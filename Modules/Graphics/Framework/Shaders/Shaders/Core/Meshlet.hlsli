@@ -3,6 +3,12 @@
 
 namespace Core
 {
+    struct MeshBoundsInfo
+    {
+        float3 m_min;
+        float3 m_max;
+    };
+
     struct MeshletHeader
     {
         uint32_t m_vertexCount : 8;

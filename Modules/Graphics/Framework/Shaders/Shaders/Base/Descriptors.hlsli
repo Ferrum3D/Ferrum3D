@@ -96,17 +96,17 @@ template<class T> struct GloballyCoherentRWTexture2DArrayDescriptor : ImageUAVDe
 template<class TResource, class T>
 struct BufferSRVDescriptorBase
 {
-    T Load(uint index)
+    T Load(uint index) FE_CONST
     {
         return Get()[index];
     }
 
-    bool IsValid()
+    bool IsValid() FE_CONST
     {
         return m_index != kInvalidIndex;
     }
 
-    TResource Get()
+    TResource Get() FE_CONST
     {
         TResource resource = ResourceDescriptorHeap[NonUniformResourceIndex(m_index)];
         return resource;

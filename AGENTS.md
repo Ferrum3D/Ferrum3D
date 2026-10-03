@@ -54,15 +54,19 @@ This only changes the current process environment. It leaves the normal Windows 
 - Follow `.clang-format` for C++ formatting:
   - 4-space indentation, no tabs.
   - 130-column limit.
-  - Allman-style braces for namespaces, classes, structs, functions, enums, control statements, and extern blocks.
-  - `else`, `catch`, and `while` after `do` appear on their own lines with braces.
+  - Use Allman-style braces for namespaces, classes, structs, functions, enums, extern blocks, and control statements that require a braced body.
+  - `else`, `catch`, and `while` after `do` appear on their own lines.
   - Always declare classes as `struct`. All public fields and functions must be declared before protected and private.
   - Declare type template parameters as `class`, not `typename` except in shader code since HLSL only supports `typename`.
   - Pointer and reference stars bind to the type side, for example `Buffer*` and `BufferInstance*&`.
   - Keep short empty functions/lambdas compact only where the formatter allows it.
   - Preserve intentional empty lines when editing; do not remove them as incidental cleanup.
   - Add two empty lines between adjacent function definitions and between adjacent type definitions.
-  - Use braces for every multi-line `if`, `else`, `for`, `while`, `do`, and similar control statement.
+  - For `if`, `else`, `for`, `while`, `do`, and similar control statements, use braces when either the formatted condition or loop header spans multiple physical lines, or the body spans multiple physical lines.
+  - Omit braces when both the condition or loop header and the body each occupy one physical line, unless another branch in the same `if`-`else` chain requires braces. Put that statement on the following indented line, not on the same line as the control header.
+  - Use braces when the body contains multiple statements or one statement spanning multiple physical lines, including wrapped function calls and nested control statements.
+  - Use consistent braces throughout an entire `if`-`else if`-`else` chain: if any branch requires braces, every branch must use braces.
+  - Keep braces whenever removing them would change scope or lifetime, create a dangling `else`, or otherwise change behavior.
   - Preserve include blocks and sort includes case-sensitively when changing include lists.
 - Include order in implementation files follows project headers grouped at the top, as in `Buffer.cpp`. Prefer angle-bracket project includes such as `#include <Graphics/Core/Vulkan/Buffer.h>`.
 - Use namespaces in the `FE::...` hierarchy and close nontrivial namespaces with comments, for example `} // namespace FE::Graphics::Vulkan`.
@@ -73,6 +77,44 @@ This only changes the current process environment. It leaves the normal Windows 
 - Keep comments sparse. Use comments for namespace endings, complex intent, or non-obvious behavior rather than restating the code.
 - Prefer generated serialization via `FE_RTTI_Serialize()` whenever reflection can express the serialized fields. Write a manual
   `Serializer` only when generated serialization cannot represent the required contract.
+
+For example, the early return and inner conditional below have single-line bodies. The outer loop and wrapped call have multi-line bodies and require braces:
+
+```cpp
+if (batch == nullptr)
+    return;
+
+for (MeshGroup* group : m_meshGroups)
+{
+    if (group != nullptr)
+        UpdateGroup(group);
+}
+
+if (!acceptedChunks.empty())
+{
+    addDispatch("CullAndCountMeshInstances",
+                pipeline,
+                acceptedChunks.size());
+}
+```
+
+A multi-line condition requires braces even for a single-line body. Every branch in the same chain then uses braces:
+
+```cpp
+if (artifact.m_buildSettings.GetType() != nullptr
+    && artifact.m_buildSettings.GetType()->m_id == artifact.m_assetTypeId)
+{
+    assetSchemaHash = artifact.m_buildSettings.GetType()->m_serializationSchemaHash;
+}
+else if (artifact.m_assetTypeId == Rtti::GetTypeID<MeshAsset>())
+{
+    assetSchemaHash = Serialization::GetSchemaHash<MeshAsset>();
+}
+else if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialAsset>())
+{
+    assetSchemaHash = Serialization::GetSchemaHash<MaterialAsset>();
+}
+```
 
 ## Memory management
 

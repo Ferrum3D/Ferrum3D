@@ -52,6 +52,15 @@ namespace FE::Simd
         inline constexpr uint32_t kLaneCount = kByteSize / sizeof(float);
 
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m128 FE_VECTORCALL Blend(const __m128 lhs, const __m128 rhs, const uint32_t mask)
+        {
+            const __m128i laneBits = _mm_setr_epi32(1, 2, 4, 8);
+            const __m128i selected = _mm_and_si128(_mm_set1_epi32(static_cast<int32_t>(mask)), laneBits);
+            const __m128 blendMask = _mm_castsi128_ps(_mm_cmpeq_epi32(selected, laneBits));
+            return _mm_blendv_ps(lhs, rhs, blendMask);
+        }
+
+
         namespace Masks
         {
             inline const __m128 kFloatX = _mm_castsi128_ps(_mm_setr_epi32(UINT32_MAX, 0, 0, 0));

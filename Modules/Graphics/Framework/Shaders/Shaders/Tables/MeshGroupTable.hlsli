@@ -7,20 +7,27 @@
 #include <Shaders/Database/Base.hlsli>
 #include <Shaders/Tables/Forwards.hlsli>
 
+#include <Shaders/Core/Meshlet.hlsli>
+
 struct MeshGroupTable
 {
     FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize
-        / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>) + sizeof(DB::Ref<MaterialInstanceTable>));
+        / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>) + sizeof(DB::Ref<MaterialInstanceTable>)
+           + sizeof(Core::MeshBoundsInfo) + sizeof(uint32_t));
 
     FE_CONSTEXPR uint32_t kOffset_m_geometry = 0;
     FE_CONSTEXPR uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kRowsPerPage;
     FE_CONSTEXPR uint32_t kOffset_m_materialInstance = kOffset_m_lods + sizeof(DB::Slice<MeshLodInfoTable>) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_bounds = kOffset_m_materialInstance + sizeof(DB::Ref<MaterialInstanceTable>) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_renderable = kOffset_m_bounds + sizeof(Core::MeshBoundsInfo) * kRowsPerPage;
 
     struct Row
     {
         DB::ElementHandle<BufferPointer, kOffset_m_geometry> m_geometry;
         DB::ElementHandle<DB::Slice<MeshLodInfoTable>, kOffset_m_lods> m_lods;
         DB::ElementHandle<DB::Ref<MaterialInstanceTable>, kOffset_m_materialInstance> m_materialInstance;
+        DB::ElementHandle<Core::MeshBoundsInfo, kOffset_m_bounds> m_bounds;
+        DB::ElementHandle<uint32_t, kOffset_m_renderable> m_renderable;
     };
 
     struct Instance
@@ -46,6 +53,8 @@ struct MeshGroupTable
         row.m_geometry.Setup(pageAddress, localRowIndex);
         row.m_lods.Setup(pageAddress, localRowIndex);
         row.m_materialInstance.Setup(pageAddress, localRowIndex);
+        row.m_bounds.Setup(pageAddress, localRowIndex);
+        row.m_renderable.Setup(pageAddress, localRowIndex);
         return row;
     }
 

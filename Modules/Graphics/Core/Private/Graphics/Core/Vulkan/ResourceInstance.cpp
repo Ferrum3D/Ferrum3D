@@ -151,6 +151,7 @@ namespace FE::Graphics::Vulkan
         VkBufferCreateInfo bufferCI = {};
         VmaAllocationCreateInfo allocationCI = {};
         TranslateBufferDesc(m_bufferDesc, params, bufferCI, allocationCI);
+        FE_Assert(bufferCI.size > 0);
 
         const VmaAllocator allocator = ImplCast(device)->GetVmaInstance();
 
@@ -184,21 +185,10 @@ namespace FE::Graphics::Vulkan
         FE_Assert(slice.m_size <= m_bufferDesc.m_size - slice.m_offset);
         if (slice.m_offset == 0 && slice.m_size == m_bufferDesc.m_size)
             return m_view;
-        for (const ViewCacheEntry& entry : m_viewCache)
-        {
-            if (entry.m_slice.m_offset == slice.m_offset && entry.m_slice.m_size == slice.m_size)
-                return entry.m_view;
-        }
-        VkBufferViewCreateInfo viewCI = {};
-        viewCI.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
-        viewCI.buffer = m_buffer;
-        viewCI.format = Translate(m_bufferDesc.m_format);
-        viewCI.offset = slice.m_offset;
-        viewCI.range = slice.m_size;
-        VkBufferView view = VK_NULL_HANDLE;
-        VerifyVk(vkCreateBufferView(NativeCast(device), &viewCI, nullptr, &view));
-        m_viewCache.push_back({ slice, view });
-        return view;
+
+        FE_Unused(device);
+        FE_DebugBreak();
+        return VK_NULL_HANDLE;
     }
 
 
@@ -206,9 +196,6 @@ namespace FE::Graphics::Vulkan
     {
         if (m_buffer)
         {
-            for (const ViewCacheEntry& entry : m_viewCache)
-                vkDestroyBufferView(NativeCast(device), entry.m_view, nullptr);
-            m_viewCache.clear();
             if (m_view)
                 vkDestroyBufferView(NativeCast(device), m_view, nullptr);
             const VmaAllocator allocator = ImplCast(device)->GetVmaInstance();

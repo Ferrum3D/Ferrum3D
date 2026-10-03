@@ -192,18 +192,23 @@ namespace FE::AssetBuilder
             IntermediateMesh* mesh = model->m_meshes[meshIndex];
             mesh->m_lods.push_back(std::move(allLod0[meshIndex]));
         }
+        model->m_lodErrors.push_back(0.0f);
     }
 
 
     namespace
     {
         void GenerateMeshletsImpl(festd::vector<uint32_t>& indices, festd::vector<IntermediateVertex>& vertices,
-                                  festd::vector<Core::MeshletHeader>& meshlets, festd::vector<Core::PackedTriangle>& primitives)
+                                  festd::vector<Core::MeshletHeader>& meshlets, festd::vector<Core::PackedTriangle>& primitives,
+                                  festd::vector<PackedVector4F>& bounds)
         {
             if (indices.empty() || vertices.empty())
                 return;
 
             namespace Limits = Core::Limits::Mesh;
+
+            if (indices.empty())
+                return;
 
             const size_t maxMeshlets =
                 meshopt_buildMeshletsBound(indices.size(), Limits::kMaxMeshletVertexCount, Limits::kMaxMeshletPrimitiveCount);
@@ -232,6 +237,13 @@ namespace FE::AssetBuilder
             meshlets.reserve(tempMeshlets.size());
             for (const meshopt_Meshlet& meshlet : tempMeshlets)
             {
+                const meshopt_Bounds sphere = meshopt_computeMeshletBounds(meshletIndices.data() + meshlet.vertex_offset,
+                                                                           meshletTriangles.data() + meshlet.triangle_offset,
+                                                                           meshlet.triangle_count,
+                                                                           &vertices.front().m_position.x,
+                                                                           vertices.size(),
+                                                                           sizeof(IntermediateVertex));
+                bounds.push_back(PackedVector4F{ sphere.center[0], sphere.center[1], sphere.center[2], sphere.radius });
                 const Core::MeshletHeader meshletHeader = Core::MeshletHeader::Pack(meshlet.vertex_count,
                                                                                     meshlet.vertex_offset,
                                                                                     meshlet.triangle_count,
@@ -256,6 +268,6 @@ namespace FE::AssetBuilder
     void MeshOptimizationPasses::GenerateMeshlets(IntermediateMesh* mesh)
     {
         for (IntermediateMeshLod& lod : mesh->m_lods)
-            GenerateMeshletsImpl(lod.m_indices, lod.m_vertices, lod.m_meshlets, lod.m_primitives);
+            GenerateMeshletsImpl(lod.m_indices, lod.m_vertices, lod.m_meshlets, lod.m_primitives, lod.m_meshletBounds);
     }
 } // namespace FE::AssetBuilder

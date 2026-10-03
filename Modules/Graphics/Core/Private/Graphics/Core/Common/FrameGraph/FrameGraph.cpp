@@ -878,7 +878,8 @@ namespace FE::Graphics::Common
             {
                 FE_Assert(existing->m_layout == access.m_layout, "Incompatible texture views in the same pass");
                 FE_Assert(access.m_layout == Core::BarrierLayout::kShaderRead
-                          || access.m_layout == Core::BarrierLayout::kShaderReadWrite, "Duplicate attachment access");
+                              || access.m_layout == Core::BarrierLayout::kShaderReadWrite,
+                          "Duplicate attachment access");
                 existing->m_syncFlags |= access.m_syncFlags;
                 existing->m_accessFlags |= access.m_accessFlags;
                 continue;

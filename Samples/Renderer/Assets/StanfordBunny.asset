@@ -16,12 +16,12 @@
                     "m_typeId": "534CD65C-1645-484D-B124-37E908676F00",
                     "m_value": {
                         "m_sourceObjectIndex": 0,
-                        "m_generateLods": false
+                        "m_generateLods": true
                     }
                 },
                 "m_dependencies": [],
-                "m_lastBuildKey": "E1C9A44C-D7B6-4D03-B3A8-845B89887A4A",
-                "m_builtArtifactId": "64C07576-ECF6-44B0-8548-387BE8C0DA89",
+                "m_lastBuildKey": "351D740F-4DE0-49FA-8048-7D3AA22C2C8E",
+                "m_builtArtifactId": "C3E2CA8D-64B6-49FC-88CA-A53664188980",
                 "m_isRemoved": false
             },
             {
@@ -42,7 +42,7 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "A51E2A49-8F64-4D5B-BF26-9386D11DA88A",
+                "m_lastBuildKey": "AD88D218-7CEE-4A9F-B5A4-0FFD9E15AF60",
                 "m_builtArtifactId": "85CAB3C0-93DF-4483-B480-9BB03A291D94",
                 "m_isRemoved": false
             }

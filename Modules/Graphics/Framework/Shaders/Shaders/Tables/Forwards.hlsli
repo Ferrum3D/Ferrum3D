@@ -8,4 +8,6 @@
 struct MeshLodInfoTable;
 struct MaterialInstanceTable;
 struct MeshGroupTable;
+struct MeshMemberTable;
+struct MeshBatchTable;
 struct MeshInstanceTable;

@@ -46,7 +46,7 @@ namespace FE::AssetBuilder
                                      const festd::span<const IO::ArtifactID> dependencyArtifacts)
         {
             constexpr festd::string_view domain = "FerrumBuild/v1";
-            constexpr festd::string_view compilerVersion = "AssetCompiler/v2";
+            constexpr festd::string_view compilerVersion = "AssetCompiler/v4";
             constexpr festd::string_view platform = "pc";
 
             Hasher lowHasher(0x1fd79b78c365ade1ull);
@@ -71,6 +71,10 @@ namespace FE::AssetBuilder
                 && artifact.m_buildSettings.GetType()->m_id == artifact.m_assetTypeId)
             {
                 assetSchemaHash = artifact.m_buildSettings.GetType()->m_serializationSchemaHash;
+            }
+            else if (artifact.m_assetTypeId == Rtti::GetTypeID<MeshAsset>())
+            {
+                assetSchemaHash = Serialization::GetSchemaHash<MeshAsset>();
             }
             else if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialAsset>())
             {

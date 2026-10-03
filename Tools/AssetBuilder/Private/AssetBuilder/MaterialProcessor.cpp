@@ -351,6 +351,106 @@ namespace FE::AssetBuilder
         }
 
 
+        bool ParseTargetFormat(const festd::string_view name, const festd::span<const Graphics::Core::Format> formats,
+                               Graphics::Core::Format& value)
+        {
+            for (const Graphics::Core::Format format : formats)
+            {
+                const festd::string_view formatName =
+                    format == Graphics::Core::Format::kUndefined ? "Undefined" : Graphics::Core::ToString(format);
+                if (formatName == name)
+                {
+                    value = format;
+                    return true;
+                }
+            }
+
+            Logger::LogError("Unsupported material target format '{}'", name);
+            return false;
+        }
+
+
+        bool ReadTargetFormats(lua_State* state, const int table, Graphics::MaterialTechniqueDesc& technique)
+        {
+            static constexpr Graphics::Core::Format colorFormats[] = {
+                Graphics::Core::Format::kR8_SINT,
+                Graphics::Core::Format::kR8_UINT,
+                Graphics::Core::Format::kR8_SNORM,
+                Graphics::Core::Format::kR8_UNORM,
+                Graphics::Core::Format::kR8G8_SINT,
+                Graphics::Core::Format::kR8G8_UINT,
+                Graphics::Core::Format::kR8G8_SNORM,
+                Graphics::Core::Format::kR8G8_UNORM,
+                Graphics::Core::Format::kR8G8B8A8_SINT,
+                Graphics::Core::Format::kR8G8B8A8_UINT,
+                Graphics::Core::Format::kR8G8B8A8_SNORM,
+                Graphics::Core::Format::kR8G8B8A8_UNORM,
+                Graphics::Core::Format::kR8G8B8A8_SRGB,
+                Graphics::Core::Format::kB8G8R8A8_UNORM,
+                Graphics::Core::Format::kB8G8R8A8_SRGB,
+                Graphics::Core::Format::kR16_SINT,
+                Graphics::Core::Format::kR16_UINT,
+                Graphics::Core::Format::kR16_SNORM,
+                Graphics::Core::Format::kR16_UNORM,
+                Graphics::Core::Format::kR16_SFLOAT,
+                Graphics::Core::Format::kR16G16_SINT,
+                Graphics::Core::Format::kR16G16_UINT,
+                Graphics::Core::Format::kR16G16_SNORM,
+                Graphics::Core::Format::kR16G16_UNORM,
+                Graphics::Core::Format::kR16G16_SFLOAT,
+                Graphics::Core::Format::kR16G16B16A16_SINT,
+                Graphics::Core::Format::kR16G16B16A16_UINT,
+                Graphics::Core::Format::kR16G16B16A16_SNORM,
+                Graphics::Core::Format::kR16G16B16A16_UNORM,
+                Graphics::Core::Format::kR16G16B16A16_SFLOAT,
+                Graphics::Core::Format::kR32_SINT,
+                Graphics::Core::Format::kR32_UINT,
+                Graphics::Core::Format::kR32_SFLOAT,
+                Graphics::Core::Format::kR32G32_SINT,
+                Graphics::Core::Format::kR32G32_UINT,
+                Graphics::Core::Format::kR32G32_SFLOAT,
+                Graphics::Core::Format::kR32G32B32A32_SINT,
+                Graphics::Core::Format::kR32G32B32A32_UINT,
+                Graphics::Core::Format::kR32G32B32A32_SFLOAT,
+                Graphics::Core::Format::kA2R10G10B10_UINT,
+                Graphics::Core::Format::kA2R10G10B10_UNORM,
+                Graphics::Core::Format::kB10G11R11_UFLOAT,
+            };
+
+            static constexpr Graphics::Core::Format depthFormats[] = {
+                Graphics::Core::Format::kUndefined,          Graphics::Core::Format::kD16_UNORM,
+                Graphics::Core::Format::kD32_SFLOAT,         Graphics::Core::Format::kD24_UNORM_S8_UINT,
+                Graphics::Core::Format::kD32_SFLOAT_S8_UINT,
+            };
+
+            if (!ParseTargetFormat(GetString(state, table, "depthTargetFormat"), depthFormats, technique.m_depthTargetFormat))
+                return false;
+
+            lua_getfield(state, table, "renderTargetFormats");
+            if (!lua_istable(state, -1))
+                return false;
+
+            const uint32_t targetCount = static_cast<uint32_t>(lua_objlen(state, -1));
+            if (targetCount > Graphics::Core::Limits::Pipeline::kMaxColorAttachments)
+                return false;
+
+            for (uint32_t target = 0; target < targetCount; ++target)
+            {
+                lua_rawgeti(state, -1, target + 1);
+                if (!lua_isstring(state, -1))
+                    return false;
+
+                Graphics::Core::Format format;
+                if (!ParseTargetFormat(lua_tostring(state, -1), colorFormats, format))
+                    return false;
+                technique.m_renderTargetFormats.push_back(format);
+                lua_pop(state, 1);
+            }
+            lua_pop(state, 1);
+            return true;
+        }
+
+
         bool ReadTechniques(lua_State* state, const int material, Graphics::MaterialAsset& output)
         {
             lua_getfield(state, material, "techniques");
@@ -377,6 +477,8 @@ namespace FE::AssetBuilder
                     technique.m_meshShader = GetName(state, -1, "meshShader");
                     technique.m_pixelShader = GetName(state, -1, "pixelShader");
                     if (!technique.m_meshShader.IsValid() && !technique.m_vertexShader.IsValid())
+                        return false;
+                    if (!ReadTargetFormats(state, lua_absindex(state, -1), technique))
                         return false;
 
                     lua_getfield(state, -1, "rasterization");

@@ -35,7 +35,7 @@ namespace FE::Graphics
 
     private:
         void EnsureDatabase();
-        void EnsureMainColorTarget(const Core::TextureDesc& swapchainColorTargetDesc);
+        void EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc);
         void EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);

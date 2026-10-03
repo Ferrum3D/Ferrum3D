@@ -15,7 +15,7 @@ namespace FE::Graphics
         MaterialInstanceRuntime(const MaterialInstanceRuntime&) = delete;
         MaterialInstanceRuntime& operator=(const MaterialInstanceRuntime&) = delete;
 
-        [[nodiscard]] Core::GraphicsPipeline* GetPipeline(Env::Name role, Core::Format colorFormat);
+        [[nodiscard]] Core::GraphicsPipeline* GetPipeline(Env::Name role);
         [[nodiscard]] bool HasTechnique(Env::Name role) const;
         [[nodiscard]] BufferPointer GetMaterialParameters() const;
         [[nodiscard]] MaterialParameterAllocator::Allocation AllocateInstanceParameters();
@@ -26,7 +26,6 @@ namespace FE::Graphics
         struct PipelineEntry final
         {
             Env::Name m_role;
-            Core::Format m_colorFormat = Core::Format::kUndefined;
             Core::GraphicsPipeline* m_pipeline = nullptr;
         };
 

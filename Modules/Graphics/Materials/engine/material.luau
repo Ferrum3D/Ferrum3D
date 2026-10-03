@@ -92,6 +92,8 @@ function Material.technique(
             local techniqueDesc: TechniqueContext.TechniqueDesc = {
                 role = role,
                 shaderDefines = {},
+                renderTargetFormats = {},
+                depthTargetFormat = "Undefined",
                 rasterization = Pipeline.RasterizationState.fillNoCull(),
                 depthStencil = Pipeline.DepthStencilState.disabled(),
                 blend = Pipeline.BlendState.disabled()

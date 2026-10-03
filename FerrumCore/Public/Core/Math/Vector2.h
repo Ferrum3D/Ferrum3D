@@ -142,6 +142,15 @@ namespace FE
 
     namespace Math
     {
+        //! Select rhs components where mask bits are set (bit 0 is x); otherwise select lhs.
+        template<class T>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> Blend(const Vector2Base<T> lhs, const Vector2Base<T> rhs,
+                                                                   const uint32_t mask)
+        {
+            return Vector2Base<T>{ (mask & 1) != 0 ? rhs.x : lhs.x, (mask & 2) != 0 ? rhs.y : lhs.y };
+        }
+
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(const Vector2Base<float> lhs, const Vector2Base<float> rhs)
         {
             return lhs.x * rhs.x + lhs.y * rhs.y;

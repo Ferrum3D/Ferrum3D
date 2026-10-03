@@ -160,7 +160,7 @@ namespace FE::Graphics
     }
 
 
-    void MeshStreamer::SetResidentLod(MeshAsset& asset, const uint32_t lodIndex)
+    void MeshStreamer::SetResidentLod(const MeshAsset& asset, const uint32_t lodIndex)
     {
         FE_Assert(Threading::IsMainThread());
         Impl::Entry* entry = FindMeshEntry(m_impl->m_entries, &asset);

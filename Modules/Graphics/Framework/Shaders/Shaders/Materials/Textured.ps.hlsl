@@ -13,9 +13,9 @@ struct InstanceParameters
 
 void main(const in PixelAttributes input, out float4 output : SV_Target0)
 {
-    MeshInstanceTable instanceTable = MeshInstanceTable::Create(GConstants.m_meshInstanceTable);
-    MeshGroupTable groupTable = MeshGroupTable::Create(GConstants.m_meshGroupTable);
-    MaterialInstanceTable materialTable = MaterialInstanceTable::Create(GConstants.m_materialInstanceTable);
+    MeshInstanceTable instanceTable = MeshInstanceTable::Create(GView.m_instances);
+    MeshGroupTable groupTable = MeshGroupTable::Create(GView.m_groups);
+    MaterialInstanceTable materialTable = MaterialInstanceTable::Create(GView.m_materials);
 
     const MeshInstanceTable::Row instance = instanceTable.ReadRow(input.m_instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());

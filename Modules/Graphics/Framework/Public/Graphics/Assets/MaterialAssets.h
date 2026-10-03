@@ -57,6 +57,8 @@ namespace FE::Graphics
         Env::Name m_meshShader;
         Env::Name m_pixelShader;
         festd::string m_shaderDefines;
+        festd::vector<Core::Format> m_renderTargetFormats;
+        Core::Format m_depthTargetFormat = Core::Format::kUndefined;
         Core::RasterizationState m_rasterization = Core::RasterizationState::kFillNoCull;
         Core::DepthStencilState m_depthStencil = Core::DepthStencilState::kDisabled;
         Core::ColorBlendState m_blend = Core::ColorBlendState::Create(Core::TargetColorBlending::kDisabled);

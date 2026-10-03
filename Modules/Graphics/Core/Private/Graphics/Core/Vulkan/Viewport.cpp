@@ -468,7 +468,8 @@ namespace FE::Graphics::Vulkan
         barrier.m_layoutAfter = Core::BarrierLayout::kRenderTarget;
         barrier.m_accessBefore = state.m_access;
         barrier.m_accessAfter = Core::BarrierAccessFlags::kRenderTarget;
-        barrier.m_syncBefore = state.m_sync;
+        // Chain the layout transition after the acquire semaphore's color/transfer wait stages.
+        barrier.m_syncBefore = state.m_sync | Core::BarrierSyncFlags::kRenderTarget | Core::BarrierSyncFlags::kCopy;
         barrier.m_syncAfter = Core::BarrierSyncFlags::kRenderTarget;
         barrier.m_queueBefore = Core::DeviceQueueType::kGraphics;
         barrier.m_queueAfter = Core::DeviceQueueType::kGraphics;

@@ -128,6 +128,7 @@ namespace FE::Graphics::Core
 
         deferFree.dismiss();
 
+        std::lock_guard lk{ m_lock };
         const Rc file = m_filePool.New();
         file->m_sourceCache = this;
         file->m_source = source;
@@ -137,7 +138,6 @@ namespace FE::Graphics::Core
 
         const festd::string_view shaderNameStrView{ shaderName };
 
-        std::lock_guard lk{ m_lock };
         m_filesMap[shaderName] = file;
 
         constexpr festd::string_view fidelityFxPrefix = "ThirdParty/FidelityFX/";

@@ -20,7 +20,6 @@ namespace FE::Graphics
     struct SceneRenderPass final
     {
         Matrix4x4 m_viewProjection;
-        Core::Format m_colorFormat = Core::Format::kUndefined;
         Core::BasePassDescToken m_passDescToken;
         DrawTag m_drawTag;
         Env::Name m_techniqueRole;
@@ -33,6 +32,8 @@ namespace FE::Graphics
         ~SceneModuleBase() override = default;
 
         virtual void Update() {}
+        virtual void UpdateRenderData(Core::FrameGraph&, Core::RingUploader&) {}
+        virtual void PrepareRenderView(Core::FrameGraph&, Core::RingUploader&) {}
         virtual void CollectRenderBatches(RenderBatchCollector&) {}
         virtual void AddRenderPasses(Core::FrameGraph&, Core::RingUploader&, const SceneRenderPass&) {}
 

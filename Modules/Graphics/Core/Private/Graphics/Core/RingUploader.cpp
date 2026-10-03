@@ -42,7 +42,7 @@ namespace FE::Graphics::Core
     }
 
 
-    bool RingUploader::Upload(FrameGraph& graph, const BufferView destination, const void* source, const uint32_t byteSize,
+    bool RingUploader::UploadBytes(FrameGraph& graph, const BufferView destination, const void* source, const uint32_t byteSize,
                               const Options options)
     {
         if (const auto allocation = m_ringBuffer.Allocate(byteSize, kAlignment))

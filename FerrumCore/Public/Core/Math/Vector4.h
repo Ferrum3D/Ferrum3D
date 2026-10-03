@@ -277,6 +277,14 @@ namespace FE
 
     namespace Math
     {
+        //! Select rhs components where mask bits are set (bit 0 is x); otherwise select lhs.
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4 FE_VECTORCALL Blend(const Vector4 lhs, const Vector4 rhs,
+                                                                          const uint32_t mask)
+        {
+            return Vector4{ Simd::SSE::Blend(lhs.m_simdVector, rhs.m_simdVector, mask) };
+        }
+
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4 FE_VECTORCALL DotBroadcast(const Vector4 lhs, const Vector4 rhs)
         {
             const __m128 result = Simd::DotProduct(lhs.m_simdVector, rhs.m_simdVector);

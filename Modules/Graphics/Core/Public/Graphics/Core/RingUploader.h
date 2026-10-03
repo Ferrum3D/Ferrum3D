@@ -20,8 +20,31 @@ namespace FE::Graphics::Core
         void Setup(Env::Name name, ResourcePool* resourcePool, uint32_t capacity);
         void Shutdown();
 
-        [[nodiscard]] bool Upload(FrameGraph& graph, BufferView destination, const void* source, uint32_t byteSize,
-                                  Options options = Options::kNone);
+        [[nodiscard]] bool UploadBytes(FrameGraph& graph, BufferView destination, const void* source, uint32_t byteSize,
+                                       Options options = Options::kNone);
+
+        template<class T>
+        [[nodiscard]] bool UploadArray(FrameGraph& graph, const BufferView destination, const festd::span<const T> source,
+                                       const Options options = Options::kNone)
+        {
+            return UploadBytes(graph, destination, source.data(), source.size_bytes(), options);
+        }
+
+        template<class T>
+        [[nodiscard]] bool UploadArray(FrameGraph& graph, const BufferView destination, const festd::span<T> source,
+                                       const Options options = Options::kNone)
+        {
+            return UploadBytes(graph, destination, source.data(), source.size_bytes(), options);
+        }
+
+        template<class T>
+            requires(std::is_trivially_copyable_v<T>)
+        [[nodiscard]] bool Upload(FrameGraph& graph, const BufferView destination, const T& source,
+                                  const Options options = Options::kNone)
+        {
+            return UploadBytes(graph, destination, &source, sizeof(T), options);
+        }
+
         void CloseFrame(const FenceSyncPoint& fence);
 
     private:

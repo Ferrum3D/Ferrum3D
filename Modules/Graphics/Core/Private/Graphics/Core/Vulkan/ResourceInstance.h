@@ -21,7 +21,6 @@ namespace FE::Graphics::Vulkan
         };
 
         Threading::SpinLock m_viewCacheLock;
-        festd::inline_vector<ViewCacheEntry, 4> m_viewCache;
         VkBufferView GetSliceView(const Core::Device* device, Core::BufferSlice slice);
 
         VkBuffer m_buffer = VK_NULL_HANDLE;

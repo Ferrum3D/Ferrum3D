@@ -23,7 +23,7 @@ namespace FE::Graphics
         MeshStreamer(const MeshStreamer&) = delete;
         MeshStreamer& operator=(const MeshStreamer&) = delete;
 
-        void SetResidentLod(MeshAsset& asset, uint32_t lodIndex);
+        void SetResidentLod(const MeshAsset& asset, uint32_t lodIndex);
 
         IO::AssetFinalizeResult FinalizeAssetLoading(IO::AssetSlot& assetSlot, const IO::ArtifactRecord& artifact,
                                                      void* candidate) override;

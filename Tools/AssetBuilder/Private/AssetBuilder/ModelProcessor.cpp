@@ -91,11 +91,16 @@ namespace FE::AssetBuilder
             MeshAsset header;
             header.m_vertexStride = layout.CalculateStreamStride(0);
             header.m_lodErrors.assign(model.m_lodErrors.begin(), model.m_lodErrors.end());
+            if (header.m_lodErrors.empty())
+                header.m_lodErrors.push_back(0.0f);
+            FE_Assert(header.m_lodErrors.size() == model.m_meshes.front()->m_lods.size());
             for (const IntermediateMesh* submesh : model.m_meshes)
             {
                 MeshSubmeshAssetInfo& submeshInfo = header.m_submeshes.emplace_back();
                 for (const IntermediateMeshLod& lod : submesh->m_lods)
                 {
+                    for (const IntermediateVertex& vertex : lod.m_vertices)
+                        submeshInfo.m_bounds = Math::Union(submeshInfo.m_bounds, vertex.m_position);
                     MeshLodAssetInfo& lodInfo = submeshInfo.m_lods.emplace_back();
                     lodInfo.m_vertexCount = lod.m_vertices.size();
                     lodInfo.m_indexCount = lod.m_indices.size();
@@ -120,6 +125,7 @@ namespace FE::AssetBuilder
                     AppendBytes(payload, lod.m_indices.data(), festd::size_bytes(lod.m_indices));
                     AppendBytes(payload, lod.m_meshlets.data(), festd::size_bytes(lod.m_meshlets));
                     AppendBytes(payload, lod.m_primitives.data(), festd::size_bytes(lod.m_primitives));
+                    AppendBytes(payload, lod.m_meshletBounds.data(), festd::size_bytes(lod.m_meshletBounds));
                 }
 
                 if (!writer.WritePayload(payload))

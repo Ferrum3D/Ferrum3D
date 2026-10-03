@@ -1,8 +1,16 @@
 #pragma once
+#include <Core/Math/Vector3.h>
 #include <Graphics/Core/InputStreamLayout.h>
 
 namespace FE::Graphics::Core
 {
+    struct MeshBoundsInfo final
+    {
+        PackedVector3F m_min;
+        PackedVector3F m_max;
+    };
+
+
     struct MeshInfo final
     {
         InputStreamLayout m_layout;

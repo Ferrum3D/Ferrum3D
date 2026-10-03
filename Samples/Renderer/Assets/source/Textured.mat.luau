@@ -18,7 +18,10 @@ local function setCull(t, ctx)
 end
 
 material:technique("DepthOnly", function(t, ctx)
+    t.renderTargetFormats = {}
     setCull(t, ctx)
+    t.depthTargetFormat = "D32_SFLOAT_S8_UINT"
+    t.amplificationShader = "Shaders/Passes/MeshPass/MeshCull.as.hlsl"
     t.meshShader = "Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl"
     t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
     return true
@@ -26,7 +29,10 @@ end)
 
 material:technique("Opaque", function(t, ctx)
     setCull(t, ctx)
+    t.depthTargetFormat = "D32_SFLOAT_S8_UINT"
+    t.amplificationShader = "Shaders/Passes/MeshPass/MeshCull.as.hlsl"
     t.meshShader = "Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl"
+    t.renderTargetFormats = { "B10G11R11_UFLOAT" }
     t.pixelShader = "Shaders/Materials/Textured.ps.hlsl"
     t.depthStencil = Pipeline.DepthStencilState.writeIfEqual()
     return true

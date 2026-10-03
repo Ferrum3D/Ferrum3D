@@ -1,6 +1,6 @@
 ﻿#include <Core/Containers/ByteBuffer.h>
-#include <Core/IO/FileStream.h>
 #include <Core/IO/Async.h>
+#include <Core/IO/FileStream.h>
 #include <Core/Logging/Trace.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
@@ -261,16 +261,18 @@ namespace FE::Graphics::Core
                 compilerResult.m_hash = DefaultHash(hashData->HashDigest, sizeof(hashData->HashDigest));
                 compilerResult.m_hashValid = true;
             }
-            else
-            {
-                Logger::LogError("Failed to get shader hash: {}", args.m_shaderName);
-            }
         }
 
         Rc<IDxcBlob> binary;
         hr = result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(binary.GetAddressOf()), nullptr);
         FE_Assert(SUCCEEDED(hr), "Failed to get binary");
         FE_Assert(binary);
+
+        if (!compilerResult.m_hashValid)
+        {
+            compilerResult.m_hash = DefaultHash(binary->GetBufferPointer(), binary->GetBufferSize());
+            compilerResult.m_hashValid = true;
+        }
 
         const uint32_t binarySize = static_cast<uint32_t>(binary->GetBufferSize());
         const uint32_t bufferSizeDwordAligned = AlignUp<sizeof(uint32_t)>(binarySize);

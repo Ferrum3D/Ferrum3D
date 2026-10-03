@@ -5,10 +5,13 @@
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Database/Base.h>
 #include <Graphics/Materials/MaterialInstance.h>
+#include <Graphics/Scene/GpuMeshWorkBuilder.h>
 #include <Graphics/Scene/Octree.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Tables/Forwards.h>
+#include <Graphics/Tables/MeshBatchTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
+#include <Graphics/Tables/MeshMemberTable.h>
 #include <festd/unordered_map.h>
 
 namespace FE::Graphics
@@ -33,11 +36,15 @@ namespace FE::Graphics
 
     struct MeshBatch final
     {
+        static constexpr uint32_t kMaxInstanceCount = MeshMemberTable::kRowsPerPage;
+
         OctreeEntry m_octreeEntry;
         MeshSceneModule* m_parent = nullptr;
         DrawTagMask m_drawTagMask;
         festd::vector<DB::Ref<MeshInstanceTable>> m_meshInstances;
         festd::vector<MeshHandle> m_handles;
+        DB::Ref<MeshBatchTable> m_tableRef;
+        DB::Slice<MeshMemberTable> m_members{};
     };
 
 
@@ -49,7 +56,7 @@ namespace FE::Graphics
         DB::Slice<MeshLodInfoTable> m_lodsRef{};
         IO::AssetLease<MeshAsset> m_asset;
         IO::AssetLease<MaterialInstanceAsset> m_material;
-        Core::Buffer* m_buffer = nullptr;
+        Rc<Core::Buffer> m_buffer;
         uint32_t m_meshGeneration = 0;
         uint32_t m_materialGeneration = kInvalidIndex;
         uint32_t m_residentLod = kInvalidIndex;
@@ -82,13 +89,22 @@ namespace FE::Graphics
 
         [[nodiscard]] MeshBatch* CreateBatch(const MeshBatchDesc& desc);
         void DestroyBatch(MeshBatch* batch);
+        void SetBatchDrawTags(MeshBatch* batch, DrawTagMask tags);
 
         [[nodiscard]] MeshHandle CreateInstance(const MeshInstanceDesc& desc);
         void DestroyInstance(MeshHandle instance);
+
         void Update() override;
-        void CollectRenderBatches(RenderBatchCollector& collector) override;
+
+        void UpdateTransform(MeshHandle instance, const Matrix4x4& transform);
+        void MoveInstance(MeshHandle instance, MeshBatch* batch);
+        void UpdateMaterial(MeshHandle handle, const IO::AssetLease<MaterialInstanceAsset>& materialLease);
+
+        void UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader) override;
+        void PrepareRenderView(Core::FrameGraph& graph, Core::RingUploader& uploader) override;
         void AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass) override;
 
+        // Indexed batch slots; destroyed batches leave null pointers until their slots are reused.
         [[nodiscard]] const festd::vector<MeshBatch*>& GetBatches() const
         {
             return m_batches;
@@ -137,6 +153,8 @@ namespace FE::Graphics
         void EnsureCapacity();
         void DestroyGroup(MeshGroup* group);
         void UpdateGroup(MeshGroup* group);
+        void UpdateBatchBounds(MeshBatch* batch);
+        void UpdateBatchMembership(MeshBatch* batch);
 
         MeshGroup* FindOrCreateMeshGroup(const IO::AssetLease<MeshAsset>& meshAsset,
                                          const IO::AssetLease<MaterialInstanceAsset>& material);
@@ -148,11 +166,18 @@ namespace FE::Graphics
 
         festd::vector<MeshGroup*> m_meshGroups;
         festd::vector<MeshBatch*> m_batches;
+        festd::bit_vector m_activeMeshGroups;
+        festd::bit_vector m_boundsDirty;
+        festd::bit_vector m_membershipDirty;
 
         Rc<MeshLodInfoTable> m_meshLodInfoTable;
         Rc<MeshGroupTable> m_meshGroupTable;
         Rc<MeshInstanceTable> m_meshInstanceTable;
         Rc<MaterialInstanceTable> m_materialInstanceTable;
+        Rc<MeshBatchTable> m_batchTable;
+        Rc<MeshMemberTable> m_memberTable;
+        MeshPipelineRegistry m_registry;
+        uint64_t m_revision = 1;
         Octree m_octree;
     };
 } // namespace FE::Graphics

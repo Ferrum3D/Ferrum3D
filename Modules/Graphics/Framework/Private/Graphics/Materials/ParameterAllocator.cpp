@@ -95,7 +95,7 @@ namespace FE::Graphics
 
         Bit::Traverse(m_dirtyPages.view(), [&](const uint32_t pageIndex) {
             Page* page = m_pages[pageIndex];
-            FE_Verify(m_uploader.Upload(graph, page->m_buffer.Get(), page->m_hostData, kPageSize));
+            FE_Verify(m_uploader.UploadBytes(graph, page->m_buffer.Get(), page->m_hostData, kPageSize));
 
             auto* barrier = graph.AllocatePassData<Core::BufferAccessPassDesc>();
             barrier->m_access = { page->m_buffer.Get(),

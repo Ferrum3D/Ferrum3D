@@ -75,7 +75,7 @@ namespace FE::Graphics
 
         m_graphicsQueue->BeginFrame();
         viewport->AcquireNextImage();
-        EnsureMainColorTarget(viewport->GetCurrentColorTarget()->GetDesc());
+        EnsureMainColorTarget(viewport->GetDesc());
         EnsureMainDepthTarget(viewport->GetDesc());
 
         m_frameGraph->BeginFrame();
@@ -84,11 +84,16 @@ namespace FE::Graphics
             module.Update();
         });
 
+        scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
+            module.UpdateRenderData(*m_frameGraph, m_renderQueueUploader);
+        });
+
         m_database->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
         m_materialParameters->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
 
         for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
         {
+            FE_FG_SCOPE(*m_frameGraph, Fmt::FixedFormat("View{}", viewIndex));
             m_frameGraph->GetBlackboard().Reset();
             View* view = scene->GetView(viewIndex);
             SetupFrameGraph(*m_frameGraph, m_frameGraph->GetBlackboard(), *scene, *view, *viewport);
@@ -147,17 +152,18 @@ namespace FE::Graphics
     }
 
 
-    void RendererImpl::EnsureMainColorTarget(const Core::TextureDesc& swapchainColorTargetDesc)
+    void RendererImpl::EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc)
     {
         const bool sizeMismatch = m_mainColorTarget != nullptr
-            && (m_mainColorTarget->GetDesc().m_width != swapchainColorTargetDesc.m_width
-                || m_mainColorTarget->GetDesc().m_height != swapchainColorTargetDesc.m_height);
-        const bool formatMismatch =
-            m_mainColorTarget != nullptr && m_mainColorTarget->GetDesc().m_imageFormat != swapchainColorTargetDesc.m_imageFormat;
-        if (m_mainColorTarget != nullptr && !sizeMismatch && !formatMismatch)
+            && (m_mainColorTarget->GetDesc().m_width != viewportDesc.m_width
+                || m_mainColorTarget->GetDesc().m_height != viewportDesc.m_height);
+        if (m_mainColorTarget != nullptr && !sizeMismatch)
             return;
 
-        m_mainColorTarget = Core::Texture::Create(m_device.Get(), "RendererMainColor", swapchainColorTargetDesc);
+        m_mainColorTarget = Core::Texture::Create(m_device.Get(),
+                                                  "RendererMainColor",
+                                                  Core::Format::kB10G11R11_UFLOAT,
+                                                  { viewportDesc.m_width, viewportDesc.m_height });
     }
 
 
@@ -204,6 +210,10 @@ namespace FE::Graphics
             context.ClearColorTarget(0, Colors::kDarkSlateBlue);
             context.ClearDepthStencilTarget(0.0f, 0);
             context.ClearRenderTargets();
+        });
+
+        scene.GetModules().ForEachActive([&](SceneModuleBase& module) {
+            module.PrepareRenderView(graph, m_renderQueueUploader);
         });
 
         DepthPrepass::AddPasses(graph, blackboard);

@@ -138,7 +138,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb FE_VECTORCALL Union(const Aabb& lhs, const Vector3 rhs)
         {
-            return Aabb{ Min(lhs.min, rhs), Max(lhs.min, rhs) };
+            return Aabb{ Min(lhs.min, rhs), Max(lhs.max, rhs) };
         }
 
 

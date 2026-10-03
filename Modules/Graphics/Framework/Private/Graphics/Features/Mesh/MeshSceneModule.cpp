@@ -1,8 +1,13 @@
 #include <Core/Memory/FiberTempAllocator.h>
+#include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
+#include <Graphics/Passes/DepthPrepass.h>
+#include <Graphics/Passes/DrawTags.h>
+#include <Graphics/Passes/OpaquePass.h>
+#include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/RendererImpl.h>
-#include <Graphics/Scene/IndirectMeshBatcher.h>
+#include <Graphics/Scene/GpuMeshWorkBuilder.h>
 #include <Graphics/Scene/RenderBatch.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
@@ -14,6 +19,19 @@
 
 namespace FE::Graphics
 {
+    static void FreeInstanceParameters(const IO::AssetLease<MaterialInstanceAsset>& materialLease, const uint32_t generation,
+                                       const MaterialParameterAllocator::Allocation& parameters)
+    {
+        // An older generation's runtime frees its remaining blocks on destruction; never free them through its replacement.
+        if (generation != materialLease.GetGeneration() || !parameters.IsValid())
+            return;
+
+        const IO::AssetRead<MaterialInstanceAsset> material = materialLease.Read();
+        if (material && material->m_runtime)
+            material->m_runtime->FreeInstanceParameters(parameters);
+    }
+
+
     MeshSceneModule::MeshSceneModule(Scene* scene)
         : SceneModuleBase(scene)
         , m_octree(Aabb{ Vector3(-10000.0f, -10000.0f, -10000.0f), Vector3(10000.0f, 10000.0f, 10000.0f) })
@@ -26,19 +44,22 @@ namespace FE::Graphics
         m_meshGroupTable = Memory::DefaultNew<MeshGroupTable>(database);
         m_meshInstanceTable = Memory::DefaultNew<MeshInstanceTable>(database);
         m_materialInstanceTable = Memory::DefaultNew<MaterialInstanceTable>(database);
+        m_batchTable = Memory::DefaultNew<MeshBatchTable>(database);
+        m_memberTable = Memory::DefaultNew<MeshMemberTable>(database);
     }
 
 
     MeshSceneModule::~MeshSceneModule()
     {
-        while (!m_batches.empty())
-            DestroyBatch(m_batches.back());
-
-        for (MeshGroup* group : m_meshGroups)
+        for (MeshBatch* batch : m_batches)
         {
-            if (group != nullptr)
-                DestroyGroup(group);
+            if (batch != nullptr)
+                DestroyBatch(batch);
         }
+
+        Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
+            DestroyGroup(m_meshGroups[groupIndex]);
+        });
     }
 
 
@@ -47,11 +68,22 @@ namespace FE::Graphics
         FE_Assert(desc.m_bounds.IsValid());
         auto* batch = Memory::DefaultNew<MeshBatch>();
         batch->m_parent = this;
+        batch->m_tableRef = m_batchTable->AllocateRow();
         batch->m_drawTagMask = desc.m_drawTagMask;
         batch->m_octreeEntry.m_bounds = desc.m_bounds;
-        batch->m_octreeEntry.m_userIndex = m_batches.size();
+        const uint32_t batchIndex = batch->m_tableRef.m_rowIndex;
+        if (batchIndex >= m_batches.size())
+        {
+            m_batches.resize(batchIndex + 1, nullptr);
+            m_boundsDirty.resize(m_batches.size(), false);
+            m_membershipDirty.resize(m_batches.size(), false);
+        }
+        m_batches[batchIndex] = batch;
+        m_boundsDirty.set(batchIndex);
+        m_membershipDirty.set(batchIndex);
+
+        batch->m_octreeEntry.m_userIndex = batchIndex;
         m_octree.InsertOrUpdate(batch->m_octreeEntry);
-        m_batches.push_back(batch);
         return batch;
     }
 
@@ -61,18 +93,21 @@ namespace FE::Graphics
         if (batch == nullptr)
             return;
 
-        const auto it = festd::find(m_batches, batch);
-        if (it == m_batches.end())
+        const uint32_t batchIndex = batch->m_tableRef.m_rowIndex;
+        if (batchIndex >= m_batches.size() || m_batches[batchIndex] != batch)
             return;
 
         while (!batch->m_handles.empty())
             DestroyInstance(batch->m_handles.back());
 
+        m_memberTable->Free(batch->m_members);
+        m_batchTable->Free(batch->m_tableRef);
+
         m_octree.Remove(batch->m_octreeEntry);
-        const uint32_t batchIndex = static_cast<uint32_t>(it - m_batches.begin());
-        m_batches.erase_unsorted(it);
-        if (batchIndex < m_batches.size())
-            m_batches[batchIndex]->m_octreeEntry.m_userIndex = batchIndex;
+        m_batches[batchIndex] = nullptr;
+        m_boundsDirty.reset(batchIndex);
+        m_membershipDirty.reset(batchIndex);
+
         Memory::DefaultDelete(batch);
     }
 
@@ -82,6 +117,7 @@ namespace FE::Graphics
         FE_Assert(desc.m_asset.IsValid() && desc.m_asset.IsReady());
         FE_Assert(desc.m_material.IsValid() && desc.m_material.IsReady());
         FE_Assert(desc.m_batch != nullptr && desc.m_batch->m_parent == this);
+        FE_Assert(desc.m_batch->m_meshInstances.size() < MeshBatch::kMaxInstanceCount);
 
         MeshGroup* meshGroup = FindOrCreateMeshGroup(desc.m_asset, desc.m_material);
         const IO::AssetRead<MaterialInstanceAsset> material = desc.m_material.Read();
@@ -100,42 +136,45 @@ namespace FE::Graphics
         desc.m_batch->m_handles.push_back(handle);
         meshGroup->m_instances.push_back(handle);
         ++meshGroup->m_instanceCount;
+        m_membershipDirty.set(desc.m_batch->m_tableRef.m_rowIndex);
+        m_boundsDirty.set(desc.m_batch->m_tableRef.m_rowIndex);
+        ++m_revision;
 
         return handle;
     }
 
 
-    void MeshSceneModule::DestroyInstance(const MeshHandle handle)
+    void MeshSceneModule::DestroyInstance(const MeshHandle instance)
     {
-        if (!handle.IsValid() || handle.m_value >= m_instances.size())
+        if (!instance.IsValid() || instance.m_value >= m_instances.size())
             return;
 
-        InstanceRecord& record = m_instances[handle.m_value];
-        if (record.m_generation != handle.m_generation || record.m_tableRef.m_rowIndex == kInvalidIndex)
+        const InstanceRecord& record = m_instances[instance.m_value];
+        if (record.m_generation != instance.m_generation || record.m_tableRef.m_rowIndex == kInvalidIndex)
             return;
 
-        const IO::AssetRead<MaterialInstanceAsset> material = record.m_group->m_material.Read();
-        const bool currentMaterialGeneration = record.m_materialGeneration == record.m_group->m_material.GetGeneration();
-        if (currentMaterialGeneration && material && material->m_runtime && record.m_parameters.IsValid())
-            material->m_runtime->FreeInstanceParameters(record.m_parameters);
+        FreeInstanceParameters(record.m_group->m_material, record.m_materialGeneration, record.m_parameters);
 
         const auto batchRef = festd::find_if(record.m_batch->m_meshInstances, [&](const DB::Ref<MeshInstanceTable> ref) {
             return ref.m_rowIndex == record.m_tableRef.m_rowIndex;
         });
         FE_Assert(batchRef != record.m_batch->m_meshInstances.end());
         record.m_batch->m_meshInstances.erase_unsorted(batchRef);
-        const auto batchHandle = festd::find(record.m_batch->m_handles, handle);
+        const auto batchHandle = festd::find(record.m_batch->m_handles, instance);
         FE_Assert(batchHandle != record.m_batch->m_handles.end());
         record.m_batch->m_handles.erase_unsorted(batchHandle);
+        m_membershipDirty.set(record.m_batch->m_tableRef.m_rowIndex);
+        m_boundsDirty.set(record.m_batch->m_tableRef.m_rowIndex);
+        ++m_revision;
 
         MeshGroup* group = record.m_group;
-        const auto groupHandle = festd::find(group->m_instances, handle);
+        const auto groupHandle = festd::find(group->m_instances, instance);
         FE_Assert(groupHandle != group->m_instances.end());
         group->m_instances.erase_unsorted(groupHandle);
         --group->m_instanceCount;
 
         m_meshInstanceTable->Free(record.m_tableRef);
-        FreeHandle(handle);
+        FreeHandle(instance);
         if (group->m_instanceCount == 0)
             DestroyGroup(group);
     }
@@ -143,114 +182,335 @@ namespace FE::Graphics
 
     void MeshSceneModule::Update()
     {
-        for (MeshGroup* group : m_meshGroups)
-        {
-            if (group != nullptr)
-                UpdateGroup(group);
-        }
+        // Live groups still poll asset generations and streamed LOD residency.
+        Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
+            UpdateGroup(m_meshGroups[groupIndex]);
+        });
+
+        Bit::Traverse(m_boundsDirty.view(), [&](const uint32_t batchIndex) {
+            UpdateBatchBounds(m_batches[batchIndex]);
+        });
+        m_boundsDirty.reset();
+
+        Bit::Traverse(m_membershipDirty.view(), [&](const uint32_t batchIndex) {
+            UpdateBatchMembership(m_batches[batchIndex]);
+        });
+        m_membershipDirty.reset();
     }
 
 
-    void MeshSceneModule::CollectRenderBatches(RenderBatchCollector& collector)
+    void MeshSceneModule::UpdateBatchBounds(MeshBatch* batch)
     {
-        const auto collectBatch = [this, &collector](const MeshBatch* meshBatch) {
-            if (meshBatch->m_handles.empty() || !meshBatch->m_drawTagMask.Contains(collector.GetDrawTag())
-                || !collector.IsVisible(meshBatch->m_octreeEntry.m_bounds))
-                return;
+        Aabb bounds = batch->m_octreeEntry.m_bounds;
+        for (const auto instanceRef : batch->m_meshInstances)
+        {
+            const auto instance = m_meshInstanceTable->ReadRow(instanceRef);
+            const MeshGroup* group = m_meshGroups[instance.m_meshGroup.Get().m_rowIndex];
+            const auto mesh = group->m_asset.Read();
+            if (!mesh || mesh->m_submeshes.empty())
+                continue;
 
-            RenderBatch* batch = nullptr;
-            for (const MeshHandle handle : meshBatch->m_handles)
+            const Aabb local = mesh->m_submeshes[0].m_bounds;
+            for (uint32_t corner = 0; corner < 8; ++corner)
             {
-                const InstanceRecord& record = m_instances[handle.m_value];
-                const MeshGroup* group = record.m_group;
-                const IO::AssetRead<MeshAsset> mesh = group->m_asset.Read();
-                const IO::AssetRead<MaterialInstanceAsset> material = group->m_material.Read();
-                if (!mesh || !material || !material->m_runtime || !mesh->m_buffer || group->m_lodsRef.m_count == 0)
-                    continue;
+                const Vector4 world = Vector4(Math::Blend(local.min, local.max, corner), 1.0f) * instance.m_transform.Get();
+                const Vector3 position(world.x, world.y, world.z);
+                bounds = Math::Union(bounds, position);
+            }
+        }
+
+        batch->m_octreeEntry.m_bounds = bounds;
+        m_octree.InsertOrUpdate(batch->m_octreeEntry);
+    }
+
+
+    void MeshSceneModule::UpdateBatchMembership(MeshBatch* batch)
+    {
+        // Resize persistent membership only when instances are added, removed, or moved.
+        const uint32_t count = batch->m_meshInstances.size();
+        if (!m_memberTable->TryReallocateRows(batch->m_members, count))
+        {
+            m_memberTable->Free(batch->m_members);
+            batch->m_members = m_memberTable->AllocateRows(count);
+        }
+
+        const uint32_t passMask = (batch->m_drawTagMask.Contains(DrawTags::DepthPrepass) ? 1u : 0u)
+            | (batch->m_drawTagMask.Contains(DrawTags::Opaque) ? 2u : 0u);
+        const auto row = m_batchTable->WriteRow(batch->m_tableRef);
+        row.m_members.Get() = batch->m_members;
+        row.m_passMask.Get() = passMask;
+
+        m_memberTable->CopyColumn(batch->m_members, festd::span(batch->m_meshInstances));
+    }
+
+
+    void MeshSceneModule::UpdateTransform(const MeshHandle instance, const Matrix4x4& transform)
+    {
+        const auto reference = TranslateHandle(instance);
+        FE_Assert(reference.m_rowIndex != kInvalidIndex);
+        m_meshInstanceTable->WriteRow(reference).m_transform.Get() = transform;
+        m_boundsDirty.set(m_instances[instance.m_value].m_batch->m_tableRef.m_rowIndex);
+    }
+
+
+    void MeshSceneModule::MoveInstance(const MeshHandle instance, MeshBatch* batch)
+    {
+        FE_Assert(batch != nullptr && batch->m_parent == this);
+
+        const auto reference = TranslateHandle(instance);
+        FE_Assert(reference.m_rowIndex != kInvalidIndex);
+
+        InstanceRecord& record = m_instances[instance.m_value];
+        if (record.m_batch == batch)
+            return;
+
+        FE_Assert(batch->m_meshInstances.size() < MeshBatch::kMaxInstanceCount);
+        MeshBatch* previous = record.m_batch;
+        previous->m_meshInstances.erase_unsorted(
+            festd::find_if(previous->m_meshInstances, [&](const DB::Ref<MeshInstanceTable> ref) {
+                return ref.m_rowIndex == reference.m_rowIndex;
+            }));
+
+        previous->m_handles.erase_unsorted(festd::find(previous->m_handles, instance));
+        m_membershipDirty.set(previous->m_tableRef.m_rowIndex);
+        m_boundsDirty.set(previous->m_tableRef.m_rowIndex);
+        batch->m_meshInstances.push_back(reference);
+        batch->m_handles.push_back(instance);
+        m_membershipDirty.set(batch->m_tableRef.m_rowIndex);
+        m_boundsDirty.set(batch->m_tableRef.m_rowIndex);
+        record.m_batch = batch;
+    }
+
+
+    void MeshSceneModule::UpdateMaterial(const MeshHandle handle, const IO::AssetLease<MaterialInstanceAsset>& materialLease)
+    {
+        FE_Assert(materialLease.IsValid() && materialLease.IsReady());
+
+        const auto reference = TranslateHandle(handle);
+        FE_Assert(reference.m_rowIndex != kInvalidIndex);
+
+        InstanceRecord& record = m_instances[handle.m_value];
+        MeshGroup* previous = record.m_group;
+        MeshGroup* group = FindOrCreateMeshGroup(previous->m_asset, materialLease);
+        if (group == previous)
+            return;
+
+        FreeInstanceParameters(previous->m_material, record.m_materialGeneration, record.m_parameters);
+
+        const auto material = materialLease.Read();
+        FE_Assert(material && material->m_runtime);
+        record.m_parameters = material->m_runtime->AllocateInstanceParameters();
+        record.m_materialGeneration = materialLease.GetGeneration();
+        record.m_group = group;
+
+        const auto instance = m_meshInstanceTable->WriteRow(reference);
+        instance.m_meshGroup.Get() = group->m_tableRef;
+        instance.m_instanceData.Get() = record.m_parameters.m_devicePointer;
+        previous->m_instances.erase_unsorted(festd::find(previous->m_instances, handle));
+        --previous->m_instanceCount;
+
+        group->m_instances.push_back(handle);
+        ++group->m_instanceCount;
+        ++m_revision;
+
+        if (previous->m_instanceCount == 0)
+            DestroyGroup(previous);
+    }
+
+
+    void MeshSceneModule::SetBatchDrawTags(MeshBatch* batch, const DrawTagMask tags)
+    {
+        FE_Assert(batch != nullptr && batch->m_parent == this);
+        batch->m_drawTagMask = tags;
+        m_membershipDirty.set(batch->m_tableRef.m_rowIndex);
+    }
+
+
+    void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader)
+    {
+        if (m_registry.m_revision != m_revision)
+        {
+            for (auto& slot : m_registry.m_slots)
+            {
+                slot.m_instanceCapacity = 0;
+                slot.m_workCapacity = 0;
+            }
+
+            festd::vector<MeshPass::PipelineRouting> routing(m_meshGroups.size());
+            Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
+                const MeshGroup* group = m_meshGroups[groupIndex];
+                if (!group->m_buffer)
+                    return;
+
+                const auto material = group->m_material.Read();
+                if (!material || !material->m_runtime)
+                    return;
 
                 const uint32_t meshletCount =
                     m_meshLodInfoTable->ReadRow(group->m_lodsRef.m_rowIndex + group->m_residentLod).m_info.Get().m_meshletCount;
-                if (meshletCount == 0 || !material->m_runtime->HasTechnique(collector.GetTechniqueRole()))
-                    continue;
+                if (meshletCount == 0)
+                    return;
 
-                if (batch == nullptr)
-                    batch = &collector.AddBatch(meshBatch->m_octreeEntry.m_bounds);
+                for (uint32_t passIndex = 0; passIndex < 2; ++passIndex)
+                {
+                    const Env::Name role = passIndex == 0 ? Env::Name("DepthOnly") : Env::Name("Opaque");
+                    if (!material->m_runtime->HasTechnique(role))
+                        continue;
 
-                RenderDraw& draw = batch->m_draws.emplace_back();
-                draw.m_viewProjection = collector.GetViewProjection();
-                draw.m_meshInstanceTable = m_meshInstanceTable->GetDeviceAddress();
-                draw.m_meshGroupTable = m_meshGroupTable->GetDeviceAddress();
-                draw.m_meshLodInfoTable = m_meshLodInfoTable->GetDeviceAddress();
-                draw.m_materialInstanceTable = m_materialInstanceTable->GetDeviceAddress();
-                draw.m_instanceIndex = record.m_tableRef.m_rowIndex;
-                draw.m_meshGroupIndex = group->m_tableRef.m_rowIndex;
-                draw.m_meshletCount = meshletCount;
-                draw.m_pipeline = material->m_runtime->GetPipeline(collector.GetTechniqueRole(), collector.GetColorFormat());
+                    Core::GraphicsPipeline* pipeline = material->m_runtime->GetPipeline(role);
+                    if (pipeline == nullptr)
+                        continue;
+
+                    uint32_t bucket = kInvalidIndex;
+                    for (uint32_t slotIndex = 0; slotIndex < m_registry.m_slots.size(); ++slotIndex)
+                    {
+                        const auto& slot = m_registry.m_slots[slotIndex];
+                        if (slot.m_pipeline.Get() == pipeline && slot.m_pass == passIndex)
+                            bucket = slotIndex;
+                    }
+
+                    if (bucket == kInvalidIndex)
+                    {
+                        bucket = m_registry.m_slots.size();
+                        m_registry.m_slots.push_back({ pipeline, passIndex, 0, 0 });
+                    }
+
+                    auto& slot = m_registry.m_slots[bucket];
+                    const uint32_t chunksPerInstance = Math::CeilDivide(meshletCount, MeshPass::kMeshletsPerWorkChunk);
+                    slot.m_instanceCapacity += group->m_instanceCount;
+                    slot.m_workCapacity += group->m_instanceCount * chunksPerInstance;
+
+                    auto& route = routing[group->m_tableRef.m_rowIndex];
+                    if (passIndex == 0)
+                        route.m_depthBucket = bucket;
+                    else
+                        route.m_opaqueBucket = bucket;
+                }
+            });
+
+            if (!routing.empty())
+            {
+                const uint32_t byteSize = routing.size() * sizeof(MeshPass::PipelineRouting);
+                m_registry.m_routing = Core::Buffer::CreateStructured<MeshPass::PipelineRouting>(graph.GetDevice(),
+                                                                                                 "MeshPipelineRouting",
+                                                                                                 routing.size());
+                FE_Verify(uploader.UploadBytes(graph, m_registry.m_routing.Get(), routing.data(), byteSize));
             }
-        };
 
-        if (!Math::Overlaps(collector.GetFrustumBounds(), m_octree.GetBounds()))
-        {
-            for (const MeshBatch* meshBatch : m_batches)
-                collectBatch(meshBatch);
-            return;
+            m_registry.m_revision = m_revision;
         }
 
-        m_octree.Traverse(collector.GetFrustumBounds(), [&](const Aabb&, const festd::span<OctreeEntry*> entries) {
-            for (const OctreeEntry* entry : entries)
-                collectBatch(m_batches[entry->m_userIndex]);
+        // Device-address geometry reads must be visible to the graph and retained through execution.
+        Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
+            const MeshGroup* group = m_meshGroups[groupIndex];
+            if (!group->m_buffer)
+                return;
+
+            auto* desc = graph.AllocatePassData<Core::BufferAccessPassDesc>();
+            desc->m_access = { group->m_buffer.Get(),
+                               Core::BarrierSyncFlags::kAllShading,
+                               Core::BarrierAccessFlags::kShaderRead };
+            graph.AddPass("MeshGeometryReady", desc);
         });
     }
 
 
-    void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass)
+    void MeshSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::RingUploader& uploader)
     {
-        RenderBatchCollector batches(graph.GetAllocator(),
-                                     pass.m_viewProjection,
-                                     pass.m_colorFormat,
-                                     pass.m_drawTag,
-                                     pass.m_techniqueRole);
-        CollectRenderBatches(batches);
-
-        IndirectMeshBatcher batcher(graph.GetAllocator());
-        batcher.Build(graph, uploader, batches.GetBatches());
-        if (batcher.m_groups.empty())
+        auto& blackboard = graph.GetBlackboard();
+        const auto& view = blackboard.Get<RendererViewData>();
+        const uint32_t enabledPasses =
+            (blackboard.Contains<DepthPrepass::PassData>() ? 1u : 0u) | (blackboard.Contains<OpaquePass::PassData>() ? 2u : 0u);
+        auto& prepared = blackboard.Add<PreparedMeshView>();
+        if (enabledPasses == 0)
             return;
 
-        const BufferSRVDescriptor indices = graph.GetSRV(batcher.m_instanceIndices.Get());
+        const Matrix4x4 viewProjection = view.m_view->GetViewProjectionMatrix();
+        RenderBatchCollector visibility(graph.GetAllocator(), viewProjection, DrawTags::Opaque, "Opaque");
+        festd::pmr::vector<MeshPass::CullDispatch> accepted{ graph.GetAllocator() };
+        const auto collectBatch = [&](const MeshBatch* batch) {
+            if (batch == nullptr)
+                return;
 
-        const Core::PassBufferAccess indicesAccess{ batcher.m_instanceIndices.Get(),
-                                                    Core::BarrierSyncFlags::kMeshShading,
-                                                    Core::BarrierAccessFlags::kShaderRead };
-        const Core::PassIndirectArgs arguments{ Core::BufferView(batcher.m_arguments.Get()) };
-
-        auto dispatch = [groups = std::move(batcher.m_groups), indices, viewProjection = pass.m_viewProjection](
-                            Core::FrameGraphContext& context) {
-            context.BeginRenderPass();
-            for (const IndirectMeshGroup& group : groups)
+            const uint32_t mask = (batch->m_drawTagMask.Contains(DrawTags::DepthPrepass) ? 1u : 0u)
+                | (batch->m_drawTagMask.Contains(DrawTags::Opaque) ? 2u : 0u);
+            if ((mask & enabledPasses) == 0 || !visibility.IsVisible(batch->m_octreeEntry.m_bounds))
+                return;
+            for (uint32_t firstMember = 0; firstMember < batch->m_members.m_count;
+                 firstMember += MeshPass::kInstancesPerCullGroup)
             {
-                MeshPass::Constants constants;
-                constants.m_viewProjection = viewProjection;
-                constants.m_meshInstanceTable = group.m_meshInstanceTable;
-                constants.m_meshGroupTable = group.m_meshGroupTable;
-                constants.m_meshLodInfoTable = group.m_meshLodInfoTable;
-                constants.m_materialInstanceTable = group.m_materialInstanceTable;
-                constants.m_instanceIndices = indices;
-                constants.m_firstInstance = group.m_firstInstance;
-                constants.m_meshletCount = group.m_meshletCount;
-                constants.m_meshletX = group.m_meshletX;
-
-                context.SetPipeline(group.m_pipeline);
-                context.PushConstants(constants);
-                context.DispatchMeshIndirect(group.m_argumentIndex * sizeof(MeshPass::MeshDispatchArguments));
+                accepted.push_back({ batch->m_tableRef.m_rowIndex, firstMember });
             }
-            context.EndRenderPass();
         };
 
-        auto* passDesc = graph.AllocatePassData<MeshPass::PassDesc>();
-        passDesc->m_instanceIndices = indicesAccess;
-        passDesc->m_arguments = arguments;
-        graph.AddPass("MeshPass", passDesc, pass.m_passDescToken, std::move(dispatch));
+        if (!Math::Overlaps(visibility.GetFrustumBounds(), m_octree.GetBounds()))
+        {
+            for (const MeshBatch* batch : m_batches)
+                collectBatch(batch);
+        }
+        else
+        {
+            m_octree.Traverse(visibility.GetFrustumBounds(), [&](const Aabb&, const festd::span<OctreeEntry*> entries) {
+                for (const OctreeEntry* entry : entries)
+                    collectBatch(m_batches[entry->m_userIndex]);
+            });
+        }
+
+        MeshPass::ViewData data{};
+        data.m_viewProjection = viewProjection;
+        data.m_instances = m_meshInstanceTable->GetDeviceAddress();
+        data.m_groups = m_meshGroupTable->GetDeviceAddress();
+        data.m_lods = m_meshLodInfoTable->GetDeviceAddress();
+        data.m_materials = m_materialInstanceTable->GetDeviceAddress();
+        data.m_batches = m_batchTable->GetDeviceAddress();
+        data.m_members = m_memberTable->GetDeviceAddress();
+        data.m_enabledPasses = enabledPasses;
+        GpuMeshWorkBuilder::Build(graph, uploader, m_registry, accepted, data, prepared);
+    }
+
+
+    void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader&, const SceneRenderPass& pass)
+    {
+        const auto& prepared = graph.GetBlackboard().Get<PreparedMeshView>();
+        if (!prepared.m_view)
+            return;
+
+        const uint32_t passIndex = pass.m_techniqueRole == "DepthOnly" ? 0u : 1u;
+        festd::vector<MeshPipelineSubmission> submissions;
+        for (const auto& submission : prepared.m_submissions)
+        {
+            if (submission.m_pass == passIndex)
+                submissions.push_back(submission);
+        }
+
+        auto* desc = graph.AllocatePassData<MeshPass::PassDesc>();
+        constexpr auto sync = Core::BarrierSyncFlags::kAmplificationShading | Core::BarrierSyncFlags::kMeshShading
+            | Core::BarrierSyncFlags::kPixelShading;
+        desc->m_view = { prepared.m_view.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
+        desc->m_visibleInstances = { prepared.m_instances.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
+        desc->m_workChunks = { prepared.m_work.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
+        desc->m_commands = { prepared.m_commands.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
+        desc->m_arguments = Core::BufferView(prepared.m_arguments.Get());
+
+        const BufferSRVDescriptor viewAddress = graph.GetSRV(prepared.m_view.Get());
+        graph.AddPass(passIndex == 0 ? "DepthMeshes" : "OpaqueMeshes",
+                      desc,
+                      pass.m_passDescToken,
+                      [submissions = std::move(submissions), viewAddress](Core::FrameGraphContext& context) {
+                          context.BeginRenderPass();
+                          for (const auto& submission : submissions)
+                          {
+                              for (uint32_t page = 0; page < submission.m_commandCount; ++page)
+                              {
+                                  context.SetPipeline(submission.m_pipeline.Get());
+                                  MeshPass::Constants constants{ viewAddress, submission.m_firstCommand + page };
+                                  context.PushConstants(constants);
+                                  context.DispatchMeshIndirect(constants.m_commandIndex
+                                                               * sizeof(MeshPass::MeshDispatchArguments));
+                              }
+                          }
+                          context.EndRenderPass();
+                      });
     }
 
 
@@ -275,6 +535,7 @@ namespace FE::Graphics
         record.m_group = group;
         record.m_parameters = parameters;
         record.m_materialGeneration = group->m_materialGeneration;
+
         MeshHandle handle;
         handle.m_value = handleIndex;
         handle.m_generation = record.m_generation;
@@ -325,6 +586,8 @@ namespace FE::Graphics
         meshGroup->m_materialRef = m_materialInstanceTable->AllocateRow();
         m_meshGroups.resize(m_meshGroupTable->GetReservedRowCount());
         m_meshGroups[meshGroup->m_tableRef.m_rowIndex] = meshGroup;
+        m_activeMeshGroups.resize(m_meshGroups.size(), false);
+        m_activeMeshGroups.set(meshGroup->m_tableRef.m_rowIndex);
         UpdateGroup(meshGroup);
         return meshGroup;
     }
@@ -335,21 +598,40 @@ namespace FE::Graphics
         const IO::AssetRead<MeshAsset> mesh = group->m_asset.Read();
         const IO::AssetRead<MaterialInstanceAsset> material = group->m_material.Read();
         if (!mesh || !material || !material->m_runtime || !mesh->m_buffer)
+        {
+            if (m_meshGroupTable->ReadRow(group->m_tableRef).m_renderable.Get() != 0)
+            {
+                m_meshGroupTable->WriteRow(group->m_tableRef).m_renderable.Get() = 0;
+                ++m_revision;
+            }
+            if (group->m_buffer)
+            {
+                group->m_buffer.Reset();
+                group->m_meshGeneration = 0;
+                ++m_revision;
+            }
             return;
+        }
 
         const uint32_t meshGeneration = group->m_asset.GetGeneration();
         const uint32_t materialGeneration = group->m_material.GetGeneration();
-        const bool meshChanged = group->m_meshGeneration != meshGeneration || group->m_buffer != mesh->m_buffer.Get()
+        const bool meshChanged = group->m_meshGeneration != meshGeneration || group->m_buffer.Get() != mesh->m_buffer.Get()
             || group->m_residentLod != mesh->m_residentLod;
         const bool materialChanged = group->m_materialGeneration != materialGeneration;
         if (!meshChanged && !materialChanged)
             return;
 
+        ++m_revision;
         const MeshGroupTable::RWRow tableRow = m_meshGroupTable->WriteRow(group->m_tableRef);
         if (meshChanged)
         {
             FE_Assert(!mesh->m_submeshes.empty());
             const MeshSubmeshAssetInfo& submesh = mesh->m_submeshes[0];
+            tableRow.m_bounds.Get().m_min = PackedVector3F(submesh.m_bounds.min);
+            tableRow.m_bounds.Get().m_max = PackedVector3F(submesh.m_bounds.max);
+            for (const MeshHandle handle : group->m_instances)
+                m_boundsDirty.set(m_instances[handle.m_value].m_batch->m_tableRef.m_rowIndex);
+
             FE_Assert(!submesh.m_lods.empty());
             if (group->m_lodsRef.m_count != submesh.m_lods.size())
             {
@@ -380,17 +662,18 @@ namespace FE::Graphics
                 {
                     FE_Assert(previousLod < previousSubmesh.m_lods.size());
                     const MeshLodAssetInfo& info = previousSubmesh.m_lods[previousLod];
-                    geometryOffset += uint64_t(info.m_vertexCount) * mesh->m_vertexStride;
-                    geometryOffset += uint64_t(info.m_indexCount) * sizeof(uint32_t);
-                    geometryOffset += uint64_t(info.m_meshletCount) * sizeof(Core::MeshletHeader);
-                    geometryOffset += uint64_t(info.m_primitiveCount) * sizeof(Core::PackedTriangle);
+                    geometryOffset += static_cast<uint64_t>(info.m_vertexCount) * mesh->m_vertexStride;
+                    geometryOffset += static_cast<uint64_t>(info.m_indexCount) * sizeof(uint32_t);
+                    geometryOffset += static_cast<uint64_t>(info.m_meshletCount) * sizeof(Core::MeshletHeader);
+                    geometryOffset += static_cast<uint64_t>(info.m_primitiveCount) * sizeof(Core::PackedTriangle);
+                    geometryOffset += static_cast<uint64_t>(info.m_meshletCount) * sizeof(PackedVector4F);
                 }
             }
             FE_Assert(geometryOffset < mesh->m_buffer->GetDesc().m_size);
 
             tableRow.m_geometry.Get() = BufferPointer{ mesh->m_buffer->GetDeviceAddress() + geometryOffset };
             tableRow.m_lods.Get() = DB::Slice<MeshLodInfoTable>{ group->m_lodsRef.m_rowIndex + lodIndex, 1 };
-            group->m_buffer = mesh->m_buffer.Get();
+            group->m_buffer = mesh->m_buffer;
             group->m_meshGeneration = meshGeneration;
             group->m_residentLod = mesh->m_residentLod;
         }
@@ -410,13 +693,16 @@ namespace FE::Graphics
 
             group->m_materialGeneration = materialGeneration;
         }
+        tableRow.m_renderable.Get() = 1;
     }
 
 
     void MeshSceneModule::DestroyGroup(MeshGroup* group)
     {
         FE_Assert(group->m_instanceCount == 0);
+        ++m_revision;
         m_meshGroups[group->m_tableRef.m_rowIndex] = nullptr;
+        m_activeMeshGroups.reset(group->m_tableRef.m_rowIndex);
         if (group->m_lodsRef.m_count != 0)
             m_meshLodInfoTable->Free(group->m_lodsRef);
 

@@ -1,4 +1,5 @@
 #include <Core/Math/Random.h>
+#include <Core/Math/Vector2.h>
 #include <Core/Math/Vector3.h>
 #include <Core/Threading/Thread.h>
 #include <gtest/gtest.h>
@@ -263,4 +264,30 @@ TEST(Vector3, Normalize)
     const float length = 3.7416573f;
     const Vector3 expected{ 1.0f / length, 2.0f / length, 3.0f / length };
     EXPECT_TRUE(Math::CmpEqual(Math::Normalize(b), expected));
+}
+
+
+TEST(Vector3, BlendCorners)
+{
+    const Vector3 min(-1, -2, -3);
+    const Vector3 max(4, 5, 6);
+    const Vector3 corners[] = {
+        { -1, -2, -3 }, { 4, -2, -3 }, { -1, 5, -3 }, { 4, 5, -3 }, { -1, -2, 6 }, { 4, -2, 6 }, { -1, 5, 6 }, { 4, 5, 6 },
+    };
+    for (uint32_t mask = 0; mask < 8; ++mask)
+    {
+        EXPECT_EQ(Math::Blend(min, max, mask), corners[mask]);
+        EXPECT_EQ(Math::Blend(min, max, mask | 0xfffffff8u), corners[mask]);
+    }
+}
+
+
+TEST(Vector2, Blend)
+{
+    EXPECT_EQ(Math::Blend(Vector2(1, 2), Vector2(3, 4), 0), Vector2(1, 2));
+    EXPECT_EQ(Math::Blend(Vector2(1, 2), Vector2(3, 4), 1), Vector2(3, 2));
+    EXPECT_EQ(Math::Blend(Vector2(1, 2), Vector2(3, 4), 2), Vector2(1, 4));
+    EXPECT_EQ(Math::Blend(Vector2(1, 2), Vector2(3, 4), 0xffffffffu), Vector2(3, 4));
+    EXPECT_EQ(Math::Blend(Vector2Int(-1, -2), Vector2Int(3, 4), 1), Vector2Int(3, -2));
+    EXPECT_EQ(Math::Blend(Vector2UInt(1, 2), Vector2UInt(3, 4), 2), Vector2UInt(1, 4));
 }

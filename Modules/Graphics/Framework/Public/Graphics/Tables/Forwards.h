@@ -10,5 +10,7 @@ namespace FE::Graphics
     struct MeshLodInfoTable;
     struct MaterialInstanceTable;
     struct MeshGroupTable;
+    struct MeshMemberTable;
+    struct MeshBatchTable;
     struct MeshInstanceTable;
 } // namespace FE::Graphics

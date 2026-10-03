@@ -123,6 +123,7 @@ def _find_headers(project: Project) -> list[Path]:
         if path.is_file()
         and path.suffix.lower() == ".h"
         and not _is_relative_to(path, tests_dir)
+        and "ThirdParty" not in path.relative_to(project.root).parts
     )
 
 

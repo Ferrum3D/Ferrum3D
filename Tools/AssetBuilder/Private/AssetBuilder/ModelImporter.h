@@ -58,6 +58,7 @@ namespace FE::AssetBuilder
         festd::vector<uint32_t> m_indices;
         festd::vector<Graphics::Core::MeshletHeader> m_meshlets;
         festd::vector<Graphics::Core::PackedTriangle> m_primitives;
+        festd::vector<PackedVector4F> m_meshletBounds;
     };
 
 

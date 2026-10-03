@@ -67,6 +67,9 @@ namespace FE::Graphics::DB
         [[nodiscard]] RowRangeHandle AllocateRowsUninitialized(uint32_t rowCount);
         void Free(RowRangeHandle rowRange);
 
+        // Resize in place within the same power-of-two allocation; failure leaves the range unchanged.
+        [[nodiscard]] bool TryReallocateRowsUninitialized(RowRangeHandle& rowRange, uint32_t rowCount);
+
         [[nodiscard]] uint32_t GetReservedRowCount() const;
 
         [[nodiscard]] BufferPointer GetDeviceAddress() const;

@@ -53,7 +53,7 @@ namespace FE::Graphics::Vulkan
         if (Bit::AllSet(flags, Core::BarrierAccessFlags::kIndirectArgument))
             vkFlags |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
         if (Bit::AllSet(flags, Core::BarrierAccessFlags::kRenderTarget))
-            vkFlags |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+            vkFlags |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
         if (Bit::AllSet(flags, Core::BarrierAccessFlags::kShaderRead))
             vkFlags |= VK_ACCESS_2_SHADER_READ_BIT;
         if (Bit::AllSet(flags, Core::BarrierAccessFlags::kShaderWrite))

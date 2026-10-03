@@ -16,10 +16,24 @@ table MaterialInstanceTable
 }
 
 table MeshGroupTable
+    : Meshlets
 {
     BufferPointer m_geometry;
 	DB::Slice<MeshLodInfoTable> m_lods;
 	DB::Ref<MaterialInstanceTable> m_materialInstance;
+    Core::MeshBoundsInfo m_bounds;
+    uint32_t m_renderable;
+}
+
+table MeshMemberTable
+{
+    DB::Ref<MeshInstanceTable> m_instance;
+}
+
+table MeshBatchTable
+{
+    DB::Slice<MeshMemberTable> m_members;
+    uint32_t m_passMask;
 }
 
 table MeshInstanceTable

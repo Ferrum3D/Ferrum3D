@@ -16,6 +16,8 @@ export type TechniqueDesc = {
     pixelShader: string?,
 
     shaderDefines: { [string]: string },
+    renderTargetFormats: { Pipeline.RenderTargetFormat },
+    depthTargetFormat: Pipeline.DepthTargetFormat,
 
     rasterization: Pipeline.RasterizationState,
     depthStencil: Pipeline.DepthStencilState,

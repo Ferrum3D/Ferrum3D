@@ -203,6 +203,14 @@ namespace FE
 
     namespace Math
     {
+        //! Select rhs components where mask bits are set (bit 0 is x); otherwise select lhs.
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL Blend(const Vector3 lhs, const Vector3 rhs,
+                                                                          const uint32_t mask)
+        {
+            return Vector3{ Simd::SSE::Blend(lhs.m_simdVector, rhs.m_simdVector, mask) };
+        }
+
+
         namespace Internal
         {
             FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m128 FE_VECTORCALL Dot3Impl(const __m128 lhs, const __m128 rhs)

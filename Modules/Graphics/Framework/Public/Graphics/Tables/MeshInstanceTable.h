@@ -73,6 +73,24 @@ namespace FE::Graphics
             return DB::Slice<MeshInstanceTable>{ range.m_offset, range.m_size };
         }
 
+        [[nodiscard]] bool TryReallocateRows(DB::Slice<MeshInstanceTable>& rows, const uint32_t rowCount)
+        {
+            RowRangeHandle range{ rows.m_rowIndex, rows.m_count };
+            if (!TryReallocateRowsUninitialized(range, rowCount))
+                return false;
+
+            for (uint32_t rowIndex = rows.m_count; rowIndex < rowCount; ++rowIndex)
+            {
+                const RWRow row = WriteRow(rowIndex + range.m_offset);
+                row.m_meshGroup.Construct();
+                row.m_transform.Construct();
+                row.m_instanceData.Construct();
+            }
+
+            rows = { range.m_offset, range.m_size };
+            return true;
+        }
+
         void Free(const DB::Ref<MeshInstanceTable> row)
         {
             TableBase::Free(row.m_rowIndex);
@@ -128,15 +146,16 @@ namespace FE::Graphics
         {
             FE_Assert(destination.m_count == source.size());
 
+            if (destination.m_count == 0)
+                return;
+
             const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
-            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
-                      "The whole range must fit in a single page");
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
             m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
-
             auto* destinationData = reinterpret_cast<DB::Ref<MeshGroupTable>*>(storage + kOffset_m_meshGroup) + localRowIndex;
             festd::copy(source, destinationData);
         }
@@ -145,15 +164,16 @@ namespace FE::Graphics
         {
             FE_Assert(destination.m_count == source.size());
 
+            if (destination.m_count == 0)
+                return;
+
             const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
-            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
-                      "The whole range must fit in a single page");
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
             m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
-
             auto* destinationData = reinterpret_cast<float4x4*>(storage + kOffset_m_transform) + localRowIndex;
             festd::copy(source, destinationData);
         }
@@ -162,15 +182,16 @@ namespace FE::Graphics
         {
             FE_Assert(destination.m_count == source.size());
 
+            if (destination.m_count == 0)
+                return;
+
             const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
-            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
-                      "The whole range must fit in a single page");
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
             m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
-
             auto* destinationData = reinterpret_cast<BufferPointer*>(storage + kOffset_m_instanceData) + localRowIndex;
             festd::copy(source, destinationData);
         }

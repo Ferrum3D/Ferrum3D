@@ -45,17 +45,25 @@ struct MeshDrawData
 };
 
 [[vk::push_constant]] Constants GConstants;
+static const ViewData GView = GConstants.m_view.Load(0);
 
-MeshDrawData LoadMeshDrawData(const uint32_t instanceIndex)
+struct MeshPayload
 {
-    MeshInstanceTable instanceTable = MeshInstanceTable::Create(GConstants.m_meshInstanceTable);
-    MeshGroupTable groupTable = MeshGroupTable::Create(GConstants.m_meshGroupTable);
-    MeshLodInfoTable lodTable = MeshLodInfoTable::Create(GConstants.m_meshLodInfoTable);
+    uint m_instanceId;
+    uint m_lodId;
+    uint m_meshletIds[kMeshletsPerWorkChunk];
+};
+
+MeshDrawData LoadMeshDrawData(const uint32_t instanceIndex, const uint32_t lodIndex = kInvalidIndex)
+{
+    MeshInstanceTable instanceTable = MeshInstanceTable::Create(GView.m_instances);
+    MeshGroupTable groupTable = MeshGroupTable::Create(GView.m_groups);
+    MeshLodInfoTable lodTable = MeshLodInfoTable::Create(GView.m_lods);
 
     const MeshInstanceTable::Row instance = instanceTable.ReadRow(instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());
     const DB::Slice<MeshLodInfoTable> lods = group.m_lods.Get();
-    const MeshLodInfoTable::Row lod = lodTable.ReadRow(lods.m_rowIndex);
+    const MeshLodInfoTable::Row lod = lodTable.ReadRow(lodIndex == kInvalidIndex ? lods.m_rowIndex : lodIndex);
 
     MeshDrawData result;
     result.m_geometry = group.m_geometry.Get();
@@ -71,7 +79,7 @@ PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t verte
     const float3x3 normalMatrix = (float3x3)drawData.m_worldTransform;
 
     PixelAttributes output;
-    output.m_pos = mul(worldPosition, GConstants.m_viewProjection);
+    output.m_pos = mul(worldPosition, GView.m_viewProjection);
     output.m_worldPos = worldPosition.xyz;
     output.m_normal = mul(input.UnpackNormal(), normalMatrix);
     output.m_uv = input.UnpackUv();

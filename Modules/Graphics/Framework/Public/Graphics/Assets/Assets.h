@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/IO/Assets.h>
+#include <Core/Math/Aabb.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Meshlet.h>
 #include <Graphics/Core/Texture.h>
@@ -26,6 +27,7 @@ namespace FE::Graphics
     struct MeshSubmeshAssetInfo final
     {
         festd::inline_vector<MeshLodAssetInfo, 4> m_lods;
+        Aabb m_bounds = Aabb::kInvalid;
 
         FE_RTTI_Reflect("16E3BAA2-A8B3-4F66-B186-48E7265AECA7");
         FE_RTTI_Serialize();
@@ -35,7 +37,7 @@ namespace FE::Graphics
     //! One mesh asset. Geometry payloads are ordered from the least detailed LOD to the most detailed LOD.
     //!
     //! Payload zero serializes this header. Every following payload stores one LOD and concatenates, for each submesh, packed
-    //! vertices, uint32 indices, meshlet headers, and packed triangles in that order.
+    //! vertices, uint32 indices, meshlet headers, packed triangles, and float4 meshlet spheres in that order.
     struct MeshAsset final
     {
         uint32_t m_vertexStride = 0;

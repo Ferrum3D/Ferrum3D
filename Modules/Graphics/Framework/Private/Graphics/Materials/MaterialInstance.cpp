@@ -209,11 +209,11 @@ namespace FE::Graphics
     }
 
 
-    Core::GraphicsPipeline* MaterialInstanceRuntime::GetPipeline(const Env::Name role, const Core::Format colorFormat)
+    Core::GraphicsPipeline* MaterialInstanceRuntime::GetPipeline(const Env::Name role)
     {
         for (const PipelineEntry& entry : m_pipelines)
         {
-            if (entry.m_role == role && entry.m_colorFormat == colorFormat)
+            if (entry.m_role == role)
                 return entry.m_pipeline;
         }
 
@@ -246,20 +246,22 @@ namespace FE::Graphics
             request.m_desc.SetMeshShader(technique->m_meshShader);
         if (technique->m_pixelShader.IsValid())
             request.m_desc.SetPixelShader(technique->m_pixelShader);
-        request.m_desc.SetDSVFormat(Core::Format::kD32_SFLOAT_S8_UINT)
+        request.m_desc.SetRTVFormats(technique->m_renderTargetFormats)
+            .SetDSVFormat(technique->m_depthTargetFormat)
             .SetDepthStencil(technique->m_depthStencil)
-            .SetRasterization(technique->m_rasterization);
-
-        if (role != "DepthOnly")
-            request.m_desc.SetRTVFormat(colorFormat).SetColorBlend(technique->m_blend);
+            .SetRasterization(technique->m_rasterization)
+            .SetColorBlend(technique->m_blend);
         request.m_defines = technique->m_shaderDefines.empty() ? Env::Name::kEmpty : Env::Name(technique->m_shaderDefines);
 
         Core::GraphicsPipeline* pipeline = m_pipelineFactory->CreateGraphicsPipeline(request);
         pipeline->GetCompletionWaitGroup()->Wait();
-        FE_Assert(pipeline->IsReady(), "Failed to compile material technique");
+        if (!pipeline->IsReady())
+        {
+            Logger::LogError("Failed to compile material '{}' technique '{}'", m_material->m_name, role);
+            return nullptr;
+        }
         PipelineEntry& entry = m_pipelines.emplace_back();
         entry.m_role = role;
-        entry.m_colorFormat = colorFormat;
         entry.m_pipeline = pipeline;
         return pipeline;
     }

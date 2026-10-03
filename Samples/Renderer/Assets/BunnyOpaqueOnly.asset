@@ -1,0 +1,36 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "MaterialInstanceAsset",
+                "m_assetId": "6C22D94D-661E-45CE-8AA3-F55783855D58",
+                "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                "m_buildSettings": {
+                    "m_typeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                    "m_value": {
+                        "m_material": "3A837ECB-B74D-438F-9F49-359F97CC68AB",
+                        "m_permutationKey": "Palette=2",
+                        "m_parameters": []
+                    }
+                },
+                "m_dependencies": [
+                    {
+                        "m_assetId": "3A837ECB-B74D-438F-9F49-359F97CC68AB",
+                        "m_expectedTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                        "m_kind": 0
+                    }
+                ],
+                "m_lastBuildKey": "B10AB23C-6277-49F2-B0A4-8B2E99EF907D",
+                "m_builtArtifactId": "8B9AF5EF-3D82-4848-A18E-562C64EAEC4B",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

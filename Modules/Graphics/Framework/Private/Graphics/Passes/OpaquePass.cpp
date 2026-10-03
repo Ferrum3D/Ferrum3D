@@ -40,7 +40,6 @@ namespace FE::Graphics::OpaquePass
         SceneRenderPass pass;
         pass.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
         pass.m_passDescToken = graph.AddBasePassDesc(passDesc);
-        pass.m_colorFormat = viewData.m_mainColorTarget->GetDesc().m_imageFormat;
         pass.m_drawTag = DrawTags::Opaque;
         pass.m_techniqueRole = "Opaque";
 

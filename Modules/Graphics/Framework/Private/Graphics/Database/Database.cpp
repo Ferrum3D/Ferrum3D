@@ -76,6 +76,9 @@ namespace FE::Graphics::DB
 
     TableBase::RowRangeHandle TableBase::AllocateRowsUninitialized(const uint32_t rowCount)
     {
+        if (rowCount == 0)
+            return {};
+
         FE_Assert(rowCount <= m_rowsPerPage);
         for (uint32_t pageIndex = 0; pageIndex < m_pages.size(); ++pageIndex)
         {
@@ -94,9 +97,32 @@ namespace FE::Graphics::DB
 
     void TableBase::Free(const RowRangeHandle rowRange)
     {
+        if (rowRange.m_size == 0)
+            return;
+
         const uint32_t pageIndex = rowRange.m_offset / m_rowsPerPage;
         const uint32_t offset = rowRange.m_offset % m_rowsPerPage;
         m_pages[pageIndex]->FreeRows(offset, rowRange.m_size);
+    }
+
+
+    bool TableBase::TryReallocateRowsUninitialized(RowRangeHandle& rowRange, const uint32_t rowCount)
+    {
+        if (rowCount == 0)
+        {
+            Free(rowRange);
+            rowRange = {};
+            return true;
+        }
+
+        if (rowRange.m_size == 0 || rowCount > m_rowsPerPage)
+            return false;
+
+        if (Math::CeilPowerOfTwo(rowRange.m_size) != Math::CeilPowerOfTwo(rowCount))
+            return false;
+
+        rowRange.m_size = rowCount;
+        return true;
     }
 
 
@@ -276,7 +302,7 @@ namespace FE::Graphics::DB
 
         Bit::Traverse(m_dirtyPages.view(), [&](const uint32_t pageIndex) {
             const StoragePage* page = m_pages[pageIndex];
-            FE_Verify(m_uploader.Upload(graph, page->m_deviceStorage.Get(), page->m_hostStorage, kTablePageSize));
+            FE_Verify(m_uploader.UploadBytes(graph, page->m_deviceStorage.Get(), page->m_hostStorage, kTablePageSize));
         });
 
         // Shader accesses to the Database pages are not known to the FrameGraph.
@@ -338,7 +364,7 @@ namespace FE::Graphics::DB
             const Core::BufferSlice destinationRange{ byteOffset, pageTableByteSize };
             const Core::BufferView destination{ m_pageTableDeviceStorage.Get(), destinationRange };
             const BufferPointer* source = m_pageTableHostStorage.data() + offset;
-            FE_Verify(m_uploader.Upload(graph, destination, source, pageTableByteSize, kUploadOptions));
+            FE_Verify(m_uploader.UploadBytes(graph, destination, source, pageTableByteSize, kUploadOptions));
         }
 
         {

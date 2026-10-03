@@ -1,4 +1,5 @@
 #include <Core/Math/Vector4.h>
+#include <bit>
 #include <gtest/gtest.h>
 #include <random>
 
@@ -204,4 +205,25 @@ TEST(Vector4, Normalize)
     const Vector4 expected{ 1.0f / length, 2.0f / length, 3.0f / length, -1.0f / length };
     const Vector4 actual = Math::Normalize(b);
     EXPECT_TRUE(Math::CmpEqual(actual, expected, 1e-5f));
+}
+
+
+TEST(Vector4, BlendPreservesComponentBits)
+{
+    const uint32_t lhsBits[] = { 0x80000000u, 0x7fc12345u, 0xff800000u, 0x3f800000u };
+    const uint32_t rhsBits[] = { 0x00000000u, 0x7fc54321u, 0x7f800000u, 0xc0000000u };
+    const Vector4 lhs(std::bit_cast<float>(lhsBits[0]),
+                      std::bit_cast<float>(lhsBits[1]),
+                      std::bit_cast<float>(lhsBits[2]),
+                      std::bit_cast<float>(lhsBits[3]));
+    const Vector4 rhs(std::bit_cast<float>(rhsBits[0]),
+                      std::bit_cast<float>(rhsBits[1]),
+                      std::bit_cast<float>(rhsBits[2]),
+                      std::bit_cast<float>(rhsBits[3]));
+    for (uint32_t mask = 0; mask < 16; ++mask)
+    {
+        const Vector4 result = Math::Blend(lhs, rhs, mask | 0xfffffff0u);
+        for (uint32_t lane = 0; lane < 4; ++lane)
+            EXPECT_EQ(std::bit_cast<uint32_t>(result[lane]), (mask & (1u << lane)) != 0 ? rhsBits[lane] : lhsBits[lane]);
+    }
 }

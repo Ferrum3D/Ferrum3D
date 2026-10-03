@@ -6,6 +6,58 @@ local Pipeline = {}
 Pipeline.__index = Pipeline
 
 ---------------------------------------------------------------------------------------------------
+-- Attachment Formats
+
+export type RenderTargetFormat = "R8_SINT"
+                              | "R8_UINT"
+                              | "R8_SNORM"
+                              | "R8_UNORM"
+                              | "R8G8_SINT"
+                              | "R8G8_UINT"
+                              | "R8G8_SNORM"
+                              | "R8G8_UNORM"
+                              | "R8G8B8A8_SINT"
+                              | "R8G8B8A8_UINT"
+                              | "R8G8B8A8_SNORM"
+                              | "R8G8B8A8_UNORM"
+                              | "R8G8B8A8_SRGB"
+                              | "B8G8R8A8_UNORM"
+                              | "B8G8R8A8_SRGB"
+                              | "R16_SINT"
+                              | "R16_UINT"
+                              | "R16_SNORM"
+                              | "R16_UNORM"
+                              | "R16_SFLOAT"
+                              | "R16G16_SINT"
+                              | "R16G16_UINT"
+                              | "R16G16_SNORM"
+                              | "R16G16_UNORM"
+                              | "R16G16_SFLOAT"
+                              | "R16G16B16A16_SINT"
+                              | "R16G16B16A16_UINT"
+                              | "R16G16B16A16_SNORM"
+                              | "R16G16B16A16_UNORM"
+                              | "R16G16B16A16_SFLOAT"
+                              | "R32_SINT"
+                              | "R32_UINT"
+                              | "R32_SFLOAT"
+                              | "R32G32_SINT"
+                              | "R32G32_UINT"
+                              | "R32G32_SFLOAT"
+                              | "R32G32B32A32_SINT"
+                              | "R32G32B32A32_UINT"
+                              | "R32G32B32A32_SFLOAT"
+                              | "A2R10G10B10_UINT"
+                              | "A2R10G10B10_UNORM"
+                              | "B10G11R11_UFLOAT"
+
+export type DepthTargetFormat = "Undefined"
+                             | "D16_UNORM"
+                             | "D32_SFLOAT"
+                             | "D24_UNORM_S8_UINT"
+                             | "D32_SFLOAT_S8_UINT"
+
+---------------------------------------------------------------------------------------------------
 -- Rasterization State
 
 export type CullingMode = "None"

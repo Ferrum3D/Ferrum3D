@@ -77,7 +77,8 @@ namespace FE::Graphics::Core
     }                                                                                                                            \
                                                                                                                                  \
     FE::festd::pmr::vector<FE::Graphics::Core::ShaderSpecializationConstant> GetSpecializationConstants(                         \
-        const uint32_t variantIndex, std::pmr::memory_resource* tempAllocator) final                                             \
+        const uint32_t variantIndex,                                                                                             \
+        std::pmr::memory_resource* tempAllocator) final                                                                          \
     {                                                                                                                            \
         const Specializer specializer{ variantIndex };                                                                           \
         return specializer.GetSpecializationConstants(tempAllocator);                                                            \
@@ -103,7 +104,8 @@ namespace FE::Graphics::Core
     }                                                                                                                            \
                                                                                                                                  \
     FE::festd::pmr::vector<FE::Graphics::Core::ShaderSpecializationConstant> GetSpecializationConstants(                         \
-        [[maybe_unused]] const uint32_t variantIndex, std::pmr::memory_resource* tempAllocator) final                            \
+        [[maybe_unused]] const uint32_t variantIndex,                                                                            \
+        std::pmr::memory_resource* tempAllocator) final                                                                          \
     {                                                                                                                            \
         return FE::festd::pmr::vector<FE::Graphics::Core::ShaderSpecializationConstant>{ tempAllocator };                        \
     }                                                                                                                            \
@@ -119,4 +121,18 @@ namespace FE::Graphics::Core
 
 
 #define FE_IMPLEMENT_PIPELINE_SET(Name) Name Name::GInstance
+
+
+#define FE_COMPUTE_PIPELINE_SET(Name, Path)                                                                                      \
+    struct Name final : public FE::Graphics::Core::ComputePipelineVariantSet                                                     \
+    {                                                                                                                            \
+        FE_DECLARE_PIPELINE_SET(Name);                                                                                           \
+                                                                                                                                 \
+    private:                                                                                                                     \
+        void SetupRequest(uint32_t, FE::Graphics::Core::ComputePipelineRequest& request) override                                \
+        {                                                                                                                        \
+            request.m_desc.SetComputeShader(Path);                                                                               \
+        }                                                                                                                        \
+    };                                                                                                                           \
+    FE_IMPLEMENT_PIPELINE_SET(Name)
 } // namespace FE::Graphics::Core
