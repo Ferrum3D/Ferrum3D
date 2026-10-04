@@ -3,6 +3,7 @@
 #include <Core/Jobs/Jobs.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Threading/Thread.h>
+#include <Core/Time/BaseTime.h>
 #include <Framework/Application/Application.h>
 #include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Assets/Streamers.h>
@@ -18,6 +19,7 @@
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/OpaquePass.h>
 #include <Graphics/Renderer.h>
+#include <festd/vector.h>
 
 using namespace FE;
 using namespace FE::Graphics;
@@ -28,8 +30,18 @@ const IO::AssetID kBunnyMaterialAssetId("EFA88960-2315-407E-BAAC-F88DFDF6FFBC");
 const IO::AssetID kBunnyWarmMaterialAssetId("D5BA9140-9F93-4407-B5CE-E9FB01C2DDEC");
 const IO::AssetID kBunnyCoolMaterialAssetId("FBD2877D-D6CB-4A11-A8A6-569E066A68EF");
 
+const IO::AssetID kHelmetModelAssetId("968E3679-1025-43A2-AB3E-967494F90D35");
+const IO::AssetID kHelmetMaterialAssetId("44B73EB3-0933-4221-96C8-C9E09CBF36FD");
+
 namespace
 {
+    struct RotatingInstance final
+    {
+        MeshHandle m_handle;
+        Matrix4x4 m_baseTransform;
+    };
+
+
     struct ExampleApplication final : public Framework::Application
     {
         ~ExampleApplication() override
@@ -45,6 +57,8 @@ namespace
             m_warmMaterialRequest.Reset();
             m_coolMaterialRequest.Reset();
             m_modelRequest.Reset();
+            m_helmetModelRequest.Reset();
+            m_helmetMaterialRequest.Reset();
             IO::AssetManager::Shutdown();
 
             Memory::DefaultDelete(m_materialStreamer);
@@ -131,13 +145,7 @@ namespace
             FE_Assert(meshLease.IsReady());
             {
                 const auto mesh = meshLease.Read();
-                const uint32_t lod = mesh->m_submeshes[0].m_lods.size() - 1;
-                m_meshStreamer->SetResidentLod(*mesh.Get(), lod);
-                while (mesh->m_residentLod != lod || mesh->m_currentOperation != nullptr)
-                {
-                    IO::AssetManager::Tick();
-                    Threading::Sleep(1);
-                }
+                m_meshStreamer->SetResidentLod(*mesh.Get(), 0);
             }
 
             m_materialRequest = IO::AssetManager::LoadAsset(IO::Link<MaterialInstanceAsset>(kBunnyMaterialAssetId));
@@ -167,16 +175,50 @@ namespace
                 m_textureStreamer->SetResidentMip(*texture.Get(), 1);
             }
 
+            m_helmetModelRequest = IO::AssetManager::LoadAsset(IO::Link<ModelAsset>(kHelmetModelAssetId));
+            m_helmetMaterialRequest = IO::AssetManager::LoadAsset(IO::Link<MaterialInstanceAsset>(kHelmetMaterialAssetId));
+            while (!m_helmetModelRequest.IsCompleted() || !m_helmetMaterialRequest.IsCompleted())
+            {
+                IO::AssetManager::Tick();
+                Threading::Sleep(1);
+            }
+            FE_Assert(m_helmetModelRequest.GetResult() == IO::AssetLoadResult::kSucceeded, "Failed to load helmet model");
+            FE_Assert(m_helmetMaterialRequest.GetResult() == IO::AssetLoadResult::kSucceeded, "Failed to load helmet material");
+
+            const auto helmetModel = IO::AssetHandle<ModelAsset>(m_helmetModelRequest.GetAssetSlot()).Read();
+            FE_Assert(helmetModel && helmetModel->m_meshes.size() == 1);
+            const IO::AssetLease<MeshAsset> helmetMeshLease(helmetModel->m_meshes[0].GetAssetHandle().GetAssetSlot());
+            FE_Assert(helmetMeshLease.IsReady());
+            {
+                const auto mesh = helmetMeshLease.Read();
+                m_meshStreamer->SetResidentLod(*mesh.Get(), 0);
+            }
+
+            const auto helmetMaterialInstance =
+                IO::AssetHandle<MaterialInstanceAsset>(m_helmetMaterialRequest.GetAssetSlot()).Read();
+            FE_Assert(helmetMaterialInstance && helmetMaterialInstance->m_runtime);
+            for (const MaterialParameterValue& parameter : helmetMaterialInstance->m_parameters)
+            {
+                if (!parameter.m_texture.GetAssetID().IsValid())
+                    continue;
+
+                const auto texture = parameter.m_texture.GetAssetHandle().Read();
+                FE_Assert(texture);
+                m_textureStreamer->SetResidentMip(*texture.Get(), 0);
+            }
+            const IO::AssetLease<MaterialInstanceAsset> helmetMaterial(m_helmetMaterialRequest.GetAssetSlot());
+
             const IO::AssetLease<MaterialInstanceAsset> originalMaterial(m_materialRequest.GetAssetSlot());
             const IO::AssetLease<MaterialInstanceAsset> warmMaterial(m_warmMaterialRequest.GetAssetSlot());
             const IO::AssetLease<MaterialInstanceAsset> coolMaterial(m_coolMaterialRequest.GetAssetSlot());
 
             auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();
             MeshInstanceDesc instanceDesc;
-            instanceDesc.m_asset = meshLease;
             for (int32_t batchIndex = -1; batchIndex <= 1; ++batchIndex)
             {
-                instanceDesc.m_material = batchIndex < 0 ? warmMaterial : batchIndex > 0 ? coolMaterial : originalMaterial;
+                const IO::AssetLease<MaterialInstanceAsset> batchMaterial = batchIndex < 0 ? warmMaterial
+                    : batchIndex > 0                                                       ? coolMaterial
+                                                                                           : originalMaterial;
                 const float batchX = static_cast<float>(batchIndex) * 2.5f;
                 MeshBatchDesc batchDesc;
                 batchDesc.m_bounds = Aabb{ Vector3(batchX - 5.0f, -5.0f, -5.0f), Vector3(batchX + 5.0f, 5.0f, 5.0f) };
@@ -185,18 +227,36 @@ namespace
 
                 for (int32_t instanceIndex = -1; instanceIndex <= 1; ++instanceIndex)
                 {
+                    const bool isHelmet = batchIndex == 0 && instanceIndex == 0;
+                    instanceDesc.m_asset = isHelmet ? helmetMeshLease : meshLease;
+                    instanceDesc.m_material = isHelmet ? helmetMaterial : batchMaterial;
+                    const float height = isHelmet ? 1.25f : 0.0f;
                     instanceDesc.m_transform = Matrix4x4::RotationY(Constants::kPI)
-                        * Matrix4x4::Translation(Vector3(batchX, 0.0f, static_cast<float>(instanceIndex) * 1.5f));
-                    (void)meshSceneModule.CreateInstance(instanceDesc);
+                        * Matrix4x4::Translation(Vector3(batchX, height, static_cast<float>(instanceIndex) * 1.5f));
+                    const MeshHandle handle = meshSceneModule.CreateInstance(instanceDesc);
+                    m_rotatingInstances.push_back({ handle, instanceDesc.m_transform });
                 }
             }
+            m_frameTimer.Start();
         }
 
 
         Rc<WaitGroup> ScheduleUpdate() override
         {
             FE_PROFILER_ZONE();
+            m_frameTimer.Stop();
+            const float deltaSeconds = static_cast<float>(m_frameTimer.GetElapsedSeconds());
+            m_frameTimer.Start();
+
+            constexpr float angularSpeed = Constants::kPI / 6.0f;
+            m_rotationAngle = Math::Fmod(m_rotationAngle + angularSpeed * deltaSeconds, 2.0f * Constants::kPI);
+            const Matrix4x4 rotation = Matrix4x4::RotationY(m_rotationAngle);
+
             IO::AssetManager::Tick();
+            auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();
+            for (const RotatingInstance& instance : m_rotatingInstances)
+                meshSceneModule.UpdateTransform(instance.m_handle, rotation * instance.m_baseTransform);
+
             Renderer::Get().Render(m_scene.Get(), m_viewport.Get());
             return nullptr;
         }
@@ -214,7 +274,13 @@ namespace
         Rc<Scene> m_scene;
         Rc<View> m_view;
 
+        festd::fixed_vector<RotatingInstance, 9> m_rotatingInstances;
+        HighResolutionTimer m_frameTimer;
+        float m_rotationAngle = 0.0f;
+
         IO::AssetRequest m_modelRequest;
+        IO::AssetRequest m_helmetModelRequest;
+        IO::AssetRequest m_helmetMaterialRequest;
         IO::AssetRequest m_materialRequest;
         IO::AssetRequest m_warmMaterialRequest;
         IO::AssetRequest m_coolMaterialRequest;

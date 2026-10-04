@@ -125,6 +125,7 @@ namespace FE::Graphics::Vulkan
         }
 
 
+        // Tonemapping encodes sRGB in the shader, so presentation uses UNORM attachments.
         constexpr VkFormat kPreferredSwapchainColorFormats[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
         constexpr VkPresentModeKHR kPreferredSwapchainPresentModes[] = { VK_PRESENT_MODE_FIFO_RELAXED_KHR,
                                                                          VK_PRESENT_MODE_FIFO_KHR };
@@ -278,7 +279,7 @@ namespace FE::Graphics::Vulkan
         {
             for (const auto [format, colorSpace] : surfaceFormats)
             {
-                if (format == requestedFormat)
+                if (format == requestedFormat && colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
                 {
                     swapchainCI.imageFormat = format;
                     swapchainCI.imageColorSpace = colorSpace;

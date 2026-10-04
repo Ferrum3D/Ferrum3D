@@ -124,32 +124,33 @@ namespace FE::AssetBuilder::Internal
         }
 
 
-        using BuildFunction = bool (*)(const BuildRequest& request);
-
         struct BuilderEntry final
         {
             Rtti::TypeID m_typeId;
-            BuildFunction m_function;
+            AssetCompiler m_compiler;
         };
     } // namespace
 
 
-    BuildFunction FindBuilder(const Rtti::TypeID typeId)
+    AssetCompiler FindCompiler(const Rtti::TypeID typeId)
     {
+        // Bump an asset type's compiler version when its generated data changes independently of its serialization schema.
         const BuilderEntry builders[] = {
-            { Rtti::GetTypeID<ModelAsset>(), BuildModelArtifact },
-            { Rtti::GetTypeID<MeshAsset>(), BuildMeshArtifact },
-            { Rtti::GetTypeID<TextureAsset>(), BuildTextureArtifact },
-            { Rtti::GetTypeID<MaterialAsset>(), BuildMaterialArtifact },
-            { Rtti::GetTypeID<MaterialInstanceAsset>(), BuildMaterialInstanceArtifact },
+            { Rtti::GetTypeID<ModelAsset>(), { BuildModelArtifact, 1 } },
+            { Rtti::GetTypeID<MeshAsset>(), { BuildMeshArtifact, 1 } },
+            { Rtti::GetTypeID<TextureAsset>(), { BuildTextureArtifact, 1 } },
+            { Rtti::GetTypeID<MaterialAsset>(), { BuildMaterialArtifact, 1 } },
+            { Rtti::GetTypeID<MaterialInstanceAsset>(), { BuildMaterialInstanceArtifact, 1 } },
         };
         for (const BuilderEntry& builder : builders)
         {
             if (builder.m_typeId == typeId)
-                return builder.m_function;
+                return builder.m_compiler;
         }
         const Rtti::Type* type = Rtti::TypeRegistry::FindType(typeId);
-        return type != nullptr && type->m_serialize != nullptr ? BuildSerializedArtifact : nullptr;
+        if (type != nullptr && type->m_serialize != nullptr)
+            return { BuildSerializedArtifact, 1 };
+        return {};
     }
 
 

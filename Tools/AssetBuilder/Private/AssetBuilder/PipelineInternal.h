@@ -41,7 +41,15 @@ namespace FE::AssetBuilder::Internal
 
 
     using BuildFunction = bool (*)(const BuildRequest& request);
-    BuildFunction FindBuilder(Rtti::TypeID typeId);
+
+    struct AssetCompiler final
+    {
+        BuildFunction m_build = nullptr;
+        uint32_t m_version = 0;
+    };
+
+
+    AssetCompiler FindCompiler(Rtti::TypeID typeId);
 
 
     struct BuildInputs final

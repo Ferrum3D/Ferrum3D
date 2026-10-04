@@ -1,7 +1,9 @@
 #include <AssetBuilder/ModelImporter.h>
 
 #include <Core/IO/Path.h>
+#include <Core/Memory/Memory.h>
 #include <Core/Strings/Parser.h>
+#include <meshoptimizer.h>
 
 #define TINYGLTF_NO_INCLUDE_RAPIDJSON
 #define TINYGLTF_NO_STB_IMAGE
@@ -98,6 +100,37 @@ namespace FE::AssetBuilder
             }
 
             return {};
+        }
+
+
+        void GenerateTangents(IntermediateMeshLod& lod)
+        {
+            if (lod.m_indices.empty())
+                return;
+
+            const IntermediateVertex& firstVertex = lod.m_vertices.front();
+            festd::vector<PackedVector4F> tangents(lod.m_indices.size());
+            meshopt_generateTangents(&tangents.front().x,
+                                     lod.m_indices.data(),
+                                     lod.m_indices.size(),
+                                     firstVertex.m_position.Data(),
+                                     lod.m_vertices.size(),
+                                     sizeof(IntermediateVertex),
+                                     firstVertex.m_normal.Data(),
+                                     sizeof(IntermediateVertex),
+                                     &firstVertex.m_uv[0].x,
+                                     sizeof(IntermediateVertex),
+                                     meshopt_TangentCompatible);
+
+            // Per-corner tangents preserve UV mirror seams; optimization reindexes the split vertices.
+            festd::vector<IntermediateVertex> vertices(lod.m_indices.size());
+            for (uint32_t index = 0; index < lod.m_indices.size(); ++index)
+            {
+                vertices[index] = lod.m_vertices[lod.m_indices[index]];
+                vertices[index].m_tangentWithSign = Vector4(tangents[index]);
+            }
+            lod.m_vertices = std::move(vertices);
+            festd::iota(lod.m_indices, 0);
         }
 
 
@@ -206,6 +239,11 @@ namespace FE::AssetBuilder
                     festd::iota(lod0.m_indices, 0);
                 }
 
+                const bool needsTangents = !primitive.attributes.contains("TANGENT") && primitive.attributes.contains("NORMAL")
+                    && primitive.attributes.contains("TEXCOORD_0");
+                if (needsTangents)
+                    GenerateTangents(lod0);
+
                 const Matrix4x4 normalTransform = Math::Transpose(Math::Invert(worldTransform));
                 for (IntermediateVertex& vertex : lod0.m_vertices)
                 {
@@ -219,7 +257,7 @@ namespace FE::AssetBuilder
                         Math::LengthSquared(normal) > Constants::kEpsilon ? Math::Normalize(normal) : Vector3::kZero;
                     const float tangentSign = vertex.m_tangentWithSign.w;
                     const Vector3 tangent =
-                        Vector4::GetXYZ(Vector4(Vector4::GetXYZ(vertex.m_tangentWithSign), 0.0f) * normalTransform);
+                        Vector4::GetXYZ(Vector4(Vector4::GetXYZ(vertex.m_tangentWithSign), 0.0f) * worldTransform);
                     const Vector3 normalizedTangent =
                         Math::LengthSquared(tangent) > Constants::kEpsilon ? Math::Normalize(tangent) : Vector3::kZero;
                     vertex.m_tangentWithSign = Vector4(normalizedTangent, -tangentSign);
@@ -471,6 +509,18 @@ namespace FE::AssetBuilder
 
     ModelImporter ModelImporter::Create(const void* data, const uint32_t byteSize, const IO::Path& sourcePath)
     {
+        static const bool allocatorInitialized = [] {
+            meshopt_setAllocator(
+                [](const size_t byteSize) {
+                    return Memory::DefaultAllocate(byteSize);
+                },
+                [](void* pointer) {
+                    Memory::DefaultFree(pointer);
+                });
+            return true;
+        }();
+        (void)allocatorInitialized;
+
         ModelImporter importer;
         importer.m_impl = Memory::DefaultNew<Implementation>();
 

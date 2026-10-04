@@ -43,6 +43,7 @@ namespace FE::AssetBuilder
                     Math::Pack::RGBA32FloatToA2R10G10B10Unorm(Vector4(vertex.m_normal * 0.5f + Vector3(0.5f), 0.0f));
 
                 Vector4 tangentWithSign = vertex.m_tangentWithSign;
+                tangentWithSign = Vector4(Vector4::GetXYZ(tangentWithSign) * 0.5f + Vector3(0.5f), tangentWithSign.w);
                 tangentWithSign.w = tangentWithSign.w < 0 ? 1.0f : 0.0f;
                 const uint32_t packedTangent = Math::Pack::RGBA32FloatToA2R10G10B10Unorm(tangentWithSign);
 

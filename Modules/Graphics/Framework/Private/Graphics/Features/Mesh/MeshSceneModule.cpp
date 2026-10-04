@@ -457,6 +457,7 @@ namespace FE::Graphics
 
         MeshPass::ViewData data{};
         data.m_viewProjection = viewProjection;
+        data.m_cameraPosition = PackedVector4F(Vector4(view.m_view->GetCameraTransform().Translation(), 1.0f));
         data.m_instances = m_meshInstanceTable->GetDeviceAddress();
         data.m_groups = m_meshGroupTable->GetDeviceAddress();
         data.m_lods = m_meshLodInfoTable->GetDeviceAddress();

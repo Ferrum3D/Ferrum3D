@@ -22,6 +22,8 @@ typedef uint2 uint64_t;
 #    define FE_CONST const
 
 #    define FE_PLATFORM_VULKAN 1
+
+#    define select(c, a, b) ((c) ? (a) : (b))
 #else
 #    define ms_payload payload
 #    define ms_vertices vertices
@@ -130,6 +132,9 @@ namespace Bit
 
 namespace Math
 {
+    static const float kPI = 3.14159265358979323f;
+
+
     template<typename T>
     T Min3(const T a, const T b, const T c)
     {

@@ -43,10 +43,9 @@ namespace FE::AssetBuilder
 
         IO::BuildKey ComputeBuildKey(const AssetFileArtifact& artifact, const festd::span<const std::byte> sourceData,
                                      const festd::span<const std::byte> settingsData,
-                                     const festd::span<const IO::ArtifactID> dependencyArtifacts)
+                                     const festd::span<const IO::ArtifactID> dependencyArtifacts, const uint32_t compilerVersion)
         {
             constexpr festd::string_view domain = "FerrumBuild/v1";
-            constexpr festd::string_view compilerVersion = "AssetCompiler/v4";
             constexpr festd::string_view platform = "pc";
 
             Hasher lowHasher(0x1fd79b78c365ade1ull);
@@ -54,14 +53,14 @@ namespace FE::AssetBuilder
             lowHasher.Update(domain.data(), domain.size())
                 .Update(artifact.m_assetId)
                 .Update(artifact.m_assetTypeId)
-                .Update(compilerVersion.data(), compilerVersion.size())
+                .Update(compilerVersion)
                 .Update(platform.data(), platform.size())
                 .Update(settingsData.data(), settingsData.size())
                 .Update(sourceData.data(), sourceData.size());
             highHasher.Update(sourceData.data(), sourceData.size())
                 .Update(settingsData.data(), settingsData.size())
                 .Update(platform.data(), platform.size())
-                .Update(compilerVersion.data(), compilerVersion.size())
+                .Update(compilerVersion)
                 .Update(artifact.m_assetTypeId)
                 .Update(artifact.m_assetId)
                 .Update(domain.data(), domain.size());
@@ -226,8 +225,15 @@ namespace FE::AssetBuilder
                     }
                 }
 
+                const AssetCompiler compiler = FindCompiler(artifact.m_assetTypeId);
+                if (compiler.m_build == nullptr)
+                {
+                    Logger::LogError("Product '{}' has no builder for type {}", artifact.m_name, artifact.m_assetTypeId);
+                    return false;
+                }
+
                 const IO::BuildKey buildKey =
-                    ComputeBuildKey(artifact, inputs.m_logicalInputData, settingsData, dependencyArtifactIds);
+                    ComputeBuildKey(artifact, inputs.m_logicalInputData, settingsData, dependencyArtifactIds, compiler.m_version);
 
                 const bool dataExists = artifact.m_builtArtifactId.IsValid()
                     && IO::File::Exists(ArtifactWriter::GetDataPath(m_finalOutputDirectory, artifact.m_builtArtifactId));
@@ -239,13 +245,6 @@ namespace FE::AssetBuilder
                     return true;
                 }
 
-                const BuildFunction builder = FindBuilder(artifact.m_assetTypeId);
-                if (builder == nullptr)
-                {
-                    Logger::LogError("Product '{}' has no builder for type {}", artifact.m_name, artifact.m_assetTypeId);
-                    return false;
-                }
-
                 const IO::ArtifactID previousArtifactId = artifact.m_builtArtifactId;
                 IO::ArtifactID artifactId = IO::ArtifactID::kNull;
                 const BuildRequest request{ artifact,
@@ -253,7 +252,7 @@ namespace FE::AssetBuilder
                                             inputs.m_sourceData,
                                             m_stagingOutputDirectory,
                                             &artifactId };
-                if (!builder(request))
+                if (!compiler.m_build(request))
                     return false;
 
                 if (!artifactId.IsValid())

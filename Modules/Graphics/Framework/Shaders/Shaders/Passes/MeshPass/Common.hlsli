@@ -28,14 +28,17 @@ struct VertexInput
     }
 };
 
+
 struct PixelAttributes
 {
     float4 m_pos : SV_Position;
     float3 m_worldPos : POSITION;
     float3 m_normal : NORMAL;
+    float4 m_tangent : TANGENT;
     float2 m_uv : TEXCOORD0;
     nointerpolation uint m_instanceIndex : TEXCOORD1;
 };
+
 
 struct MeshDrawData
 {
@@ -44,8 +47,10 @@ struct MeshDrawData
     Core::MeshLodInfo m_lodInfo;
 };
 
+
 [[vk::push_constant]] Constants GConstants;
 static const ViewData GView = GConstants.m_view.Load(0);
+
 
 struct MeshPayload
 {
@@ -53,6 +58,7 @@ struct MeshPayload
     uint m_lodId;
     uint m_meshletIds[kMeshletsPerWorkChunk];
 };
+
 
 MeshDrawData LoadMeshDrawData(const uint32_t instanceIndex, const uint32_t lodIndex = kInvalidIndex)
 {
@@ -72,6 +78,7 @@ MeshDrawData LoadMeshDrawData(const uint32_t instanceIndex, const uint32_t lodIn
     return result;
 }
 
+
 PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t vertexIndex, const uint32_t instanceIndex)
 {
     const VertexInput input = drawData.m_geometry.Read<VertexInput>(vertexIndex * sizeof(VertexInput));
@@ -81,15 +88,45 @@ PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t verte
     PixelAttributes output;
     output.m_pos = mul(worldPosition, GView.m_viewProjection);
     output.m_worldPos = worldPosition.xyz;
-    output.m_normal = mul(input.UnpackNormal(), normalMatrix);
+    const float3x3 cofactorMatrix = float3x3(cross(normalMatrix[1], normalMatrix[2]),
+                                             cross(normalMatrix[2], normalMatrix[0]),
+                                             cross(normalMatrix[0], normalMatrix[1]));
+    output.m_normal = mul(input.UnpackNormal(), cofactorMatrix) / determinant(normalMatrix);
+    const float4 tangent = Math::Pack::A2R10G10B10UnormToRGBA32Float(input.m_packedTangent);
+    const float handedness = determinant(normalMatrix) < 0.0f ? -1.0f : 1.0f;
+    output.m_tangent = float4(mul(tangent.xyz * 2.0f - 1.0f, normalMatrix), (tangent.w > 0.5f ? -1.0f : 1.0f) * handedness);
     output.m_uv = input.UnpackUv();
     output.m_instanceIndex = instanceIndex;
     return output;
 }
+
 
 uint3 LoadPrimitive(const MeshDrawData drawData, const uint32_t primitiveIndex, const uint32_t primitivesByteOffset)
 {
     const Core::PackedTriangle packedTriangle =
         drawData.m_geometry.Read<Core::PackedTriangle>(primitiveIndex * sizeof(Core::PackedTriangle) + primitivesByteOffset);
     return uint3(packedTriangle.m_index0, packedTriangle.m_index1, packedTriangle.m_index2);
+}
+
+
+float3 TangentNormalToWorld(const PixelAttributes input, const float3 tangentNormal)
+{
+    const float3 normal = normalize(input.m_normal);
+    const float3 tangent = normalize(input.m_tangent.xyz);
+    const float3 bitangent = cross(normal, tangent) * input.m_tangent.w;
+    return normalize(tangentNormal.x * tangent + tangentNormal.y * bitangent + tangentNormal.z * normal);
+}
+
+
+template<typename TMaterial, typename TInstance>
+void LoadMaterialParameters(const uint32_t instanceIndex, out TMaterial material, out TInstance instanceData)
+{
+    MeshInstanceTable instances = MeshInstanceTable::Create(GView.m_instances);
+    MeshGroupTable groups = MeshGroupTable::Create(GView.m_groups);
+    MaterialInstanceTable materials = MaterialInstanceTable::Create(GView.m_materials);
+    const MeshInstanceTable::Row instance = instances.ReadRow(instanceIndex);
+    const MeshGroupTable::Row group = groups.ReadRow(instance.m_meshGroup.Get());
+    const MaterialInstanceTable::Row materialInstance = materials.ReadRow(group.m_materialInstance.Get());
+    material = materialInstance.m_materialParameters.Get().Read<TMaterial>(0);
+    instanceData = instance.m_instanceData.Get().Read<TInstance>(0);
 }

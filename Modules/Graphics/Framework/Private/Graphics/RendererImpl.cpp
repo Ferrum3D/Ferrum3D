@@ -9,7 +9,7 @@
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/OpaquePass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
-#include <Graphics/Passes/Tools/Blit.h>
+#include <Graphics/Passes/Tools/Tonemap.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/SceneImpl.h>
 
@@ -100,9 +100,9 @@ namespace FE::Graphics
         }
 
         viewport->PrepareBlit();
-        Tools::Blit::AddPass(*m_frameGraph,
-                             Core::TextureView::Create(m_mainColorTarget.Get()),
-                             Core::TextureView::Create(viewport->GetCurrentColorTarget()));
+        Tools::Tonemap::AddPass(*m_frameGraph,
+                                Core::TextureView::Create(m_mainColorTarget.Get()),
+                                Core::TextureView::Create(viewport->GetCurrentColorTarget()));
 
         m_frameGraph->CompileAndExecute();
         m_renderQueueUploader.CloseFrame(m_graphicsQueue->GetCurrentFence());

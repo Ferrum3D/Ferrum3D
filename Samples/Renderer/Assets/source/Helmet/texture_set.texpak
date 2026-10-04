@@ -1,0 +1,311 @@
+{
+    "format": "TexPak Project",
+    "version": 4,
+    "nodes": [
+        {
+            "type": "source",
+            "id": 1,
+            "outputPin": 2,
+            "mipsOutputPin": 3,
+            "channelPins": [
+                4,
+                5,
+                6,
+                7
+            ],
+            "path": "Default_albedo.png"
+        },
+        {
+            "type": "source",
+            "id": 8,
+            "outputPin": 9,
+            "mipsOutputPin": 10,
+            "channelPins": [
+                11,
+                12,
+                13,
+                14
+            ],
+            "path": "Default_AO.png"
+        },
+        {
+            "type": "source",
+            "id": 15,
+            "outputPin": 16,
+            "mipsOutputPin": 17,
+            "channelPins": [
+                18,
+                19,
+                20,
+                21
+            ],
+            "path": "Default_emissive.png"
+        },
+        {
+            "type": "source",
+            "id": 22,
+            "outputPin": 23,
+            "mipsOutputPin": 24,
+            "channelPins": [
+                25,
+                26,
+                27,
+                28
+            ],
+            "path": "Default_metalRoughness.png"
+        },
+        {
+            "type": "source",
+            "id": 29,
+            "outputPin": 30,
+            "mipsOutputPin": 31,
+            "channelPins": [
+                32,
+                33,
+                34,
+                35
+            ],
+            "path": "Default_normal.png"
+        },
+        {
+            "type": "constant",
+            "id": 36,
+            "outputPin": 37,
+            "unitRange": true,
+            "channelCount": 1,
+            "values": [
+                1.0
+            ]
+        },
+        {
+            "type": "constant",
+            "id": 38,
+            "outputPin": 39,
+            "unitRange": true,
+            "channelCount": 1,
+            "values": [
+                1.0
+            ]
+        },
+        {
+            "type": "merge",
+            "id": 40,
+            "inputPins": [
+                41,
+                42,
+                43,
+                44
+            ],
+            "inputCount": 4,
+            "outputPin": 45
+        },
+        {
+            "type": "merge",
+            "id": 46,
+            "inputPins": [
+                47,
+                48,
+                49,
+                50
+            ],
+            "inputCount": 4,
+            "outputPin": 51
+        },
+        {
+            "type": "merge",
+            "id": 52,
+            "inputPins": [
+                53,
+                54,
+                55,
+                56
+            ],
+            "inputCount": 2,
+            "outputPin": 57
+        },
+        {
+            "type": "output",
+            "id": 58,
+            "name": "DamagedHelmet_a",
+            "format": 71,
+            "inputPin": 59,
+            "mipsInputPin": 60,
+            "compressionQuality": 1.0,
+            "compressionQualityCustomized": false,
+            "generateMips": true,
+            "cubeMap": false,
+            "srgb": true
+        },
+        {
+            "type": "output",
+            "id": 61,
+            "name": "DamagedHelmet_orm",
+            "format": 98,
+            "inputPin": 62,
+            "mipsInputPin": 63,
+            "compressionQuality": 0.699999988079071,
+            "compressionQualityCustomized": false,
+            "generateMips": true,
+            "cubeMap": false,
+            "srgb": false
+        },
+        {
+            "type": "output",
+            "id": 64,
+            "name": "DamagedHelmet_e",
+            "format": 98,
+            "inputPin": 65,
+            "mipsInputPin": 66,
+            "compressionQuality": 0.699999988079071,
+            "compressionQualityCustomized": false,
+            "generateMips": true,
+            "cubeMap": false,
+            "srgb": true
+        },
+        {
+            "type": "output",
+            "id": 67,
+            "name": "DamagedHelmet_n",
+            "format": 83,
+            "inputPin": 68,
+            "mipsInputPin": 69,
+            "compressionQuality": 1.0,
+            "compressionQualityCustomized": false,
+            "generateMips": true,
+            "cubeMap": false,
+            "srgb": false
+        }
+    ],
+    "links": [
+        {
+            "outputPin": 4,
+            "inputPin": 41
+        },
+        {
+            "outputPin": 5,
+            "inputPin": 42
+        },
+        {
+            "outputPin": 6,
+            "inputPin": 43
+        },
+        {
+            "outputPin": 37,
+            "inputPin": 44
+        },
+        {
+            "outputPin": 11,
+            "inputPin": 47
+        },
+        {
+            "outputPin": 26,
+            "inputPin": 48
+        },
+        {
+            "outputPin": 39,
+            "inputPin": 50
+        },
+        {
+            "outputPin": 32,
+            "inputPin": 53
+        },
+        {
+            "outputPin": 27,
+            "inputPin": 49
+        },
+        {
+            "outputPin": 45,
+            "inputPin": 59
+        },
+        {
+            "outputPin": 51,
+            "inputPin": 62
+        },
+        {
+            "outputPin": 57,
+            "inputPin": 68
+        },
+        {
+            "outputPin": 16,
+            "inputPin": 65
+        },
+        {
+            "outputPin": 33,
+            "inputPin": 54
+        }
+    ],
+    "editor": {
+        "nodePositions": [
+            {
+                "id": 1,
+                "x": 32.0,
+                "y": 64.0
+            },
+            {
+                "id": 8,
+                "x": 32.0,
+                "y": 288.0
+            },
+            {
+                "id": 15,
+                "x": 32.0,
+                "y": 1152.0
+            },
+            {
+                "id": 22,
+                "x": 32.0,
+                "y": 512.0
+            },
+            {
+                "id": 29,
+                "x": 32.0,
+                "y": 800.0
+            },
+            {
+                "id": 36,
+                "x": 320.0,
+                "y": 256.0
+            },
+            {
+                "id": 38,
+                "x": 320.0,
+                "y": 704.0
+            },
+            {
+                "id": 40,
+                "x": 640.0,
+                "y": 128.0
+            },
+            {
+                "id": 46,
+                "x": 640.0,
+                "y": 352.0
+            },
+            {
+                "id": 52,
+                "x": 416.0,
+                "y": 832.0
+            },
+            {
+                "id": 58,
+                "x": 1024.0,
+                "y": 32.0
+            },
+            {
+                "id": 61,
+                "x": 1024.0,
+                "y": 352.0
+            },
+            {
+                "id": 64,
+                "x": 448.0,
+                "y": 1152.0
+            },
+            {
+                "id": 67,
+                "x": 768.0,
+                "y": 832.0
+            }
+        ]
+    }
+}

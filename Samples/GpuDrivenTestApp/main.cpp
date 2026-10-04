@@ -203,9 +203,9 @@ namespace
             if (!GStressMode || GLargeMeshes)
             {
                 const auto mesh = meshLease.Read();
-                const uint32_t lod = mesh->m_submeshes[0].m_lods.size() - 1;
-                m_meshStreamer->SetResidentLod(*mesh.Get(), lod);
-                while (mesh->m_residentLod != lod || mesh->m_currentOperation != nullptr)
+                const uint32_t residentLod = mesh->m_lodErrors.size() - 1;
+                m_meshStreamer->SetResidentLod(*mesh.Get(), 0);
+                while (mesh->m_residentLod != residentLod || mesh->m_currentOperation != nullptr)
                 {
                     IO::AssetManager::Tick();
                     Threading::Sleep(1);
@@ -421,9 +421,10 @@ namespace
                 {
                     const auto model = IO::AssetHandle<ModelAsset>(m_modelRequest.GetAssetSlot()).Read();
                     const auto mesh = model->m_meshes[0].GetAssetHandle().Read();
-                    const uint32_t lod = m_frameIndex == 8 ? mesh->m_submeshes[0].m_lods.size() - 1 : 0;
+                    const uint32_t lod = m_frameIndex == 8 ? 0 : mesh->m_lodErrors.size() - 1;
+                    const uint32_t residentLod = mesh->m_lodErrors.size() - lod - 1;
                     m_meshStreamer->SetResidentLod(*mesh.Get(), lod);
-                    while (mesh->m_residentLod != lod || mesh->m_currentOperation != nullptr)
+                    while (mesh->m_residentLod != residentLod || mesh->m_currentOperation != nullptr)
                     {
                         IO::AssetManager::Tick();
                         Threading::Sleep(1);

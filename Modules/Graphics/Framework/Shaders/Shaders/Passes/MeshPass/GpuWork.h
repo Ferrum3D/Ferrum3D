@@ -80,6 +80,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     struct ViewData final
     {
         float4x4 m_viewProjection;
+        float4 m_cameraPosition;
         MeshInstanceTable::Instance m_instances;
         MeshGroupTable::Instance m_groups;
         MeshLodInfoTable::Instance m_lods;

@@ -165,7 +165,7 @@ namespace FE::Graphics
         FE_Assert(Threading::IsMainThread());
         Impl::Entry* entry = FindMeshEntry(m_impl->m_entries, &asset);
         FE_Assert(entry && lodIndex < asset.m_lodErrors.size());
-        entry->m_requestedLod = lodIndex;
+        entry->m_requestedLod = asset.m_lodErrors.size() - lodIndex - 1;
         entry->m_failed = false;
     }
 
