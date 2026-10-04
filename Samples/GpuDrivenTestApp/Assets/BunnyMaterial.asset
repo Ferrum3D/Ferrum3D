@@ -1,0 +1,72 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "MaterialInstanceAsset",
+                "m_assetId": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC",
+                "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                "m_buildSettings": {
+                    "m_typeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                    "m_value": {
+                        "m_material": "A56650D7-CD26-418C-B02C-514D54430555",
+                        "m_permutationKey": "TwoSided=0",
+                        "m_parameters": [
+                            {
+                                "m_name": "Albedo",
+                                "m_value": {
+                                    "x": "00000000",
+                                    "y": "00000000",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "5C9F4230-E3BD-447C-8344-407F710CF0CD"
+                            },
+                            {
+                                "m_name": "UvScale",
+                                "m_value": {
+                                    "x": "0000803f",
+                                    "y": "0000803f",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "00000000-0000-0000-0000-000000000000"
+                            },
+                            {
+                                "m_name": "Tint",
+                                "m_value": {
+                                    "x": "0000803f",
+                                    "y": "0000803f",
+                                    "z": "0000803f",
+                                    "w": "0000803f"
+                                },
+                                "m_texture": "00000000-0000-0000-0000-000000000000"
+                            }
+                        ]
+                    }
+                },
+                "m_dependencies": [
+                    {
+                        "m_assetId": "A56650D7-CD26-418C-B02C-514D54430555",
+                        "m_expectedTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "5C9F4230-E3BD-447C-8344-407F710CF0CD",
+                        "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                        "m_kind": 0
+                    }
+                ],
+                "m_lastBuildKey": "984D539B-CA00-462F-84EC-0A1EC9F8919C",
+                "m_builtArtifactId": "2B7791F5-35C6-482D-B08B-DADF26F4A0A1",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

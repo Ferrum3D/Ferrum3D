@@ -1,1 +1,2 @@
 add_subdirectory(Renderer)
+add_subdirectory(GpuDrivenTestApp)

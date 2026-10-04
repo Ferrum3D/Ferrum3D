@@ -4,29 +4,35 @@
     "$version": 0,
     "$schema": "0x4d3ae890a4a739c5",
     "$value": {
-        "m_artifactId": "87BC8781-5A19-4C08-84D2-6C39BF73621F",
-        "m_assetId": "3A837ECB-B74D-438F-9F49-359F97CC68AB",
-        "m_assetTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+        "m_artifactId": "BA3661BB-D934-4654-AF52-1B9346438D0D",
+        "m_assetId": "D5BA9140-9F93-4407-B5CE-E9FB01C2DDEC",
+        "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
         "m_payloads": [
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
                     "m_byteOffset": 0,
-                    "m_byteSize": 483
+                    "m_byteSize": 114
                 },
                 "m_chunks": [
                     {
                         "m_offsetInPayload": 0,
-                        "m_compressedSize": 483,
-                        "m_uncompressedSize": 1886,
+                        "m_compressedSize": 114,
+                        "m_uncompressedSize": 121,
                         "m_compressionMethod": 2,
                         "m_checksum": {
-                            "m_current": 295769631
+                            "m_current": 4086665772
                         }
                     }
                 ]
             }
         ],
-        "m_dependencies": []
+        "m_dependencies": [
+            {
+                "m_assetId": "3A837ECB-B74D-438F-9F49-359F97CC68AB",
+                "m_expectedTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                "m_kind": 0
+            }
+        ]
     }
 }
