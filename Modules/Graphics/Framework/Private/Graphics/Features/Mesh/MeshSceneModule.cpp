@@ -201,18 +201,18 @@ namespace FE::Graphics
         Aabb bounds = batch->m_octreeEntry.m_bounds;
         for (const auto instanceRef : batch->m_meshInstances)
         {
-            const auto instance = m_meshInstanceTable->ReadRow(instanceRef);
+            const MeshInstanceTable::Row instance = m_meshInstanceTable->ReadRow(instanceRef);
             const MeshGroup* group = m_meshGroups[instance.m_meshGroup.Get().m_rowIndex];
-            const auto mesh = group->m_asset.Read();
+            const IO::AssetRead<MeshAsset> mesh = group->m_asset.Read();
             if (!mesh || mesh->m_submeshes.empty())
                 continue;
 
-            const Aabb local = mesh->m_submeshes[0].m_bounds;
+            const Aabb localBounds = mesh->m_submeshes[0].m_bounds;
             for (uint32_t corner = 0; corner < 8; ++corner)
             {
-                const Vector4 world = Vector4(Math::Blend(local.min, local.max, corner), 1.0f) * instance.m_transform.Get();
-                const Vector3 position(world.x, world.y, world.z);
-                bounds = Math::Union(bounds, position);
+                const Vector3 localPosition = Math::Blend(localBounds.min, localBounds.max, corner);
+                const Vector4 worldPosition = Vector4(localPosition, 1.0f) * instance.m_transform.Get();
+                bounds = Math::Union(bounds, Vector3(worldPosition.x, worldPosition.y, worldPosition.z));
             }
         }
 
@@ -334,11 +334,13 @@ namespace FE::Graphics
                 break;
             }
         }
+
         if (registry == nullptr)
         {
             registry = &m_registries.emplace_back();
             registry->m_techniqueRole = role;
         }
+
         if (registry->m_revision == m_revision)
             return *registry;
 
@@ -489,7 +491,7 @@ namespace FE::Graphics
         desc->m_arguments = Core::BufferView(prepared.m_arguments.Get());
 
         const BufferSRVDescriptor viewAddress = graph.GetSRV(prepared.m_view.Get());
-        graph.AddPass(festd::string_view(pass.m_techniqueRole.c_str(), pass.m_techniqueRole.size()),
+        graph.AddPass(festd::string_view(pass.m_techniqueRole),
                       desc,
                       pass.m_passDescToken,
                       [submissions = std::move(prepared.m_submissions), viewAddress](Core::FrameGraphContext& context) {

@@ -19,6 +19,9 @@ namespace FE::Graphics::OpaquePass
 
     struct PassData final
     {
+        DrawTag m_drawTag;
+        Env::Name m_techniqueRole;
+
         FE_RTTI_Reflect("B27600BC-3187-49D2-A81F-254D6E0C606C");
     };
 

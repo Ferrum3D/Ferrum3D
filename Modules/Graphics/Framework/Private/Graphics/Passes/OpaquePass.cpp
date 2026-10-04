@@ -22,7 +22,9 @@ namespace FE::Graphics::OpaquePass
 
     void ViewModule::Update(Core::FrameGraphBlackboard& blackboard)
     {
-        blackboard.Add<PassData>();
+        auto& data = blackboard.Add<PassData>();
+        data.m_drawTag = m_drawTag;
+        data.m_techniqueRole = m_techniqueRole;
     }
 
 
@@ -31,6 +33,7 @@ namespace FE::Graphics::OpaquePass
         if (!blackboard.Contains<PassData>())
             return;
 
+        const PassData& data = blackboard.Get<PassData>();
         const RendererViewData& viewData = blackboard.Get<RendererViewData>();
 
         auto* passDesc = graph.AllocatePassData<PassDesc>();
@@ -41,9 +44,8 @@ namespace FE::Graphics::OpaquePass
         SceneRenderPass pass;
         pass.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
         pass.m_passDescToken = graph.AddBasePassDesc(passDesc);
-        const auto& module = viewData.m_view->GetModules().Find<ViewModule>();
-        pass.m_drawTag = module.m_drawTag;
-        pass.m_techniqueRole = module.m_techniqueRole;
+        pass.m_drawTag = data.m_drawTag;
+        pass.m_techniqueRole = data.m_techniqueRole;
 
         viewData.m_scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
             module.AddRenderPasses(graph, *viewData.m_renderQueueUploader, pass);

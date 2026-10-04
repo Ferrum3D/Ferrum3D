@@ -4389,9 +4389,30 @@ namespace FE::Graphics::OpaquePass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_drawTag
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0,
+            0x8d, 0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_techniqueRole
+        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_drawTag = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_techniqueRole = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_drawTag",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PassData::m_drawTag,
+                                                        kAttributes_m_drawTag,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_techniqueRole",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &PassData::m_techniqueRole,
+                                                        kAttributes_m_techniqueRole,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
 
         context.ReflectClass<PassData>(typeInstance,
                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),

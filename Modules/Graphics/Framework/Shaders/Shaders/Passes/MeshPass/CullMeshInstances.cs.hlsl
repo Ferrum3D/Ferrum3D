@@ -16,6 +16,7 @@ void ClassifyMember(ViewData view, DB::Slice<MeshMemberTable> members, uint2 dra
     MeshInstanceTable instances = MeshInstanceTable::Create(view.m_instances);
     MeshGroupTable groups = MeshGroupTable::Create(view.m_groups);
     MeshLodInfoTable lods = MeshLodInfoTable::Create(view.m_lods);
+
     const DB::Ref<MeshInstanceTable> instanceId = membership.ReadRow(members.m_rowIndex + memberIndex).m_instance.Get();
     const MeshInstanceTable::Row instance = instances.ReadRow(instanceId);
     const DB::Ref<MeshGroupTable> groupId = instance.m_meshGroup.Get();
@@ -35,6 +36,7 @@ void ClassifyMember(ViewData view, DB::Slice<MeshMemberTable> members, uint2 dra
             item.m_drawTagMask = drawTagMask;
         }
     }
+
     GConstants.m_classification.Store(scratchIndex, item);
 }
 

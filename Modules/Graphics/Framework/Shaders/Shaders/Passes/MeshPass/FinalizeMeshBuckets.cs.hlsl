@@ -23,6 +23,7 @@ void BuildBucketCommands(uint bucket, PipelineBucket range)
     }
 }
 
+
 FE_NUM_THREADS(kThreadCount, 1, 1)
 void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
 {

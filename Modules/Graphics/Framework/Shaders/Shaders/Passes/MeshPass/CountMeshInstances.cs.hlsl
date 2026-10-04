@@ -10,6 +10,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     uint bucket = kInvalidIndex;
     if (item.m_meshletCount != 0 && any(item.m_drawTagMask & GConstants.m_drawTagMask))
         bucket = GConstants.m_routing.Load(item.m_groupId).m_bucket;
+
     GConstants.m_instanceBuckets.Store(index, bucket);
     if (bucket == kInvalidIndex)
         return;
