@@ -54,8 +54,8 @@ namespace FE::Framework
         };
     } // namespace Internal
 
-    template<class... Terms>
-    struct Query
+    template<bool Cascade, class... Terms>
+    struct BasicQuery
     {
         static_assert(sizeof...(Terms) > 0, "Query needs at least one component term");
         static_assert(Internal::UniqueTerms<Terms...>::kValue, "Duplicate component terms in the same source");
@@ -76,7 +76,7 @@ namespace FE::Framework
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase,
                                       std::initializer_list<Rc<WaitGroup>> prerequisites, Callable&& callable,
-                                      ExecutionPolicy policy = ExecutionPolicy::kSequential)
+                                      ExecutionPolicy policy = ExecutionPolicy::kSequential, ChangeCursor* cursor = nullptr)
         {
             using Function = std::decay_t<Callable>;
             constexpr bool withEntity = std::is_invocable_v<Function&, Entity&, typename Internal::QueryTerm<Terms>::Argument...>;
@@ -101,7 +101,16 @@ namespace FE::Framework
                     static_cast<Function*>(function)->~Function();
                 },
                 festd::span<const Rc<WaitGroup>>(prerequisites.begin(), static_cast<uint32_t>(prerequisites.size())),
-                policy);
+                policy,
+                Cascade,
+                cursor);
+        }
+
+        template<class Callable>
+        static Rc<WaitGroup> TraverseChanged(EntityUpdateContext& context, Phase phase, ChangeCursor& cursor, Callable&& callable,
+                                             ExecutionPolicy policy = ExecutionPolicy::kSequential)
+        {
+            return Traverse(context, phase, {}, std::forward<Callable>(callable), policy, &cursor);
         }
 
     private:
@@ -117,5 +126,9 @@ namespace FE::Framework
 
 
     template<class... Terms>
-    using CascadeQuery = Query<Terms...>;
+    using Query = BasicQuery<false, Terms...>;
+
+
+    template<class... Terms>
+    using CascadeQuery = BasicQuery<true, Terms...>;
 } // namespace FE::Framework

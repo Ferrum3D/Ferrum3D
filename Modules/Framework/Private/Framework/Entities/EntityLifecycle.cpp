@@ -475,6 +475,7 @@ namespace FE::Framework
                 continue;
             const auto& info = *chunk.m_archetype.m_columns[column];
             stage |= kActive;
+            MarkChanged(entity);
             if (info.m_activate && info.m_activate(chunk.Get(entity.m_row, column), context) != LifecycleResult::kSucceeded)
             {
                 if (entity.m_active)
@@ -527,6 +528,7 @@ namespace FE::Framework
             if (result == LifecycleResult::kSucceeded)
             {
                 replacement.m_stage |= kActive;
+                MarkChanged(entity);
                 if (info.m_activate)
                     result = info.m_activate(replacement.m_data, context);
             }
@@ -585,6 +587,7 @@ namespace FE::Framework
 
         auto publish = [&](auto&& self, Entity& entity) -> void {
             entity.m_active = true;
+            MarkChanged(entity);
             for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
             {
                 if (child->m_runtime->m_prepared && child->m_wantsActive && !child->m_failed)

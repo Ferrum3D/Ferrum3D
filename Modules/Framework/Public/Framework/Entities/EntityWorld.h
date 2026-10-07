@@ -7,6 +7,34 @@
 
 namespace FE::Framework
 {
+    struct ChangeCursor final
+    {
+        uint64_t m_version = 0;
+        uint64_t m_hierarchyRevision = 0;
+        uint64_t m_structureRevision = 0;
+    };
+
+
+    struct ScheduleConflict final
+    {
+        Rtti::TypeID m_component;
+        uint32_t m_beforeTraversal;
+        uint32_t m_afterTraversal;
+    };
+
+
+    struct ScheduleDiagnostics final
+    {
+        uint32_t m_conflictEdges = 0;
+        uint32_t m_systemEdges = 0;
+        uint32_t m_stageEdges = 0;
+        uint32_t m_jobs = 0;
+        uint32_t m_chunks = 0;
+        uint32_t m_treeBatches = 0;
+        uint32_t m_callbacks = 0;
+    };
+
+
     struct QueryAccess final
     {
         Rtti::TypeID m_type;
@@ -16,7 +44,7 @@ namespace FE::Framework
     };
 
 
-    // All world mutation, lifecycle hooks, collection and serial phase execution occur at main-thread safe points.
+    // World mutation, lifecycle hooks and collection occur at main-thread safe points. Query callbacks execute on job fibers.
     // Application stages may pass external completion groups. Validate the full phase plan before executing any callbacks.
     struct EntityWorld final
     {
@@ -64,6 +92,8 @@ namespace FE::Framework
         bool ExecuteSchedule();
         bool EndUpdate();
         [[nodiscard]] uint64_t GetEpoch() const;
+        [[nodiscard]] ScheduleDiagnostics GetScheduleDiagnostics() const;
+        [[nodiscard]] festd::span<const ScheduleConflict> GetScheduleConflicts() const;
         [[nodiscard]] uint64_t GetHierarchyRevision() const;
         [[nodiscard]] festd::ascii_view GetLastError() const;
         [[nodiscard]] uint32_t GetEntityCount() const;
@@ -72,7 +102,8 @@ namespace FE::Framework
         Rc<WaitGroup> RecordTraversal(EntityUpdateContext& context, Phase phase, festd::span<const QueryAccess> accesses,
                                       void* callable, void (*invoke)(void*, Entity&, void**), void (*destroy)(void*),
                                       festd::span<const Rc<WaitGroup>> prerequisites,
-                                      ExecutionPolicy policy = ExecutionPolicy::kSequential);
+                                      ExecutionPolicy policy = ExecutionPolicy::kSequential, bool cascade = false,
+                                      ChangeCursor* cursor = nullptr);
         void* AllocateTraversal(size_t size, size_t alignment);
         [[nodiscard]] void* LookupComponent(const Entity& entity, Rtti::TypeID type, bool write) const;
         bool RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type);
@@ -83,6 +114,8 @@ namespace FE::Framework
         bool Fail(festd::ascii_view message);
         Rc<WaitGroup> RecordStage(Phase stage, void* callable, void (*invoke)(void*), void (*destroy)(void*),
                                   festd::span<const Rc<WaitGroup>> prerequisites);
+        void ExecuteTraversal(uint32_t index);
+        void MarkChanged(Entity& entity);
         bool CommitImpl(bool bootstrap);
         Entity* AllocateEntity(EntityRegistry& registry, Env::Name name, Uuid uuid);
         void DestroyEntity(Entity& entity);

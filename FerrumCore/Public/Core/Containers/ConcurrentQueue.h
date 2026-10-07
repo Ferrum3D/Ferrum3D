@@ -28,6 +28,8 @@ namespace FE
         {
             std::lock_guard lock{ m_lock };
             node->m_next = m_head;
+            if (!m_head)
+                m_tail = node;
             m_head = node;
         }
 

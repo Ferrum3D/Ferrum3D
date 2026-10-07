@@ -87,7 +87,7 @@ namespace FE::Framework
     } // namespace Phases
 
 
-    // Parent terms are declared here; topology-aware execution is introduced with the parallel scheduler.
+    // Parent terms read the active immediate parent; cascade queries additionally enforce topological order.
     template<class T>
     struct Parent
     {

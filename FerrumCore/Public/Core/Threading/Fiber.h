@@ -17,6 +17,7 @@ namespace FE::Threading
         static constexpr uint32_t kFiberMagic = 0xfefb14f0;
 
         uint32_t m_magic = kFiberMagic;
+        void* m_executionContext = nullptr;
         FiberHandle m_handle;
         const char* m_name = nullptr;
         Memory::LinearAllocator m_tempAllocator;

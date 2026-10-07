@@ -33,6 +33,7 @@ REFLECTION_PROJECTS = [
     Project("CoreTests", PROJECT_DIR / "FerrumCore/Tests"),
     Project("Framework", PROJECT_DIR / "Modules/Framework"),
     Project("FrameworkTests", PROJECT_DIR / "Modules/Framework/Tests"),
+    Project("GameFramework", PROJECT_DIR / "Modules/GameFramework"),
     Project("GraphicsCore", PROJECT_DIR / "Modules/Graphics/Core"),
     Project("Graphics", PROJECT_DIR / "Modules/Graphics/Framework"),
     Project("AssetBuilder", PROJECT_DIR / "Tools/AssetBuilder"),

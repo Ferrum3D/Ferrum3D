@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/Memory/PoolAllocator.h>
+#include <Core/Threading/Fiber.h>
 #include <Framework/Entities/EntityWorld.h>
 #include <festd/unordered_map.h>
 
@@ -68,6 +69,9 @@ namespace FE::Framework
             WorldSystem* m_system = nullptr;
             void (*m_stageInvoke)(void*) = nullptr;
             bool m_executed = false;
+            bool m_cascade = false;
+            ChangeCursor* m_cursor = nullptr;
+            festd::vector<uint32_t> m_dependencies;
             struct Mapping
             {
                 const Archetype* m_archetype;
@@ -75,6 +79,14 @@ namespace FE::Framework
                 bool m_matches = true;
             };
             festd::vector<Mapping> m_mappings;
+        };
+
+
+        struct CallbackContext
+        {
+            const EntityWorld* m_world;
+            const Traversal* m_traversal;
+            const Entity* m_entity;
         };
 
 
@@ -162,13 +174,17 @@ namespace FE::Framework
         uint64_t m_nextRegistryId = 1;
         uint64_t m_epoch = 0;
         uint64_t m_hierarchyRevision = 0;
+        uint64_t m_structureRevision = 0;
         bool m_started = false;
         bool m_collecting = false;
         bool m_updating = false;
         bool m_executing = false;
         bool m_validated = false;
         bool m_scheduleFailed = false;
-        const Traversal* m_currentTraversal = nullptr;
+        Threading::SpinLock m_versionLock;
+        uint64_t m_changeVersion = 1;
+        ScheduleDiagnostics m_diagnostics;
+        festd::vector<ScheduleConflict> m_conflicts;
         Rtti::TypeID m_loadingComponent = Rtti::TypeID::kNull;
         uint64_t m_loadingTransition = 0;
         uint64_t m_nextTransition = 1;

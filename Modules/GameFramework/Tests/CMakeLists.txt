@@ -1,0 +1,7 @@
+file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp" "*.h")
+add_executable(FeGameFrameworkTests ${SOURCES})
+fe_configure_target(FeGameFrameworkTests)
+target_link_libraries(FeGameFrameworkTests PRIVATE FeGameFramework gtest gmock)
+set_target_properties(FeGameFrameworkTests PROPERTIES FOLDER "Modules/GameFramework")
+include(GoogleTest)
+gtest_discover_tests(FeGameFrameworkTests)

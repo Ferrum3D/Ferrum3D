@@ -204,6 +204,7 @@ namespace FE::Framework
         }
         MarkUnready(entity);
         ++m_impl->m_hierarchyRevision;
+        MarkChanged(entity);
     }
 
 
@@ -223,6 +224,7 @@ namespace FE::Framework
 
             Memory::DefaultDelete(chunk);
         }
+        entity.m_chunk = nullptr;
         Reparent(entity, nullptr);
         m_impl->m_uuidLookup.erase(entity.m_uuid);
         auto& slot = m_impl->m_slots[entity.m_id.Slot()];
@@ -332,9 +334,11 @@ namespace FE::Framework
                 type.m_defaultConstructor(destination->Get(row, i));
             }
         }
+        ++m_impl->m_structureRevision;
         entity.m_chunk = destination;
         entity.m_row = row;
         MarkUnready(entity);
+        MarkChanged(entity);
         if (source)
         {
             source->Free(oldRow);
@@ -348,15 +352,32 @@ namespace FE::Framework
     }
 
 
+    void EntityWorld::MarkChanged(Entity& entity)
+    {
+        if (!entity.m_chunk)
+            return;
+        std::lock_guard guard(m_impl->m_versionLock);
+        const uint64_t version = ++m_impl->m_changeVersion;
+        for (auto& column : entity.m_chunk->m_versions)
+            column = version;
+    }
+
+
     void* EntityWorld::LookupComponent(const Entity& entity, const Rtti::TypeID type, const bool write) const
     {
         FE_Assert(!m_impl->m_collecting, "System collection cannot inspect live component data");
-        if (const auto* traversal = m_impl->m_currentTraversal)
+        const auto* callback = m_impl->m_executing
+            ? static_cast<const CallbackContext*>(Threading::FiberRuntimeInfo::Get().m_executionContext)
+            : nullptr;
+        const auto* traversal = callback && callback->m_world == this ? callback->m_traversal : nullptr;
+        if (traversal)
         {
             bool declared = false;
             for (const auto& access : traversal->m_accesses)
             {
-                if (!access.m_parent && access.m_type == type && (!write || access.m_write))
+                if (access.m_type == type && (!write || access.m_write)
+                    && ((access.m_parent && callback->m_entity->GetParent() == &entity)
+                        || (!access.m_parent && callback->m_entity == &entity)))
                     declared = true;
             }
             FE_AssertDebug(declared, "Entity component lookup exceeds traversal access declarations");
@@ -366,7 +387,7 @@ namespace FE::Framework
         const uint32_t column = entity.m_chunk->m_archetype.Find(type);
         if (column == kInvalidIndex)
             return nullptr;
-        if (m_impl->m_currentTraversal && !(entity.m_chunk->Stage(entity.m_row, column) & kActive))
+        if (traversal && !(entity.m_chunk->Stage(entity.m_row, column) & kActive))
             return nullptr;
         return entity.m_chunk->Get(entity.m_row, column);
     }

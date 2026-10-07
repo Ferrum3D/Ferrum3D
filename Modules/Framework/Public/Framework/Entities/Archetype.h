@@ -24,6 +24,7 @@ namespace FE::Framework
         festd::vector<Entity*> m_entities;
         // Lifecycle metadata follows rows on compaction/migration; objects have no framework base or vtable.
         festd::vector<uint8_t> m_stages;
+        festd::vector<uint64_t> m_versions;
         uint32_t m_count = 0;
         ArchetypeChunk(Archetype& archetype, EntityRegistry& registry);
         ~ArchetypeChunk();

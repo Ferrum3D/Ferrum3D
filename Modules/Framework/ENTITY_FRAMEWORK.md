@@ -1,6 +1,6 @@
-# Entity framework runtime (Stages 1–5)
+# Entity framework runtime (Stages 1–6 and Stage 7 change tracking)
 
-`FeFramework` depends on Core only. The runtime and `FeFrameworkTests` require no graphics device. Parallel policies, executing Parent/Cascade terms, transforms, and asset materialization belong to the later milestones.
+`FeFramework` depends on Core only. The runtime and `FeFrameworkTests` require no graphics device. The base entity runtime, scheduler, generic change tracking and their tests stay in Framework. Engine systems live in `FeGameFramework`; its TransformationSystem begins Stage 7. Graphics systems will be implemented there in Stage 10.
 
 ## Ownership and safe points
 
@@ -69,4 +69,22 @@ Declare application phase IDs with `FE_DECLARE_ENTITY_PHASE` at namespace scope.
 
 `Query<const T>` reads a required active component; `Query<T>` writes it. Pointer terms are optional and may be null. Callback signatures may have a leading `Entity&`. Development checks prevent component lookup through Entity from exceeding the traversal's access declarations. Exact types match; inheritance does not. Column mappings are cached by canonical archetype for each traversal; chunk rows are resolved afresh after intervening structural stages.
 
-Completions are unsignaled when submitted and signal after execution/bookkeeping, including empty queries. Serial execution obeys prerequisites regardless of collection order. System collection cannot inspect component storage or wait on its deferred groups. Captured references must outlive the epoch; move/copy captures are arena-owned until EndUpdate. Unexecuted work is canceled and its completion released at EndUpdate, which reports failure. Parent read-only terms, CascadeQuery and the parallel policy names compile for API examples; execution explicitly rejects those features until Stage 6. The default and explicitly selected `ExecutionPolicy::kSequential` both execute serially.
+Completions are unsignaled when submitted and signal after execution/bookkeeping, including empty queries. Serial execution obeys prerequisites regardless of collection order. System collection cannot inspect component storage or wait on its deferred groups. Captured references must outlive the epoch; move/copy captures are arena-owned until EndUpdate. Unexecuted work is canceled and its completion released at EndUpdate, which reports failure. Callbacks run on Core job fibers. `ExecutionPolicy::kSequential` serializes a traversal's callbacks; traversals from the same system also receive exclusion edges when either uses sequential policy. `kParallelChunks` runs ordinary queries in independent chunk jobs. `kParallelHierarchyTrees` requires CascadeQuery and batches up to 16 root trees per job; each tree completes parent callbacks before visiting children, including through ancestors excluded by self terms. ParallelChunks is rejected for cascade queries, and for parent reads that alias self writes.
+
+`Parent<const T>` reads the required active immediate parent component; `Parent<const T*>` supplies null for a root, inactive parent, or missing component. It never searches more distant ancestors. Parent terms participate in type-wide conflicts. Entity lookup inside a callback is checked against both the declared component access and its self/parent source. Callback access context stays with the fiber across suspension and worker migration.
+
+The scheduler validates explicit prerequisites first, then adds acyclic component write/read and write/write exclusions. Read/read traversals from independent systems or application submissions can overlap. Captured objects and external services remain the caller's synchronization responsibility. Core's non-recursive `Threading::FiberMutex` suspends a contending fiber and hands ownership to queued waiters without blocking a worker. Stage 6 also corrects the scheduler queue's empty PushFront tail handling, preventing subsequent enqueues from discarding ready jobs or fibers. Systems must not wait on work whose execution depends on their own completion.
+
+`GetScheduleDiagnostics()` reports component conflict, system and stage edges, internal jobs, included chunks, tree batches and callbacks. `GetScheduleConflicts()` reports conflicting component IDs and the oriented traversal indices; its view lasts until the next BeginUpdate. Execution is also instrumented with profiler zones.
+
+## Generic change tracking (Stage 7 foundation)
+
+```cpp
+ChangeCursor renderChanges; // Retain independently for each consumer.
+Query<const Position>::TraverseChanged(context, Phases::PostUpdate, renderChanges,
+    [](const Position& position) { /* process changed chunks */ });
+```
+
+A cursor is caller-owned and must outlive the epoch. Use a separate cursor for each consumer/query; consuming one cursor twice in an epoch is rejected. Submission does not advance it. Completion publishes writable chunk-column versions and advances the successful consumer. Changed queries operate at chunk granularity and may conservatively invoke callbacks for untouched rows. Migration forces conservative reprocessing so pending changes cannot disappear; activation and reparenting mark affected storage changed. Cascade filtering also observes hierarchy revisions and parent-column writes, and conservatively includes all matching descendants when input changes. Direct safe-point component edits must go through replacement commands to publish changes.
+
+Stage 7 remains in progress: PreserveWorld/PreserveLocal reparent command integration and singular-parent rejection are not implemented yet. SetParent currently changes topology without adjusting authored component values.

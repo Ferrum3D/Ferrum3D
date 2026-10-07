@@ -1,8 +1,10 @@
 ï»¿# Entity framework implementation plan
 
-Status: Stages 1–5 implemented in `Modules/Framework`; see `Modules/Framework/ENTITY_FRAMEWORK.md` for the finalized runtime API and ownership contracts. Stages 6–11 remain planned.
+Status: Stages 1–6 implemented in `Modules/Framework`. Stage 7 is in progress: generic change tracking is in Framework; affine transform components and TransformationSystem are in the new `Modules/GameFramework` project. PreserveWorld reparent command integration remains pending. Stages 8–11 remain planned. See `Modules/Framework/ENTITY_FRAMEWORK.md` and `Modules/GameFramework/README.md`.
 
 This plan replaces the old `Modules/Framework/.../Entities` prototype with a hybrid entity/ECS framework. Entity objects provide stable identity and hierarchy. Components reside in packed archetype chunks. World systems submit deferred query work into application-scheduled phases. Assets describe worlds, reusable collections, and persistent placements; registries own runtime entity groups and residency without defining simulation boundaries.
+
+All engine systems and engine-specific components belong to `Modules/GameFramework`; Framework retains the reusable entity runtime and its tests. Graphics resource/rendering implementations stay in Graphics, with their entity systems in GameFramework.
 
 The decisions below are the starting contract. Changes to that contract should update this document before changing dependent APIs.
 
@@ -412,7 +414,7 @@ Dependencies: Stages 3, 5, and 6.
 Work:
 
 - Implement chunk-column write versions, independent changed consumers, activation/migration change handling, and hierarchy invalidation.
-- Add reflected authored affine TransformComponent, optional NonUniformScaleComponent, transient WorldTransformComponent, and TransformationSystem.
+- Add reflected authored affine TransformComponent, optional NonUniformScaleComponent, transient WorldTransformComponent, and TransformationSystem in GameFramework.
 - Implement default PreserveWorld reparent command handler and explicit PreserveLocal.
 
 Acceptance:
@@ -448,7 +450,7 @@ Work:
 
 - Implement EntityWorldAsset definitions and explicit world construction with application-provided system factories/service bindings.
 - Implement full concrete snapshot capture/restore, ownership-group keys, persistent placement bookkeeping, and UUID-preserving reload.
-- Add a world streaming system that owns placement requests and runtime registries without adding simulation boundaries.
+- Add a world streaming system in GameFramework that owns placement requests and runtime registries without adding simulation boundaries.
 - Support registry load/unload requests and failed/canceled operation diagnostics.
 
 Acceptance:
@@ -465,7 +467,7 @@ Dependencies: Stages 7 through 9.
 
 Work:
 
-- Add graphics mesh/camera components as needed and render world systems in Graphics. Store scene instance handles as transient state; preserve component relocatability.
+- Add graphics mesh/camera components as needed and render world systems in GameFramework. Store scene instance handles as transient state; preserve component relocatability.
 - Activation/deactivation creates/destroys graphics membership at safe points; scheduled sequential extraction updates changed transforms/material state.
 - Order extraction after transformation completion and before existing graphics scene processing/render submission. Avoid renderer-side raw component pointers.
 - Add a sample that loads a world with a persistent hierarchy, streams a second registry, repeatedly spawns an effect collection, reparents an entity, and saves/restores modified state.

@@ -70,6 +70,7 @@ namespace FE::Framework
     {
         m_data = static_cast<std::byte*>(Memory::DefaultAllocate(archetype.m_byteSize, archetype.m_alignment));
         m_entities.resize(archetype.m_capacity, nullptr);
+        m_versions.resize(archetype.m_columns.size(), 0);
         m_stages.resize(archetype.m_capacity * archetype.m_columns.size(), 0);
     }
 
