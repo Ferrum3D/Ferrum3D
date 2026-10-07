@@ -106,6 +106,7 @@ namespace FE::Framework
                 cursor);
         }
 
+
         template<class Callable>
         static Rc<WaitGroup> TraverseChanged(EntityUpdateContext& context, Phase phase, ChangeCursor& cursor, Callable&& callable,
                                              ExecutionPolicy policy = ExecutionPolicy::kSequential)

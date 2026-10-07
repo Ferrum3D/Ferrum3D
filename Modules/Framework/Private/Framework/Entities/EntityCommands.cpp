@@ -3,29 +3,116 @@
 
 namespace FE::Framework
 {
+    namespace
+    {
+        bool DestructionContains(const EntityWorld& world, const Command& command, const EntityID target)
+        {
+            if (command.m_kind != CommandKind::kDestroy)
+                return false;
+
+            for (const Entity* current = world.Find(target); current; current = current->GetParent())
+            {
+                if (current->GetID() == command.m_target.m_id)
+                    return true;
+            }
+            return false;
+        }
+
+
+        const EntityRegistry* GetCommandRegistry(const EntityWorld& world, const Command& command)
+        {
+            if (command.m_registry)
+                return command.m_registry;
+
+            const Entity* entity = world.Find(command.m_target.m_id);
+            return entity ? &entity->GetRegistry() : nullptr;
+        }
+
+
+        bool CommandsConflict(const EntityWorld& world, const Command& first, const Command& second)
+        {
+            if (first.m_target.m_id.m_value && first.m_target.m_id == second.m_target.m_id)
+                return true;
+
+            if (DestructionContains(world, first, second.m_target.m_id)
+                || DestructionContains(world, second, first.m_target.m_id))
+            {
+                return true;
+            }
+            if (DestructionContains(world, first, second.m_parent.m_id)
+                || DestructionContains(world, second, first.m_parent.m_id))
+            {
+                return true;
+            }
+
+            if (first.m_kind == CommandKind::kParent && second.m_kind == CommandKind::kParent)
+            {
+                if (first.m_parent.m_id.m_value && first.m_parent.m_id == second.m_target.m_id)
+                    return true;
+                if (second.m_parent.m_id.m_value && second.m_parent.m_id == first.m_target.m_id)
+                    return true;
+            }
+
+            if (first.m_kind != CommandKind::kUnloadRegistry && second.m_kind != CommandKind::kUnloadRegistry)
+                return false;
+
+            const EntityRegistry* firstRegistry = GetCommandRegistry(world, first);
+            return firstRegistry && firstRegistry == GetCommandRegistry(world, second);
+        }
+
+
+        bool CommandListsConflict(const EntityWorld& world, const festd::span<const Command> first,
+                                  const festd::span<const Command> second)
+        {
+            for (const auto& firstCommand : first)
+            {
+                for (const auto& secondCommand : second)
+                {
+                    if (CommandsConflict(world, firstCommand, secondCommand))
+                        return true;
+                }
+            }
+            return false;
+        }
+    } // namespace
+
+
     void EntityWorld::Submit(EntityCommandList&& commands)
     {
         FE_Assert(commands.m_impl && commands.m_impl->m_world == this);
+
         std::lock_guard lock{ m_impl->m_commandLock };
         auto& list = *commands.m_impl;
         list.m_eligibleEpoch = m_impl->m_epoch;
+
         bool hasPublication = false;
-        festd::vector<EntityID> deferredTargets;
-        festd::vector<EntityID> destroyedTargets;
+        bool hasHierarchyEdits = false;
         for (const auto& command : list.m_commands)
         {
             hasPublication |= command.m_kind == CommandKind::kCreate || command.m_kind == CommandKind::kComponent;
+            hasHierarchyEdits |= command.m_kind == CommandKind::kParent;
+        }
+
+        // Preserve detach/destroy recording order when a hierarchy batch also needs deferred publication.
+        if (!hasPublication || hasHierarchyEdits)
+        {
+            if (hasPublication)
+                ++list.m_eligibleEpoch;
+            m_impl->m_commands.push_back(std::exchange(commands.m_impl, nullptr));
+            return;
+        }
+
+        festd::inline_vector<EntityID> deferredTargets;
+        festd::inline_vector<EntityID> destroyedTargets;
+        for (const auto& command : list.m_commands)
+        {
             if (command.m_kind == CommandKind::kComponent && command.m_target.m_id.m_value)
                 deferredTargets.push_back(command.m_target.m_id);
             if (command.m_kind == CommandKind::kDestroy && command.m_target.m_id.m_value)
                 destroyedTargets.push_back(command.m_target.m_id);
         }
-        if (!hasPublication)
-        {
-            m_impl->m_commands.push_back(std::exchange(commands.m_impl, nullptr));
-            return;
-        }
-        // Keep token/hierarchy batches together. Independent existing targets can commit without waiting for creations.
+
+        // Independent existing targets can commit without waiting for creations.
         auto* immediate = Memory::DefaultNew<EntityCommandList::Impl>(*this);
         immediate->m_id = list.m_id;
         immediate->m_eligibleEpoch = m_impl->m_epoch;
@@ -37,8 +124,8 @@ namespace FE::Framework
             const bool needsPublication =
                 !destroyed && festd::find(deferredTargets, command.m_target.m_id) != deferredTargets.end();
             const bool tokenCommand = command.m_target.m_token.m_list || command.m_parent.m_token.m_list;
-            const bool isImmediate =
-                command.m_target.m_id.m_value && !tokenCommand && !needsPublication && command.m_kind != CommandKind::kParent;
+            const bool isImmediate = command.m_target.m_id.m_value && !tokenCommand && !needsPublication;
+
             if (destroyed && command.m_kind == CommandKind::kComponent)
             {
                 command.m_component->m_type->m_destructor(command.m_payload);
@@ -81,7 +168,9 @@ namespace FE::Framework
         FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
         if (m_impl->m_collecting || m_impl->m_executing)
             return Fail("Structural commit requires a safe boundary");
+
         m_impl->m_error = {};
+
         festd::vector<EntityCommandList::Impl*> ready;
         {
             std::lock_guard lock{ m_impl->m_commandLock };
@@ -102,51 +191,19 @@ namespace FE::Framework
             for (auto* list : ready)
                 Memory::DefaultDelete(list);
         });
-        auto destructionContains = [&](const Command& command, EntityID target) {
-            if (command.m_kind != CommandKind::kDestroy)
-                return false;
-            for (const Entity* current = Find(target); current; current = current->GetParent())
-            {
-                if (current->GetID() == command.m_target.m_id)
-                    return true;
-            }
-            return false;
-        };
-
-
         festd::vector<bool> conflicts(ready.size(), false);
-        for (uint32_t i = 0; i < ready.size(); ++i)
+        for (uint32_t first = 0; first < ready.size(); ++first)
         {
-            for (uint32_t j = i + 1; j < ready.size(); ++j)
+            for (uint32_t second = first + 1; second < ready.size(); ++second)
             {
-                if (ready[i]->m_id == ready[j]->m_id)
+                if (ready[first]->m_id == ready[second]->m_id)
                     continue;
-                for (const auto& a : ready[i]->m_commands)
-                {
-                    for (const auto& b : ready[j]->m_commands)
-                    {
-                        bool same = a.m_target.m_id.m_value != 0 && a.m_target.m_id == b.m_target.m_id;
-                        same |= destructionContains(a, b.m_target.m_id) || destructionContains(b, a.m_target.m_id);
-                        same |= destructionContains(a, b.m_parent.m_id) || destructionContains(b, a.m_parent.m_id);
-                        if (a.m_kind == CommandKind::kParent && b.m_kind == CommandKind::kParent)
-                        {
-                            same |= a.m_parent.m_id.m_value && a.m_parent.m_id == b.m_target.m_id;
-                            same |= b.m_parent.m_id.m_value && b.m_parent.m_id == a.m_target.m_id;
-                        }
-                        if (a.m_kind == CommandKind::kUnloadRegistry || b.m_kind == CommandKind::kUnloadRegistry)
-                        {
-                            Entity* ae = Find(a.m_target.m_id);
-                            Entity* be = Find(b.m_target.m_id);
-                            const auto* ar = a.m_registry ? a.m_registry : ae ? ae->m_registry : nullptr;
-                            const auto* br = b.m_registry ? b.m_registry : be ? be->m_registry : nullptr;
-                            same |= ar && ar == br;
-                        }
-                        if (same)
-                            conflicts[i] = conflicts[j] = true;
-                    }
-                }
+
+                if (CommandListsConflict(*this, ready[first]->m_commands, ready[second]->m_commands))
+                    conflicts[first] = conflicts[second] = true;
             }
         }
+
         bool success = true;
         for (uint32_t listIndex = 0; listIndex < ready.size(); ++listIndex)
         {
@@ -189,6 +246,7 @@ namespace FE::Framework
             {
                 if (!slot.m_entity)
                     continue;
+
                 const Entity& entity = *slot.m_entity;
                 Edit edit;
                 edit.m_entity = slot.m_entity;
@@ -202,10 +260,10 @@ namespace FE::Framework
                 edits.push_back(std::move(edit));
             }
 
-
             auto entityIndex = [&](Entity* entity) {
                 if (!entity)
                     return kInvalidIndex;
+
                 for (uint32_t i = 0; i < edits.size(); ++i)
                 {
                     if (edits[i].m_entity == entity)
@@ -215,6 +273,7 @@ namespace FE::Framework
             };
             for (auto& edit : edits)
                 edit.m_parent = entityIndex(edit.m_entity->m_parent);
+
             auto resolve = [&](const EntityTarget& target) {
                 if (target.m_token.m_list)
                 {
@@ -224,6 +283,7 @@ namespace FE::Framework
                 }
                 return entityIndex(Find(target.m_id));
             };
+
             struct EditContext
             {
                 festd::vector<Edit>* m_edits;
@@ -233,6 +293,7 @@ namespace FE::Framework
                 auto& context = *static_cast<EditContext*>(data);
                 if (index >= context.m_edits->size())
                     return nullptr;
+
                 auto& edit = (*context.m_edits)[index];
                 auto value = festd::find_if(edit.m_values.begin(), edit.m_values.end(), [&](const Value& item) {
                     return item.m_info->m_type->m_id == type;
@@ -241,12 +302,15 @@ namespace FE::Framework
                     return nullptr;
                 if (value->m_value)
                     return value->m_value;
+
                 void* source = edit.m_entity ? edit.m_entity->FindComponent(type) : nullptr;
                 if (!write)
                     return source;
+
                 const auto& rtti = *value->m_info->m_type;
                 if (!source || !rtti.m_copyConstructor)
                     return nullptr;
+
                 void* storage = context.m_list->m_arena.allocate(rtti.m_size, rtti.m_alignment);
                 if (!storage)
                 {
@@ -259,6 +323,7 @@ namespace FE::Framework
                 edit.m_componentsChanged = true;
                 return storage;
             };
+
             bool valid = true;
             for (const auto& command : list.m_commands)
             {
@@ -309,6 +374,7 @@ namespace FE::Framework
                 auto& edit = edits[index];
                 if (edit.m_destroy)
                     continue;
+
                 edit.m_touched = true;
                 switch (command.m_kind)
                 {
@@ -392,6 +458,7 @@ namespace FE::Framework
                 if (!valid)
                     break;
             }
+
             for (uint32_t i = 0; valid && i < edits.size(); ++i)
             {
                 uint32_t ancestor = edits[i].m_parent;
@@ -435,6 +502,7 @@ namespace FE::Framework
                 success = false;
                 continue;
             }
+
             // No entity/link/storage mutation precedes validation of the complete list.
             for (auto& edit : edits)
             {
@@ -444,10 +512,12 @@ namespace FE::Framework
                     edit.m_entity->m_runtime->m_residencyScope = edit.m_residency;
                 }
             }
+
             for (auto& edit : edits)
             {
-                if (!edit.m_touched || !edit.m_entity)
+                if (!edit.m_touched || !edit.m_entity || edit.m_destroy)
                     continue;
+
                 Entity& entity = *edit.m_entity;
                 entity.m_name = edit.m_name;
                 if (edit.m_created || edit.m_componentsChanged)
@@ -466,6 +536,7 @@ namespace FE::Framework
                     MarkUnready(entity);
                 entity.m_wantsActive = edit.m_wantsActive;
             }
+
             // Detach changed links first so a valid final topology cannot temporarily form a cycle.
             for (auto& edit : edits)
             {
@@ -477,11 +548,19 @@ namespace FE::Framework
                 if (edit.m_parentChanged && edit.m_entity && edit.m_parent != kInvalidIndex)
                     Reparent(*edit.m_entity, edits[edit.m_parent].m_entity);
             }
+
             for (auto& edit : edits)
             {
                 Entity* entity = Find(edit.m_uuid, false);
                 if (!entity || !edit.m_touched)
                     continue;
+
+                if (edit.m_destroy)
+                {
+                    DestroyEntity(*entity);
+                    continue;
+                }
+
                 if (!edit.m_wantsActive)
                     DeactivateSubtree(*entity);
                 if (edit.m_unload)
@@ -498,8 +577,6 @@ namespace FE::Framework
                     };
                     unload(unload, *entity);
                 }
-                if (edit.m_destroy)
-                    DestroyEntity(*entity);
             }
             for (auto* registry : unloadRegistries)
                 RemoveRegistry(*registry);

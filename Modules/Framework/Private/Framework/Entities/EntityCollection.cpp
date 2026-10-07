@@ -45,6 +45,7 @@ namespace FE::Framework
     {
         if (!value || !type.m_serialize || !type.m_deserialize || !type.m_defaultConstructor)
             return false;
+
         for (const auto& component : entity.m_components)
         {
             if (component.m_type == type.m_id)
@@ -74,10 +75,12 @@ namespace FE::Framework
             });
         if (context.Store(type, value) != Serialization::ResultCode::kSuccess)
             return false;
+
         festd::pmr::vector<std::byte> bytes;
         stream.DumpAll(bytes);
         if (bytes.size() > UINT32_MAX || m_payload.size() > UINT32_MAX - bytes.size())
             return false;
+
         record.m_payloadOffset = static_cast<uint32_t>(m_payload.size());
         record.m_payloadSize = static_cast<uint32_t>(bytes.size());
         for (const auto byte : bytes)
@@ -94,6 +97,7 @@ namespace FE::Framework
             const auto& entity = m_entities[index];
             if (!entity.m_uuid.IsValid())
                 return false;
+
             for (uint32_t other = 0; other < index; ++other)
             {
                 if (m_entities[other].m_uuid == entity.m_uuid)
@@ -105,11 +109,13 @@ namespace FE::Framework
             {
                 if (++depth > m_entities.size())
                     return false;
+
                 auto found = festd::find_if(m_entities.begin(), m_entities.end(), [&](const auto& record) {
                     return record.m_uuid == parent;
                 });
                 if (found == m_entities.end())
                     return false;
+
                 parent = found->m_parentUuid;
             }
             for (uint32_t column = 0; column < entity.m_components.size(); ++column)
@@ -119,6 +125,7 @@ namespace FE::Framework
                     return false;
                 if (component.m_payloadSize > m_payload.size() - component.m_payloadOffset)
                     return false;
+
                 for (uint32_t other = 0; other < column; ++other)
                 {
                     if (entity.m_components[other].m_type == component.m_type)
@@ -142,6 +149,7 @@ namespace FE::Framework
     {
         if (!Validate())
             return false;
+
         for (const auto& entity : m_entities)
         {
             for (const auto& component : entity.m_components)
@@ -165,13 +173,16 @@ namespace FE::Framework
                 Serialization::DeserializationContext context(&stream, format);
                 if (context.Load(*type, data) != Serialization::ResultCode::kSuccess || stream.Tell() != stream.Length())
                     return false;
+
                 EntityCollection verified;
                 EntityRecord record;
                 if (!verified.CookComponent(record, *type, data))
                     return false;
+
                 const auto& dependencies = record.m_components.front().m_dependencies;
                 if (dependencies.size() != component.m_dependencies.size())
                     return false;
+
                 for (const auto& expected : dependencies)
                 {
                     const auto found =
@@ -214,6 +225,7 @@ namespace FE::Framework
     {
         if (!Validate())
             return false;
+
         EntityCollectionInstanceAsset copy = *this;
         festd::vector<EntityUuidBinding> remapping;
         copy.m_rootUuid = NewEntityUuid();
@@ -234,6 +246,7 @@ namespace FE::Framework
                 return false;
             if (type->m_serializationVersion != component.m_version || type->m_serializationSchemaHash != component.m_schemaHash)
                 return false;
+
             void* data = Memory::DefaultAllocate(type->m_size, type->m_alignment);
             type->m_defaultConstructor(data);
             auto cleanup = festd::defer([&] {
@@ -277,6 +290,7 @@ namespace FE::Framework
             const auto& binding = m_bindings[index];
             if (!binding.m_sourceUuid.IsValid() || !binding.m_entityUuid.IsValid() || binding.m_entityUuid == m_rootUuid)
                 return false;
+
             for (uint32_t other = 0; other < index; ++other)
             {
                 if (m_bindings[other].m_sourceUuid == binding.m_sourceUuid
@@ -294,6 +308,7 @@ namespace FE::Framework
     {
         if (!Validate() || !collection.Validate() || m_bindings.size() != collection.m_entities.size())
             return false;
+
         for (const auto& binding : m_bindings)
         {
             const auto found =

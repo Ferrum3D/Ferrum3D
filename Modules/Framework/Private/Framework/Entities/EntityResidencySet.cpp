@@ -16,6 +16,7 @@ namespace FE::Framework
             return LifecycleResult::kPending;
         if (result != IO::AssetLoadResult::kSucceeded)
             return LifecycleResult::kFailed;
+
         const auto* slot = request.m_request.GetAssetSlot();
         if (expectedType.IsValid() && (!slot || slot->m_typeId != expectedType))
             return LifecycleResult::kFailed;
@@ -40,6 +41,7 @@ namespace FE::Framework
     {
         if (!id.IsValid())
             return true;
+
         for (auto& entry : m_entries)
         {
             if (entry.m_id == id)

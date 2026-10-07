@@ -1332,3 +1332,151 @@ TEST_F(WorldFixture, SharedChangeCursorAndAliasingParallelParentTermsAreRejected
     EXPECT_FALSE(m_world.ExecuteSchedule());
     EXPECT_FALSE(m_world.EndUpdate());
 }
+
+
+TEST_F(WorldFixture, MixedPublicationPreservesDetachAndDestroyRecordingOrder)
+{
+    const Rtti::TypeID afterNumber[] = { Rtti::GetTypeID<Number>() };
+    ASSERT_TRUE(m_world.Components().Register<Extra>(afterNumber));
+
+    for (uint32_t scenario = 0; scenario < 2; ++scenario)
+    {
+        EntityCommandList setup(m_world);
+        auto parent = setup.CreateEntity(m_registry, {}, kRoot);
+        auto child = setup.CreateEntity(m_registry, {}, kChild);
+        setup.SetParent(child, parent);
+        m_world.Submit(std::move(setup));
+        if (scenario == 0)
+            ASSERT_TRUE(m_world.CommitBootstrap());
+        else
+        {
+            m_world.BeginUpdate();
+            ASSERT_TRUE(m_world.EndUpdate());
+        }
+
+        const EntityID parentId = m_world.Find(kRoot)->GetID();
+        const EntityID childId = m_world.Find(kChild)->GetID();
+        m_world.BeginUpdate();
+        EntityCommandList edits(m_world);
+        edits.CreateEntity(m_registry, {}, kOther);
+        edits.AddComponent(parentId, Extra{ 42 });
+        if (scenario == 0)
+            edits.SetParent(childId);
+        edits.Destroy(parentId);
+        if (scenario == 1)
+            edits.SetParent(childId);
+        m_world.Submit(std::move(edits));
+        ASSERT_TRUE(m_world.Commit());
+        ASSERT_TRUE(m_world.EndUpdate());
+
+        m_world.BeginUpdate();
+        EXPECT_EQ(m_world.Find(parentId), nullptr);
+        EXPECT_NE(m_world.Find(kOther), nullptr);
+        EXPECT_EQ(m_world.Find(childId) != nullptr, scenario == 0);
+        if (scenario == 0)
+        {
+            Entity* survivor = m_world.Find(childId);
+            ASSERT_NE(survivor, nullptr);
+            EXPECT_EQ(survivor->GetParent(), nullptr);
+        }
+        ASSERT_TRUE(m_world.EndUpdate());
+
+        EntityCommandList cleanup(m_world);
+        cleanup.Destroy(m_world.Find(kOther)->GetID());
+        if (scenario == 0)
+            cleanup.Destroy(childId);
+        m_world.Submit(std::move(cleanup));
+        ASSERT_TRUE(m_world.Commit());
+    }
+}
+
+
+TEST_F(WorldFixture, DeliberatelyInactiveChildDoesNotBlockParentActivation)
+{
+    EntityCommandList setup(m_world);
+    auto parent = setup.CreateEntity(m_registry, {}, kRoot);
+    auto child = setup.CreateEntity(m_registry, {}, kChild);
+    setup.AddComponent(parent, Hook{ 1 });
+    setup.AddComponent(child, Hook{ 2 });
+    setup.SetParent(child, parent);
+    setup.SetActive(child, false);
+    m_world.Submit(std::move(setup));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    Entity* root = m_world.Find(kRoot, false);
+    Entity* inactiveChild = m_world.Find(kChild, false);
+    ASSERT_NE(root, nullptr);
+    ASSERT_NE(inactiveChild, nullptr);
+    EXPECT_TRUE(root->IsActive());
+    EXPECT_FALSE(inactiveChild->IsActive());
+    EXPECT_EQ(Hook::s_trace, (festd::vector<int32_t>{ 11, 12, 13 }));
+
+    EntityCommandList deactivate(m_world);
+    deactivate.SetActive(root->GetID(), false);
+    m_world.Submit(std::move(deactivate));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EntityCommandList reactivate(m_world);
+    reactivate.SetActive(root->GetID(), true);
+    m_world.Submit(std::move(reactivate));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_TRUE(root->IsActive());
+    EXPECT_FALSE(inactiveChild->IsActive());
+}
+
+
+TEST_F(WorldFixture, CommittedReplacementSurvivesDeactivation)
+{
+    Entity& entity = Spawn();
+    EntityCommandList edits(m_world);
+    edits.ReplaceComponent(entity.GetID(), Number{ 42 });
+    edits.SetActive(entity.GetID(), false);
+    m_world.Submit(std::move(edits));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_FALSE(entity.IsActive());
+    EXPECT_EQ(entity.FindComponent<Number>()->m_value, 42);
+
+    EntityCommandList reactivate(m_world);
+    reactivate.SetActive(entity.GetID(), true);
+    m_world.Submit(std::move(reactivate));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_TRUE(entity.IsActive());
+    EXPECT_EQ(entity.FindComponent<Number>()->m_value, 42);
+}
+
+
+TEST_F(WorldFixture, DeactivationCancelsCandidateLoadingButRetainsItsAuthoredValue)
+{
+    m_assets.m_status = LifecycleResult::kSucceeded;
+    EntityCommandList setup(m_world);
+    auto entity = setup.CreateEntity(m_registry, {}, kRoot);
+    setup.AddComponent(entity, AssetComponent{ IO::Link<Number>(kAsset), {} });
+    m_world.Submit(std::move(setup));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    const EntityID id = m_world.Find(kRoot)->GetID();
+
+    m_assets.m_status = LifecycleResult::kPending;
+    EntityCommandList replacement(m_world);
+    replacement.ReplaceComponent(id, AssetComponent{ IO::Link<Number>(kOther), {} });
+    m_world.Submit(std::move(replacement));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_EQ(m_assets.m_acquires, 2);
+    EXPECT_EQ(m_assets.m_releases, 0);
+
+    EntityCommandList deactivate(m_world);
+    deactivate.SetActive(id, false);
+    m_world.Submit(std::move(deactivate));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    Entity* inactive = m_world.Find(id);
+    ASSERT_NE(inactive, nullptr);
+    EXPECT_FALSE(inactive->IsActive());
+    EXPECT_EQ(inactive->FindComponent<AssetComponent>()->m_hard.GetAssetID(), kOther);
+    EXPECT_EQ(m_assets.m_releases, 2);
+
+    m_assets.m_status = LifecycleResult::kSucceeded;
+    EntityCommandList reactivate(m_world);
+    reactivate.SetActive(id, true);
+    m_world.Submit(std::move(reactivate));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_TRUE(inactive->IsActive());
+    EXPECT_EQ(inactive->FindComponent<AssetComponent>()->m_hard.GetAssetID(), kOther);
+    EXPECT_EQ(m_assets.m_acquires, 3);
+}

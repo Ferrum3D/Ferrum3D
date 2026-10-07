@@ -16,6 +16,8 @@ namespace FE::Framework
         EntityID m_id;
         EntityToken m_token;
         EntityTarget() = default;
+
+
         EntityTarget(EntityID id)
             : m_id(id)
         {
@@ -63,6 +65,7 @@ namespace FE::Framework
             const auto* info = Register<Value>();
             if (!info)
                 return false;
+
             void* storage = AllocatePayload(info->m_type->m_size, info->m_type->m_alignment);
             ::new (storage) Value(std::forward<T>(value));
             RecordComponent(target, *info, storage);

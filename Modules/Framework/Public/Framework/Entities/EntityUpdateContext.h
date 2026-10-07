@@ -16,6 +16,8 @@ namespace FE::Framework
     {
         virtual ~WorldSystem() = default;
         virtual void Init(EntityWorld&) {}
+
+
         virtual void Shutdown(EntityWorld&) {}
         virtual void Update(EntityUpdateContext&) = 0;
     };

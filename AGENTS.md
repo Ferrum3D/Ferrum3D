@@ -6,6 +6,8 @@ Scope: this file applies to the whole repository.
 
 - `FerrumCore/` contains the core runtime library. Public API headers live under `FerrumCore/Public`, implementation details under `FerrumCore/Private`, and tests under `FerrumCore/Tests`.
 - `Modules/` contains engine modules. Modules follow the same `Public` and `Private` split used by `FerrumCore`.
+- `Modules/Framework/` contains the generic entity runtime, command processing, lifecycle, queries, scheduling, and collection assets. Keep engine-independent runtime tests in `Modules/Framework/Tests` (`FeFrameworkTests` and `FeFrameworkAssetTests`).
+- `Modules/GameFramework/` contains engine-specific components and systems, including transforms and future graphics or streaming integration. Keep these systems out of Framework; their tests live in `Modules/GameFramework/Tests` (`FeGameFrameworkTests`).
 - `Modules/Graphics/Core/` is the low-level graphics module. Backend-independent public interfaces live in `Public/Graphics/Core`, shared private implementation lives in `Private/Graphics/Core/Common`, and Vulkan-specific implementation lives in `Private/Graphics/Core/Vulkan`.
 - `Samples/` contains sample applications such as `FrameGraph` and `Renderer`.
 - `Tools/` contains standalone tools such as `AssetBuilder` and `TextureCompressor`.

@@ -84,6 +84,7 @@ namespace FE::Framework
             static_assert(std::is_invocable_r_v<void, Function&>, "Application stage callback takes no arguments");
             if (!SchedulePhase(stage))
                 return {};
+
             void* storage = AllocateTraversal(sizeof(Function), alignof(Function));
             ::new (storage) Function(std::forward<Callable>(callable));
             return RecordStage(
@@ -141,7 +142,7 @@ namespace FE::Framework
         void UnwindSubtree(Entity& entity);
         bool PrepareSubtree(Entity& entity);
         bool ActivateSubtree(Entity& entity);
-        void DeactivateSubtree(Entity& entity);
+        void DeactivateSubtree(Entity& entity, bool keepAuthoredValues = true);
         void TeardownComponent(Entity& entity, uint32_t column, bool destroy);
         EntityResidencySet& ResidencyOwner(Entity& entity);
         void ReleaseAssets(Entity& entity, Rtti::TypeID component, uint64_t transition = 0);
@@ -149,6 +150,6 @@ namespace FE::Framework
                                   uint64_t transition = 0);
         void TeardownValue(Entity& entity, const EntityComponentInfo& info, void* data, uint8_t& stage, uint64_t transition = 0);
         void AdvanceReplacements(Entity& entity);
-        void CancelReplacements(Entity& entity, Rtti::TypeID type = Rtti::TypeID::kNull);
+        void CancelReplacements(Entity& entity, Rtti::TypeID type = Rtti::TypeID::kNull, bool keepAuthoredValues = false);
     };
 } // namespace FE::Framework

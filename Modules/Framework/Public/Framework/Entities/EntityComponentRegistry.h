@@ -69,23 +69,23 @@ namespace FE::Framework
                 m_lastError = "Chunk components require RTTI move construction, a no-throw move, and destruction";
                 return false;
             }
-            constexpr bool hasLoad = requires(T& c, ComponentLoadingContext& x) {
-                { c.Load(x) } -> std::same_as<LifecycleResult>;
+            constexpr bool hasLoad = requires(T& component, ComponentLoadingContext& context) {
+                { component.Load(context) } -> std::same_as<LifecycleResult>;
             };
-            constexpr bool hasUnload = requires(T& c, ComponentLoadingContext& x) {
-                { c.Unload(x) } -> std::same_as<void>;
+            constexpr bool hasUnload = requires(T& component, ComponentLoadingContext& context) {
+                { component.Unload(context) } -> std::same_as<void>;
             };
-            constexpr bool hasInit = requires(T& c, ComponentContext& x) {
-                { c.Init(x) } -> std::same_as<LifecycleResult>;
+            constexpr bool hasInit = requires(T& component, ComponentContext& context) {
+                { component.Init(context) } -> std::same_as<LifecycleResult>;
             };
-            constexpr bool hasShutdown = requires(T& c, ComponentContext& x) {
-                { c.Shutdown(x) } -> std::same_as<void>;
+            constexpr bool hasShutdown = requires(T& component, ComponentContext& context) {
+                { component.Shutdown(context) } -> std::same_as<void>;
             };
-            constexpr bool hasActivate = requires(T& c, ComponentContext& x) {
-                { c.Activate(x) } -> std::same_as<LifecycleResult>;
+            constexpr bool hasActivate = requires(T& component, ComponentContext& context) {
+                { component.Activate(context) } -> std::same_as<LifecycleResult>;
             };
-            constexpr bool hasDeactivate = requires(T& c, ComponentContext& x) {
-                { c.Deactivate(x) } -> std::same_as<void>;
+            constexpr bool hasDeactivate = requires(T& component, ComponentContext& context) {
+                { component.Deactivate(context) } -> std::same_as<void>;
             };
             static_assert(hasLoad == hasUnload, "Load/Unload must be paired and use ComponentLoadingContext");
             static_assert(hasInit == hasShutdown, "Init/Shutdown must be paired and use ComponentContext");
@@ -104,29 +104,29 @@ namespace FE::Framework
             entry->m_initAfter.assign(initAfter.begin(), initAfter.end());
             if constexpr (hasLoad)
             {
-                entry->m_load = [](void* c, ComponentLoadingContext& x) {
-                    return static_cast<T*>(c)->Load(x);
+                entry->m_load = [](void* component, ComponentLoadingContext& context) {
+                    return static_cast<T*>(component)->Load(context);
                 };
-                entry->m_unload = [](void* c, ComponentLoadingContext& x) {
-                    static_cast<T*>(c)->Unload(x);
+                entry->m_unload = [](void* component, ComponentLoadingContext& context) {
+                    static_cast<T*>(component)->Unload(context);
                 };
             }
             if constexpr (hasInit)
             {
-                entry->m_init = [](void* c, ComponentContext& x) {
-                    return static_cast<T*>(c)->Init(x);
+                entry->m_init = [](void* component, ComponentContext& context) {
+                    return static_cast<T*>(component)->Init(context);
                 };
-                entry->m_shutdown = [](void* c, ComponentContext& x) {
-                    static_cast<T*>(c)->Shutdown(x);
+                entry->m_shutdown = [](void* component, ComponentContext& context) {
+                    static_cast<T*>(component)->Shutdown(context);
                 };
             }
             if constexpr (hasActivate)
             {
-                entry->m_activate = [](void* c, ComponentContext& x) {
-                    return static_cast<T*>(c)->Activate(x);
+                entry->m_activate = [](void* component, ComponentContext& context) {
+                    return static_cast<T*>(component)->Activate(context);
                 };
-                entry->m_deactivate = [](void* c, ComponentContext& x) {
-                    static_cast<T*>(c)->Deactivate(x);
+                entry->m_deactivate = [](void* component, ComponentContext& context) {
+                    static_cast<T*>(component)->Deactivate(context);
                 };
             }
             m_entries.push_back(entry);

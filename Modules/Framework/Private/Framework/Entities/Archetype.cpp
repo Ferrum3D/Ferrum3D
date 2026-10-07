@@ -15,6 +15,7 @@ namespace FE::Framework
         m_byteSize = Math::Max(16u * 1024, AlignUp(rowSize, m_alignment));
         m_capacity = columns.empty() ? 1024 : Math::Max(1u, m_byteSize / rowSize);
         m_offsets.resize(columns.size());
+
         for (;; --m_capacity)
         {
             uint32_t offset = 0;
@@ -27,6 +28,7 @@ namespace FE::Framework
             if (offset <= m_byteSize)
                 break;
         }
+
         // Stable RTTI-ID order breaks ties in the explicitly declared initialization dependency graph.
         while (m_lifecycleOrder.size() < columns.size())
         {
@@ -35,6 +37,7 @@ namespace FE::Framework
             {
                 if (festd::find(m_lifecycleOrder, i) != m_lifecycleOrder.end())
                     continue;
+
                 bool ready = true;
                 for (const auto dependency : columns[i]->m_initAfter)
                 {
@@ -44,6 +47,7 @@ namespace FE::Framework
                 }
                 if (!ready)
                     continue;
+
                 m_lifecycleOrder.push_back(i);
                 progress = true;
             }

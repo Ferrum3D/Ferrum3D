@@ -16,10 +16,14 @@ namespace
         {
             m_world.AddSystem(m_system);
         }
+
+
         void TearDown() override
         {
             m_world.RemoveSystem(m_system);
         }
+
+
         void Tick()
         {
             m_world.BeginUpdate();
@@ -27,6 +31,8 @@ namespace
             ASSERT_TRUE(m_world.ExecuteSchedule());
             ASSERT_TRUE(m_world.EndUpdate());
         }
+
+
         EntityToken Add(EntityCommandList& commands, Uuid uuid, Matrix4x4 local)
         {
             auto token = commands.CreateEntity(m_registry, {}, uuid);
@@ -35,6 +41,8 @@ namespace
             return token;
         }
     };
+
+
     const Uuid kParent("a8cdb00d-20ce-4780-b08d-211d0f610001");
     const Uuid kChild("a8cdb00d-20ce-4780-b08d-211d0f610002");
 } // namespace
@@ -228,4 +236,36 @@ TEST_F(TransformationFixture, ManyShallowTreesPublishEveryDerivedTransform)
                         float(tree + 1));
     Tick();
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
+}
+
+
+TEST_F(TransformationFixture, PreserveWorldRetainsAdjustedLocalUnderInactiveParent)
+{
+    EntityCommandList setup(m_world);
+    Add(setup, kParent, Matrix4x4::Translation(Vector3(10, 0, 0)));
+    Add(setup, kChild, Matrix4x4::Translation(Vector3(7, 0, 0)));
+    m_world.Submit(std::move(setup));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    Tick();
+    Entity* parent = m_world.Find(kParent);
+    Entity* child = m_world.Find(kChild);
+
+    EntityCommandList deactivate(m_world);
+    deactivate.SetActive(parent->GetID(), false);
+    m_world.Submit(std::move(deactivate));
+    Tick();
+    EntityCommandList reparent(m_world);
+    reparent.SetParent(child->GetID(), parent->GetID());
+    m_world.Submit(std::move(reparent));
+    Tick();
+    EXPECT_EQ(child->GetParent(), parent);
+    EXPECT_FALSE(child->IsActive());
+    EXPECT_FLOAT_EQ(child->FindComponent<TransformComponent>()->m_local.m_30, -3);
+
+    EntityCommandList reactivate(m_world);
+    reactivate.SetActive(parent->GetID(), true);
+    m_world.Submit(std::move(reactivate));
+    Tick();
+    EXPECT_TRUE(child->IsActive());
+    EXPECT_FLOAT_EQ(child->FindComponent<WorldTransformComponent>()->m_world.m_30, 7);
 }

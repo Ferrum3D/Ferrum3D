@@ -105,6 +105,7 @@ namespace FE::Framework
     {
         if (!m_impl->m_updating || m_impl->m_validated || !prerequisite)
             return Fail("Prerequisite edits require an unvalidated epoch and a valid group");
+
         for (auto& traversal : m_impl->m_traversals)
         {
             if (traversal.m_completion.Get() == &completion)
@@ -123,6 +124,7 @@ namespace FE::Framework
     {
         if (!m_impl->m_updating || m_impl->m_validated || m_impl->m_executing)
             return Fail("Phase scheduling requires an unvalidated update epoch");
+
         for (const auto& scheduled : m_impl->m_phases)
         {
             if (scheduled.m_phase == phase)
@@ -144,6 +146,7 @@ namespace FE::Framework
             return true;
         if (!m_impl->m_updating || m_impl->m_scheduleFailed)
             return Fail("Invalid update schedule");
+
         auto phaseIndex = [&](Phase phase) {
             for (uint32_t i = 0; i < m_impl->m_phases.size(); ++i)
             {
@@ -166,9 +169,11 @@ namespace FE::Framework
                 return Fail("Cascade queries cannot use ParallelChunks");
             if (!traversal.m_cascade && traversal.m_policy == ExecutionPolicy::kParallelHierarchyTrees)
                 return Fail("ParallelHierarchyTrees requires a cascade query");
+
             const uint32_t phase = phaseIndex(traversal.m_phase);
             if (phase == kInvalidIndex)
                 return Fail("A submitted traversal phase was omitted");
+
             for (const auto& access : traversal.m_accesses)
             {
                 if (access.m_parent && traversal.m_policy == ExecutionPolicy::kParallelChunks)
@@ -186,6 +191,7 @@ namespace FE::Framework
             {
                 if (!group)
                     return Fail("Null traversal prerequisite");
+
                 const uint32_t producer = producerIndex(group);
                 if (producer != kInvalidIndex && phaseIndex(m_impl->m_traversals[producer].m_phase) > phase)
                     return Fail("Traversal depends on a later phase");
@@ -197,6 +203,7 @@ namespace FE::Framework
             {
                 if (!group)
                     return Fail("Null phase prerequisite");
+
                 const uint32_t producer = producerIndex(group);
                 if (producer != kInvalidIndex && phaseIndex(m_impl->m_traversals[producer].m_phase) >= i)
                     return Fail("Phase prerequisite depends on itself or a later phase");
@@ -213,6 +220,7 @@ namespace FE::Framework
             {
                 if (visited[i])
                     continue;
+
                 bool ready = true;
                 for (const auto& group : m_impl->m_traversals[i].m_prerequisites)
                 {
@@ -222,6 +230,7 @@ namespace FE::Framework
                 }
                 if (!ready)
                     continue;
+
                 visited[i] = true;
                 order.push_back(i);
                 ++count;
@@ -251,6 +260,7 @@ namespace FE::Framework
                     return Fail("A change cursor may be consumed only once per epoch");
                 if (!(before.m_phase == after.m_phase))
                     continue;
+
                 const bool stageExclusion = before.m_stageInvoke || after.m_stageInvoke;
                 bool conflict = false;
                 for (const auto& lhs : before.m_accesses)
@@ -285,6 +295,7 @@ namespace FE::Framework
         FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
         if (!m_impl->m_validated && !ValidateSchedule())
             return false;
+
         FE_Assert(!m_impl->m_executing);
         m_impl->m_executing = true;
         auto restore = festd::defer([&] {
@@ -299,6 +310,7 @@ namespace FE::Framework
                 auto& traversal = m_impl->m_traversals[i];
                 if (!(traversal.m_phase == phase.m_phase) || traversal.m_executed)
                     continue;
+
                 festd::inline_vector<WaitGroup*> prerequisites;
                 for (const auto& group : traversal.m_prerequisites)
                     prerequisites.push_back(group.Get());
@@ -364,6 +376,7 @@ namespace FE::Framework
                 {
                     if (access.m_parent)
                         continue;
+
                     const uint32_t column = chunk->m_archetype.Find(access.m_type);
                     if (column == kInvalidIndex && !access.m_optional)
                         matches = false;
@@ -395,6 +408,7 @@ namespace FE::Framework
             });
             if (mapping != traversal.m_mappings.end())
                 continue;
+
             Traversal::Mapping entry{ &chunk->m_archetype };
             for (const auto& access : traversal.m_accesses)
                 entry.m_columns.push_back(access.m_parent ? kInvalidIndex : chunk->m_archetype.Find(access.m_type));
@@ -404,6 +418,7 @@ namespace FE::Framework
         auto invoke = [&](Entity& entity) {
             if (!entity.m_active || festd::find(chunks, entity.m_chunk) == chunks.end())
                 return;
+
             const auto mapping = festd::find_if(traversal.m_mappings.begin(), traversal.m_mappings.end(), [&](const auto& entry) {
                 return entry.m_archetype == &entity.m_chunk->m_archetype;
             });
@@ -421,6 +436,7 @@ namespace FE::Framework
                     : nullptr;
                 if (!value && !access.m_optional)
                     return;
+
                 values.push_back(value);
             }
             auto& fiber = Threading::FiberRuntimeInfo::Get();
@@ -550,6 +566,7 @@ namespace FE::Framework
     {
         if (!m_impl->m_updating)
             return Fail("No update epoch is open");
+
         bool completed = true;
         for (const auto& traversal : m_impl->m_traversals)
             completed &= traversal.m_executed;

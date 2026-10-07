@@ -9,6 +9,7 @@ namespace FE::Framework
         EntityAssetServices GDefaultAssets;
     } // namespace
 
+
     EntityWorld::EntityWorld(EntityAssetServices* assets, void* services)
         : m_impl(Memory::DefaultNew<Impl>())
     {
@@ -50,6 +51,7 @@ namespace FE::Framework
     {
         if (id.m_value == 0 || id.World() != m_impl->m_token || id.Slot() >= m_impl->m_slots.size())
             return nullptr;
+
         const auto& slot = m_impl->m_slots[id.Slot()];
         return slot.m_generation == id.Generation() ? slot.m_entity : nullptr;
     }
@@ -84,6 +86,7 @@ namespace FE::Framework
         const auto registryIt = festd::find(m_impl->m_registries, &registry);
         if (registryIt == m_impl->m_registries.end())
             return;
+
         registry.m_unloading = true;
         for (uint32_t index = 0; index < m_impl->m_materializations.size(); ++index)
         {
@@ -162,6 +165,7 @@ namespace FE::Framework
     {
         if (m_impl->m_uuidLookup.contains(uuid))
             return nullptr;
+
         uint32_t index;
         if (m_impl->m_freeSlots.empty())
         {
@@ -221,7 +225,7 @@ namespace FE::Framework
     {
         while (entity.m_firstChild)
             DestroyEntity(*entity.m_firstChild);
-        DeactivateSubtree(entity);
+        DeactivateSubtree(entity, false);
         const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
         for (uint32_t i = order.size(); i > 0; --i)
             TeardownComponent(entity, order[i - 1], true);
@@ -259,6 +263,7 @@ namespace FE::Framework
         {
             if (candidate->m_columns.size() != columns.size())
                 continue;
+
             bool equal = true;
             for (uint32_t i = 0; i < columns.size(); ++i)
                 equal &= candidate->m_columns[i] == columns[i];
@@ -273,6 +278,7 @@ namespace FE::Framework
             archetype = Memory::DefaultNew<Archetype>(columns);
             m_impl->m_archetypes.push_back(archetype);
         }
+
         FE_Assert(archetype->m_lifecycleOrder.size() == columns.size(), "Missing or cyclic component initialization dependency");
         ArchetypeChunk* destination = nullptr;
         for (auto* chunk : m_impl->m_chunks)
@@ -289,6 +295,7 @@ namespace FE::Framework
             destination = Memory::DefaultNew<ArchetypeChunk>(*archetype, *entity.m_registry);
             m_impl->m_chunks.push_back(destination);
         }
+
         auto* source = entity.m_chunk;
         const uint32_t oldRow = entity.m_row;
         festd::vector<void*> actualValues(values.begin(), values.end());
@@ -300,6 +307,7 @@ namespace FE::Framework
                 const uint32_t oldColumn = source->m_archetype.Find(type.m_id);
                 if (!actualValues[i] || oldColumn == kInvalidIndex || !(source->Stage(oldRow, oldColumn) & kActive))
                     continue;
+
                 CancelReplacements(entity, type.m_id);
                 void* data = Memory::DefaultAllocate(type.m_size, type.m_alignment);
                 type.m_moveConstructor(data, actualValues[i]);
@@ -307,6 +315,7 @@ namespace FE::Framework
                 actualValues[i] = nullptr;
             }
         }
+
         // Teardown removed/replaced components before moving their siblings.
         if (source)
         {
@@ -325,6 +334,7 @@ namespace FE::Framework
                 }
             }
         }
+
         const uint32_t row = destination->Allocate(entity);
         for (uint32_t i = 0; i < columns.size(); ++i)
         {
@@ -344,12 +354,14 @@ namespace FE::Framework
                 type.m_defaultConstructor(destination->Get(row, i));
             }
         }
+
         FE_Assert(m_impl->m_structureRevision != UINT64_MAX, "Structure revision exhausted");
         ++m_impl->m_structureRevision;
         entity.m_chunk = destination;
         entity.m_row = row;
         MarkUnready(entity);
         MarkChanged(entity);
+
         if (source)
         {
             source->Free(oldRow);
@@ -392,6 +404,7 @@ namespace FE::Framework
     {
         if (!entity.m_chunk)
             return;
+
         std::lock_guard guard(m_impl->m_versionLock);
         const uint64_t version = NextChangeVersion();
         for (auto& column : entity.m_chunk->m_versions)
@@ -411,17 +424,15 @@ namespace FE::Framework
             bool declared = false;
             for (const auto& access : traversal->m_accesses)
             {
-                if (access.m_type == type && (!write || access.m_write)
-                    && ((access.m_parent && callback->m_entity->GetParent() == &entity)
-                        || (!access.m_parent && callback->m_entity == &entity)))
-                {
+                const Entity* source = access.m_parent ? callback->m_entity->GetParent() : callback->m_entity;
+                if (access.m_type == type && (!write || access.m_write) && source == &entity)
                     declared = true;
-                }
             }
             FE_AssertDebug(declared, "Entity component lookup exceeds traversal access declarations");
         }
         if (!entity.m_chunk)
             return nullptr;
+
         const uint32_t column = entity.m_chunk->m_archetype.Find(type);
         if (column == kInvalidIndex)
             return nullptr;

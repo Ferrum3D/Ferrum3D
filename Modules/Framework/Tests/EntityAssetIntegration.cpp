@@ -19,6 +19,8 @@ namespace
         {
             m_directory = IO::Path(FE_ENTITY_ASSET_TEST_OUTPUT) / Fmt::Format("{}", NewEntityUuid());
         }
+
+
         template<class T>
         IO::AssetID BuildDefinition(const char* name, const T& value)
         {
@@ -35,6 +37,8 @@ namespace
             EXPECT_TRUE(AssetBuilder::BuildAsset({ path, {}, m_directory }));
             return id;
         }
+
+
         void Pump(EntityWorld& world, MaterializationToken token)
         {
             for (uint32_t iteration = 0; iteration < 5000; ++iteration)

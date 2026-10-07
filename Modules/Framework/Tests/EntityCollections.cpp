@@ -36,11 +36,15 @@ namespace
             ASSERT_TRUE(m_collection.CookComponent(child, ReferenceComponent{ { kSource }, { kExternal, kPlacement } }));
             m_collection.m_entities.push_back(std::move(child));
         }
+
+
         void Tick()
         {
             m_world.BeginUpdate();
             EXPECT_TRUE(m_world.EndUpdate());
         }
+
+
         EntityCollectionInstanceAsset Placement()
         {
             EntityCollectionInstanceAsset placement;
@@ -249,10 +253,14 @@ TEST(CollectionMaterialization, PendingDependenciesPreventPublicationAndCancelWi
             ++m_acquisitions;
             return { {}, 1 };
         }
+
+
         LifecycleResult Poll(const EntityAssetRequest&, Rtti::TypeID) override
         {
             return m_ready ? LifecycleResult::kSucceeded : LifecycleResult::kPending;
         }
+
+
         void Release(EntityAssetRequest& request) override
         {
             if (request.m_serviceToken)

@@ -83,6 +83,7 @@ namespace FE::Framework
     {
         if (token.m_world != m_impl->m_token || token.m_index >= m_impl->m_materializations.size())
             return {};
+
         const auto& operation = *m_impl->m_materializations[token.m_index];
         return { operation.m_state, operation.m_root, operation.m_error };
     }
@@ -102,9 +103,11 @@ namespace FE::Framework
         FE_Assert(!m_impl->m_collecting && !m_impl->m_executing);
         if (token.m_world != m_impl->m_token || token.m_index >= m_impl->m_materializations.size())
             return;
+
         auto& operation = *m_impl->m_materializations[token.m_index];
         if (operation.m_state == MaterializationState::kCanceled)
             return;
+
         operation.m_state = MaterializationState::kCanceled;
         operation.m_request.Reset();
         operation.m_collectionRequest.Reset();
@@ -116,7 +119,6 @@ namespace FE::Framework
         operation.m_entities.clear();
         operation.m_collection = {};
         operation.m_definition = {};
-        operation.m_state = MaterializationState::kCanceled;
         operation.m_root = {};
     }
 
@@ -125,15 +127,18 @@ namespace FE::Framework
     {
         auto& operation = *m_impl->m_materializations[index];
         const auto& collection = operation.m_collection;
+
         auto reject = [&](festd::ascii_view error) {
             operation.m_error = error;
             operation.m_state = MaterializationState::kFailed;
             return false;
         };
+
         if (!collection.Validate())
             return reject("Invalid collection hierarchy or component envelope");
         if (operation.m_placement && (!operation.m_asset.IsValid() || !operation.m_definition.Validate(collection)))
             return reject("Invalid placement UUID bindings or root definition");
+
         operation.m_bindings = operation.m_placement ? operation.m_definition.m_bindings : festd::vector<EntityUuidBinding>{};
         if (!operation.m_placement)
         {
@@ -143,6 +148,7 @@ namespace FE::Framework
         const Uuid rootUuid = operation.m_placement ? operation.m_definition.m_rootUuid : NewEntityUuid();
         if (Find(rootUuid, false))
             return reject("Placement root UUID is already owned");
+
         for (const auto& binding : operation.m_bindings)
         {
             if (Find(binding.m_entityUuid, false))
@@ -159,6 +165,7 @@ namespace FE::Framework
             records.push_back(&entity);
             definitions.push_back(&collection);
         }
+
         festd::vector<festd::vector<const EntityComponentInfo*>> schemas;
         for (const auto* record : records)
         {
@@ -192,8 +199,10 @@ namespace FE::Framework
             Archetype validation(columns);
             if (validation.m_lifecycleOrder.size() != columns.size())
                 return reject("Missing or cyclic component initialization dependency");
+
             schemas.push_back(std::move(columns));
         }
+
         auto remap = [](void* data, Uuid uuid) {
             auto& bindings = *static_cast<festd::vector<EntityUuidBinding>*>(data);
             for (const auto& binding : bindings)
@@ -207,6 +216,7 @@ namespace FE::Framework
         auto rollback = festd::defer([&] {
             if (success)
                 return;
+
             for (const auto id : operation.m_entities)
             {
                 if (auto* entity = Find(id))
@@ -215,6 +225,7 @@ namespace FE::Framework
             operation.m_entities.clear();
             operation.m_root = {};
         });
+
         for (uint32_t row = 0; row < records.size(); ++row)
         {
             const auto& record = *records[row];
@@ -249,6 +260,7 @@ namespace FE::Framework
                 m_impl->m_loadingComponent = Rtti::TypeID::kNull;
             }
         }
+
         operation.m_root = operation.m_entities.front();
         for (uint32_t row = 1; row < records.size(); ++row)
         {
@@ -256,6 +268,7 @@ namespace FE::Framework
             Entity* parentEntity = parent.IsValid() ? Find(remap(&operation.m_bindings, parent), false) : Find(operation.m_root);
             Reparent(*Find(operation.m_entities[row]), parentEntity);
         }
+
         for (const auto id : operation.m_entities)
             Find(id)->m_wantsActive = true;
         for (const auto id : operation.m_entities)
@@ -269,6 +282,7 @@ namespace FE::Framework
                     return reject("Materialized dependency discovery failed");
             }
         }
+
         success = true;
         return true;
     }
@@ -375,6 +389,7 @@ namespace FE::Framework
             auto& operation = *m_impl->m_materializations[index];
             if (operation.m_state != MaterializationState::kPending || operation.m_entities.empty())
                 continue;
+
             bool failed = false;
             bool ready = true;
             for (const auto id : operation.m_entities)

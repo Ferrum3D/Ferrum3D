@@ -19,6 +19,8 @@ namespace FE::Framework::Tests
             }
             return LifecycleResult::kSucceeded;
         }
+
+
         void Unload(ComponentLoadingContext&) {}
     };
 

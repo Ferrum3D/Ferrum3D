@@ -16,6 +16,8 @@ namespace FE::Framework
 
 
             void ResetImpl() override {}
+
+
             Serialization::ResultCode BeginStoreDocumentImpl(Rtti::TypeID, uint32_t, uint64_t) override
             {
                 return Serialization::ResultCode::kSuccess;
@@ -247,9 +249,10 @@ namespace FE::Framework
     }
 
 
-    void EntityWorld::CancelReplacements(Entity& entity, const Rtti::TypeID type)
+    void EntityWorld::CancelReplacements(Entity& entity, const Rtti::TypeID type, const bool keepAuthoredValues)
     {
         auto& replacements = entity.m_runtime->m_replacements;
+        bool valuesChanged = false;
         for (auto it = replacements.begin(); it != replacements.end();)
         {
             if (type.IsValid() && it->m_info->m_type->m_id != type)
@@ -257,19 +260,37 @@ namespace FE::Framework
                 ++it;
                 continue;
             }
+
             TeardownValue(entity, *it->m_info, it->m_data, it->m_stage, it->m_transition);
+            if (keepAuthoredValues)
+            {
+                FE_Assert(!entity.m_active);
+                const uint32_t column = entity.m_chunk->m_archetype.Find(it->m_info->m_type->m_id);
+                FE_Assert(column != kInvalidIndex);
+                TeardownComponent(entity, column, true);
+                it->m_info->m_type->m_moveConstructor(entity.m_chunk->Get(entity.m_row, column), it->m_data);
+                entity.m_chunk->Stage(entity.m_row, column) = 0;
+                valuesChanged = true;
+            }
+
             it->m_info->m_type->m_destructor(it->m_data);
             Memory::DefaultFree(it->m_data);
             it = replacements.erase(it);
         }
+
+        if (valuesChanged)
+        {
+            MarkUnready(entity);
+            MarkChanged(entity);
+        }
     }
 
 
-    void EntityWorld::DeactivateSubtree(Entity& entity)
+    void EntityWorld::DeactivateSubtree(Entity& entity, const bool keepAuthoredValues)
     {
-        CancelReplacements(entity);
         for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
-            DeactivateSubtree(*child);
+            DeactivateSubtree(*child, keepAuthoredValues);
+
         const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
         ComponentContext context{ entity, *this, m_impl->m_services };
         for (uint32_t i = order.size(); i > 0; --i)
@@ -278,12 +299,15 @@ namespace FE::Framework
             auto& stage = entity.m_chunk->Stage(entity.m_row, column);
             if (!(stage & kActive))
                 continue;
+
             const auto& info = *entity.m_chunk->m_archetype.m_columns[column];
             if (info.m_deactivate)
                 info.m_deactivate(entity.m_chunk->Get(entity.m_row, column), context);
             stage &= ~kActive;
         }
+
         entity.m_active = false;
+        CancelReplacements(entity, Rtti::TypeID::kNull, keepAuthoredValues);
     }
 
 
@@ -292,11 +316,14 @@ namespace FE::Framework
         FE_Assert(m_impl->m_loadingComponent.IsValid(), "Require is legal only during dependency discovery or Load");
         if (!id.IsValid())
             return true;
+
         auto& contributions = entity.m_runtime->m_assets;
         for (const auto& contribution : contributions)
         {
-            if (contribution.m_component == m_impl->m_loadingComponent && contribution.m_asset == id
-                && contribution.m_expectedType == type && contribution.m_transition == m_impl->m_loadingTransition)
+            const bool sameComponent = contribution.m_component == m_impl->m_loadingComponent
+                && contribution.m_transition == m_impl->m_loadingTransition;
+            const bool sameAsset = contribution.m_asset == id && contribution.m_expectedType == type;
+            if (sameComponent && sameAsset)
                 return true;
         }
         ResidencyOwner(entity).Add(id, type);
@@ -311,6 +338,7 @@ namespace FE::Framework
         ComponentLoadingContext loading{ { entity, *this, m_impl->m_services } };
         if (stage & kLoaded)
             return LifecycleResult::kSucceeded;
+
         m_impl->m_loadingComponent = info.m_type->m_id;
         m_impl->m_loadingTransition = transition;
         auto loadingScope = festd::defer([&] {
@@ -335,21 +363,22 @@ namespace FE::Framework
                                                                   [](void* user, Uuid asset, Rtti::TypeID type, uint32_t kind) {
                                                                       if (kind != festd::to_underlying(IO::DependencyKind::kHard))
                                                                           return;
+
                                                                       auto& d = *static_cast<Discovery*>(user);
                                                                       d.m_world->RequireAsset(*d.m_entity, asset, type);
                                                                   });
                 if (serialization.Store(*info.m_type, data) != Serialization::ResultCode::kSuccess)
-                {
                     return LifecycleResult::kFailed;
-                }
             }
         }
+
         auto dependenciesReady = [&] {
             LifecycleResult result = LifecycleResult::kSucceeded;
             for (const auto& contribution : entity.m_runtime->m_assets)
             {
                 if (contribution.m_component != info.m_type->m_id || contribution.m_transition != transition)
                     continue;
+
                 const auto status = ResidencyOwner(entity).Poll(contribution.m_asset, contribution.m_expectedType);
                 if (status == LifecycleResult::kFailed)
                     return status;
@@ -358,6 +387,7 @@ namespace FE::Framework
             }
             return result;
         };
+
         auto status = dependenciesReady();
         if (status == LifecycleResult::kSucceeded)
         {
@@ -376,6 +406,7 @@ namespace FE::Framework
     {
         if (entity.m_failed || !entity.m_wantsActive)
             return false;
+
         auto& chunk = *entity.m_chunk;
         bool ownLoaded = true;
         auto failComponent = [&](uint32_t column) {
@@ -394,6 +425,7 @@ namespace FE::Framework
             const auto& info = *chunk.m_archetype.m_columns[column];
             if (stage & (kLoaded | kFailed))
                 continue;
+
             const auto status = LoadValue(entity, info, chunk.Get(entity.m_row, column), stage);
             if (status == LifecycleResult::kFailed)
             {
@@ -405,10 +437,14 @@ namespace FE::Framework
             else
                 stage |= kLoaded;
         }
+
         // Child readiness is retained between polls; only pending subtrees are revisited.
         entity.m_runtime->m_unreadyChildren = 0;
         for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
         {
+            if (!child->m_wantsActive)
+                continue;
+
             const bool childReady = child->m_runtime->m_prepared || PrepareSubtree(*child);
             if (!childReady && (!entity.m_active || !child->m_failed))
                 ++entity.m_runtime->m_unreadyChildren;
@@ -417,13 +453,14 @@ namespace FE::Framework
                 if (!entity.m_active)
                     entity.m_failed = true;
                 else
-                {
                     UnwindSubtree(*child);
-                }
             }
         }
-        if ((!entity.m_active && (!ownLoaded || entity.m_runtime->m_unreadyChildren)) || entity.m_failed)
+
+        const bool subtreeLoading = !ownLoaded || entity.m_runtime->m_unreadyChildren != 0;
+        if (entity.m_failed || (!entity.m_active && subtreeLoading))
             return false;
+
         for (const uint32_t column : chunk.m_archetype.m_lifecycleOrder)
         {
             auto& stage = chunk.Stage(entity.m_row, column);
@@ -431,6 +468,7 @@ namespace FE::Framework
                 continue;
             if (!(stage & kLoaded))
                 continue;
+
             const auto& info = *chunk.m_archetype.m_columns[column];
             bool dependenciesInitialized = true;
             for (const auto dependency : info.m_initAfter)
@@ -446,6 +484,7 @@ namespace FE::Framework
             }
             if (!dependenciesInitialized)
                 continue;
+
             // Undo is required even when a synchronous transition reports failure after partial work.
             stage |= kInitialized;
             if (info.m_init && info.m_init(chunk.Get(entity.m_row, column), context) != LifecycleResult::kSucceeded)
@@ -454,6 +493,7 @@ namespace FE::Framework
                 return false;
             }
         }
+
         bool ownPrepared = true;
         for (uint32_t column = 0; column < chunk.m_archetype.m_columns.size(); ++column)
             ownPrepared &= (chunk.Stage(entity.m_row, column) & (kInitialized | kFailed)) != 0;
@@ -466,6 +506,7 @@ namespace FE::Framework
     {
         if (!entity.m_wantsActive || entity.m_failed)
             return false;
+
         auto& chunk = *entity.m_chunk;
         ComponentContext context{ entity, *this, m_impl->m_services };
         for (const uint32_t column : chunk.m_archetype.m_lifecycleOrder)
@@ -473,6 +514,7 @@ namespace FE::Framework
             auto& stage = chunk.Stage(entity.m_row, column);
             if (!(stage & kInitialized) || (stage & kActive))
                 continue;
+
             const auto& info = *chunk.m_archetype.m_columns[column];
             stage |= kActive;
             MarkChanged(entity);
@@ -488,8 +530,12 @@ namespace FE::Framework
                 return false;
             }
         }
+
         for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
         {
+            if (!child->m_wantsActive)
+                continue;
+
             if ((child->m_active || child->m_runtime->m_prepared) && !ActivateSubtree(*child))
             {
                 if (!entity.m_active)
@@ -507,6 +553,7 @@ namespace FE::Framework
     {
         if (!entity.m_active || !entity.m_wantsActive)
             return;
+
         auto& replacements = entity.m_runtime->m_replacements;
         for (auto it = replacements.begin(); it != replacements.end();)
         {
@@ -565,7 +612,7 @@ namespace FE::Framework
 
     void EntityWorld::UnwindSubtree(Entity& entity)
     {
-        DeactivateSubtree(entity);
+        DeactivateSubtree(entity, false);
         for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
             UnwindSubtree(*child);
         const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
@@ -599,9 +646,11 @@ namespace FE::Framework
             Entity* entity = slot.m_entity;
             if (!entity || entity->m_parent || !entity->m_wantsActive || entity->m_failed)
                 continue;
+
             const bool wasActive = entity->m_active;
             if (wasActive && entity->m_runtime->m_prepared)
                 continue;
+
             PrepareSubtree(*entity);
             if (entity->m_failed)
             {
