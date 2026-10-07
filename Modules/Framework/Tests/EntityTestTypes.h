@@ -1,8 +1,37 @@
 #pragma once
 #include <Framework/Entities/EntityComponentRegistry.h>
+#include <Framework/Entities/EntityReference.h>
 
 namespace FE::Framework::Tests
 {
+    struct SpawnFromLoad final
+    {
+        static inline const EntityCollection* s_collection = nullptr;
+        static inline festd::fixed_vector<MaterializationToken, 16> s_operations;
+        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6017");
+        FE_RTTI_Serialize();
+        LifecycleResult Load(ComponentLoadingContext& context)
+        {
+            if (s_collection)
+            {
+                for (uint32_t index = 0; index < 16; ++index)
+                    s_operations.push_back(context.m_world.SpawnCollection(context.m_entity.GetRegistry(), *s_collection));
+            }
+            return LifecycleResult::kSucceeded;
+        }
+        void Unload(ComponentLoadingContext&) {}
+    };
+
+
+    struct ReferenceComponent final
+    {
+        EntityReference m_internal;
+        EntityReference m_external;
+        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6015");
+        FE_RTTI_Serialize();
+    };
+
+
     struct Number final
     {
         int32_t m_value = 0;
@@ -127,6 +156,15 @@ namespace FE::Framework::Tests
         IO::Link<Number> m_hard;
         IO::Link<Number, IO::DependencyKind::kSoft> m_soft;
         FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6008");
+        FE_RTTI_Serialize();
+    };
+
+
+    struct CollectionAssets final
+    {
+        IO::Link<AssetComponent> m_hard;
+        IO::Link<Number, IO::DependencyKind::kSoft> m_soft;
+        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6016");
         FE_RTTI_Serialize();
     };
 

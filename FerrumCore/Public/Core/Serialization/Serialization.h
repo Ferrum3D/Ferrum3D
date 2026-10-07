@@ -413,6 +413,20 @@ namespace FE::Serialization
 
         ResultCode Load(const Rtti::Type& type, void* value);
 
+        using ObjectReferenceRemapper = Uuid (*)(void*, Uuid);
+        void SetObjectReferenceRemapper(void* data, ObjectReferenceRemapper remapper)
+        {
+            m_objectReferenceData = data;
+            m_objectReferenceRemapper = remapper;
+        }
+
+
+        [[nodiscard]] Uuid RemapObjectReference(Uuid uuid) const
+        {
+            return m_objectReferenceRemapper ? m_objectReferenceRemapper(m_objectReferenceData, uuid) : uuid;
+        }
+
+
         template<class T>
         ResultCode Number(T& value)
         {
@@ -451,6 +465,8 @@ namespace FE::Serialization
 
         IO::IStream* m_stream;
         SerializationFormat* m_format;
+        void* m_objectReferenceData = nullptr;
+        ObjectReferenceRemapper m_objectReferenceRemapper = nullptr;
 
         template<class T>
         ResultCode Field(const festd::ascii_view name, T& value)

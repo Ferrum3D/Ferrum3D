@@ -26,6 +26,7 @@ namespace FE::Framework
         Stage m_activate = nullptr;
         Undo m_deactivate = nullptr;
         festd::vector<Rtti::TypeID> m_initAfter;
+        festd::vector<Rtti::TypeID> m_runtimeCompanions;
     };
 
 
@@ -41,6 +42,17 @@ namespace FE::Framework
         {
             std::lock_guard lock{ m_lock };
             return m_lastError;
+        }
+
+
+        template<class Authored, class Runtime>
+        void AddRuntimeCompanion()
+        {
+            std::lock_guard lock{ m_lock };
+            auto* authored = const_cast<EntityComponentInfo*>(FindUnlocked(Rtti::GetTypeID<Authored>()));
+            FE_Assert(authored && FindUnlocked(Rtti::GetTypeID<Runtime>()));
+            if (festd::find(authored->m_runtimeCompanions, Rtti::GetTypeID<Runtime>()) == authored->m_runtimeCompanions.end())
+                authored->m_runtimeCompanions.push_back(Rtti::GetTypeID<Runtime>());
         }
 
 

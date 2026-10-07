@@ -33,6 +33,8 @@ namespace FE::Framework
         for (auto* archetype : m_impl->m_archetypes)
             Memory::DefaultDelete(archetype);
 
+        for (auto* operation : m_impl->m_materializations)
+            Memory::DefaultDelete(operation);
         Memory::DefaultDelete(m_impl);
     }
 
@@ -83,6 +85,12 @@ namespace FE::Framework
         if (registryIt == m_impl->m_registries.end())
             return;
         registry.m_unloading = true;
+        for (uint32_t index = 0; index < m_impl->m_materializations.size(); ++index)
+        {
+            const auto& operation = *m_impl->m_materializations[index];
+            if (operation.m_registry == &registry && operation.m_state <= MaterializationState::kReady)
+                CancelMaterialization({ m_impl->m_token, index });
+        }
         for (auto& slot : m_impl->m_slots)
         {
             if (slot.m_entity && slot.m_entity->m_registry == &registry && !slot.m_entity->m_parent)
@@ -203,6 +211,7 @@ namespace FE::Framework
             parent->m_lastChild = &entity;
         }
         MarkUnready(entity);
+        FE_Assert(m_impl->m_hierarchyRevision != UINT64_MAX, "Hierarchy revision exhausted");
         ++m_impl->m_hierarchyRevision;
         MarkChanged(entity);
     }
@@ -236,6 +245,7 @@ namespace FE::Framework
         }
         entity.~Entity();
         m_impl->m_entities.GetAllocator()->deallocate(&entity, sizeof(Entity), alignof(Entity));
+        FE_Assert(m_impl->m_hierarchyRevision != UINT64_MAX, "Hierarchy revision exhausted");
         ++m_impl->m_hierarchyRevision;
     }
 
@@ -334,6 +344,7 @@ namespace FE::Framework
                 type.m_defaultConstructor(destination->Get(row, i));
             }
         }
+        FE_Assert(m_impl->m_structureRevision != UINT64_MAX, "Structure revision exhausted");
         ++m_impl->m_structureRevision;
         entity.m_chunk = destination;
         entity.m_row = row;
@@ -352,12 +363,37 @@ namespace FE::Framework
     }
 
 
+    void EntityWorld::SetReparentHandler(const ReparentHandler handler)
+    {
+        FE_Assert(Threading::IsMainThread() && !m_impl->m_executing && !m_impl->m_collecting);
+        FE_Assert(!handler || !m_impl->m_reparentHandler || handler == m_impl->m_reparentHandler);
+        m_impl->m_reparentHandler = handler;
+    }
+
+
+    uint64_t EntityWorld::NextChangeVersion()
+    {
+        if (m_impl->m_changeVersion == UINT64_MAX)
+        {
+            FE_Assert(m_impl->m_changeEra != UINT64_MAX, "Change version era exhausted");
+            ++m_impl->m_changeEra;
+            m_impl->m_changeVersion = 0;
+            for (auto* chunk : m_impl->m_chunks)
+            {
+                for (auto& version : chunk->m_versions)
+                    version = 0;
+            }
+        }
+        return ++m_impl->m_changeVersion;
+    }
+
+
     void EntityWorld::MarkChanged(Entity& entity)
     {
         if (!entity.m_chunk)
             return;
         std::lock_guard guard(m_impl->m_versionLock);
-        const uint64_t version = ++m_impl->m_changeVersion;
+        const uint64_t version = NextChangeVersion();
         for (auto& column : entity.m_chunk->m_versions)
             column = version;
     }
@@ -378,7 +414,9 @@ namespace FE::Framework
                 if (access.m_type == type && (!write || access.m_write)
                     && ((access.m_parent && callback->m_entity->GetParent() == &entity)
                         || (!access.m_parent && callback->m_entity == &entity)))
+                {
                     declared = true;
+                }
             }
             FE_AssertDebug(declared, "Entity component lookup exceeds traversal access declarations");
         }

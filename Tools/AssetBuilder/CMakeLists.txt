@@ -37,6 +37,7 @@ target_link_libraries(AssetBuilder
     PUBLIC
         FeCore
         FeGraphics
+        FeGameFramework
     PRIVATE
         meshoptimizer
         tiny_gltf

@@ -44,6 +44,7 @@ namespace FE::Framework
             void* m_payload = nullptr;
             bool m_active = true;
             ResidencyScope m_residency = ResidencyScope::kEntity;
+            ReparentMode m_reparentMode = ReparentMode::kPreserveWorld;
         };
 
 
@@ -125,6 +126,12 @@ namespace FE::Framework
         uint64_t m_eligibleEpoch = 0;
         Memory::LinearAllocator m_arena;
         festd::vector<Command> m_commands;
+        struct OwnedValue
+        {
+            const EntityComponentInfo* m_info;
+            void* m_data;
+        };
+        festd::vector<OwnedValue> m_ownedValues;
         festd::vector<void*> m_largePayloads;
         explicit Impl(EntityWorld& world)
             : m_world(&world)
@@ -139,6 +146,8 @@ namespace FE::Framework
                 if (command.m_payload)
                     command.m_component->m_type->m_destructor(command.m_payload);
             }
+            for (const auto& value : m_ownedValues)
+                value.m_info->m_type->m_destructor(value.m_data);
             for (void* payload : m_largePayloads)
                 Memory::DefaultFree(payload);
         }
@@ -147,6 +156,27 @@ namespace FE::Framework
 
     struct EntityWorld::Impl
     {
+        struct Materialization
+        {
+            EntityRegistry* m_registry = nullptr;
+            uint64_t m_registryId = 0;
+            uint64_t m_eligibleEpoch = 0;
+            IO::AssetID m_asset = IO::AssetID::kNull;
+            bool m_placement = false;
+            bool m_hasDefinition = false;
+            MaterializationState m_state = MaterializationState::kPending;
+            festd::ascii_view m_error;
+            IO::AssetRequest m_request;
+            IO::AssetRequest m_collectionRequest;
+            EntityCollection m_collection;
+            EntityCollectionInstanceAsset m_definition;
+            festd::vector<EntityUuidBinding> m_bindings;
+            festd::vector<EntityID> m_entities;
+            EntityID m_root;
+        };
+        festd::vector<Materialization*> m_materializations;
+
+
         struct Slot
         {
             Entity* m_entity = nullptr;
@@ -156,6 +186,7 @@ namespace FE::Framework
         EntityComponentRegistry m_components;
         EntityAssetServices* m_assets;
         void* m_services;
+        ReparentHandler m_reparentHandler = nullptr;
         uint16_t m_token;
         festd::vector<Slot> m_slots;
         festd::vector<uint32_t> m_freeSlots;
@@ -183,6 +214,7 @@ namespace FE::Framework
         bool m_scheduleFailed = false;
         Threading::SpinLock m_versionLock;
         uint64_t m_changeVersion = 1;
+        uint64_t m_changeEra = 1;
         ScheduleDiagnostics m_diagnostics;
         festd::vector<ScheduleConflict> m_conflicts;
         Rtti::TypeID m_loadingComponent = Rtti::TypeID::kNull;

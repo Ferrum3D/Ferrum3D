@@ -3,6 +3,7 @@
 #include <AssetBuilder/ModelProcessor.h>
 #include <AssetBuilder/PipelineInternal.h>
 #include <AssetBuilder/TextureProcessor.h>
+#include <Framework/Entities/EntityCollection.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
 
@@ -92,6 +93,23 @@ namespace FE::AssetBuilder::Internal
                                  request.m_artifact.m_name,
                                  request.m_artifact.m_assetTypeId);
                 return false;
+            }
+
+            if (const auto* collection = request.m_artifact.m_buildSettings.TryGet<Framework::EntityCollection>())
+            {
+                if (!collection->ValidatePayloads())
+                {
+                    Logger::LogError("Invalid cooked entity collection");
+                    return false;
+                }
+            }
+            if (const auto* placement = request.m_artifact.m_buildSettings.TryGet<Framework::EntityCollectionInstanceAsset>())
+            {
+                if (!placement->Validate() || !placement->m_root.ValidatePayloads())
+                {
+                    Logger::LogError("Invalid entity placement definition");
+                    return false;
+                }
             }
 
             ArtifactWriter writer(request.m_outputDirectory, request.m_artifact.m_assetId, request.m_artifact.m_assetTypeId);

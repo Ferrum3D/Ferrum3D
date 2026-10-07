@@ -28,7 +28,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6001();
     }
 
-
     void Number::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6001();
@@ -37,7 +36,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x01, // FE::Framework::Tests::Number
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
@@ -63,7 +61,6 @@ namespace FE::Framework::Tests
                                      kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6001(&Number::Reflect);
 
     FE::Serialization::ResultCode Number::Serialize(FE::Serialization::SerializationContext& context) const
@@ -76,7 +73,6 @@ namespace FE::Framework::Tests
         return context.GetResultCode();
     }
 
-
     FE::Serialization::ResultCode Number::Deserialize(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
@@ -86,7 +82,6 @@ namespace FE::Framework::Tests
 
         return context.GetResultCode();
     }
-
 
     uint64_t Number::RTTI_GetSerializationSchemaHash()
     {
@@ -104,7 +99,6 @@ namespace FE::Framework::Tests
 
         return kHash;
     }
-
 
     uint32_t Number::RTTI_GetSerializationVersion()
     {
@@ -134,7 +128,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6002();
     }
 
-
     void Extra::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6002();
@@ -143,7 +136,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x02, // FE::Framework::Tests::Extra
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
@@ -169,7 +161,6 @@ namespace FE::Framework::Tests
                                     kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6002(&Extra::Reflect);
 } // namespace FE::Framework::Tests
 
@@ -194,7 +185,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6003();
     }
 
-
     void MoveOnly::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6003();
@@ -203,7 +193,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x03, // FE::Framework::Tests::MoveOnly
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
@@ -229,7 +218,6 @@ namespace FE::Framework::Tests
                                        kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6003(&MoveOnly::Reflect);
 } // namespace FE::Framework::Tests
 
@@ -254,7 +242,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6004();
     }
 
-
     void Aligned::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6004();
@@ -263,7 +250,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x04, // FE::Framework::Tests::Aligned
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
@@ -289,7 +275,6 @@ namespace FE::Framework::Tests
                                       kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6004(&Aligned::Reflect);
 } // namespace FE::Framework::Tests
 
@@ -314,7 +299,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6005();
     }
 
-
     void Huge::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6005();
@@ -323,7 +307,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x05, // FE::Framework::Tests::Huge
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
@@ -349,7 +332,6 @@ namespace FE::Framework::Tests
                                    kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6005(&Huge::Reflect);
 } // namespace FE::Framework::Tests
 
@@ -374,7 +356,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6006();
     }
 
-
     void ThrowingMove::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6006();
@@ -383,7 +364,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x06, // FE::Framework::Tests::ThrowingMove
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
@@ -397,7 +377,6 @@ namespace FE::Framework::Tests
                                            kAttributes,
                                            kFields);
     }
-
 
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6006(&ThrowingMove::Reflect);
 } // namespace FE::Framework::Tests
@@ -423,7 +402,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6007();
     }
 
-
     void Hook::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6007();
@@ -432,7 +410,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x07, // FE::Framework::Tests::Hook
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
@@ -458,7 +435,6 @@ namespace FE::Framework::Tests
                                    kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6007(&Hook::Reflect);
 } // namespace FE::Framework::Tests
 
@@ -483,7 +459,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6008();
     }
 
-
     void AssetComponent::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6008();
@@ -492,7 +467,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x08, // FE::Framework::Tests::AssetComponent
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
@@ -526,7 +500,6 @@ namespace FE::Framework::Tests
                                              kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6008(&AssetComponent::Reflect);
 
     FE::Serialization::ResultCode AssetComponent::Serialize(FE::Serialization::SerializationContext& context) const
@@ -540,7 +513,6 @@ namespace FE::Framework::Tests
         return context.GetResultCode();
     }
 
-
     FE::Serialization::ResultCode AssetComponent::Deserialize(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
@@ -551,7 +523,6 @@ namespace FE::Framework::Tests
 
         return context.GetResultCode();
     }
-
 
     uint64_t AssetComponent::RTTI_GetSerializationSchemaHash()
     {
@@ -571,7 +542,6 @@ namespace FE::Framework::Tests
 
         return kHash;
     }
-
 
     uint32_t AssetComponent::RTTI_GetSerializationVersion()
     {
@@ -601,7 +571,6 @@ namespace FE::Framework::Tests
         return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6009();
     }
 
-
     void CustomLoad::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6009();
@@ -610,7 +579,6 @@ namespace FE::Framework::Tests
             0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
             0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x09, // FE::Framework::Tests::CustomLoad
         };
-
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
@@ -636,6 +604,316 @@ namespace FE::Framework::Tests
                                          kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6009(&CustomLoad::Reflect);
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID ReferenceComponent::TypeID = Rtti::TypeID{
+        0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x15,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6015()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ReferenceComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6015();
+    }
+
+    void ReferenceComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6015();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
+            0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x15, // FE::Framework::Tests::ReferenceComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0xb9, 0xdb, 0xe8, 0x0d, 0x6a, 0xb0, 0x48, 0x6a,
+            0xab, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, // FE::Framework::EntityReference m_internal
+            0xb9, 0xdb, 0xe8, 0x0d, 0x6a, 0xb0, 0x48, 0x6a,
+            0xab, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, // FE::Framework::EntityReference m_external
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_internal = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_external = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_internal",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &ReferenceComponent::m_internal,
+                                                        kAttributes_m_internal,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_external",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &ReferenceComponent::m_external,
+                                                        kAttributes_m_external,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ReferenceComponent>(typeInstance,
+                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                 "FE::Framework::Tests::ReferenceComponent",
+                                                 kBaseClassTypeIDs,
+                                                 kAttributes,
+                                                 kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6015(&ReferenceComponent::Reflect);
+
+    FE::Serialization::ResultCode ReferenceComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_internal", m_internal);
+            object.Field("m_external", m_external);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ReferenceComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_internal", m_internal);
+            object.Field("m_external", m_external);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ReferenceComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x15,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_internal", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_internal)>());
+            hasher.Update("m_external", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_external)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ReferenceComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID CollectionAssets::TypeID = Rtti::TypeID{
+        0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x16,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6016()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& CollectionAssets::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6016();
+    }
+
+    void CollectionAssets::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6016();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
+            0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x16, // FE::Framework::Tests::CollectionAssets
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_hard
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_soft
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_hard = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_soft = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_hard",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &CollectionAssets::m_hard,
+                                                        kAttributes_m_hard,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_soft",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &CollectionAssets::m_soft,
+                                                        kAttributes_m_soft,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<CollectionAssets>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Framework::Tests::CollectionAssets",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6016(&CollectionAssets::Reflect);
+
+    FE::Serialization::ResultCode CollectionAssets::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_hard", m_hard);
+            object.Field("m_soft", m_soft);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode CollectionAssets::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_hard", m_hard);
+            object.Field("m_soft", m_soft);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t CollectionAssets::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x16,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_hard", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_hard)>());
+            hasher.Update("m_soft", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_soft)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t CollectionAssets::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID SpawnFromLoad::TypeID = Rtti::TypeID{
+        0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x17,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6017()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SpawnFromLoad::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6017();
+    }
+
+    void SpawnFromLoad::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6017();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
+            0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x17, // FE::Framework::Tests::SpawnFromLoad
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<SpawnFromLoad>(typeInstance,
+                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                            "FE::Framework::Tests::SpawnFromLoad",
+                                            kBaseClassTypeIDs,
+                                            kAttributes,
+                                            kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6017(&SpawnFromLoad::Reflect);
+
+    FE::Serialization::ResultCode SpawnFromLoad::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode SpawnFromLoad::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t SpawnFromLoad::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x17,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t SpawnFromLoad::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::Framework::Tests

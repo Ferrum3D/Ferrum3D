@@ -77,7 +77,7 @@ The scheduler validates explicit prerequisites first, then adds acyclic componen
 
 `GetScheduleDiagnostics()` reports component conflict, system and stage edges, internal jobs, included chunks, tree batches and callbacks. `GetScheduleConflicts()` reports conflicting component IDs and the oriented traversal indices; its view lasts until the next BeginUpdate. Execution is also instrumented with profiler zones.
 
-## Generic change tracking (Stage 7 foundation)
+## Change tracking and reparent integration
 
 ```cpp
 ChangeCursor renderChanges; // Retain independently for each consumer.
@@ -87,4 +87,38 @@ Query<const Position>::TraverseChanged(context, Phases::PostUpdate, renderChange
 
 A cursor is caller-owned and must outlive the epoch. Use a separate cursor for each consumer/query; consuming one cursor twice in an epoch is rejected. Submission does not advance it. Completion publishes writable chunk-column versions and advances the successful consumer. Changed queries operate at chunk granularity and may conservatively invoke callbacks for untouched rows. Migration forces conservative reprocessing so pending changes cannot disappear; activation and reparenting mark affected storage changed. Cascade filtering also observes hierarchy revisions and parent-column writes, and conservatively includes all matching descendants when input changes. Direct safe-point component edits must go through replacement commands to publish changes.
 
-Stage 7 remains in progress: PreserveWorld/PreserveLocal reparent command integration and singular-parent rejection are not implemented yet. SetParent currently changes topology without adjusting authored component values.
+`SetParent` defaults to PreserveWorld. A registered `ReparentHandler` operates on a transactional view of authored component values and hierarchy after preceding commands in the list. Its writable values are private clones until full validation succeeds. Framework owns command validation and storage publication; GameFramework owns the affine calculation. Without a transform handler/participating components, parenting changes topology. PreserveLocal bypasses the transform handler. Change-version rollover advances a separate era and invalidates older consumer cursors; exhausted era/hierarchy/structure counters fail explicitly.
+
+## Collection assets and persistent placements
+
+`EntityCollection` contains source UUIDs, names, internal parent UUIDs, component envelopes and one compact cooked byte buffer. `CookComponent` uses the actual serializer to capture type/version/schema and nested asset dependency metadata. `Validate` checks envelopes, bounds, duplicate identities/types, internal parents and cycles. `ValidatePayloads` additionally decodes authored values and verifies dependency metadata for authoring/build tools. Runtime requires every authored component to be registered in the world and rejects transient components and unsupported schemas.
+
+`EntityCollectionInstanceAsset` holds a collection link, persistent root UUID, generic root component envelopes and exact source-to-concrete UUID bindings. Set the collection link before calling `UpdateBindings`: unchanged sources retain concrete UUIDs, new sources receive fresh UUIDs and removed sources lose bindings. `MakeIndependentCopy` creates a fresh root and bindings and remaps references inside cooked root components; it returns false without modifying the original on malformed data. Collection source references are remapped when materialized. Engine placement transforms belong to GameFramework and use the generic root envelope.
+
+```cpp
+EntityCollection collection;
+EntityRecord source;
+source.m_uuid = NewEntityUuid();
+source.m_name = "example";
+collection.CookComponent(source, Position{ /* authored values */ });
+collection.m_entities.push_back(std::move(source));
+
+const MaterializationToken spawned = world.SpawnCollection(registry, collection);
+// Or: world.SpawnCollection(registry, collectionAssetId);
+// Or: world.LoadPlacement(registry, placementAssetId);
+world.BeginUpdate();
+world.EndUpdate();
+const MaterializationStatus status = world.GetMaterializationStatus(spawned);
+```
+
+Requests are admitted on the main thread; asset discovery/loading runs asynchronously. Both in-memory definitions and real AssetManager-backed definitions use the same safe-point materialization path. Startup `CommitBootstrap` can materialize immediately; after startup publication waits until the next epoch. Tokens include the world incarnation. Status is Pending, Ready, Failed or Canceled, with a root runtime ID and diagnostic. `GetMaterializationBindings` exposes the operation's concrete UUID table. Runtime spawns receive fresh identities and a group root; authored placements restore their root and bindings. All collection roots attach beneath their group root using authored local composition.
+
+Duplicate requests for the same placement asset return its existing pending/ready token even before publication. Conflicting placement assets claiming an occupied root/concrete UUID fail. The whole hierarchy and schemas are validated before allocating rows. Payloads deserialize into default-constructed final chunk storage; malformed payloads roll back all allocated rows. Publication waits for the complete group lifecycle/dependency closure. Independent runtime acquisitions exist before definition requests are released. Generation reads are short-lived and never cached in runtime entities; consumed definition buffers are released too. AssetManager must be ticked by the application. Register the optional explicit DefaultStreamer bindings with `RegisterEntityAssetStreamers` after manager initialization, and unregister before manager shutdown; default manager fallback also handles these reflected serialized types.
+
+`CancelMaterialization` releases definition requests and destroys any created membership, including a ready group. Registry removal cancels pending and ready memberships before releasing the owner. A failed/canceled placement can be requested again; reload preserves authored UUIDs but allocates new generation-checked runtime IDs. Deleting individual entities from a ready placement does not respawn them. Destroying its membership root retires that membership at the next safe point.
+
+`EntityReference` stores a concrete entity UUID and optional placement asset ID. It never acquires asset residency. `Resolve(world)` returns an active target or null; `Resolve(world, false)` permits allocated inactive targets. Resolution performs a fresh world lookup, so stream-in can resolve the same UUID to a new runtime identity. Internal source references remap during deserialization; external UUIDs remain unchanged. Remapped references clear the optional old placement diagnostic because ownership changed.
+
+AssetBuilder provides `ImportEntityCollection(output, collection)` and `ImportEntityPlacement(output, placement, collection)` in `AssetBuilder/EntityImport.h`. They validate cooked data, preserve product identity on reimport, and save authored `.asset` definitions. The existing `BuildAsset` pipeline writes their artifacts and replays opaque component dependencies. Soft/optional targets are recorded but do not require built metadata or participate in the build dependency closure; hard dependencies retain normal type/build validation. The CLI's serialized-type import path also registers collection, placement and GameFramework transform types.
+
+Tests remain under Framework: `FeFrameworkTests` covers the generic runtime and deterministic materialization; `FeFrameworkAssetTests` exercises real import/build/load, transitive residency, cancellation and persistent reload. Engine transformation tests are in `FeGameFrameworkTests`.

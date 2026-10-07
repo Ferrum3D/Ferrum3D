@@ -1,6 +1,6 @@
 ï»¿# Entity framework implementation plan
 
-Status: Stages 1–6 implemented in `Modules/Framework`. Stage 7 is in progress: generic change tracking is in Framework; affine transform components and TransformationSystem are in the new `Modules/GameFramework` project. PreserveWorld reparent command integration remains pending. Stages 8–11 remain planned. See `Modules/Framework/ENTITY_FRAMEWORK.md` and `Modules/GameFramework/README.md`.
+Status: Stages 1–8 implemented. The reusable entity runtime, collection assets, persistent placement materialization and generic tests are in `Modules/Framework`. Affine transformation components, reparent integration and TransformationSystem are in `Modules/GameFramework`. AssetBuilder imports/cooks collection and placement definitions. Stages 9–11 remain planned. See `Modules/Framework/ENTITY_FRAMEWORK.md` and `Modules/GameFramework/README.md`.
 
 This plan replaces the old `Modules/Framework/.../Entities` prototype with a hybrid entity/ECS framework. Entity objects provide stable identity and hierarchy. Components reside in packed archetype chunks. World systems submit deferred query work into application-scheduled phases. Assets describe worlds, reusable collections, and persistent placements; registries own runtime entity groups and residency without defining simulation boundaries.
 

@@ -1,8 +1,10 @@
 #pragma once
 #include <Framework/Entities/Archetype.h>
 #include <Framework/Entities/Entity.h>
+#include <Framework/Entities/EntityCollection.h>
 #include <Framework/Entities/EntityCommandList.h>
 #include <Framework/Entities/EntityRegistry.h>
+#include <Framework/Entities/EntityReparent.h>
 #include <Framework/Entities/EntityUpdateContext.h>
 
 namespace FE::Framework
@@ -10,6 +12,7 @@ namespace FE::Framework
     struct ChangeCursor final
     {
         uint64_t m_version = 0;
+        uint64_t m_versionEra = 0;
         uint64_t m_hierarchyRevision = 0;
         uint64_t m_structureRevision = 0;
     };
@@ -58,11 +61,20 @@ namespace FE::Framework
         void RemoveRegistry(EntityRegistry& registry);
         EntityComponentRegistry& Components();
         void Submit(EntityCommandList&& commands);
+        MaterializationToken SpawnCollection(EntityRegistry& registry, const EntityCollection& collection);
+        MaterializationToken SpawnCollection(EntityRegistry& registry, IO::AssetID collection);
+        MaterializationToken LoadPlacement(EntityRegistry& registry, IO::AssetID placement);
+        MaterializationToken LoadPlacement(EntityRegistry& registry, IO::AssetID placement,
+                                           const EntityCollectionInstanceAsset& definition, const EntityCollection& collection);
+        [[nodiscard]] MaterializationStatus GetMaterializationStatus(MaterializationToken token) const;
+        [[nodiscard]] festd::span<const EntityUuidBinding> GetMaterializationBindings(MaterializationToken token) const;
+        void CancelMaterialization(MaterializationToken token);
         // Bootstrap ends permanently with the first BeginUpdate. Normal lists never bypass their next-frame eligibility.
         bool CommitBootstrap();
         bool Commit();
         void BeginUpdate();
         void AddSystem(WorldSystem& system);
+        void SetReparentHandler(ReparentHandler handler);
         void RemoveSystem(WorldSystem& system);
         bool SchedulePhase(Phase phase, festd::span<const Rc<WaitGroup>> prerequisites = {});
         template<class Callable>
@@ -116,7 +128,10 @@ namespace FE::Framework
                                   festd::span<const Rc<WaitGroup>> prerequisites);
         void ExecuteTraversal(uint32_t index);
         void MarkChanged(Entity& entity);
+        uint64_t NextChangeVersion();
         bool CommitImpl(bool bootstrap);
+        void AdvanceMaterializations(bool bootstrap);
+        bool Materialize(uint32_t operation);
         Entity* AllocateEntity(EntityRegistry& registry, Env::Name name, Uuid uuid);
         void DestroyEntity(Entity& entity);
         void Reparent(Entity& entity, Entity* parent);

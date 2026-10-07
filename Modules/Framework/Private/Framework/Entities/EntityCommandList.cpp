@@ -7,18 +7,15 @@
 
 namespace FE::Framework
 {
-    namespace
+    Uuid NewEntityUuid()
     {
-        Uuid NewUuid()
-        {
-            Uuid result{ kForceInit };
-            FE_Verify(BCryptGenRandom(nullptr, result.data(), 16, BCRYPT_USE_SYSTEM_PREFERRED_RNG) >= 0);
-            result.m_bytes[6] = (result.m_bytes[6] & 0xf) | 0x40;
-            result.m_bytes[8] = (result.m_bytes[8] & 0x3f) | 0x80;
-            return result;
-        }
+        Uuid result{ kForceInit };
+        FE_Verify(BCryptGenRandom(nullptr, result.data(), 16, BCRYPT_USE_SYSTEM_PREFERRED_RNG) >= 0);
+        result.m_bytes[6] = (result.m_bytes[6] & 0xf) | 0x40;
+        result.m_bytes[8] = (result.m_bytes[8] & 0x3f) | 0x80;
+        return result;
+    }
 
-    } // namespace
 
     uint64_t Internal::NextCommandListID()
     {
@@ -84,7 +81,7 @@ namespace FE::Framework
         command.m_registryId = registry.GetID();
         command.m_residency = residency;
         command.m_name = name;
-        command.m_uuid = uuid.IsValid() ? uuid : NewUuid();
+        command.m_uuid = uuid.IsValid() ? uuid : NewEntityUuid();
         m_impl->m_commands.push_back(command);
         return token;
     }
@@ -104,10 +101,11 @@ namespace FE::Framework
     }
 
 
-    void EntityCommandList::SetParent(const EntityTarget target, const EntityTarget parent)
+    void EntityCommandList::SetParent(const EntityTarget target, const EntityTarget parent, const ReparentMode mode)
     {
         Command command{ CommandKind::kParent, target };
         command.m_parent = parent;
+        command.m_reparentMode = mode;
         m_impl->m_commands.push_back(command);
     }
 

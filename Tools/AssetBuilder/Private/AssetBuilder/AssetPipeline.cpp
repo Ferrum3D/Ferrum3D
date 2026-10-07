@@ -167,6 +167,8 @@ namespace FE::AssetBuilder
 
                 for (const AssetFileDependency& dependency : artifact.m_dependencies)
                 {
+                    if (dependency.m_kind != IO::DependencyKind::kHard)
+                        continue;
                     const auto iter = m_artifactIndices.find(dependency.m_assetId);
                     if (iter == m_artifactIndices.end())
                     {
@@ -202,7 +204,9 @@ namespace FE::AssetBuilder
                                         m_primarySourceData,
                                         m_primaryLogicalInputData,
                                         inputs))
+                {
                     return false;
+                }
 
                 festd::pmr::vector<std::byte> settingsData;
                 if (!SerializeBuildSettings(artifact, settingsData))
@@ -211,6 +215,11 @@ namespace FE::AssetBuilder
                 festd::inline_vector<IO::ArtifactID, 4> dependencyArtifactIds;
                 for (const AssetFileDependency& dependency : artifact.m_dependencies)
                 {
+                    if (dependency.m_kind != IO::DependencyKind::kHard)
+                    {
+                        dependencyArtifactIds.push_back(IO::ArtifactID::kNull);
+                        continue;
+                    }
                     const auto iter = m_artifactIndices.find(dependency.m_assetId);
                     if (iter != m_artifactIndices.end())
                     {

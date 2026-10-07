@@ -13,6 +13,7 @@ namespace FE::GameFramework
     struct TransformationSystem final : Framework::WorldSystem
     {
         void Init(Framework::EntityWorld& world) override;
+        void Shutdown(Framework::EntityWorld& world) override;
         void Update(Framework::EntityUpdateContext& context) override;
         [[nodiscard]] const Rc<WaitGroup>& GetCompletion() const
         {

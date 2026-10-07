@@ -44,7 +44,7 @@ namespace FE::Framework
                                  ResidencyScope residency = ResidencyScope::kEntity);
         void Destroy(EntityTarget target);
         void Rename(EntityTarget target, Env::Name name);
-        void SetParent(EntityTarget target, EntityTarget parent = {});
+        void SetParent(EntityTarget target, EntityTarget parent = {}, ReparentMode mode = ReparentMode::kPreserveWorld);
         void SetActive(EntityTarget target, bool active);
         void Unload(EntityTarget target);
         void UnloadRegistry(EntityRegistry& registry);

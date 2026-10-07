@@ -358,7 +358,8 @@ namespace FE::Framework
             {
                 bool matches = true;
                 bool changed = parentChanged || !traversal.m_cursor
-                    || traversal.m_cursor->m_structureRevision != m_impl->m_structureRevision;
+                    || traversal.m_cursor->m_structureRevision != m_impl->m_structureRevision
+                    || traversal.m_cursor->m_versionEra != m_impl->m_changeEra;
                 for (const auto& access : traversal.m_accesses)
                 {
                     if (access.m_parent)
@@ -368,7 +369,9 @@ namespace FE::Framework
                         matches = false;
                     if (column != kInvalidIndex && traversal.m_cursor
                         && chunk->m_versions[column] > traversal.m_cursor->m_version)
+                    {
                         changed = true;
+                    }
                 }
                 if (matches)
                 {
@@ -503,7 +506,7 @@ namespace FE::Framework
         }
         {
             std::lock_guard guard(m_impl->m_versionLock);
-            const uint64_t publishedVersion = ++m_impl->m_changeVersion;
+            const uint64_t publishedVersion = NextChangeVersion();
             for (auto* chunk : chunks)
             {
                 for (const auto& access : traversal.m_accesses)
@@ -516,6 +519,7 @@ namespace FE::Framework
             if (traversal.m_cursor)
             {
                 traversal.m_cursor->m_version = publishedVersion;
+                traversal.m_cursor->m_versionEra = m_impl->m_changeEra;
                 traversal.m_cursor->m_hierarchyRevision = m_impl->m_hierarchyRevision;
                 traversal.m_cursor->m_structureRevision = m_impl->m_structureRevision;
             }

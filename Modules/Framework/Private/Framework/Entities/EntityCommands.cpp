@@ -224,6 +224,41 @@ namespace FE::Framework
                 }
                 return entityIndex(Find(target.m_id));
             };
+            struct EditContext
+            {
+                festd::vector<Edit>* m_edits;
+                EntityCommandList::Impl* m_list;
+            } editContext{ &edits, &list };
+            auto component = [](void* data, const uint32_t index, Rtti::TypeID type, const bool write) -> void* {
+                auto& context = *static_cast<EditContext*>(data);
+                if (index >= context.m_edits->size())
+                    return nullptr;
+                auto& edit = (*context.m_edits)[index];
+                auto value = festd::find_if(edit.m_values.begin(), edit.m_values.end(), [&](const Value& item) {
+                    return item.m_info->m_type->m_id == type;
+                });
+                if (value == edit.m_values.end())
+                    return nullptr;
+                if (value->m_value)
+                    return value->m_value;
+                void* source = edit.m_entity ? edit.m_entity->FindComponent(type) : nullptr;
+                if (!write)
+                    return source;
+                const auto& rtti = *value->m_info->m_type;
+                if (!source || !rtti.m_copyConstructor)
+                    return nullptr;
+                void* storage = context.m_list->m_arena.allocate(rtti.m_size, rtti.m_alignment);
+                if (!storage)
+                {
+                    storage = Memory::DefaultAllocate(rtti.m_size, rtti.m_alignment);
+                    context.m_list->m_largePayloads.push_back(storage);
+                }
+                rtti.m_copyConstructor(storage, source);
+                context.m_list->m_ownedValues.push_back({ value->m_info, storage });
+                value->m_value = storage;
+                edit.m_componentsChanged = true;
+                return storage;
+            };
             bool valid = true;
             for (const auto& command : list.m_commands)
             {
@@ -315,6 +350,24 @@ namespace FE::Framework
                             valid = Fail("Parenting cannot cross registry or world boundaries");
                         else
                         {
+                            if (edit.m_parent != parent && m_impl->m_reparentHandler
+                                && command.m_reparentMode == ReparentMode::kPreserveWorld)
+                            {
+                                ReparentContext context{ index,
+                                                         parent,
+                                                         static_cast<uint32_t>(edits.size()),
+                                                         command.m_reparentMode,
+                                                         &editContext,
+                                                         [](void* data, uint32_t target) {
+                                                             return (*static_cast<EditContext*>(data)->m_edits)[target].m_parent;
+                                                         },
+                                                         component };
+                                if (!m_impl->m_reparentHandler(context))
+                                {
+                                    valid = Fail("Reparent transform validation failed; original values and hierarchy retained");
+                                    break;
+                                }
+                            }
                             edit.m_parent = parent;
                             edit.m_parentChanged = true;
                         }
@@ -451,7 +504,7 @@ namespace FE::Framework
             for (auto* registry : unloadRegistries)
                 RemoveRegistry(*registry);
         }
-        AdvanceLifecycle();
+        AdvanceMaterializations(bootstrap);
         return success;
     }
 } // namespace FE::Framework

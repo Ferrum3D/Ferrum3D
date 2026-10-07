@@ -5,6 +5,9 @@
 
 namespace FE::Framework
 {
+    Uuid NewEntityUuid();
+
+
     struct Entity;
     struct EntityWorld;
     struct EntityRegistry;
@@ -46,6 +49,13 @@ namespace FE::Framework
         kSucceeded,
         kPending,
         kFailed
+    };
+
+
+    enum class ReparentMode : uint8_t
+    {
+        kPreserveWorld,
+        kPreserveLocal
     };
 
 
