@@ -420,6 +420,59 @@ namespace FE::Framework
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b9dbe80d6ab0486aab00000000000010(&EntityDependencyRecord::Reflect);
+
+    FE::Serialization::ResultCode EntityDependencyRecord::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (context.IsValid())
+            BeforeSerialize(context);
+        if (auto object = context.BeginObject())
+        {
+            object.Field("asset", m_asset);
+            object.Field("expectedType", m_expectedType);
+            object.Field("kind", m_kind);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode EntityDependencyRecord::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("asset", m_asset);
+            object.Field("expectedType", m_expectedType);
+            object.Field("kind", m_kind);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t EntityDependencyRecord::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xb9, 0xdb, 0xe8, 0x0d, 0x6a, 0xb0, 0x48, 0x6a, 0xab, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("asset", 5);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_asset)>());
+            hasher.Update("expectedType", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_expectedType)>());
+            hasher.Update("kind", 4);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_kind)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t EntityDependencyRecord::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::Framework
 
 
@@ -907,6 +960,55 @@ namespace FE::Framework
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b9dbe80d6ab0486aab00000000000014(&EntityReference::Reflect);
+
+    FE::Serialization::ResultCode EntityReference::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("uuid", m_uuid);
+            object.Field("placementAsset", m_placementAsset);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode EntityReference::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("uuid", m_uuid);
+            object.Field("placementAsset", m_placementAsset);
+        }
+        if (context.IsValid())
+            AfterDeserialize(context);
+
+        return context.GetResultCode();
+    }
+
+    uint64_t EntityReference::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xb9, 0xdb, 0xe8, 0x0d, 0x6a, 0xb0, 0x48, 0x6a, 0xab, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("uuid", 4);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_uuid)>());
+            hasher.Update("placementAsset", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_placementAsset)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t EntityReference::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::Framework
 
 

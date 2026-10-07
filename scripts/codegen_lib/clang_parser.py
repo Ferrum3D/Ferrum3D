@@ -112,6 +112,7 @@ def is_codegen_attribute(annotation: str) -> bool:
         annotation == "SerializeGenerated"
         or annotation == "SkipSerializing"
         or annotation.startswith("EnumName:")
+        or annotation.startswith("SerializeName:")
         or annotation.startswith("ReflectBasic=")
         or annotation.startswith("ReflectFull")
     )
@@ -131,6 +132,10 @@ def parse_attributes(node: cindex.Cursor) -> dict[str, str]:
 
         if annotation_list.startswith("EnumName:"):
             attributes["EnumName"] = annotation_list.removeprefix("EnumName:")
+            continue
+
+        if annotation_list.startswith("SerializeName:"):
+            attributes["SerializeName"] = annotation_list.removeprefix("SerializeName:")
             continue
 
         for annotation in annotation_list.split(";"):
@@ -337,6 +342,8 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
     member_reflection_id = None
     is_serializable = False
     serialization_version = None
+    before_serialize = False
+    after_deserialize = False
     type_kind = TypeKind.NORMAL
     for child in node.get_children():
         if child.is_static_method() and child.spelling == "Reflect":
@@ -355,6 +362,9 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
         elif is_class(child.kind) and child.spelling == "RTTI_SerializationMarker":
             marker_attributes = parse_attributes(child)
             is_serializable = "SerializeGenerated" in marker_attributes
+        elif child.kind == cindex.CursorKind.CXX_METHOD and not child.is_static_method():
+            before_serialize |= child.spelling == "BeforeSerialize"
+            after_deserialize |= child.spelling == "AfterDeserialize"
         elif child.kind == cindex.CursorKind.VAR_DECL and child.spelling == "kVersion":
             serialization_version = child.spelling
 
@@ -391,6 +401,8 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             direct_bases=direct_bases,
             is_serializable=is_serializable,
             serialization_version=serialization_version,
+            before_serialize=before_serialize,
+            after_deserialize=after_deserialize,
         )
         types[ref_type.internal_id] = ref_type
 

@@ -21,6 +21,7 @@
 #endif
 
 #define FE_ENUMNAME(name) FE_CODEGEN_ATTRIBUTE("EnumName:" name)
+#define FE_SERIALIZE_NAME(name) FE_CODEGEN_ATTRIBUTE("SerializeName:" name)
 #define FE_SKIP_SERIALIZING FE_CODEGEN_ATTRIBUTE("SkipSerializing")
 
 
@@ -276,6 +277,7 @@ namespace FE::Serialization
 } // namespace FE::Serialization
 
 
+// Generated serializers call optional BeforeSerialize(context) const and AfterDeserialize(context) hooks only on valid contexts.
 #define FE_RTTI_Serialize()                                                                                                      \
 public:                                                                                                                          \
     FE::Serialization::ResultCode Serialize(FE::Serialization::SerializationContext& context) const;                             \

@@ -227,13 +227,18 @@ namespace {{ type.namespace }}
 
     FE::Serialization::ResultCode {{ type.name }}::Serialize(FE::Serialization::SerializationContext& context) const
     {
+        {%- if type.before_serialize %}
+        if (context.IsValid())
+            BeforeSerialize(context);
+
+        {%- endif %}
         if (auto object = context.BeginObject())
         {
         {%- for base in type.direct_bases %}
             object.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
-            object.Field("{{ field.name }}", {{ field.name }});
+            object.Field("{{ field.serialization_name }}", {{ field.name }});
         {%- endfor %}
         }
 
@@ -254,9 +259,9 @@ namespace {{ type.namespace }}
         {%- endfor %}
         {%- for field in type.serialization_fields %}
         {%- if field.is_bitfield %}
-            object.Field("{{ field.name }}", bitfield_temp_{{ field.name }});
+            object.Field("{{ field.serialization_name }}", bitfield_temp_{{ field.name }});
         {%- else %}
-            object.Field("{{ field.name }}", {{ field.name }});
+            object.Field("{{ field.serialization_name }}", {{ field.name }});
         {%- endif %}
         {%- endfor %}
         {%- for field in type.serialization_fields %}
@@ -265,6 +270,11 @@ namespace {{ type.namespace }}
         {%- endif %}
         {%- endfor %}
         }
+
+        {%- if type.after_deserialize %}
+        if (context.IsValid())
+            AfterDeserialize(context);
+        {%- endif %}
 
         return context.GetResultCode();
     }
@@ -282,7 +292,7 @@ namespace {{ type.namespace }}
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<{{ base.qualified_name }}>());
         {%- endfor %}
         {%- for field in type.serialization_fields %}
-            hasher.Update("{{ field.name }}", {{ field.name|length }});
+            hasher.Update("{{ field.serialization_name }}", {{ field.serialization_name|length }});
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype({{ field.name }})>());
         {%- endfor %}
             hasher.Update({{ type.serialization_version or 0 }});

@@ -8,12 +8,12 @@ namespace FE::Framework
     // Authored identities and cooked envelopes never contain runtime handles.
     struct EntityDependencyRecord final
     {
-        IO::AssetID m_asset = IO::AssetID::kNull;
-        Rtti::TypeID m_expectedType = Rtti::TypeID::kNull;
-        IO::DependencyKind m_kind = IO::DependencyKind::kHard;
+        FE_SERIALIZE_NAME("asset") IO::AssetID m_asset = IO::AssetID::kNull;
+        FE_SERIALIZE_NAME("expectedType") Rtti::TypeID m_expectedType = Rtti::TypeID::kNull;
+        FE_SERIALIZE_NAME("kind") IO::DependencyKind m_kind = IO::DependencyKind::kHard;
         FE_RTTI_Reflect("b9dbe80d-6ab0-486a-ab00-000000000010");
-        Serialization::ResultCode Serialize(Serialization::SerializationContext& context) const;
-        Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context);
+        FE_RTTI_Serialize();
+        void BeforeSerialize(Serialization::SerializationContext& context) const;
     };
 
 

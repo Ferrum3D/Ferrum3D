@@ -44,6 +44,7 @@ class FieldInfo:
         self.array_size = array_size
         self.is_bitfield = is_bitfield
         self.display_name = codegen_attributes.get("EnumName", name)
+        self.serialization_name = codegen_attributes.get("SerializeName", name)
 
     @property
     def skip_serializing(self) -> bool:
@@ -108,6 +109,8 @@ class ReflectedType:
         direct_bases: list[ReflectedType] | None = None,
         is_serializable: bool = False,
         serialization_version: str | None = None,
+        before_serialize: bool = False,
+        after_deserialize: bool = False,
     ):
         self.need_reflect = need_reflect
         self.name = name
@@ -138,6 +141,8 @@ class ReflectedType:
         self.is_member = kind == TypeKind.MEMBER_CLASS
         self.is_serializable = is_serializable
         self.serialization_version = serialization_version
+        self.before_serialize = before_serialize
+        self.after_deserialize = after_deserialize
         self.pointer_level = 0
 
         # if not self.is_external and not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) and self.id != REF_COUNTED_OBJECT_BASE_ID:

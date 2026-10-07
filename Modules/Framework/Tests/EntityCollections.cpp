@@ -1,5 +1,6 @@
 #include <Core/IO/MemoryStream.h>
 #include <Core/Serialization/BinarySerialization.h>
+#include <Core/Serialization/JsonSerialization.h>
 #include <EntityTestTypes.h>
 #include <gtest/gtest.h>
 
@@ -326,4 +327,51 @@ TEST_F(CollectionFixture, DestroyingPlacementRootRetiresMembershipAndPermitsExpl
     EXPECT_NE(reloaded, first);
     Tick();
     EXPECT_EQ(m_world.GetMaterializationStatus(reloaded).m_state, MaterializationState::kReady);
+}
+
+
+TEST_F(CollectionFixture, GeneratedReferenceSerializerPreservesFieldNames)
+{
+    const EntityReference source{ kSource, kPlacement };
+    IO::WriteOnlyMemoryStream stream;
+    Serialization::JsonFormat format;
+    Serialization::SerializationContext writer(&stream, format);
+    ASSERT_EQ(writer.Store(source), Serialization::ResultCode::kSuccess);
+    festd::pmr::vector<std::byte> bytes;
+    stream.DumpAll(bytes);
+    const festd::string_view text(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    EXPECT_NE(text.find("\"uuid\""), text.end());
+    EXPECT_NE(text.find("\"placementAsset\""), text.end());
+    EXPECT_EQ(text.find("\"m_uuid\""), text.end());
+    IO::ReadOnlyMemoryStream input(bytes);
+    Serialization::JsonFormat loadFormat;
+    Serialization::DeserializationContext reader(&input, loadFormat);
+    EntityReference restored;
+    ASSERT_EQ(reader.Load(restored), Serialization::ResultCode::kSuccess);
+    EXPECT_EQ(restored.m_uuid, source.m_uuid);
+    EXPECT_EQ(restored.m_placementAsset, source.m_placementAsset);
+}
+
+
+TEST_F(CollectionFixture, FailedReferenceDeserializationDoesNotRemap)
+{
+    const EntityReference source{ kSource, kPlacement };
+    IO::WriteOnlyMemoryStream stream;
+    Serialization::PackedBinaryFormat format;
+    Serialization::SerializationContext writer(&stream, format);
+    ASSERT_EQ(writer.Store(source), Serialization::ResultCode::kSuccess);
+    festd::pmr::vector<std::byte> bytes;
+    stream.DumpAll(bytes);
+    bytes.pop_back();
+    IO::ReadOnlyMemoryStream input(bytes);
+    Serialization::PackedBinaryFormat loadFormat;
+    Serialization::DeserializationContext reader(&input, loadFormat);
+    uint32_t remaps = 0;
+    reader.SetObjectReferenceRemapper(&remaps, [](void* data, Uuid) {
+        ++*static_cast<uint32_t*>(data);
+        return kExternal;
+    });
+    EntityReference restored;
+    EXPECT_NE(reader.Load(restored), Serialization::ResultCode::kSuccess);
+    EXPECT_EQ(remaps, 0);
 }

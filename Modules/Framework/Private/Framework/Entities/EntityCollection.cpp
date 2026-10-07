@@ -26,36 +26,18 @@ namespace FE::Framework
     }
 
 
-    Serialization::ResultCode EntityDependencyRecord::Serialize(Serialization::SerializationContext& context) const
+    void EntityDependencyRecord::BeforeSerialize(Serialization::SerializationContext& context) const
     {
         context.VisitAssetReference(m_asset, m_expectedType, festd::to_underlying(m_kind));
-        context.BeginObject().Field("asset", m_asset).Field("expectedType", m_expectedType).Field("kind", m_kind);
-        return context.GetResultCode();
     }
 
 
-    Serialization::ResultCode EntityDependencyRecord::Deserialize(Serialization::DeserializationContext& context)
+    void EntityReference::AfterDeserialize(Serialization::DeserializationContext& context)
     {
-        context.BeginObject().Field("asset", m_asset).Field("expectedType", m_expectedType).Field("kind", m_kind);
-        return context.GetResultCode();
-    }
-
-
-    Serialization::ResultCode EntityReference::Serialize(Serialization::SerializationContext& context) const
-    {
-        context.BeginObject().Field("uuid", m_uuid).Field("placementAsset", m_placementAsset);
-        return context.GetResultCode();
-    }
-
-
-    Serialization::ResultCode EntityReference::Deserialize(Serialization::DeserializationContext& context)
-    {
-        context.BeginObject().Field("uuid", m_uuid).Field("placementAsset", m_placementAsset);
         const Uuid remapped = context.RemapObjectReference(m_uuid);
         if (remapped != m_uuid)
             m_placementAsset = IO::AssetID::kNull;
         m_uuid = remapped;
-        return context.GetResultCode();
     }
 
 
