@@ -229,7 +229,7 @@ Implement a Core `FiberMutex` with engine allocation, race-safe waiter registrat
 
 At commit, preserve the old world transform after preceding transform work completes, compute the candidate local transform against the new parent, and only then modify hierarchy links. If cached world data is stale, evaluate the needed ancestor chains before applying the operation. Validate the whole operation before mutation.
 
-Use an affine matrix as authoritative local transform storage in the initial `TransformComponent`; `WorldTransformComponent` is transient computed matrix output. Existing `FE::Transform` supports only uniform scale and no shear, so do not silently decompose arbitrary preserve-world results into it. `NonUniformScaleComponent` is an optional modifier with a documented composition order consistent with the engine's matrix convention. When preserving world space, bake any modifier into the new affine local matrix and reset it to identity so the result is exact.
+Use `FE::Transform` as authoritative local transform storage in `TransformComponent`; `WorldTransformComponent` is transient computed matrix output. `FE::Transform` contains translation, quaternion rotation, and uniform scale. `NonUniformScaleComponent` is an optional modifier composed before the local transform in the engine's row-vector convention. PreserveWorld decomposes the candidate local matrix into these authored values; reject results requiring shear, non-uniform scale without an existing modifier, or failed decomposition rather than silently losing information.
 
 Reject PreserveWorld if the new parent's affine matrix is non-invertible; leave the hierarchy and components unchanged and report command failure. For entities without transform participation, SetParent performs topology-only mutation. A parent without a world-transform component contributes identity; require explicit transform components on any intermediate node that must transmit a transform. Initial tests establish multiplication/composition order rather than assuming the pseudocode's convention.
 
@@ -414,14 +414,14 @@ Dependencies: Stages 3, 5, and 6.
 Work:
 
 - Implement chunk-column write versions, independent changed consumers, activation/migration change handling, and hierarchy invalidation.
-- Add reflected authored affine TransformComponent, optional NonUniformScaleComponent, transient WorldTransformComponent, and TransformationSystem in GameFramework.
+- Add reflected authored TransformComponent using FE::Transform, optional NonUniformScaleComponent, transient WorldTransformComponent, and TransformationSystem in GameFramework.
 - Implement default PreserveWorld reparent command handler and explicit PreserveLocal.
 
 Acceptance:
 
 - Changes publish on completion; two consumers observe independently; migration cannot drop changes.
 - Moving a parent updates all relevant descendant world transforms even with unchanged local values.
-- Reparenting preserves world matrices for affine/non-uniform/sheared inputs and marks outputs changed; singular parent rejection preserves old state.
+- Reparenting preserves representable world matrices and marks outputs changed; singular parents and unrepresentable local results reject the command list and preserve old state.
 - Roots, missing transform parents, added children, deep chains, and many shallow trees follow the documented composition semantics.
 
 ### Stage 8 - Collection assets and persistent placements

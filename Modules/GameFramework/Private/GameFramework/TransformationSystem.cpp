@@ -1,4 +1,5 @@
 #include <GameFramework/TransformationSystem.h>
+#include <algorithm>
 #include <cmath>
 
 namespace FE::GameFramework
@@ -22,6 +23,49 @@ namespace FE::GameFramework
         }
 
 
+        Matrix4x4 ComposeLocal(const TransformComponent& local, const NonUniformScaleComponent* scale)
+        {
+            const Matrix4x4 matrix = Transform::ToMatrix(local.m_local);
+            return scale ? Matrix4x4::Scale(scale->m_scale) * matrix : matrix;
+        }
+
+
+        bool DecomposeLocal(const Matrix4x4& matrix, bool hasScaleModifier, Transform& local, Vector3& modifier)
+        {
+            Vector3 translation;
+            Quaternion rotation;
+            Vector3 scale;
+            Vector3 shear;
+            if (!Math::DecomposeTransform(matrix, translation, rotation, scale, shear))
+                return false;
+
+            constexpr float kTolerance = 0.00001f;
+            if (!Math::CmpEqual(shear, Vector3::kZero, kTolerance))
+                return false;
+
+            if (!hasScaleModifier)
+            {
+                const float scaleMagnitude = std::max({ std::abs(scale.x), std::abs(scale.y), std::abs(scale.z) });
+                if (!Math::CmpEqual(scale, Vector3(scale.x), kTolerance * scaleMagnitude))
+                    return false;
+            }
+
+            local = Transform::Create(translation, rotation, hasScaleModifier ? 1.0f : scale.x);
+            modifier = hasScaleModifier ? scale : Vector3(1, 1, 1);
+            const Matrix4x4 reconstructed = Matrix4x4::Scale(modifier) * Transform::ToMatrix(local);
+            if (!IsFinite(reconstructed))
+                return false;
+
+            for (uint32_t i = 0; i < 16; ++i)
+            {
+                const float tolerance = kTolerance * std::max(1.0f, std::abs(matrix.m_values[i]));
+                if (std::abs(reconstructed.m_values[i] - matrix.m_values[i]) > tolerance)
+                    return false;
+            }
+            return true;
+        }
+
+
         bool EvaluateWorld(const Framework::ReparentContext& context, uint32_t entity, Matrix4x4& result)
         {
             result = Matrix4x4::kIdentity;
@@ -35,7 +79,7 @@ namespace FE::GameFramework
                 if (!local || !context.Read<WorldTransformComponent>(entity))
                     break;
                 const auto* scale = context.Read<NonUniformScaleComponent>(entity);
-                result = result * (scale ? Matrix4x4::Scale(scale->m_scale) * local->m_local : local->m_local);
+                result = result * ComposeLocal(*local, scale);
                 entity = context.GetParent(entity);
             }
             return IsFinite(result) && IsAffine(result);
@@ -122,19 +166,25 @@ namespace FE::GameFramework
             if (!IsFinite(candidate))
                 return false;
 
+            const bool hasScaleModifier = context.Read<NonUniformScaleComponent>(context.m_target) != nullptr;
+            Transform candidateLocal;
+            Vector3 candidateScale;
+            if (!DecomposeLocal(candidate, hasScaleModifier, candidateLocal, candidateScale))
+                return false;
+
             auto* local = context.Write<TransformComponent>(context.m_target);
             if (!local)
                 return false;
 
-            local->m_local = candidate;
+            local->m_local = candidateLocal;
 
-            if (context.Read<NonUniformScaleComponent>(context.m_target))
+            if (hasScaleModifier)
             {
                 auto* scale = context.Write<NonUniformScaleComponent>(context.m_target);
                 if (!scale)
                     return false;
 
-                scale->m_scale = Vector3(1, 1, 1);
+                scale->m_scale = candidateScale;
             }
             return true;
         }
@@ -173,8 +223,8 @@ namespace FE::GameFramework
                const NonUniformScaleComponent* scale,
                const WorldTransformComponent* parent,
                WorldTransformComponent& output) {
-                // Row-vector convention: apply scale, then authored affine local, then parent world.
-                const Matrix4x4 effectiveLocal = scale ? Matrix4x4::Scale(scale->m_scale) * local.m_local : local.m_local;
+                // Row-vector convention: apply the scale modifier, then local transform, then parent world.
+                const Matrix4x4 effectiveLocal = ComposeLocal(local, scale);
                 output.m_world = parent ? effectiveLocal * parent->m_world : effectiveLocal;
             },
             Framework::ExecutionPolicy::kParallelHierarchyTrees);

@@ -40,8 +40,8 @@ namespace FE::GameFramework
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0xe9, 0xbb, 0x71, 0xce, 0xa3, 0xb2, 0x4e, 0x7d,
-            0xaa, 0x6f, 0xe1, 0xba, 0xb7, 0x16, 0x05, 0xba, // FE::Matrix4x4 m_local
+            0x27, 0xc5, 0x20, 0xa6, 0x96, 0x08, 0x45, 0x3d,
+            0xbe, 0x4e, 0xdc, 0xa5, 0x51, 0x25, 0x13, 0x25, // FE::Transform m_local
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -63,6 +63,7 @@ namespace FE::GameFramework
                                                  kFields);
     }
 
+
     static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600001(&TransformComponent::Reflect);
 
     FE::Serialization::ResultCode TransformComponent::Serialize(FE::Serialization::SerializationContext& context) const
@@ -74,6 +75,7 @@ namespace FE::GameFramework
 
         return context.GetResultCode();
     }
+
 
     FE::Serialization::ResultCode TransformComponent::Deserialize(FE::Serialization::DeserializationContext& context)
     {
@@ -166,6 +168,7 @@ namespace FE::GameFramework
                                                        kFields);
     }
 
+
     static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600002(&NonUniformScaleComponent::Reflect);
 
     FE::Serialization::ResultCode NonUniformScaleComponent::Serialize(FE::Serialization::SerializationContext& context) const
@@ -177,6 +180,7 @@ namespace FE::GameFramework
 
         return context.GetResultCode();
     }
+
 
     FE::Serialization::ResultCode NonUniformScaleComponent::Deserialize(FE::Serialization::DeserializationContext& context)
     {
@@ -269,6 +273,7 @@ namespace FE::GameFramework
                                                       kAttributes,
                                                       kFields);
     }
+
 
     static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600003(&WorldTransformComponent::Reflect);
 } // namespace FE::GameFramework

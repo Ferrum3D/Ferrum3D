@@ -1,12 +1,12 @@
 #pragma once
-#include <Core/Math/Matrix4x4.h>
+#include <Core/Math/Transform.h>
 #include <Framework/Entities/EntityComponentRegistry.h>
 
 namespace FE::GameFramework
 {
     struct TransformComponent final
     {
-        Matrix4x4 m_local = Matrix4x4::kIdentity;
+        Transform m_local = Transform::Identity();
         FE_RTTI_Reflect("a8cdb00d-20ce-4780-b08d-211d0f600001");
         FE_RTTI_Serialize();
     };
