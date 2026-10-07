@@ -58,6 +58,7 @@ namespace FE::Rtti
             RegisterType(type);
         }
 
+
         template<class T>
         void ReflectEnum(Type& type, const TypeID id, const festd::span<const uint8_t> underlyingType,
                          const festd::ascii_view qualifiedName, const festd::span<const Attribute> attributes,
@@ -83,6 +84,7 @@ namespace FE::Rtti
             RegisterType(type);
         }
 
+
         template<class T>
         void ReflectBuiltinType(Type& type, const TypeID id, const festd::ascii_view name)
         {
@@ -101,6 +103,7 @@ namespace FE::Rtti
             BindTypeSerialization<T>(type);
             RegisterType(type);
         }
+
 
         template<uint32_t TArraySize, class TClass, class TField>
         static FieldInfo CreateFieldInfo(const festd::ascii_view name, const TypeID fieldTypeID, TField TClass::* field,
@@ -132,6 +135,18 @@ namespace FE::Rtti
         template<class T>
         static void BindTypeLifecycle(Type& type)
         {
+            type.m_defaultConstructor = nullptr;
+            type.m_copyConstructor = nullptr;
+            type.m_moveConstructor = nullptr;
+            type.m_noThrowMove = false;
+            type.m_destructor = nullptr;
+            if constexpr (std::is_move_constructible_v<T>)
+            {
+                type.m_moveConstructor = [](void* storage, void* source) {
+                    ::new (storage) T(std::move(*static_cast<T*>(source)));
+                };
+                type.m_noThrowMove = std::is_nothrow_move_constructible_v<T>;
+            }
             if constexpr (std::is_default_constructible_v<T>)
             {
                 type.m_defaultConstructor = [](void* storage) {
@@ -151,6 +166,7 @@ namespace FE::Rtti
                 };
             }
         }
+
 
         static festd::ascii_view GetShortName(festd::ascii_view qualifiedName)
         {

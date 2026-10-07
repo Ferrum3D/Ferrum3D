@@ -10,7 +10,6 @@
 #include <Framework/Application/Core/PlatformWindow.h>
 #include <Framework/Application/Platform/Windows/PlatformApplication.h>
 #include <Framework/Application/Platform/Windows/PlatformWindow.h>
-#include <Framework/Entities/EntityRegistry.h>
 
 
 namespace FE::Framework::Core
@@ -422,82 +421,3 @@ namespace FE::Framework::Core
 
     static Rtti::TypeRegistrar GTypeRegistrar_c1f93be65fe74e28a5f68a1e9a5f427f(&PlatformWindow::Reflect);
 } // namespace FE::Framework::Core
-
-
-namespace FE::Framework
-{
-    const Rtti::TypeID EntityRegistry::TypeID = Rtti::TypeID{
-        0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14, 0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c,
-    };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(EntityRegistry* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14,
-                0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c, // FE::Framework::EntityRegistry (this type)
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& EntityRegistry::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c();
-    }
-
-    void* FE_VECTORCALL EntityRegistry::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(this, typeID);
-    }
-
-    const void* FE_VECTORCALL EntityRegistry::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(const_cast<EntityRegistry*>(this), typeID);
-    }
-    void EntityRegistry::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14,
-            0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c, // FE::Framework::EntityRegistry
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<EntityRegistry>(typeInstance,
-                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                             "FE::Framework::EntityRegistry",
-                                             kBaseClassTypeIDs,
-                                             kAttributes,
-                                             kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_d7d3e880e1524014b598a9a97f5e463c(&EntityRegistry::Reflect);
-} // namespace FE::Framework

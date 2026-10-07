@@ -20,6 +20,7 @@ namespace FE::Rtti
         kStandardLayout = 1 << 3,
     };
 
+
     FE_ENUM_OPERATORS(TypeFlags);
 
 
@@ -35,6 +36,7 @@ namespace FE::Rtti
 
         kAll = Constants::kMaxU32,
     };
+
 
     FE_ENUM_OPERATORS(FieldFlags);
 
@@ -54,6 +56,7 @@ namespace FE::Rtti
             static_assert(std::derived_from<T, MetaAttributeBase>);
             static constexpr uint32_t kValue = 1;
         };
+
 
         template<class TLeft, class TRight>
         struct MetaAttributeCount<MetaAttributeList<TLeft, TRight>>
@@ -101,6 +104,7 @@ namespace FE::Rtti
                 return static_cast<const T*>(attribute.m_value);
         }
 
+
         return nullptr;
     }
 
@@ -121,6 +125,7 @@ namespace FE::Rtti
             return Rtti::TryGetAttribute<T>(m_attributes);
         }
 
+
         template<class TValue>
         const TValue& Get(const void* instance, const uint32_t arrayIndex = 0) const
         {
@@ -130,6 +135,7 @@ namespace FE::Rtti
             const TValue* ptr = reinterpret_cast<const TValue*>(address);
             return ptr[arrayIndex];
         }
+
 
         template<class TValue>
         void Set(void* instance, const TValue& value, const uint32_t arrayIndex = 0) const
@@ -147,6 +153,7 @@ namespace FE::Rtti
     {
         using DefaultConstructor = void (*)(void*);
         using CopyConstructor = void (*)(void*, const void*);
+        using MoveConstructor = void (*)(void*, void*);
         using Destructor = void (*)(void*);
         using Serialize = Serialization::ResultCode (*)(Serialization::SerializationContext&, const void*);
         using Deserialize = Serialization::ResultCode (*)(Serialization::DeserializationContext&, void*);
@@ -156,6 +163,8 @@ namespace FE::Rtti
         festd::ascii_view m_qualifiedName;
         DefaultConstructor m_defaultConstructor = nullptr;
         CopyConstructor m_copyConstructor = nullptr;
+        MoveConstructor m_moveConstructor = nullptr;
+        bool m_noThrowMove = false;
         Destructor m_destructor = nullptr;
         Serialize m_serialize = nullptr;
         Deserialize m_deserialize = nullptr;
@@ -186,10 +195,12 @@ namespace FE::Rtti
         {
         }
 
+
         [[nodiscard]] festd::intrusive_list<Type>::const_iterator begin() const
         {
             return m_list->begin();
         }
+
 
         [[nodiscard]] festd::intrusive_list<Type>::const_iterator end() const
         {

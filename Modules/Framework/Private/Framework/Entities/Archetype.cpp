@@ -1,197 +1,125 @@
-#include <Core/Memory/FiberTempAllocator.h>
-#include <Core/Memory/PoolAllocator.h>
-#include <Core/Env/Environment.h>
 #include <Framework/Entities/Archetype.h>
-#include <Framework/Entities/EntityComponentRegistry.h>
-#include <festd/bit_vector.h>
+#include <Framework/Entities/Entity.h>
 
 namespace FE::Framework
 {
-    namespace
+    Archetype::Archetype(const festd::span<const EntityComponentInfo* const> columns)
     {
-        constexpr uint32_t kBitsPerWord = sizeof(uint64_t) * 8;
-
-        bool IsChunkSizeValid(const uint32_t byteSize, const uint32_t entityByteSize, const uint32_t entityCount)
+        m_columns.assign(columns.begin(), columns.end());
+        uint32_t rowSize = 0;
+        for (const auto* column : columns)
         {
-            const uint32_t bitsetSize = Math::CeilDivide(entityCount, kBitsPerWord);
-            const uint32_t requiredByteSize = (entityByteSize + sizeof(uint16_t)) * entityCount + bitsetSize * sizeof(uint64_t);
-            return requiredByteSize <= byteSize;
+            rowSize += column->m_type->m_size + column->m_type->m_alignment - 1;
+            m_alignment = Math::Max(m_alignment, column->m_type->m_alignment);
         }
-
-
-        Memory::Pool<Archetype> GArchetypePool{ "Entity/ArchetypePool" };
-        Memory::Pool<ArchetypeChunk> GArchetypeChunkPool{ "Entity/ArchetypeChunkPool" };
-    } // namespace
-
-
-    Archetype* Archetype::Create(EntityRegistry* registry, festd::span<const ComponentTypeID> componentTypes)
-    {
-        return GArchetypePool.New(registry, componentTypes);
-    }
-
-
-    void Archetype::Destroy(const Archetype* archetype)
-    {
-        GArchetypePool.Delete(archetype);
-    }
-
-
-    EntityAllocationResult Archetype::AllocateEntity()
-    {
-        for (ArchetypeChunk* chunk : m_chunks)
+        m_byteSize = Math::Max(16u * 1024, AlignUp(rowSize, m_alignment));
+        m_capacity = columns.empty() ? 1024 : Math::Max(1u, m_byteSize / rowSize);
+        m_offsets.resize(columns.size());
+        for (;; --m_capacity)
         {
-            const uint32_t entityIndex = chunk->Allocate();
-            if (entityIndex != kInvalidIndex)
+            uint32_t offset = 0;
+            for (uint32_t i = 0; i < columns.size(); ++i)
             {
-                EntityAllocationResult result;
-                result.m_chunk = chunk;
-                result.m_entityIndex = entityIndex;
-                return result;
+                offset = AlignUp(offset, columns[i]->m_type->m_alignment);
+                m_offsets[i] = offset;
+                offset += columns[i]->m_type->m_size * m_capacity;
             }
+            if (offset <= m_byteSize)
+                break;
         }
-
-        auto* newChunk = ArchetypeChunk::Create();
-        newChunk->Setup(m_chunks.size(), this, m_chunkByteSize);
-        m_chunkByteSize *= 2;
-        m_chunks.push_back(newChunk);
-
-        EntityAllocationResult result;
-        result.m_chunk = newChunk;
-        result.m_entityIndex = newChunk->Allocate();
-        return result;
-    }
-
-
-    Archetype::Archetype(EntityRegistry* registry, const festd::span<const ComponentTypeID> componentTypes)
-        : m_registry(registry)
-    {
-        m_componentTypes.reserve(componentTypes.size());
-        m_componentTypeIDs.reserve(componentTypes.size());
-        m_components.reserve(m_componentTypes.size());
-
-        const auto& componentRegistry = EntityComponentRegistry::Get();
-        for (const ComponentTypeID typeID : componentTypes)
+        // Stable RTTI-ID order breaks ties in the explicitly declared initialization dependency graph.
+        while (m_lifecycleOrder.size() < columns.size())
         {
-            const EntityComponentInfo* info = componentRegistry.GetComponentInfo(typeID);
-            m_componentTypes.push_back(info);
-        }
-
-        festd::sort(m_componentTypes, [](const EntityComponentInfo* lhs, const EntityComponentInfo* rhs) {
-            if (lhs->m_byteSize == rhs->m_byteSize)
-                return lhs->m_typeID.m_value < rhs->m_typeID.m_value;
-            return lhs->m_byteSize > rhs->m_byteSize;
-        });
-
-        m_entityByteSize = 0;
-        for (const EntityComponentInfo* info : m_componentTypes)
-        {
-            m_entityByteSize = AlignUp(m_entityByteSize, info->m_byteAlignment);
-
-            ArchetypeComponentDesc& desc = m_components.push_back();
-            desc.m_byteSize = info->m_byteSize;
-            desc.m_byteOffset = m_entityByteSize;
-
-            m_entityByteSize += desc.m_byteSize;
-            m_componentTypeIDs.push_back(info->m_typeID);
-        }
-    }
-
-
-    Archetype::~Archetype()
-    {
-        for (const ArchetypeChunk* chunk : m_chunks)
-            GArchetypeChunkPool.Delete(chunk);
-    }
-
-
-    bool Archetype::MatchesAll(const festd::span<const ComponentTypeID> includedComponentTypes) const
-    {
-        for (const ComponentTypeID typeID : includedComponentTypes)
-        {
-            const auto it = festd::find(m_componentTypeIDs, typeID);
-            if (it == m_componentTypeIDs.end())
-                return false;
-        }
-
-        return true;
-    }
-
-
-    bool Archetype::MatchesAny(festd::span<const ComponentTypeID> includedComponentTypes) const
-    {
-        for (const ComponentTypeID typeID : includedComponentTypes)
-        {
-            const auto it = festd::find(m_componentTypeIDs, typeID);
-            if (it != m_componentTypeIDs.end())
-                return true;
-        }
-
-        return false;
-    }
-
-
-    ArchetypeChunk* ArchetypeChunk::Create()
-    {
-        return GArchetypeChunkPool.New();
-    }
-
-
-    void ArchetypeChunk::Setup(const uint32_t chunkID, Archetype* archetype, const uint32_t byteSize)
-    {
-        m_archetype = archetype;
-        m_chunkID = chunkID;
-        m_byteSize = byteSize;
-
-        auto* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kDefault);
-        m_data = static_cast<std::byte*>(allocator->allocate(byteSize));
-
-        const uint32_t bytesPerEntity = archetype->m_entityByteSize + sizeof(uint16_t);
-        const uint32_t bitsPerEntity = bytesPerEntity * 8 + 1;
-        m_entityCount = byteSize * 8 / bitsPerEntity;
-
-        while (!IsChunkSizeValid(byteSize, archetype->m_entityByteSize, m_entityCount))
-        {
-            FE_AssertDebug(m_entityCount > 1);
-            --m_entityCount;
-        }
-
-        const uint32_t indexLookupTableSize = m_entityCount * sizeof(uint16_t);
-        const uint32_t bitsetSize = Math::CeilDivide(m_entityCount, kBitsPerWord) * sizeof(uint64_t);
-        const uint32_t componentDataSize = archetype->m_entityByteSize * m_entityCount;
-
-        m_indexLookupTable = reinterpret_cast<uint16_t*>(m_data + componentDataSize);
-        m_allocatedEntitiesBitSet = reinterpret_cast<uint64_t*>(m_data + componentDataSize + indexLookupTableSize);
-        FE_Assert(m_byteSize >= componentDataSize + indexLookupTableSize + bitsetSize);
-    }
-
-
-    uint32_t ArchetypeChunk::Allocate() const
-    {
-        const uint32_t wordCount = Math::CeilDivide(m_entityCount, kBitsPerWord);
-        for (uint32_t wordIndex = 0; wordIndex < wordCount; ++wordIndex)
-        {
-            const uint64_t currentWord = ~m_allocatedEntitiesBitSet[wordIndex];
-            if (uint32_t bitIndex; Bit::ScanForward(bitIndex, currentWord))
+            bool progress = false;
+            for (uint32_t i = 0; i < columns.size(); ++i)
             {
-                const uint32_t result = wordIndex * kBitsPerWord + bitIndex;
-                if (result >= m_entityCount)
-                    return kInvalidIndex;
-
-                m_allocatedEntitiesBitSet[wordIndex] |= UINT64_C(1) << bitIndex;
-                return result;
+                if (festd::find(m_lifecycleOrder, i) != m_lifecycleOrder.end())
+                    continue;
+                bool ready = true;
+                for (const auto dependency : columns[i]->m_initAfter)
+                {
+                    const uint32_t index = Find(dependency);
+                    if (index == kInvalidIndex || festd::find(m_lifecycleOrder, index) == m_lifecycleOrder.end())
+                        ready = false;
+                }
+                if (!ready)
+                    continue;
+                m_lifecycleOrder.push_back(i);
+                progress = true;
             }
+            if (!progress)
+                break;
         }
+    }
 
+
+    uint32_t Archetype::Find(const Rtti::TypeID type) const
+    {
+        for (uint32_t i = 0; i < m_columns.size(); ++i)
+        {
+            if (m_columns[i]->m_type->m_id == type)
+                return i;
+        }
         return kInvalidIndex;
     }
 
 
-    void ArchetypeChunk::Free(const uint32_t entityIndex) const
+    ArchetypeChunk::ArchetypeChunk(Archetype& archetype, EntityRegistry& registry)
+        : m_archetype(archetype)
+        , m_registry(registry)
     {
-        const uint32_t wordIndex = entityIndex / kBitsPerWord;
-        const uint32_t bitIndex = entityIndex % kBitsPerWord;
+        m_data = static_cast<std::byte*>(Memory::DefaultAllocate(archetype.m_byteSize, archetype.m_alignment));
+        m_entities.resize(archetype.m_capacity, nullptr);
+        m_stages.resize(archetype.m_capacity * archetype.m_columns.size(), 0);
+    }
 
-        FE_AssertDebug(m_allocatedEntitiesBitSet[wordIndex] & (UINT64_C(1) << bitIndex));
-        m_allocatedEntitiesBitSet[wordIndex] &= ~(UINT64_C(1) << bitIndex);
+
+    ArchetypeChunk::~ArchetypeChunk()
+    {
+        FE_Assert(m_count == 0);
+        Memory::DefaultFree(m_data);
+    }
+
+
+    void* ArchetypeChunk::Get(const uint32_t row, const uint32_t column) const
+    {
+        return m_data + m_archetype.m_offsets[column] + row * m_archetype.m_columns[column]->m_type->m_size;
+    }
+
+
+    uint8_t& ArchetypeChunk::Stage(const uint32_t row, const uint32_t column)
+    {
+        return m_stages[column * m_archetype.m_capacity + row];
+    }
+
+
+    uint32_t ArchetypeChunk::Allocate(Entity& entity)
+    {
+        FE_Assert(m_count < m_archetype.m_capacity);
+        const uint32_t row = m_count++;
+        m_entities[row] = &entity;
+        for (uint32_t column = 0; column < m_archetype.m_columns.size(); ++column)
+            Stage(row, column) = 0;
+        return row;
+    }
+
+
+    void ArchetypeChunk::Free(const uint32_t row)
+    {
+        FE_Assert(row < m_count);
+        const uint32_t last = --m_count;
+        if (row != last)
+        {
+            for (uint32_t i = 0; i < m_archetype.m_columns.size(); ++i)
+            {
+                const auto& type = *m_archetype.m_columns[i]->m_type;
+                type.m_moveConstructor(Get(row, i), Get(last, i));
+                type.m_destructor(Get(last, i));
+                Stage(row, i) = Stage(last, i);
+            }
+            m_entities[row] = m_entities[last];
+            m_entities[row]->m_row = row;
+        }
+        m_entities[last] = nullptr;
     }
 } // namespace FE::Framework

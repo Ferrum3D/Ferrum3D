@@ -1,187 +1,373 @@
-#include <Core/Memory/FiberTempAllocator.h>
-#include <Core/Memory/PoolAllocator.h>
-#include <Framework/Entities/EntityRegistry.h>
-#include <Framework/Entities/EntityWorld.h>
-#include <Framework/Entities/EntityWorldSystem.h>
+#include <Core/Threading/Thread.h>
+#include <Framework/Entities/EntityRuntime.h>
 
 namespace FE::Framework
 {
     namespace
     {
-        Memory::SpinLockedPool<EntityRegistry> GEntityRegistryPool{ "Entity/RegistryPool" };
-
-        Threading::SpinLock GEntityWorldListLock;
-        uint32_t GFreeEntityWorldIDs = (1u << kInvalidEntityWorldID) - 1;
-        festd::intrusive_list<EntityWorld> GEntityWorldList;
+        std::atomic<uint32_t> GNextWorld{ 1 };
+        EntityAssetServices GDefaultAssets;
     } // namespace
 
-
-    EntityWorld::ListReader::ListReader(festd::intrusive_list<EntityWorld>* list)
+    EntityWorld::EntityWorld(EntityAssetServices* assets, void* services)
+        : m_impl(Memory::DefaultNew<Impl>())
     {
-        GEntityWorldListLock.lock();
-        m_list = list;
-    }
-
-
-    EntityWorld::ListReader::~ListReader()
-    {
-        GEntityWorldListLock.unlock();
-    }
-
-
-    EntityWorld::ListReader::ListReader(ListReader&& other) noexcept
-    {
-        m_list = other.m_list;
-        other.m_list = nullptr;
-    }
-
-
-    EntityWorld::ListReader& EntityWorld::ListReader::operator=(ListReader&& other) noexcept
-    {
-        festd::swap(m_list, other.m_list);
-        return *this;
-    }
-
-
-    EntityWorld::ListReader EntityWorld::GetWorldList()
-    {
-        return ListReader(&GEntityWorldList);
-    }
-
-
-    EntityRegistry* EntityWorld::CreateRegistry()
-    {
-        std::lock_guard lock{ m_lock };
-
-        auto* registry = GEntityRegistryPool.New(this);
-        m_registries.push_back(registry);
-
-        if (m_freeRegistryIDs.size() < m_registries.capacity())
-            m_freeRegistryIDs.resize(m_registries.capacity(), true);
-
-        const uint32_t id = m_freeRegistryIDs.find_first();
-        m_freeRegistryIDs.reset(id);
-
-        registry->m_ID = id;
-        registry->RequestLoad();
-
-        return registry;
-    }
-
-
-    void EntityWorld::AddSystem(EntityWorldSystem* system)
-    {
-        std::lock_guard lock{ m_lock };
-        FE_Assert(!m_isUpdating);
-        m_worldSystems.push_back(system);
-        system->Init();
-    }
-
-
-    void EntityWorld::RemoveSystem(EntityWorldSystem* system)
-    {
-        std::lock_guard lock{ m_lock };
-        FE_Assert(!m_isUpdating);
-
-        const auto it = festd::find(m_worldSystems, system);
-        FE_Assert(it != m_worldSystems.end());
-        m_worldSystems.erase_unsorted(it);
-
-        system->Shutdown();
-        system->Destroy();
-    }
-
-
-    void EntityWorld::UpdateLoadingState()
-    {
-        std::lock_guard lock{ m_lock };
-
-        for (uint32_t registryIndex = 0; registryIndex < m_registries.size();)
-        {
-            EntityRegistry* registry = m_registries[registryIndex];
-            registry->UpdateLoadingState(m_loadingContext);
-
-            switch (registry->GetState())
-            {
-            case EntityRegistry::State::kUnloaded:
-                GEntityRegistryPool.Delete(registry);
-                festd::swap(m_registries[registryIndex], m_registries.back());
-                m_registries.pop_back();
-                break;
-
-            default:
-                ++registryIndex;
-                break;
-            }
-        }
-    }
-
-
-    void EntityWorld::Update()
-    {
-        m_isUpdating = true;
-        auto restoreUpdating = festd::defer([this] {
-            m_isUpdating = false;
-        });
-
-        UpdateLoadingState();
-
-        Memory::FiberTempAllocator temp;
-        SegmentedVector<const Archetype*> newArchetypes{ &temp };
-
-        for (EntityRegistry* registry : m_registries)
-        {
-            registry->Update(m_updateContext);
-            for (uint32_t archetypeIndex = registry->m_prevArchetypeCount; archetypeIndex < registry->m_archetypes.size();
-                 ++archetypeIndex)
-            {
-                newArchetypes.push_back(registry->m_archetypes[archetypeIndex]);
-            }
-
-            registry->m_prevArchetypeCount = registry->m_archetypes.size();
-        }
-
-        for (EntityWorldSystem* system : m_worldSystems)
-        {
-            for (const Archetype* archetype : newArchetypes)
-                system->RegisterArchetype(archetype);
-
-            system->Update(m_updateContext);
-        }
+        FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+        const uint32_t token = GNextWorld.fetch_add(1);
+        FE_Assert(token <= 0xffff, "World incarnation space exhausted");
+        m_impl->m_token = static_cast<uint16_t>(token);
+        m_impl->m_assets = assets ? assets : &GDefaultAssets;
+        m_impl->m_services = services;
     }
 
 
     EntityWorld::~EntityWorld()
     {
-        FE_Assert(m_registries.size() == 1);
+        m_impl->ClearEpoch();
+        for (uint32_t i = m_impl->m_systems.size(); i > 0; --i)
+            m_impl->m_systems[i - 1]->Shutdown(*this);
+        while (!m_impl->m_registries.empty())
+            RemoveRegistry(*m_impl->m_registries.back());
+        for (auto* commands : m_impl->m_commands)
+            Memory::DefaultDelete(commands);
+        for (auto* archetype : m_impl->m_archetypes)
+            Memory::DefaultDelete(archetype);
 
-        EntityRegistry* persistentRegistry = m_registries[0];
-        GEntityRegistryPool.Delete(persistentRegistry);
-        m_registries.clear();
-
-        for (EntityWorldSystem* system : m_worldSystems)
-        {
-            system->Shutdown();
-            system->Destroy();
-        }
-        m_worldSystems.clear();
-
-        std::lock_guard lock{ GEntityWorldListLock };
-        festd::intrusive_list<EntityWorld>::remove(*this);
-        GFreeEntityWorldIDs |= (UINT32_C(1) << m_ID);
+        Memory::DefaultDelete(m_impl);
     }
 
 
-    EntityWorld::EntityWorld()
+    bool EntityWorld::Fail(const festd::ascii_view message)
     {
-        std::lock_guard lock{ GEntityWorldListLock };
-        GEntityWorldList.push_back(*this);
+        m_impl->m_error = message;
+        return false;
+    }
 
-        Bit::ScanForward(m_ID, GFreeEntityWorldIDs);
-        FE_Assert(m_ID < kInvalidEntityWorldID);
-        GFreeEntityWorldIDs &= ~(UINT32_C(1) << m_ID);
 
-        // Create persistent registry
-        FE_Unused(CreateRegistry());
+    Entity* EntityWorld::Find(const EntityID id) const
+    {
+        if (id.m_value == 0 || id.World() != m_impl->m_token || id.Slot() >= m_impl->m_slots.size())
+            return nullptr;
+        const auto& slot = m_impl->m_slots[id.Slot()];
+        return slot.m_generation == id.Generation() ? slot.m_entity : nullptr;
+    }
+
+
+    Entity* EntityWorld::Find(const Uuid uuid, const bool activeOnly) const
+    {
+        const auto it = m_impl->m_uuidLookup.find(uuid);
+        if (it == m_impl->m_uuidLookup.end())
+            return nullptr;
+        return !activeOnly || it->second->IsActive() ? it->second : nullptr;
+    }
+
+
+    EntityRegistry& EntityWorld::CreateRegistry()
+    {
+        FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+        FE_Assert(!m_impl->m_collecting && !m_impl->m_executing);
+
+        void* storage = Memory::DefaultAllocate(sizeof(EntityRegistry), alignof(EntityRegistry));
+        auto* registry = ::new (storage) EntityRegistry(*this, *m_impl->m_assets, m_impl->m_nextRegistryId++);
+        m_impl->m_registries.push_back(registry);
+        return *registry;
+    }
+
+
+    void EntityWorld::RemoveRegistry(EntityRegistry& registry)
+    {
+        FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+        FE_Assert(!m_impl->m_executing && !m_impl->m_collecting);
+
+        const auto registryIt = festd::find(m_impl->m_registries, &registry);
+        if (registryIt == m_impl->m_registries.end())
+            return;
+        registry.m_unloading = true;
+        for (auto& slot : m_impl->m_slots)
+        {
+            if (slot.m_entity && slot.m_entity->m_registry == &registry && !slot.m_entity->m_parent)
+                DestroyEntity(*slot.m_entity);
+        }
+        // Cancel every pending list that names this owner before releasing its address.
+        {
+            std::lock_guard lock{ m_impl->m_commandLock };
+            for (auto it = m_impl->m_commands.begin(); it != m_impl->m_commands.end();)
+            {
+                bool references = false;
+                for (const auto& command : (*it)->m_commands)
+                {
+                    if (command.m_registry == &registry)
+                        references = true;
+                }
+                if (references)
+                {
+                    Memory::DefaultDelete(*it);
+                    it = m_impl->m_commands.erase(it);
+                }
+                else
+                    ++it;
+            }
+        }
+        m_impl->m_registries.erase(registryIt);
+
+        Memory::DefaultDelete(&registry);
+    }
+
+
+    EntityComponentRegistry& EntityWorld::Components()
+    {
+        return m_impl->m_components;
+    }
+
+
+    uint64_t EntityWorld::GetEpoch() const
+    {
+        return m_impl->m_epoch;
+    }
+
+
+    uint64_t EntityWorld::GetHierarchyRevision() const
+    {
+        return m_impl->m_hierarchyRevision;
+    }
+
+
+    festd::ascii_view EntityWorld::GetLastError() const
+    {
+        return m_impl->m_error;
+    }
+
+
+    uint32_t EntityWorld::GetEntityCount() const
+    {
+        return static_cast<uint32_t>(m_impl->m_uuidLookup.size());
+    }
+
+
+    uint32_t EntityWorld::GetChunkCount() const
+    {
+        return m_impl->m_chunks.size();
+    }
+
+
+    Entity* EntityWorld::AllocateEntity(EntityRegistry& registry, const Env::Name name, const Uuid uuid)
+    {
+        if (m_impl->m_uuidLookup.contains(uuid))
+            return nullptr;
+        uint32_t index;
+        if (m_impl->m_freeSlots.empty())
+        {
+            index = m_impl->m_slots.size();
+            FE_Assert(index <= 0xffffff, "Entity slot space exhausted");
+            m_impl->m_slots.push_back({});
+        }
+        else
+        {
+            index = m_impl->m_freeSlots.back();
+            m_impl->m_freeSlots.pop_back();
+        }
+        auto& slot = m_impl->m_slots[index];
+        Entity* entity = ::new (m_impl->m_entities.AllocateMemory())
+            Entity(*this, registry, EntityID::Pack(m_impl->m_token, index, slot.m_generation), uuid, name);
+        slot.m_entity = entity;
+        m_impl->m_uuidLookup.emplace(uuid, entity);
+        return entity;
+    }
+
+
+    void EntityWorld::Reparent(Entity& entity, Entity* parent)
+    {
+        if (entity.m_parent == parent)
+            return;
+        if (entity.m_parent)
+            MarkUnready(*entity.m_parent);
+        if (parent && !parent->m_active && entity.m_active)
+            DeactivateSubtree(entity);
+        if (entity.m_previousSibling)
+            entity.m_previousSibling->m_nextSibling = entity.m_nextSibling;
+        else if (entity.m_parent)
+            entity.m_parent->m_firstChild = entity.m_nextSibling;
+        if (entity.m_nextSibling)
+            entity.m_nextSibling->m_previousSibling = entity.m_previousSibling;
+        else if (entity.m_parent)
+            entity.m_parent->m_lastChild = entity.m_previousSibling;
+        entity.m_parent = parent;
+        entity.m_previousSibling = parent ? parent->m_lastChild : nullptr;
+        entity.m_nextSibling = nullptr;
+        if (parent)
+        {
+            if (parent->m_lastChild)
+                parent->m_lastChild->m_nextSibling = &entity;
+            else
+                parent->m_firstChild = &entity;
+            parent->m_lastChild = &entity;
+        }
+        MarkUnready(entity);
+        ++m_impl->m_hierarchyRevision;
+    }
+
+
+    void EntityWorld::DestroyEntity(Entity& entity)
+    {
+        while (entity.m_firstChild)
+            DestroyEntity(*entity.m_firstChild);
+        DeactivateSubtree(entity);
+        const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
+        for (uint32_t i = order.size(); i > 0; --i)
+            TeardownComponent(entity, order[i - 1], true);
+        auto* chunk = entity.m_chunk;
+        chunk->Free(entity.m_row);
+        if (chunk->m_count == 0)
+        {
+            m_impl->m_chunks.erase(festd::find(m_impl->m_chunks, chunk));
+
+            Memory::DefaultDelete(chunk);
+        }
+        Reparent(entity, nullptr);
+        m_impl->m_uuidLookup.erase(entity.m_uuid);
+        auto& slot = m_impl->m_slots[entity.m_id.Slot()];
+        slot.m_entity = nullptr;
+        if (slot.m_generation < 0xffffff)
+        {
+            ++slot.m_generation;
+            m_impl->m_freeSlots.push_back(entity.m_id.Slot());
+        }
+        entity.~Entity();
+        m_impl->m_entities.GetAllocator()->deallocate(&entity, sizeof(Entity), alignof(Entity));
+        ++m_impl->m_hierarchyRevision;
+    }
+
+
+    void EntityWorld::Migrate(Entity& entity, const festd::span<const EntityComponentInfo* const> columns,
+                              const festd::span<void* const> values)
+    {
+        Archetype* archetype = nullptr;
+        // Compare canonical type lists, never trust a signature hash as identity.
+        for (auto* candidate : m_impl->m_archetypes)
+        {
+            if (candidate->m_columns.size() != columns.size())
+                continue;
+            bool equal = true;
+            for (uint32_t i = 0; i < columns.size(); ++i)
+                equal &= candidate->m_columns[i] == columns[i];
+            if (equal)
+            {
+                archetype = candidate;
+                break;
+            }
+        }
+        if (!archetype)
+        {
+            archetype = Memory::DefaultNew<Archetype>(columns);
+            m_impl->m_archetypes.push_back(archetype);
+        }
+        FE_Assert(archetype->m_lifecycleOrder.size() == columns.size(), "Missing or cyclic component initialization dependency");
+        ArchetypeChunk* destination = nullptr;
+        for (auto* chunk : m_impl->m_chunks)
+        {
+            if (&chunk->m_archetype == archetype && &chunk->m_registry == entity.m_registry
+                && chunk->m_count < archetype->m_capacity)
+            {
+                destination = chunk;
+                break;
+            }
+        }
+        if (!destination)
+        {
+            destination = Memory::DefaultNew<ArchetypeChunk>(*archetype, *entity.m_registry);
+            m_impl->m_chunks.push_back(destination);
+        }
+        auto* source = entity.m_chunk;
+        const uint32_t oldRow = entity.m_row;
+        festd::vector<void*> actualValues(values.begin(), values.end());
+        if (source && entity.m_active)
+        {
+            for (uint32_t i = 0; i < columns.size(); ++i)
+            {
+                const auto& type = *columns[i]->m_type;
+                const uint32_t oldColumn = source->m_archetype.Find(type.m_id);
+                if (!actualValues[i] || oldColumn == kInvalidIndex || !(source->Stage(oldRow, oldColumn) & kActive))
+                    continue;
+                CancelReplacements(entity, type.m_id);
+                void* data = Memory::DefaultAllocate(type.m_size, type.m_alignment);
+                type.m_moveConstructor(data, actualValues[i]);
+                entity.m_runtime->m_replacements.push_back({ columns[i], data, m_impl->m_nextTransition++ });
+                actualValues[i] = nullptr;
+            }
+        }
+        // Teardown removed/replaced components before moving their siblings.
+        if (source)
+        {
+            const auto& order = source->m_archetype.m_lifecycleOrder;
+            for (uint32_t i = order.size(); i > 0; --i)
+            {
+                const uint32_t oldColumn = order[i - 1];
+                const auto* info = source->m_archetype.m_columns[oldColumn];
+
+                const auto found = festd::find(columns, info);
+                const bool retained = found != columns.end() && !actualValues[static_cast<uint32_t>(found - columns.begin())];
+                if (!retained)
+                {
+                    CancelReplacements(entity, info->m_type->m_id);
+                    TeardownComponent(entity, oldColumn, true);
+                }
+            }
+        }
+        const uint32_t row = destination->Allocate(entity);
+        for (uint32_t i = 0; i < columns.size(); ++i)
+        {
+            const auto& type = *columns[i]->m_type;
+            const uint32_t oldColumn = source ? source->m_archetype.Find(type.m_id) : kInvalidIndex;
+            if (actualValues[i])
+                type.m_moveConstructor(destination->Get(row, i), actualValues[i]);
+            else if (oldColumn != kInvalidIndex)
+            {
+                type.m_moveConstructor(destination->Get(row, i), source->Get(oldRow, oldColumn));
+                type.m_destructor(source->Get(oldRow, oldColumn));
+                destination->Stage(row, i) = source->Stage(oldRow, oldColumn);
+            }
+            else
+            {
+                FE_Assert(type.m_defaultConstructor);
+                type.m_defaultConstructor(destination->Get(row, i));
+            }
+        }
+        entity.m_chunk = destination;
+        entity.m_row = row;
+        MarkUnready(entity);
+        if (source)
+        {
+            source->Free(oldRow);
+            if (source->m_count == 0)
+            {
+                m_impl->m_chunks.erase(festd::find(m_impl->m_chunks, source));
+
+                Memory::DefaultDelete(source);
+            }
+        }
+    }
+
+
+    void* EntityWorld::LookupComponent(const Entity& entity, const Rtti::TypeID type, const bool write) const
+    {
+        FE_Assert(!m_impl->m_collecting, "System collection cannot inspect live component data");
+        if (const auto* traversal = m_impl->m_currentTraversal)
+        {
+            bool declared = false;
+            for (const auto& access : traversal->m_accesses)
+            {
+                if (!access.m_parent && access.m_type == type && (!write || access.m_write))
+                    declared = true;
+            }
+            FE_AssertDebug(declared, "Entity component lookup exceeds traversal access declarations");
+        }
+        if (!entity.m_chunk)
+            return nullptr;
+        const uint32_t column = entity.m_chunk->m_archetype.Find(type);
+        if (column == kInvalidIndex)
+            return nullptr;
+        if (m_impl->m_currentTraversal && !(entity.m_chunk->Stage(entity.m_row, column) & kActive))
+            return nullptr;
+        return entity.m_chunk->Get(entity.m_row, column);
     }
 } // namespace FE::Framework

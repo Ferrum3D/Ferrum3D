@@ -74,7 +74,7 @@ def get_module_path(type_declaration_file_path: str, project_dir: Path) -> Path:
         if part.name == "Shaders":
             return project_dir / "Modules/Graphics/Framework"
 
-        if part.name == "Tests" and part.parent.name == "FerrumCore":
+        if part.name == "Tests" and (part.parent.name == "FerrumCore" or part.parent.parent.name == "Modules"):
             return project_dir / part
 
         if part.name == "Public" or part.name == "Private":

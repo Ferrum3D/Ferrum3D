@@ -1,160 +1,100 @@
 #pragma once
-#include <Core/Env/Environment.h>
 #include <Framework/Entities/Base.h>
-#include <Framework/Entities/EntityComponentRegistry.h>
-#include <Framework/Entities/EntitySystem.h>
-#include <festd/vector.h>
 
 namespace FE::Framework
 {
-    struct EntityDeferredAction final
+    // Stable until destruction; component addresses are borrowed only until the next structural commit.
+    // Metadata is read-only during traversal. All structural edits go through EntityCommandList.
+    struct Entity final
     {
-        enum class Type : uint32_t
+        [[nodiscard]] EntityID GetID() const
         {
-            kInvalid,
-            kAddSystem,
-            kRemoveSystem,
-            kAddComponent,
-            kRemoveComponent,
-        };
-
-        EntityDeferredAction* m_next = nullptr;
-        Type m_type = Type::kInvalid;
-        Entity* m_entity = nullptr;
-
-        union
-        {
-            EntitySystem* m_system = nullptr;
-            ComponentTypeID m_componentType;
-        } m_data;
-
-        static EntityDeferredAction AddSystem(Entity* entity, EntitySystem* system)
-        {
-            EntityDeferredAction action;
-            action.m_type = Type::kAddSystem;
-            action.m_entity = entity;
-            action.m_data.m_system = system;
-            return action;
+            return m_id;
         }
 
-        static EntityDeferredAction RemoveSystem(Entity* entity, EntitySystem* system)
+
+        [[nodiscard]] Uuid GetUuid() const
         {
-            EntityDeferredAction action;
-            action.m_type = Type::kRemoveSystem;
-            action.m_entity = entity;
-            action.m_data.m_system = system;
-            return action;
+            return m_uuid;
         }
 
-        static EntityDeferredAction AddComponent(Entity* entity, const ComponentTypeID componentType)
+
+        [[nodiscard]] Env::Name GetName() const
         {
-            EntityDeferredAction action;
-            action.m_type = Type::kAddComponent;
-            action.m_entity = entity;
-            action.m_data.m_componentType = componentType;
-            return action;
+            return m_name;
         }
 
-        static EntityDeferredAction RemoveComponent(Entity* entity, const ComponentTypeID componentType)
+
+        [[nodiscard]] EntityWorld& GetWorld() const
         {
-            EntityDeferredAction action;
-            action.m_type = Type::kRemoveComponent;
-            action.m_entity = entity;
-            action.m_data.m_componentType = componentType;
-            return action;
-        }
-    };
-
-
-    union EntityID final
-    {
-        struct
-        {
-            uint32_t m_worldID : kEntityWorldIDBits;
-            uint32_t m_registryID : kEntityRegistryIDBits;
-            uint32_t m_entityID;
-        };
-
-        uint64_t m_value;
-
-        EntityID() = default;
-
-        explicit EntityID(ForceInitType)
-        {
-            m_value = Constants::kMaxU64;
+            return *m_world;
         }
 
-        static const EntityID kInvalid;
-    };
 
-    inline const EntityID EntityID::kInvalid{ kForceInit };
-
-    static_assert(sizeof(EntityID) == sizeof(uint64_t));
-
-
-    struct Entity final : public IComponentProvider
-    {
-        enum class State : uint32_t
+        [[nodiscard]] EntityRegistry& GetRegistry() const
         {
-            kUnloaded,
-            kLoaded,
-            kInitialized,
-        };
-
-        [[nodiscard]] EntityID GetID() const;
-
-        static Entity* Create(Env::Name name, EntityRegistry* registry);
-        static void Destroy(const Entity* entity);
-
-        [[nodiscard]] void* GetComponentByTypeID(ComponentTypeID componentType) const override;
-        [[nodiscard]] void* SafeGetComponentByTypeID(ComponentTypeID componentType) const override;
-        [[nodiscard]] bool HasComponentByTypeID(ComponentTypeID componentType) const override;
-
-        template<class TComponent>
-        void AddComponent()
-        {
-            constexpr ComponentTypeID componentType = ComponentTypeID::Create<TComponent>();
-            EntityComponentRegistry::Get().RegisterComponent<TComponent>();
-            AddComponentByTypeID(componentType);
+            return *m_registry;
         }
 
-        void AddComponentByTypeID(ComponentTypeID componentType);
 
-        void AddSystem(EntitySystem* system);
-        void AddSystemImmediate(EntitySystem* system);
+        [[nodiscard]] Entity* GetParent() const
+        {
+            return m_parent;
+        }
 
-        void RemoveSystem(EntitySystem* system);
-        void RemoveSystemImmediate(EntitySystem* system);
 
-        void ChangeArchetypeImmediate(festd::span<const ComponentTypeID> addedComponents,
-                                      festd::span<const ComponentTypeID> removedComponents);
+        [[nodiscard]] Entity* GetFirstChild() const
+        {
+            return m_firstChild;
+        }
 
-        void ExecuteDeferredActions();
 
-        void UpdateLocalSystems(const EntityUpdateContext& context);
+        [[nodiscard]] Entity* GetNextSibling() const
+        {
+            return m_nextSibling;
+        }
+
+
+        [[nodiscard]] bool IsActive() const
+        {
+            return m_active;
+        }
+
+
+        [[nodiscard]] bool HasFailed() const
+        {
+            return m_failed;
+        }
+
+
+        [[nodiscard]] void* FindComponent(Rtti::TypeID type, bool write = false) const;
+        template<class T>
+        [[nodiscard]] T* FindComponent() const
+        {
+            return static_cast<T*>(FindComponent(Rtti::GetTypeID<std::remove_const_t<T>>(), !std::is_const_v<T>));
+        }
 
     private:
-        friend EntityRegistry;
-
-        Entity(Env::Name name, EntityRegistry* registry);
-
-        void AddDeferredAction(const EntityDeferredAction& action);
-        void LoadComponents(const EntityLoadingContext& context);
-        void UnloadComponents(const EntityLoadingContext& context);
-
-        Threading::SpinLock m_lock;
-        std::atomic<State> m_state = State::kUnloaded;
-        uint32_t m_entityIndexInRegistry = kInvalidIndex;
-        uint32_t m_entityIndexInArchetypeChunk = kInvalidIndex;
-        Env::Name m_name;
+        friend EntityWorld;
+        friend ArchetypeChunk;
+        struct Runtime;
+        EntityWorld* m_world = nullptr;
         EntityRegistry* m_registry = nullptr;
-        ArchetypeChunk* m_archetypeChunk = nullptr;
-        festd::inline_vector<EntitySystem*> m_systems;
-
-        EntityDeferredAction* m_deferredActions = nullptr;
-        uint32_t m_componentsToAddCount = 0;
-        uint32_t m_componentsToRemoveCount = 0;
-        uint32_t m_systemsToAddCount = 0;
-        uint32_t m_systemsToRemoveCount = 0;
+        const EntityID m_id;
+        const Uuid m_uuid;
+        Env::Name m_name;
+        Entity* m_parent = nullptr;
+        Entity* m_firstChild = nullptr;
+        Entity* m_lastChild = nullptr;
+        Entity* m_previousSibling = nullptr;
+        Entity* m_nextSibling = nullptr;
+        ArchetypeChunk* m_chunk = nullptr;
+        uint32_t m_row = 0;
+        bool m_active = false;
+        bool m_wantsActive = true;
+        bool m_failed = false;
+        Runtime* m_runtime = nullptr;
+        Entity(EntityWorld& world, EntityRegistry& registry, EntityID id, Uuid uuid, Env::Name name);
+        ~Entity();
     };
 } // namespace FE::Framework

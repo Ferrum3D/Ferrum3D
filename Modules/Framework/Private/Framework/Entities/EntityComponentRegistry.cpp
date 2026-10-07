@@ -1,26 +1,29 @@
-#include <Framework/Entities/EntityComponentRegistry.h>
+#include <Core/Threading/Thread.h>
+#include <Framework/Entities/EntityRuntime.h>
 
 namespace FE::Framework
 {
-    void EntityComponentRegistry::RegisterEntry(const EntityComponentInfo* entry)
+    EntityComponentRegistry::~EntityComponentRegistry()
     {
-        std::lock_guard lock{ m_lock };
-        m_entries[entry->m_typeID] = entry;
+        for (auto* entry : m_entries)
+            Memory::DefaultDelete(entry);
     }
 
 
-    const EntityComponentInfo* EntityComponentRegistry::GetComponentInfo(const ComponentTypeID typeID) const
+    const EntityComponentInfo* EntityComponentRegistry::Find(const Rtti::TypeID id) const
     {
         std::lock_guard lock{ m_lock };
-        const auto it = m_entries.find(typeID);
-        FE_Assert(it != m_entries.end());
-        return it->second;
+        return FindUnlocked(id);
     }
 
 
-    EntityComponentRegistry& EntityComponentRegistry::Get()
+    const EntityComponentInfo* EntityComponentRegistry::FindUnlocked(const Rtti::TypeID id) const
     {
-        static EntityComponentRegistry registry;
-        return registry;
+        for (const auto* entry : m_entries)
+        {
+            if (entry->m_type->m_id == id)
+                return entry;
+        }
+        return nullptr;
     }
 } // namespace FE::Framework

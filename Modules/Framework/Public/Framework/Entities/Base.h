@@ -1,54 +1,96 @@
 #pragma once
-#include <Core/Base/BaseTypes.h>
-#include <Core/Base/Hash.h>
+#include <Core/Env/Environment.h>
+#include <Core/Jobs/WaitGroup.h>
+#include <Core/RTTI/Reflection.h>
 
 namespace FE::Framework
 {
-    union EntityID;
     struct Entity;
-    struct EntitySystem;
-    struct EntityComponentInfo;
-    struct EntityRegistry;
     struct EntityWorld;
-    struct EntityWorldSystem;
-    struct EntityLoadingContext;
-    struct EntityUpdateContext;
-
+    struct EntityRegistry;
     struct Archetype;
     struct ArchetypeChunk;
+    struct EntityCommandList;
+    struct EntityUpdateContext;
+    struct WorldSystem;
 
-
-    struct ComponentTypeID final : public TypedHandle<ComponentTypeID, uint64_t>
+    struct EntityID final
     {
-        template<class TComponent>
-        static constexpr ComponentTypeID Create()
+        uint64_t m_value = 0;
+        [[nodiscard]] uint16_t World() const
         {
-            return ComponentTypeID{ TypeNameHash<TComponent> };
+            return static_cast<uint16_t>(m_value >> 48);
         }
 
-        template<class TComponent>
-        [[nodiscard]] constexpr bool Is() const
+
+        [[nodiscard]] uint32_t Slot() const
         {
-            return m_value == TypeNameHash<TComponent>;
+            return static_cast<uint32_t>((m_value >> 24) & 0xffffff);
+        }
+
+
+        [[nodiscard]] uint32_t Generation() const
+        {
+            return static_cast<uint32_t>(m_value & 0xffffff);
+        }
+        bool operator==(const EntityID&) const = default;
+        static EntityID Pack(uint16_t world, uint32_t slot, uint32_t generation)
+        {
+            return { (uint64_t(world) << 48) | (uint64_t(slot) << 24) | generation };
         }
     };
 
 
-    inline constexpr uint32_t kMaxComponentsPerEntity = 512;
-
-    inline constexpr uint32_t kEntityWorldIDBits = 4;
-    inline constexpr uint32_t kEntityRegistryIDBits = 28;
-
-    inline constexpr uint32_t kInvalidEntityWorldID = (1 << kEntityWorldIDBits) - 1;
-    inline constexpr uint32_t kInvalidEntityRegistryID = (1 << kEntityRegistryIDBits) - 1;
-} // namespace FE::Framework
-
-
-template<>
-struct eastl::hash<FE::Framework::ComponentTypeID>
-{
-    size_t operator()(const FE::Framework::ComponentTypeID id) const
+    enum class LifecycleResult : uint8_t
     {
-        return id.m_value;
+        kSucceeded,
+        kPending,
+        kFailed
+    };
+
+
+    enum class ResidencyScope : uint8_t
+    {
+        kEntity,
+        kRegistry
+    };
+
+
+    enum class ExecutionPolicy : uint8_t
+    {
+        kSequential,
+        kParallelChunks,
+        kParallelHierarchyTrees
+    };
+
+
+    struct Phase final
+    {
+        uint64_t m_id;
+        festd::ascii_view m_name;
+        bool operator==(const Phase& other) const
+        {
+            return m_id == other.m_id;
+        }
+    };
+
+#define FE_DECLARE_ENTITY_PHASE(name)                                                                                            \
+    inline constexpr ::FE::Framework::Phase name                                                                                 \
+    {                                                                                                                            \
+        ::FE::CompileTimeHash(#name, sizeof(#name) - 1), #name                                                                   \
     }
-};
+    namespace Phases
+    {
+        FE_DECLARE_ENTITY_PHASE(PreUpdate);
+        FE_DECLARE_ENTITY_PHASE(Update);
+        FE_DECLARE_ENTITY_PHASE(PostUpdate);
+    } // namespace Phases
+
+
+    // Parent terms are declared here; topology-aware execution is introduced with the parallel scheduler.
+    template<class T>
+    struct Parent
+    {
+        using Type = T;
+    };
+} // namespace FE::Framework
