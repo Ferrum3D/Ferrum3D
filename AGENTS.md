@@ -63,16 +63,17 @@ This only changes the current process environment. It leaves the normal Windows 
   - Pointer and reference stars bind to the type side, for example `Buffer*` and `BufferInstance*&`.
   - Keep short empty functions/lambdas compact only where the formatter allows it.
   - Preserve intentional empty lines when editing; do not remove them as incidental cleanup.
-  - Add two empty lines between adjacent function definitions and between adjacent type definitions.
+  - Add two empty lines between adjacent function definitions and between adjacent type definitions. **Never use two empty lines inside function bodies or directly in struct definitions**.
   - For `if`, `else`, `for`, `while`, `do`, and similar control statements, use braces when either the formatted condition or loop header spans multiple physical lines, or the body spans multiple physical lines.
   - Omit braces when both the condition or loop header and the body each occupy one physical line, unless another branch in the same `if`-`else` chain requires braces. Put that statement on the following indented line, not on the same line as the control header.
   - Use braces when the body contains multiple statements or one statement spanning multiple physical lines, including wrapped function calls and nested control statements.
-  - Use consistent braces throughout an entire `if`-`else if`-`else` chain: if any branch requires braces, every branch must use braces.
+  - Use consistent braces throughout an entire `if`-`else if`-`else` chain: **if any branch requires braces, every branch must use braces**.
   - Keep braces whenever removing them would change scope or lifetime, create a dangling `else`, or otherwise change behavior.
   - Preserve include blocks and sort includes case-sensitively when changing include lists.
 - Treat whitespace as part of the code's structure. Keep related statements together, and use one empty line to separate distinct steps within a function, such as validation, setup, the main operation, and cleanup. Do not compress a multi-step function into one uninterrupted block, and do not add blank lines between every statement.
 - Keep the existing two-empty-line separation between adjacent function definitions and adjacent type definitions. Apply it consistently to overloads, small helpers, and functions inside unnamed namespaces; do not reduce it to a single empty line when editing nearby code.
 - Use blank lines to make changes in control flow and ownership easy to scan. Separate an early-return guard from the work that follows, and separate independently meaningful phases in loops or nested branches. Keep a condition with its body and keep short, tightly related operations on adjacent lines.
+- Always use blank lines after `return`, `break` and `continue` and before sequences of variable declarations; except before or after lines containing only braces.
 - When a function contains deeply nested logic, prefer extracting a small, purpose-named helper over compressing the code or letting one function become a wall of statements. Keep helpers focused and near their call site when local to the implementation.
 - Do not rely on clang-format to add logical spacing: it formats indentation and line layout but cannot infer where the code's conceptual steps should be separated. Preserve intentional blank lines when formatting or editing a file.
 - Include order in implementation files follows project headers grouped at the top, as in `Buffer.cpp`. Prefer angle-bracket project includes such as `#include <Graphics/Core/Vulkan/Buffer.h>`.
@@ -82,8 +83,8 @@ This only changes the current process environment. It leaves the normal Windows 
 - Avoid complex multi-line boolean conditions. Use named predicates, separate early-return checks, or focused validation helpers so each condition is easy to read.
 - Use existing project diagnostics and helpers instead of ad hoc checks: `FE_Assert`, `FE_AssertDebug`, `FE_DebugBreak`, `VerifyVk`, `FE_PROFILER_ZONE`, `Rtti::AssertCast`, `NativeCast`, and `ImplCast`.
 - Keep comments sparse. Use comments for namespace endings, complex intent, or non-obvious behavior rather than restating the code.
-- Prefer generated serialization via `FE_RTTI_Serialize()` whenever reflection can express the serialized fields. Write a manual
-  `Serializer` only when generated serialization cannot represent the required contract.
+- Prefer generated serialization via `FE_RTTI_Serialize()` whenever reflection can express the serialized fields. Write a manual `Serializer` only when generated serialization cannot represent the required contract.
+- Avoid unnecessary casts, e.g. most `festd` containers' `size_type` is `uint32_t` so `static_cast<uint32_t>(vec.size())` is redundant.
 
 For example, the early return and inner conditional below have single-line bodies. The outer loop and wrapped call have multi-line bodies and require braces:
 

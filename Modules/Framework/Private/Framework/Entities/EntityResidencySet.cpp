@@ -14,12 +14,14 @@ namespace FE::Framework
         const auto result = request.m_request.GetResult();
         if (result == IO::AssetLoadResult::kPending)
             return LifecycleResult::kPending;
+
         if (result != IO::AssetLoadResult::kSucceeded)
             return LifecycleResult::kFailed;
 
         const auto* slot = request.m_request.GetAssetSlot();
         if (expectedType.IsValid() && (!slot || slot->m_typeId != expectedType))
             return LifecycleResult::kFailed;
+
         return LifecycleResult::kSucceeded;
     }
 
@@ -50,6 +52,7 @@ namespace FE::Framework
                 return true;
             }
         }
+
         m_entries.push_back({ id, expectedType, m_services->Acquire(id, expectedType), 1 });
         return true;
     }
@@ -61,11 +64,13 @@ namespace FE::Framework
         {
             if (it->m_id != id)
                 continue;
+
             if (--it->m_contributors == 0)
             {
                 m_services->Release(it->m_request);
                 m_entries.erase(it);
             }
+
             return;
         }
     }
@@ -78,6 +83,7 @@ namespace FE::Framework
             if (entry.m_id == id)
                 return m_services->Poll(entry.m_request, expectedType);
         }
+
         return LifecycleResult::kFailed;
     }
 

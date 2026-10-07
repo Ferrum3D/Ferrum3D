@@ -13,18 +13,17 @@ namespace FE::Framework
         void* m_userData;
         uint32_t (*m_parent)(void*, uint32_t);
         void* (*m_component)(void*, uint32_t, Rtti::TypeID, bool);
+
         uint32_t GetParent(uint32_t entity) const
         {
             return m_parent(m_userData, entity);
         }
-
 
         template<class T>
         const T* Read(uint32_t entity) const
         {
             return static_cast<const T*>(m_component(m_userData, entity, Rtti::GetTypeID<T>(), false));
         }
-
 
         template<class T>
         T* Write(uint32_t entity) const

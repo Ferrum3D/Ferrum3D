@@ -17,12 +17,10 @@ namespace FE::Framework
         EntityToken m_token;
         EntityTarget() = default;
 
-
         EntityTarget(EntityID id)
             : m_id(id)
         {
         }
-
 
         EntityTarget(EntityToken token)
             : m_token(token)
@@ -57,7 +55,6 @@ namespace FE::Framework
             RemoveComponent(target, Rtti::GetTypeID<T>());
         }
 
-
         template<class T>
         bool AddComponent(EntityTarget target, T&& value)
         {
@@ -72,13 +69,11 @@ namespace FE::Framework
             return true;
         }
 
-
         template<class T>
         bool AddComponent(EntityTarget target)
         {
             return AddComponent(target, T{});
         }
-
 
         template<class T>
         bool ReplaceComponent(EntityTarget target, T&& value)
@@ -96,7 +91,6 @@ namespace FE::Framework
         {
             return Components().Register<T>() ? Components().Find(Rtti::GetTypeID<T>()) : nullptr;
         }
-
 
         void* AllocatePayload(size_t size, size_t alignment);
         void RecordComponent(EntityTarget target, const EntityComponentInfo& info, void* storage);

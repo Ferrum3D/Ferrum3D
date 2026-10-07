@@ -47,9 +47,9 @@ namespace FE::Framework
         if (this != &other)
         {
             Memory::DefaultDelete(m_impl);
-
             m_impl = std::exchange(other.m_impl, nullptr);
         }
+
         return *this;
     }
 
@@ -68,6 +68,7 @@ namespace FE::Framework
             result = Memory::DefaultAllocate(size, alignment);
             m_impl->m_largePayloads.push_back(result);
         }
+
         return result;
     }
 

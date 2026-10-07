@@ -51,10 +51,12 @@ namespace FE::Framework
             if (component.m_type == type.m_id)
                 return false;
         }
+
         EntityComponentRecord record;
         record.m_type = type.m_id;
         record.m_version = type.m_serializationVersion;
         record.m_schemaHash = type.m_serializationSchemaHash;
+
         IO::WriteOnlyMemoryStream stream;
         Serialization::PackedBinaryFormat format;
         Serialization::SerializationContext context(
@@ -73,6 +75,7 @@ namespace FE::Framework
                 }
                 dependencies.push_back({ asset, expected, static_cast<IO::DependencyKind>(kind) });
             });
+
         if (context.Store(type, value) != Serialization::ResultCode::kSuccess)
             return false;
 
@@ -81,10 +84,11 @@ namespace FE::Framework
         if (bytes.size() > UINT32_MAX || m_payload.size() > UINT32_MAX - bytes.size())
             return false;
 
-        record.m_payloadOffset = static_cast<uint32_t>(m_payload.size());
-        record.m_payloadSize = static_cast<uint32_t>(bytes.size());
+        record.m_payloadOffset = m_payload.size();
+        record.m_payloadSize = bytes.size();
         for (const auto byte : bytes)
             m_payload.push_back(static_cast<uint8_t>(byte));
+
         entity.m_components.push_back(std::move(record));
         return true;
     }
@@ -103,6 +107,7 @@ namespace FE::Framework
                 if (m_entities[other].m_uuid == entity.m_uuid)
                     return false;
             }
+
             Uuid parent = entity.m_parentUuid;
             uint32_t depth = 0;
             while (parent.IsValid())
@@ -118,11 +123,13 @@ namespace FE::Framework
 
                 parent = found->m_parentUuid;
             }
+
             for (uint32_t column = 0; column < entity.m_components.size(); ++column)
             {
                 const auto& component = entity.m_components[column];
                 if (!component.m_type.IsValid() || component.m_payloadSize == 0 || component.m_payloadOffset > m_payload.size())
                     return false;
+
                 if (component.m_payloadSize > m_payload.size() - component.m_payloadOffset)
                     return false;
 
@@ -131,6 +138,7 @@ namespace FE::Framework
                     if (entity.m_components[other].m_type == component.m_type)
                         return false;
                 }
+
                 for (const auto& dependency : component.m_dependencies)
                 {
                     if (!dependency.m_asset.IsValid() || !dependency.m_expectedType.IsValid()
@@ -157,17 +165,20 @@ namespace FE::Framework
                 const auto* type = Rtti::TypeRegistry::FindType(component.m_type);
                 if (!type || !type->m_defaultConstructor || !type->m_destructor || !type->m_deserialize)
                     return false;
+
                 if (type->m_serializationVersion != component.m_version
                     || type->m_serializationSchemaHash != component.m_schemaHash)
                 {
                     return false;
                 }
+
                 void* data = Memory::DefaultAllocate(type->m_size, type->m_alignment);
                 type->m_defaultConstructor(data);
                 auto cleanup = festd::defer([&] {
                     type->m_destructor(data);
                     Memory::DefaultFree(data);
                 });
+
                 IO::ReadOnlyMemoryStream stream(m_payload.data() + component.m_payloadOffset, component.m_payloadSize);
                 Serialization::PackedBinaryFormat format;
                 Serialization::DeserializationContext context(&stream, format);
@@ -190,11 +201,13 @@ namespace FE::Framework
                             return actual.m_asset == expected.m_asset && actual.m_expectedType == expected.m_expectedType
                                 && actual.m_kind == expected.m_kind;
                         });
+
                     if (found == component.m_dependencies.end())
                         return false;
                 }
             }
         }
+
         return true;
     }
 
@@ -203,19 +216,24 @@ namespace FE::Framework
     {
         if (!collection.Validate())
             return false;
+
         if (!m_rootUuid.IsValid())
             m_rootUuid = NewEntityUuid();
+
         festd::vector<EntityUuidBinding> bindings;
         for (const auto& entity : collection.m_entities)
         {
             auto found = festd::find_if(m_bindings.begin(), m_bindings.end(), [&](const auto& binding) {
                 return binding.m_sourceUuid == entity.m_uuid;
             });
+
             bindings.push_back({ entity.m_uuid, found == m_bindings.end() ? NewEntityUuid() : found->m_entityUuid });
         }
+
         m_bindings = std::move(bindings);
         if (m_root.m_entities.empty())
             m_root.m_entities.push_back({});
+
         m_root.m_entities.front().m_uuid = m_rootUuid;
         return Validate(collection);
     }
@@ -230,11 +248,13 @@ namespace FE::Framework
         festd::vector<EntityUuidBinding> remapping;
         copy.m_rootUuid = NewEntityUuid();
         remapping.push_back({ m_rootUuid, copy.m_rootUuid });
+
         for (uint32_t index = 0; index < copy.m_bindings.size(); ++index)
         {
             copy.m_bindings[index].m_entityUuid = NewEntityUuid();
             remapping.push_back({ m_bindings[index].m_entityUuid, copy.m_bindings[index].m_entityUuid });
         }
+
         EntityCollection root;
         EntityRecord record;
         record.m_uuid = copy.m_rootUuid;
@@ -244,6 +264,7 @@ namespace FE::Framework
             const auto* type = Rtti::TypeRegistry::FindType(component.m_type);
             if (!type || !type->m_defaultConstructor || !type->m_destructor || !type->m_deserialize)
                 return false;
+
             if (type->m_serializationVersion != component.m_version || type->m_serializationSchemaHash != component.m_schemaHash)
                 return false;
 
@@ -253,6 +274,7 @@ namespace FE::Framework
                 type->m_destructor(data);
                 Memory::DefaultFree(data);
             });
+
             IO::ReadOnlyMemoryStream stream(m_root.m_payload.data() + component.m_payloadOffset, component.m_payloadSize);
             Serialization::PackedBinaryFormat format;
             Serialization::DeserializationContext context(&stream, format);
@@ -264,11 +286,14 @@ namespace FE::Framework
                 }
                 return uuid;
             });
+
             if (context.Load(*type, data) != Serialization::ResultCode::kSuccess || stream.Tell() != stream.Length())
                 return false;
+
             if (!root.CookComponent(record, *type, data))
                 return false;
         }
+
         root.m_entities.push_back(std::move(record));
         copy.m_root = std::move(root);
         *this = std::move(copy);
@@ -280,11 +305,13 @@ namespace FE::Framework
     {
         if (!m_rootUuid.IsValid() || !m_collection.GetAssetID().IsValid() || !m_root.Validate())
             return false;
+
         if (m_root.m_entities.size() != 1 || m_root.m_entities.front().m_uuid != m_rootUuid
             || m_root.m_entities.front().m_parentUuid.IsValid())
         {
             return false;
         }
+
         for (uint32_t index = 0; index < m_bindings.size(); ++index)
         {
             const auto& binding = m_bindings[index];
@@ -300,6 +327,7 @@ namespace FE::Framework
                 }
             }
         }
+
         return true;
     }
 
@@ -315,9 +343,11 @@ namespace FE::Framework
                 festd::find_if(collection.m_entities.begin(), collection.m_entities.end(), [&](const auto& entity) {
                     return entity.m_uuid == binding.m_sourceUuid;
                 });
+
             if (found == collection.m_entities.end())
                 return false;
         }
+
         return true;
     }
 } // namespace FE::Framework

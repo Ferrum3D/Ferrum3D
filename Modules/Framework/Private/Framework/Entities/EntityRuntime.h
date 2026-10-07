@@ -237,5 +237,4 @@ namespace FE::Framework
             m_epochArena.Clear();
         }
     };
-
 } // namespace FE::Framework

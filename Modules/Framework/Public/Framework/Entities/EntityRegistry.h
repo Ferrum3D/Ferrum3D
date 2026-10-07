@@ -11,12 +11,10 @@ namespace FE::Framework
             return *m_world;
         }
 
-
         [[nodiscard]] uint64_t GetID() const
         {
             return m_id;
         }
-
 
         [[nodiscard]] const EntityResidencySet& GetResidency() const
         {
@@ -29,6 +27,7 @@ namespace FE::Framework
         const uint64_t m_id;
         EntityResidencySet m_residency;
         bool m_unloading = false;
+
         EntityRegistry(EntityWorld& world, EntityAssetServices& services, uint64_t id)
             : m_world(&world)
             , m_id(id)

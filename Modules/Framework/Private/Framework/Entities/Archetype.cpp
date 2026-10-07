@@ -12,6 +12,7 @@ namespace FE::Framework
             rowSize += column->m_type->m_size + column->m_type->m_alignment - 1;
             m_alignment = Math::Max(m_alignment, column->m_type->m_alignment);
         }
+
         m_byteSize = Math::Max(16u * 1024, AlignUp(rowSize, m_alignment));
         m_capacity = columns.empty() ? 1024 : Math::Max(1u, m_byteSize / rowSize);
         m_offsets.resize(columns.size());
@@ -25,6 +26,7 @@ namespace FE::Framework
                 m_offsets[i] = offset;
                 offset += columns[i]->m_type->m_size * m_capacity;
             }
+
             if (offset <= m_byteSize)
                 break;
         }
@@ -45,12 +47,14 @@ namespace FE::Framework
                     if (index == kInvalidIndex || festd::find(m_lifecycleOrder, index) == m_lifecycleOrder.end())
                         ready = false;
                 }
+
                 if (!ready)
                     continue;
 
                 m_lifecycleOrder.push_back(i);
                 progress = true;
             }
+
             if (!progress)
                 break;
         }
@@ -64,6 +68,7 @@ namespace FE::Framework
             if (m_columns[i]->m_type->m_id == type)
                 return i;
         }
+
         return kInvalidIndex;
     }
 
@@ -101,10 +106,12 @@ namespace FE::Framework
     uint32_t ArchetypeChunk::Allocate(Entity& entity)
     {
         FE_Assert(m_count < m_archetype.m_capacity);
+
         const uint32_t row = m_count++;
         m_entities[row] = &entity;
         for (uint32_t column = 0; column < m_archetype.m_columns.size(); ++column)
             Stage(row, column) = 0;
+
         return row;
     }
 
@@ -122,9 +129,11 @@ namespace FE::Framework
                 type.m_destructor(Get(last, i));
                 Stage(row, i) = Stage(last, i);
             }
+
             m_entities[row] = m_entities[last];
             m_entities[row]->m_row = row;
         }
+
         m_entities[last] = nullptr;
     }
 } // namespace FE::Framework

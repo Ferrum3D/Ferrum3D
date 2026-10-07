@@ -53,30 +53,40 @@ namespace FE::Framework
     {
         explicit EntityWorld(EntityAssetServices* assets = nullptr, void* services = nullptr);
         ~EntityWorld();
+
         EntityWorld(const EntityWorld&) = delete;
         EntityWorld& operator=(const EntityWorld&) = delete;
+
         [[nodiscard]] Entity* Find(EntityID id) const;
         [[nodiscard]] Entity* Find(Uuid uuid, bool activeOnly = true) const;
+
         EntityRegistry& CreateRegistry();
         void RemoveRegistry(EntityRegistry& registry);
+
         EntityComponentRegistry& Components();
         void Submit(EntityCommandList&& commands);
+
         MaterializationToken SpawnCollection(EntityRegistry& registry, const EntityCollection& collection);
         MaterializationToken SpawnCollection(EntityRegistry& registry, IO::AssetID collection);
         MaterializationToken LoadPlacement(EntityRegistry& registry, IO::AssetID placement);
         MaterializationToken LoadPlacement(EntityRegistry& registry, IO::AssetID placement,
                                            const EntityCollectionInstanceAsset& definition, const EntityCollection& collection);
+
         [[nodiscard]] MaterializationStatus GetMaterializationStatus(MaterializationToken token) const;
         [[nodiscard]] festd::span<const EntityUuidBinding> GetMaterializationBindings(MaterializationToken token) const;
+
         void CancelMaterialization(MaterializationToken token);
+
         // Bootstrap ends permanently with the first BeginUpdate. Normal lists never bypass their next-frame eligibility.
         bool CommitBootstrap();
         bool Commit();
+
         void BeginUpdate();
         void AddSystem(WorldSystem& system);
         void SetReparentHandler(ReparentHandler handler);
         void RemoveSystem(WorldSystem& system);
         bool SchedulePhase(Phase phase, festd::span<const Rc<WaitGroup>> prerequisites = {});
+
         template<class Callable>
         Rc<WaitGroup> ScheduleStage(Phase stage, Callable&& callable, festd::span<const Rc<WaitGroup>> prerequisites = {})
         {
@@ -99,11 +109,11 @@ namespace FE::Framework
                 prerequisites);
         }
 
-
         bool AddPrerequisite(WaitGroup& completion, const Rc<WaitGroup>& prerequisite);
         bool ValidateSchedule();
         bool ExecuteSchedule();
         bool EndUpdate();
+
         [[nodiscard]] uint64_t GetEpoch() const;
         [[nodiscard]] ScheduleDiagnostics GetScheduleDiagnostics() const;
         [[nodiscard]] festd::span<const ScheduleConflict> GetScheduleConflicts() const;
@@ -111,12 +121,14 @@ namespace FE::Framework
         [[nodiscard]] festd::ascii_view GetLastError() const;
         [[nodiscard]] uint32_t GetEntityCount() const;
         [[nodiscard]] uint32_t GetChunkCount() const;
+
         // Query callbacks are arena-owned until EndUpdate. Captured references must outlive the epoch.
         Rc<WaitGroup> RecordTraversal(EntityUpdateContext& context, Phase phase, festd::span<const QueryAccess> accesses,
                                       void* callable, void (*invoke)(void*, Entity&, void**), void (*destroy)(void*),
                                       festd::span<const Rc<WaitGroup>> prerequisites,
                                       ExecutionPolicy policy = ExecutionPolicy::kSequential, bool cascade = false,
                                       ChangeCursor* cursor = nullptr);
+
         void* AllocateTraversal(size_t size, size_t alignment);
         [[nodiscard]] void* LookupComponent(const Entity& entity, Rtti::TypeID type, bool write) const;
         bool RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type);
@@ -124,6 +136,7 @@ namespace FE::Framework
     private:
         struct Impl;
         Impl* m_impl;
+
         bool Fail(festd::ascii_view message);
         Rc<WaitGroup> RecordStage(Phase stage, void* callable, void (*invoke)(void*), void (*destroy)(void*),
                                   festd::span<const Rc<WaitGroup>> prerequisites);

@@ -28,12 +28,16 @@ namespace FE::Framework
             : m_services(&services)
         {
         }
+
         ~EntityResidencySet();
         EntityResidencySet(const EntityResidencySet&) = delete;
         EntityResidencySet& operator=(const EntityResidencySet&) = delete;
+
         bool Add(IO::AssetID id, Rtti::TypeID expectedType);
         void Remove(IO::AssetID id, Rtti::TypeID expectedType);
+
         [[nodiscard]] LifecycleResult Poll(IO::AssetID id, Rtti::TypeID expectedType) const;
+
         [[nodiscard]] uint32_t GetAcquisitionCount() const
         {
             return m_entries.size();
@@ -47,6 +51,7 @@ namespace FE::Framework
             EntityAssetRequest m_request;
             uint32_t m_contributors = 1;
         };
+
         EntityAssetServices* m_services;
         festd::vector<Entry> m_entries;
     };

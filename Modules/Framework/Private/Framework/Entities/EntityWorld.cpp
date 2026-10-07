@@ -178,9 +178,11 @@ namespace FE::Framework
             index = m_impl->m_freeSlots.back();
             m_impl->m_freeSlots.pop_back();
         }
+
         auto& slot = m_impl->m_slots[index];
         Entity* entity = ::new (m_impl->m_entities.AllocateMemory())
             Entity(*this, registry, EntityID::Pack(m_impl->m_token, index, slot.m_generation), uuid, name);
+
         slot.m_entity = entity;
         m_impl->m_uuidLookup.emplace(uuid, entity);
         return entity;
@@ -191,21 +193,27 @@ namespace FE::Framework
     {
         if (entity.m_parent == parent)
             return;
+
         if (entity.m_parent)
             MarkUnready(*entity.m_parent);
+
         if (parent && !parent->m_active && entity.m_active)
             DeactivateSubtree(entity);
+
         if (entity.m_previousSibling)
             entity.m_previousSibling->m_nextSibling = entity.m_nextSibling;
         else if (entity.m_parent)
             entity.m_parent->m_firstChild = entity.m_nextSibling;
+
         if (entity.m_nextSibling)
             entity.m_nextSibling->m_previousSibling = entity.m_previousSibling;
         else if (entity.m_parent)
             entity.m_parent->m_lastChild = entity.m_previousSibling;
+
         entity.m_parent = parent;
         entity.m_previousSibling = parent ? parent->m_lastChild : nullptr;
         entity.m_nextSibling = nullptr;
+
         if (parent)
         {
             if (parent->m_lastChild)
@@ -214,6 +222,7 @@ namespace FE::Framework
                 parent->m_firstChild = &entity;
             parent->m_lastChild = &entity;
         }
+
         MarkUnready(entity);
         FE_Assert(m_impl->m_hierarchyRevision != UINT64_MAX, "Hierarchy revision exhausted");
         ++m_impl->m_hierarchyRevision;
@@ -226,20 +235,24 @@ namespace FE::Framework
         while (entity.m_firstChild)
             DestroyEntity(*entity.m_firstChild);
         DeactivateSubtree(entity, false);
+
         const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
         for (uint32_t i = order.size(); i > 0; --i)
             TeardownComponent(entity, order[i - 1], true);
+
         auto* chunk = entity.m_chunk;
         chunk->Free(entity.m_row);
+
         if (chunk->m_count == 0)
         {
             m_impl->m_chunks.erase(festd::find(m_impl->m_chunks, chunk));
-
             Memory::DefaultDelete(chunk);
         }
+
         entity.m_chunk = nullptr;
         Reparent(entity, nullptr);
         m_impl->m_uuidLookup.erase(entity.m_uuid);
+
         auto& slot = m_impl->m_slots[entity.m_id.Slot()];
         slot.m_entity = nullptr;
         if (slot.m_generation < 0xffffff)
@@ -247,6 +260,7 @@ namespace FE::Framework
             ++slot.m_generation;
             m_impl->m_freeSlots.push_back(entity.m_id.Slot());
         }
+
         entity.~Entity();
         m_impl->m_entities.GetAllocator()->deallocate(&entity, sizeof(Entity), alignof(Entity));
         FE_Assert(m_impl->m_hierarchyRevision != UINT64_MAX, "Hierarchy revision exhausted");
@@ -267,12 +281,14 @@ namespace FE::Framework
             bool equal = true;
             for (uint32_t i = 0; i < columns.size(); ++i)
                 equal &= candidate->m_columns[i] == columns[i];
+
             if (equal)
             {
                 archetype = candidate;
                 break;
             }
         }
+
         if (!archetype)
         {
             archetype = Memory::DefaultNew<Archetype>(columns);
@@ -290,6 +306,7 @@ namespace FE::Framework
                 break;
             }
         }
+
         if (!destination)
         {
             destination = Memory::DefaultNew<ArchetypeChunk>(*archetype, *entity.m_registry);
@@ -341,7 +358,9 @@ namespace FE::Framework
             const auto& type = *columns[i]->m_type;
             const uint32_t oldColumn = source ? source->m_archetype.Find(type.m_id) : kInvalidIndex;
             if (actualValues[i])
+            {
                 type.m_moveConstructor(destination->Get(row, i), actualValues[i]);
+            }
             else if (oldColumn != kInvalidIndex)
             {
                 type.m_moveConstructor(destination->Get(row, i), source->Get(oldRow, oldColumn));
@@ -365,10 +384,10 @@ namespace FE::Framework
         if (source)
         {
             source->Free(oldRow);
+
             if (source->m_count == 0)
             {
                 m_impl->m_chunks.erase(festd::find(m_impl->m_chunks, source));
-
                 Memory::DefaultDelete(source);
             }
         }
@@ -390,12 +409,14 @@ namespace FE::Framework
             FE_Assert(m_impl->m_changeEra != UINT64_MAX, "Change version era exhausted");
             ++m_impl->m_changeEra;
             m_impl->m_changeVersion = 0;
+
             for (auto* chunk : m_impl->m_chunks)
             {
                 for (auto& version : chunk->m_versions)
                     version = 0;
             }
         }
+
         return ++m_impl->m_changeVersion;
     }
 
@@ -415,9 +436,11 @@ namespace FE::Framework
     void* EntityWorld::LookupComponent(const Entity& entity, const Rtti::TypeID type, const bool write) const
     {
         FE_Assert(!m_impl->m_collecting, "System collection cannot inspect live component data");
+
         const auto* callback = m_impl->m_executing
             ? static_cast<const CallbackContext*>(Threading::FiberRuntimeInfo::Get().m_executionContext)
             : nullptr;
+
         const auto* traversal = callback && callback->m_world == this ? callback->m_traversal : nullptr;
         if (traversal)
         {
@@ -428,16 +451,20 @@ namespace FE::Framework
                 if (access.m_type == type && (!write || access.m_write) && source == &entity)
                     declared = true;
             }
+
             FE_AssertDebug(declared, "Entity component lookup exceeds traversal access declarations");
         }
+
         if (!entity.m_chunk)
             return nullptr;
 
         const uint32_t column = entity.m_chunk->m_archetype.Find(type);
         if (column == kInvalidIndex)
             return nullptr;
+
         if (traversal && !(entity.m_chunk->Stage(entity.m_row, column) & kActive))
             return nullptr;
+
         return entity.m_chunk->Get(entity.m_row, column);
     }
 } // namespace FE::Framework

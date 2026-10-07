@@ -191,16 +191,17 @@ namespace FE::Framework
                 return 0;
             }
         };
-
-
     } // namespace
+
 
     EntityResidencySet& EntityWorld::ResidencyOwner(Entity& entity)
     {
         if (entity.m_runtime->m_residencyScope == ResidencyScope::kRegistry)
             return entity.m_registry->m_residency;
+
         if (!entity.m_runtime->m_residency)
             entity.m_runtime->m_residency = Memory::DefaultNew<EntityResidencySet>(*m_impl->m_assets);
+
         return *entity.m_runtime->m_residency;
     }
 
@@ -215,6 +216,7 @@ namespace FE::Framework
                 ++it;
                 continue;
             }
+
             ResidencyOwner(entity).Remove(it->m_asset, it->m_expectedType);
             it = assets.erase(it);
         }
@@ -326,6 +328,7 @@ namespace FE::Framework
             if (sameComponent && sameAsset)
                 return true;
         }
+
         ResidencyOwner(entity).Add(id, type);
         contributions.push_back({ m_impl->m_loadingComponent, id, type, m_impl->m_loadingTransition });
         return true;
@@ -345,6 +348,7 @@ namespace FE::Framework
             m_impl->m_loadingComponent = Rtti::TypeID::kNull;
             m_impl->m_loadingTransition = 0;
         });
+
         if (!(stage & kDiscovered))
         {
             stage |= kDiscovered;
@@ -355,6 +359,7 @@ namespace FE::Framework
                     EntityWorld* m_world;
                     Entity* m_entity;
                 } discovery{ this, &entity };
+
                 IO::WriteOnlyMemoryStream stream;
                 DependencyOnlyFormat format;
                 Serialization::SerializationContext serialization(&stream,
@@ -367,6 +372,7 @@ namespace FE::Framework
                                                                       auto& d = *static_cast<Discovery*>(user);
                                                                       d.m_world->RequireAsset(*d.m_entity, asset, type);
                                                                   });
+
                 if (serialization.Store(*info.m_type, data) != Serialization::ResultCode::kSuccess)
                     return LifecycleResult::kFailed;
             }
@@ -385,6 +391,7 @@ namespace FE::Framework
                 if (status == LifecycleResult::kPending)
                     result = status;
             }
+
             return result;
         };
 
@@ -396,8 +403,10 @@ namespace FE::Framework
             if (status == LifecycleResult::kSucceeded)
                 status = dependenciesReady();
         }
+
         if (status == LifecycleResult::kSucceeded)
             stage |= kLoaded;
+
         return status;
     }
 
@@ -418,6 +427,7 @@ namespace FE::Framework
             else
                 entity.m_failed = true;
         };
+
         ComponentContext context{ entity, *this, m_impl->m_services };
         for (const uint32_t column : chunk.m_archetype.m_lifecycleOrder)
         {
@@ -432,6 +442,7 @@ namespace FE::Framework
                 failComponent(column);
                 return false;
             }
+
             if (status == LifecycleResult::kPending)
                 ownLoaded = false;
             else
@@ -448,6 +459,7 @@ namespace FE::Framework
             const bool childReady = child->m_runtime->m_prepared || PrepareSubtree(*child);
             if (!childReady && (!entity.m_active || !child->m_failed))
                 ++entity.m_runtime->m_unreadyChildren;
+
             if (child->m_failed)
             {
                 if (!entity.m_active)
@@ -480,8 +492,10 @@ namespace FE::Framework
                     failComponent(column);
                     return false;
                 }
+
                 dependenciesInitialized &= (dependencyStage & kInitialized) != 0;
             }
+
             if (!dependenciesInitialized)
                 continue;
 
@@ -497,6 +511,7 @@ namespace FE::Framework
         bool ownPrepared = true;
         for (uint32_t column = 0; column < chunk.m_archetype.m_columns.size(); ++column)
             ownPrepared &= (chunk.Stage(entity.m_row, column) & (kInitialized | kFailed)) != 0;
+
         entity.m_runtime->m_prepared = ownPrepared && entity.m_runtime->m_unreadyChildren == 0;
         return entity.m_runtime->m_prepared;
     }
@@ -526,7 +541,10 @@ namespace FE::Framework
                     chunk.Stage(entity.m_row, column) = kFailed;
                 }
                 else
+                {
                     entity.m_failed = true;
+                }
+
                 return false;
             }
         }
@@ -542,6 +560,7 @@ namespace FE::Framework
                     entity.m_failed = true;
                 else
                     UnwindSubtree(*child);
+
                 return false;
             }
         }
@@ -565,6 +584,7 @@ namespace FE::Framework
                 ++it;
                 continue;
             }
+
             ComponentContext context{ entity, *this, m_impl->m_services };
             if (result == LifecycleResult::kSucceeded)
             {
@@ -572,6 +592,7 @@ namespace FE::Framework
                 if (info.m_init)
                     result = info.m_init(replacement.m_data, context);
             }
+
             if (result == LifecycleResult::kSucceeded)
             {
                 replacement.m_stage |= kActive;
@@ -579,12 +600,15 @@ namespace FE::Framework
                 if (info.m_activate)
                     result = info.m_activate(replacement.m_data, context);
             }
+
             if (result == LifecycleResult::kSucceeded)
             {
                 const uint32_t column = entity.m_chunk->m_archetype.Find(info.m_type->m_id);
                 TeardownComponent(entity, column, true);
+
                 info.m_type->m_moveConstructor(entity.m_chunk->Get(entity.m_row, column), replacement.m_data);
                 entity.m_chunk->Stage(entity.m_row, column) = replacement.m_stage;
+
                 for (auto& contribution : entity.m_runtime->m_assets)
                 {
                     if (contribution.m_transition == replacement.m_transition)
@@ -596,6 +620,7 @@ namespace FE::Framework
                 TeardownValue(entity, info, replacement.m_data, replacement.m_stage, replacement.m_transition);
                 Fail("Component replacement failed; previous active value retained");
             }
+
             info.m_type->m_destructor(replacement.m_data);
             Memory::DefaultFree(replacement.m_data);
             it = replacements.erase(it);
@@ -615,9 +640,11 @@ namespace FE::Framework
         DeactivateSubtree(entity, false);
         for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
             UnwindSubtree(*child);
+
         const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
         for (uint32_t i = order.size(); i > 0; --i)
             TeardownComponent(entity, order[i - 1], false);
+
         entity.m_failed = true;
         entity.m_runtime->m_prepared = false;
     }
@@ -631,7 +658,6 @@ namespace FE::Framework
                 AdvanceReplacements(*slot.m_entity);
         }
 
-
         auto publish = [&](auto&& self, Entity& entity) -> void {
             entity.m_active = true;
             MarkChanged(entity);
@@ -641,6 +667,7 @@ namespace FE::Framework
                     self(self, *child);
             }
         };
+
         for (auto& slot : m_impl->m_slots)
         {
             Entity* entity = slot.m_entity;
@@ -658,6 +685,7 @@ namespace FE::Framework
                     UnwindSubtree(*entity);
                 continue;
             }
+
             if (entity->m_runtime->m_prepared || wasActive)
             {
                 if (ActivateSubtree(*entity))

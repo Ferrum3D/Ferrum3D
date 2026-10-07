@@ -54,6 +54,7 @@ namespace FE::Framework
         };
     } // namespace Internal
 
+
     template<bool Cascade, class... Terms>
     struct BasicQuery
     {
@@ -65,13 +66,11 @@ namespace FE::Framework
             return Traverse(context, phase, std::initializer_list<Rc<WaitGroup>>{}, std::forward<Callable>(callable));
         }
 
-
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, ExecutionPolicy policy, Callable&& callable)
         {
             return Traverse(context, phase, std::initializer_list<Rc<WaitGroup>>{}, std::forward<Callable>(callable), policy);
         }
-
 
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase,
@@ -83,12 +82,15 @@ namespace FE::Framework
             constexpr bool withoutEntity = std::is_invocable_v<Function&, typename Internal::QueryTerm<Terms>::Argument...>;
             static_assert(withEntity || withoutEntity, "Callback must accept query values, optionally preceded by Entity&");
             (context.m_world.Components().Register<typename Internal::QueryTerm<Terms>::Component>(), ...);
+
             const QueryAccess accesses[] = { { Rtti::GetTypeID<typename Internal::QueryTerm<Terms>::Component>(),
                                                Internal::QueryTerm<Terms>::kOptional,
                                                Internal::QueryTerm<Terms>::kWrite,
                                                Internal::QueryTerm<Terms>::kParent }... };
+
             void* storage = context.m_world.AllocateTraversal(sizeof(Function), alignof(Function));
             ::new (storage) Function(std::forward<Callable>(callable));
+
             return context.m_world.RecordTraversal(
                 context,
                 phase,
@@ -105,7 +107,6 @@ namespace FE::Framework
                 Cascade,
                 cursor);
         }
-
 
         template<class Callable>
         static Rc<WaitGroup> TraverseChanged(EntityUpdateContext& context, Phase phase, ChangeCursor& cursor, Callable&& callable,
@@ -128,7 +129,6 @@ namespace FE::Framework
 
     template<class... Terms>
     using Query = BasicQuery<false, Terms...>;
-
 
     template<class... Terms>
     using CascadeQuery = BasicQuery<true, Terms...>;

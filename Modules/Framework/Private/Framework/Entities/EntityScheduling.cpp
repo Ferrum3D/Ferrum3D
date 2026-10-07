@@ -33,6 +33,7 @@ namespace FE::Framework
         m_impl->m_started = true;
         ++m_impl->m_epoch;
         Commit();
+
         m_impl->m_updating = true;
         m_impl->m_diagnostics = {};
         m_impl->m_conflicts.clear();
@@ -60,6 +61,7 @@ namespace FE::Framework
             storage = Memory::DefaultAllocate(size, alignment);
             m_impl->m_largeCaptures.push_back(storage);
         }
+
         return storage;
     }
 
@@ -84,6 +86,7 @@ namespace FE::Framework
         traversal.m_system = context.m_system;
         traversal.m_completion = Rc<WaitGroup>(WaitGroup::Create(1));
         traversal.m_prerequisites.assign(prerequisites.begin(), prerequisites.end());
+
         Rc<WaitGroup> result = traversal.m_completion;
 
         m_impl->m_traversals.push_back(std::move(traversal));
@@ -115,7 +118,6 @@ namespace FE::Framework
             }
         }
 
-
         return Fail("Completion does not belong to this epoch");
     }
 
@@ -133,6 +135,7 @@ namespace FE::Framework
                 return Fail("Phase scheduled twice in one epoch");
             }
         }
+
         ScheduledPhase scheduled{ phase };
         scheduled.m_prerequisites.assign(prerequisites.begin(), prerequisites.end());
         m_impl->m_phases.push_back(std::move(scheduled));
@@ -144,6 +147,7 @@ namespace FE::Framework
     {
         if (m_impl->m_validated)
             return true;
+
         if (!m_impl->m_updating || m_impl->m_scheduleFailed)
             return Fail("Invalid update schedule");
 
@@ -155,6 +159,7 @@ namespace FE::Framework
             }
             return kInvalidIndex;
         };
+
         auto producerIndex = [&](const Rc<WaitGroup>& group) {
             for (uint32_t i = 0; i < m_impl->m_traversals.size(); ++i)
             {
@@ -163,10 +168,12 @@ namespace FE::Framework
             }
             return kInvalidIndex;
         };
+
         for (const auto& traversal : m_impl->m_traversals)
         {
             if (traversal.m_cascade && traversal.m_policy == ExecutionPolicy::kParallelChunks)
                 return Fail("Cascade queries cannot use ParallelChunks");
+
             if (!traversal.m_cascade && traversal.m_policy == ExecutionPolicy::kParallelHierarchyTrees)
                 return Fail("ParallelHierarchyTrees requires a cascade query");
 
@@ -184,9 +191,11 @@ namespace FE::Framework
                             return Fail("Parallel parent reads alias self writes; use a cascade query");
                     }
                 }
+
                 if (!access.m_type.IsValid() || !Components().Find(access.m_type))
                     return Fail("Query references an unregistered component type");
             }
+
             for (const auto& group : traversal.m_prerequisites)
             {
                 if (!group)
@@ -197,6 +206,7 @@ namespace FE::Framework
                     return Fail("Traversal depends on a later phase");
             }
         }
+
         for (uint32_t i = 0; i < m_impl->m_phases.size(); ++i)
         {
             for (const auto& group : m_impl->m_phases[i].m_prerequisites)
@@ -209,6 +219,7 @@ namespace FE::Framework
                     return Fail("Phase prerequisite depends on itself or a later phase");
             }
         }
+
         // Validate the framework graph without waiting on deferred completions.
         festd::vector<bool> visited(m_impl->m_traversals.size(), false);
         festd::vector<uint32_t> order;
@@ -228,6 +239,7 @@ namespace FE::Framework
                     if (producer != kInvalidIndex && !visited[producer])
                         ready = false;
                 }
+
                 if (!ready)
                     continue;
 
@@ -236,9 +248,11 @@ namespace FE::Framework
                 ++count;
                 progress = true;
             }
+
             if (!progress)
                 return Fail("Framework traversal dependency cycle");
         }
+
         for (auto& traversal : m_impl->m_traversals)
         {
             traversal.m_dependencies.clear();
@@ -249,6 +263,7 @@ namespace FE::Framework
                     traversal.m_dependencies.push_back(producer);
             }
         }
+
         // Orient conservative exclusions using the already validated explicit topological order.
         for (uint32_t a = 0; a < order.size(); ++a)
         {
@@ -258,6 +273,7 @@ namespace FE::Framework
                 auto& after = m_impl->m_traversals[order[b]];
                 if (before.m_cursor && before.m_cursor == after.m_cursor)
                     return Fail("A change cursor may be consumed only once per epoch");
+
                 if (!(before.m_phase == after.m_phase))
                     continue;
 
@@ -274,8 +290,10 @@ namespace FE::Framework
                         }
                     }
                 }
+
                 const bool systemExclusion = before.m_system && before.m_system == after.m_system
                     && (before.m_policy == ExecutionPolicy::kSequential || after.m_policy == ExecutionPolicy::kSequential);
+
                 if (conflict || systemExclusion || stageExclusion)
                 {
                     after.m_dependencies.push_back(order[a]);
@@ -285,6 +303,7 @@ namespace FE::Framework
                 }
             }
         }
+
         m_impl->m_validated = true;
         return true;
     }
@@ -301,10 +320,12 @@ namespace FE::Framework
         auto restore = festd::defer([&] {
             m_impl->m_executing = false;
         });
+
         for (const auto& phase : m_impl->m_phases)
         {
             for (const auto& group : phase.m_prerequisites)
                 group->Wait();
+
             for (uint32_t i = 0; i < m_impl->m_traversals.size(); ++i)
             {
                 auto& traversal = m_impl->m_traversals[i];
@@ -314,24 +335,30 @@ namespace FE::Framework
                 festd::inline_vector<WaitGroup*> prerequisites;
                 for (const auto& group : traversal.m_prerequisites)
                     prerequisites.push_back(group.Get());
+
                 for (const uint32_t dependency : traversal.m_dependencies)
                     prerequisites.push_back(m_impl->m_traversals[dependency].m_completion.Get());
+
                 const auto affinity =
                     traversal.m_stageInvoke ? Jobs::FiberAffinityMask::kMainThread : Jobs::FiberAffinityMask::kAllForeground;
+
                 Jobs::Dispatch(affinity, prerequisites, Jobs::Priority::kNormal, [this, i] {
                     ExecuteTraversal(i);
                 });
+
                 {
                     std::lock_guard guard(m_impl->m_versionLock);
                     ++m_impl->m_diagnostics.m_jobs;
                 }
             }
+
             for (const auto& traversal : m_impl->m_traversals)
             {
                 if (traversal.m_phase == phase.m_phase)
                     traversal.m_completion->Wait();
             }
         }
+
         return true;
     }
 
@@ -339,6 +366,7 @@ namespace FE::Framework
     void EntityWorld::ExecuteTraversal(const uint32_t index)
     {
         FE_PROFILER_ZONE();
+
         auto& traversal = m_impl->m_traversals[index];
         if (traversal.m_stageInvoke)
         {
@@ -349,6 +377,7 @@ namespace FE::Framework
             traversal.m_completion->Signal();
             return;
         }
+
         festd::vector<ArchetypeChunk*> chunks;
         bool cascadeChanged = false;
         {
@@ -366,12 +395,14 @@ namespace FE::Framework
                     }
                 }
             }
+
             for (auto* chunk : m_impl->m_chunks)
             {
                 bool matches = true;
                 bool changed = parentChanged || !traversal.m_cursor
                     || traversal.m_cursor->m_structureRevision != m_impl->m_structureRevision
                     || traversal.m_cursor->m_versionEra != m_impl->m_changeEra;
+
                 for (const auto& access : traversal.m_accesses)
                 {
                     if (access.m_parent)
@@ -380,12 +411,14 @@ namespace FE::Framework
                     const uint32_t column = chunk->m_archetype.Find(access.m_type);
                     if (column == kInvalidIndex && !access.m_optional)
                         matches = false;
+
                     if (column != kInvalidIndex && traversal.m_cursor
                         && chunk->m_versions[column] > traversal.m_cursor->m_version)
                     {
                         changed = true;
                     }
                 }
+
                 if (matches)
                 {
                     if (traversal.m_cascade || changed)
@@ -394,12 +427,14 @@ namespace FE::Framework
                 }
             }
         }
+
         if (traversal.m_cascade && traversal.m_cursor)
         {
             cascadeChanged |= traversal.m_cursor->m_hierarchyRevision != m_impl->m_hierarchyRevision;
             if (!cascadeChanged)
                 chunks.clear();
         }
+
         // Mappings contain only column indices. Row and parent locations are always resolved afresh.
         for (auto* chunk : chunks)
         {
@@ -414,6 +449,7 @@ namespace FE::Framework
                 entry.m_columns.push_back(access.m_parent ? kInvalidIndex : chunk->m_archetype.Find(access.m_type));
             traversal.m_mappings.push_back(std::move(entry));
         }
+
         std::atomic<uint32_t> callbacks = 0;
         auto invoke = [&](Entity& entity) {
             if (!entity.m_active || festd::find(chunks, entity.m_chunk) == chunks.end())
@@ -422,6 +458,7 @@ namespace FE::Framework
             const auto mapping = festd::find_if(traversal.m_mappings.begin(), traversal.m_mappings.end(), [&](const auto& entry) {
                 return entry.m_archetype == &entity.m_chunk->m_archetype;
             });
+
             festd::inline_vector<void*> values;
             for (uint32_t i = 0; i < traversal.m_accesses.size(); ++i)
             {
@@ -430,15 +467,18 @@ namespace FE::Framework
                 uint32_t column = mapping->m_columns[i];
                 if (access.m_parent && source && source->m_chunk)
                     column = source->m_chunk->m_archetype.Find(access.m_type);
+
                 void* value = source && source->m_active && column != kInvalidIndex
                         && (source->m_chunk->Stage(source->m_row, column) & kActive)
                     ? source->m_chunk->Get(source->m_row, column)
                     : nullptr;
+
                 if (!value && !access.m_optional)
                     return;
 
                 values.push_back(value);
             }
+
             auto& fiber = Threading::FiberRuntimeInfo::Get();
             CallbackContext callback{ this, &traversal, &entity };
             void* previous = fiber.m_executionContext;
@@ -446,9 +486,11 @@ namespace FE::Framework
             auto restore = festd::defer([&] {
                 fiber.m_executionContext = previous;
             });
+
             traversal.m_invoke(traversal.m_callable, entity, values.data());
             callbacks.fetch_add(1, std::memory_order_relaxed);
         };
+
         auto visitTree = [&](Entity* root) {
             Entity* entity = root;
             while (entity)
@@ -464,6 +506,7 @@ namespace FE::Framework
                 entity = entity == root ? nullptr : entity->m_nextSibling;
             }
         };
+
         Rc<WaitGroup> work = WaitGroup::Create();
         uint32_t jobs = 0;
         uint32_t batches = 0;
@@ -475,6 +518,7 @@ namespace FE::Framework
                 if (slot.m_entity && !slot.m_entity->m_parent)
                     roots.push_back(slot.m_entity);
             }
+
             constexpr uint32_t kTreesPerBatch = 16;
             for (uint32_t begin = 0; begin < roots.size(); begin += kTreesPerBatch)
             {
@@ -497,6 +541,7 @@ namespace FE::Framework
                         work.Get());
                 }
             }
+
             work->Signal();
             work->Wait();
         }
@@ -508,8 +553,11 @@ namespace FE::Framework
                     for (uint32_t row = 0; row < chunk->m_count; ++row)
                         invoke(*chunk->m_entities[row]);
                 };
+
                 if (traversal.m_policy == ExecutionPolicy::kSequential)
+                {
                     visitChunk();
+                }
                 else
                 {
                     work->Add(1);
@@ -517,6 +565,7 @@ namespace FE::Framework
                     Jobs::DispatchForeground(std::move(visitChunk), work.Get());
                 }
             }
+
             work->Signal();
             work->Wait();
         }
@@ -532,6 +581,7 @@ namespace FE::Framework
                         chunk->m_versions[column] = publishedVersion;
                 }
             }
+
             if (traversal.m_cursor)
             {
                 traversal.m_cursor->m_version = publishedVersion;
@@ -539,11 +589,13 @@ namespace FE::Framework
                 traversal.m_cursor->m_hierarchyRevision = m_impl->m_hierarchyRevision;
                 traversal.m_cursor->m_structureRevision = m_impl->m_structureRevision;
             }
+
             m_impl->m_diagnostics.m_jobs += jobs;
             m_impl->m_diagnostics.m_chunks += chunks.size();
             m_impl->m_diagnostics.m_treeBatches += batches;
             m_impl->m_diagnostics.m_callbacks += callbacks.load();
         }
+
         traversal.m_executed = true;
         traversal.m_completion->Signal();
     }
@@ -570,8 +622,10 @@ namespace FE::Framework
         bool completed = true;
         for (const auto& traversal : m_impl->m_traversals)
             completed &= traversal.m_executed;
+
         if (!completed)
             Fail("Update ended with unexecuted deferred work");
+
         m_impl->ClearEpoch();
         m_impl->m_updating = false;
         return completed;

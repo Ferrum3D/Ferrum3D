@@ -15,6 +15,7 @@ namespace FE::Framework
                 if (current->GetID() == command.m_target.m_id)
                     return true;
             }
+
             return false;
         }
 
@@ -39,6 +40,7 @@ namespace FE::Framework
             {
                 return true;
             }
+
             if (DestructionContains(world, first, second.m_parent.m_id)
                 || DestructionContains(world, second, first.m_parent.m_id))
             {
@@ -49,6 +51,7 @@ namespace FE::Framework
             {
                 if (first.m_parent.m_id.m_value && first.m_parent.m_id == second.m_target.m_id)
                     return true;
+
                 if (second.m_parent.m_id.m_value && second.m_parent.m_id == first.m_target.m_id)
                     return true;
             }
@@ -72,6 +75,7 @@ namespace FE::Framework
                         return true;
                 }
             }
+
             return false;
         }
     } // namespace
@@ -131,6 +135,7 @@ namespace FE::Framework
                 command.m_component->m_type->m_destructor(command.m_payload);
                 continue;
             }
+
             if (isImmediate)
                 immediate->m_commands.push_back(command);
             else
@@ -153,6 +158,7 @@ namespace FE::Framework
     {
         if (m_impl->m_started)
             return Fail("Bootstrap is closed after the first update");
+
         return CommitImpl(true);
     }
 
@@ -186,7 +192,6 @@ namespace FE::Framework
             }
         }
 
-
         auto cleanup = festd::defer([&] {
             for (auto* list : ready)
                 Memory::DefaultDelete(list);
@@ -214,13 +219,11 @@ namespace FE::Framework
                 continue;
             }
 
-
             struct Value
             {
                 const EntityComponentInfo* m_info;
                 void* m_value;
             };
-
 
             struct Edit
             {
@@ -239,6 +242,7 @@ namespace FE::Framework
                 bool m_parentChanged = false;
                 festd::vector<Value> m_values;
             };
+
             festd::vector<Edit> edits;
             festd::vector<uint32_t> tokens(list.m_created, kInvalidIndex);
             festd::vector<EntityRegistry*> unloadRegistries;
@@ -269,8 +273,10 @@ namespace FE::Framework
                     if (edits[i].m_entity == entity)
                         return i;
                 }
+
                 return kInvalidIndex;
             };
+
             for (auto& edit : edits)
                 edit.m_parent = entityIndex(edit.m_entity->m_parent);
 
@@ -289,6 +295,7 @@ namespace FE::Framework
                 festd::vector<Edit>* m_edits;
                 EntityCommandList::Impl* m_list;
             } editContext{ &edits, &list };
+
             auto component = [](void* data, const uint32_t index, Rtti::TypeID type, const bool write) -> void* {
                 auto& context = *static_cast<EditContext*>(data);
                 if (index >= context.m_edits->size())
@@ -300,6 +307,7 @@ namespace FE::Framework
                 });
                 if (value == edit.m_values.end())
                     return nullptr;
+
                 if (value->m_value)
                     return value->m_value;
 
@@ -317,6 +325,7 @@ namespace FE::Framework
                     storage = Memory::DefaultAllocate(rtti.m_size, rtti.m_alignment);
                     context.m_list->m_largePayloads.push_back(storage);
                 }
+
                 rtti.m_copyConstructor(storage, source);
                 context.m_list->m_ownedValues.push_back({ value->m_info, storage });
                 value->m_value = storage;
@@ -334,16 +343,19 @@ namespace FE::Framework
                         valid = Fail("Creation targets a foreign or unloaded registry");
                         break;
                     }
+
                     if (command.m_registry->GetID() != command.m_registryId)
                     {
                         valid = Fail("Creation registry identity is stale");
                         break;
                     }
+
                     for (const auto& edit : edits)
                     {
                         if (edit.m_uuid == command.m_uuid)
                             valid = Fail("Duplicate entity UUID");
                     }
+
                     Edit edit;
                     edit.m_registry = command.m_registry;
                     edit.m_uuid = command.m_uuid;
@@ -355,6 +367,7 @@ namespace FE::Framework
                     edits.push_back(std::move(edit));
                     continue;
                 }
+
                 if (command.m_kind == CommandKind::kUnloadRegistry)
                 {
                     if (festd::find(m_impl->m_registries, command.m_registry) == m_impl->m_registries.end())
@@ -363,14 +376,17 @@ namespace FE::Framework
                         valid = Fail("Unload registry identity is stale");
                     else
                         unloadRegistries.push_back(command.m_registry);
+
                     continue;
                 }
+
                 const uint32_t index = resolve(command.m_target);
                 if (index == kInvalidIndex)
                 {
                     valid = Fail("Stale entity ID or invalid list-local token");
                     break;
                 }
+
                 auto& edit = edits[index];
                 if (edit.m_destroy)
                     continue;
@@ -396,24 +412,33 @@ namespace FE::Framework
                         }
                     }
                     break;
+
                 case CommandKind::kRename:
                     edit.m_name = command.m_name;
                     break;
+
                 case CommandKind::kActive:
                     edit.m_wantsActive = command.m_active;
                     break;
+
                 case CommandKind::kUnload:
                     edit.m_unload = true;
                     edit.m_wantsActive = false;
                     break;
+
                 case CommandKind::kParent:
                     {
                         const bool nullParent = !command.m_parent.m_id.m_value && !command.m_parent.m_token.m_list;
                         const uint32_t parent = nullParent ? kInvalidIndex : resolve(command.m_parent);
+
                         if (!nullParent && parent == kInvalidIndex)
+                        {
                             valid = Fail("Invalid parent handle");
+                        }
                         else if (parent != kInvalidIndex && edits[parent].m_registry != edit.m_registry)
+                        {
                             valid = Fail("Parenting cannot cross registry or world boundaries");
+                        }
                         else
                         {
                             if (edit.m_parent != parent && m_impl->m_reparentHandler
@@ -421,7 +446,7 @@ namespace FE::Framework
                             {
                                 ReparentContext context{ index,
                                                          parent,
-                                                         static_cast<uint32_t>(edits.size()),
+                                                         (edits.size()),
                                                          command.m_reparentMode,
                                                          &editContext,
                                                          [](void* data, uint32_t target) {
@@ -434,11 +459,13 @@ namespace FE::Framework
                                     break;
                                 }
                             }
+
                             edit.m_parent = parent;
                             edit.m_parentChanged = true;
                         }
                         break;
                     }
+
                 case CommandKind::kComponent:
                 case CommandKind::kRemove:
                     {
@@ -455,6 +482,7 @@ namespace FE::Framework
                 default:
                     break;
                 }
+
                 if (!valid)
                     break;
             }
@@ -467,6 +495,7 @@ namespace FE::Framework
                     valid = Fail("Cannot parent an entity to a target queued for destruction");
                     break;
                 }
+
                 uint32_t depth = 0;
                 while (ancestor != kInvalidIndex)
                 {
@@ -475,8 +504,10 @@ namespace FE::Framework
                         valid = Fail("Hierarchy cycle rejected before changing links");
                         break;
                     }
+
                     ancestor = edits[ancestor].m_parent;
                 }
+
                 auto& edit = edits[i];
                 if (!edit.m_touched || edit.m_destroy)
                     continue;
@@ -490,13 +521,16 @@ namespace FE::Framework
                 festd::sort(edit.m_values.begin(), edit.m_values.end(), [](const Value& a, const Value& b) {
                     return a.m_info->m_type->m_id < b.m_info->m_type->m_id;
                 });
+
                 festd::vector<const EntityComponentInfo*> columns;
                 for (const auto& value : edit.m_values)
                     columns.push_back(value.m_info);
+
                 Archetype validation(columns);
                 if (validation.m_lifecycleOrder.size() != columns.size())
                     valid = Fail("Missing or cyclic component initialization dependency");
             }
+
             if (!valid)
             {
                 success = false;
@@ -529,11 +563,14 @@ namespace FE::Framework
                         columns.push_back(value.m_info);
                         values.push_back(value.m_value);
                     }
+
                     Migrate(entity, columns, values);
                     entity.m_failed = false;
                 }
+
                 if (entity.m_wantsActive != edit.m_wantsActive)
                     MarkUnready(entity);
+
                 entity.m_wantsActive = edit.m_wantsActive;
             }
 
@@ -543,6 +580,7 @@ namespace FE::Framework
                 if (edit.m_parentChanged && edit.m_entity)
                     Reparent(*edit.m_entity, nullptr);
             }
+
             for (auto& edit : edits)
             {
                 if (edit.m_parentChanged && edit.m_entity && edit.m_parent != kInvalidIndex)
@@ -563,24 +601,30 @@ namespace FE::Framework
 
                 if (!edit.m_wantsActive)
                     DeactivateSubtree(*entity);
+
                 if (edit.m_unload)
                 {
                     // Unload keeps allocated identity but resets runtime state, descendants first.
                     auto unload = [&](auto&& self, Entity& current) -> void {
                         for (Entity* child = current.m_firstChild; child; child = child->m_nextSibling)
                             self(self, *child);
+
                         const auto& order = current.m_chunk->m_archetype.m_lifecycleOrder;
                         for (uint32_t j = order.size(); j > 0; --j)
                             TeardownComponent(current, order[j - 1], false);
+
                         current.m_runtime->m_prepared = false;
                         current.m_wantsActive = false;
                     };
+
                     unload(unload, *entity);
                 }
             }
+
             for (auto* registry : unloadRegistries)
                 RemoveRegistry(*registry);
         }
+
         AdvanceMaterializations(bootstrap);
         return success;
     }

@@ -24,6 +24,7 @@ namespace FE::Framework
             if (entry->m_type->m_id == id)
                 return entry;
         }
+
         return nullptr;
     }
 } // namespace FE::Framework
