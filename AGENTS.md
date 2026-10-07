@@ -68,6 +68,11 @@ This only changes the current process environment. It leaves the normal Windows 
   - Use consistent braces throughout an entire `if`-`else if`-`else` chain: if any branch requires braces, every branch must use braces.
   - Keep braces whenever removing them would change scope or lifetime, create a dangling `else`, or otherwise change behavior.
   - Preserve include blocks and sort includes case-sensitively when changing include lists.
+- Treat whitespace as part of the code's structure. Keep related statements together, and use one empty line to separate distinct steps within a function, such as validation, setup, the main operation, and cleanup. Do not compress a multi-step function into one uninterrupted block, and do not add blank lines between every statement.
+- Keep the existing two-empty-line separation between adjacent function definitions and adjacent type definitions. Apply it consistently to overloads, small helpers, and functions inside unnamed namespaces; do not reduce it to a single empty line when editing nearby code.
+- Use blank lines to make changes in control flow and ownership easy to scan. Separate an early-return guard from the work that follows, and separate independently meaningful phases in loops or nested branches. Keep a condition with its body and keep short, tightly related operations on adjacent lines.
+- When a function contains deeply nested logic, prefer extracting a small, purpose-named helper over compressing the code or letting one function become a wall of statements. Keep helpers focused and near their call site when local to the implementation.
+- Do not rely on clang-format to add logical spacing: it formats indentation and line layout but cannot infer where the code's conceptual steps should be separated. Preserve intentional blank lines when formatting or editing a file.
 - Include order in implementation files follows project headers grouped at the top, as in `Buffer.cpp`. Prefer angle-bracket project includes such as `#include <Graphics/Core/Vulkan/Buffer.h>`.
 - Use namespaces in the `FE::...` hierarchy and close nontrivial namespaces with comments, for example `} // namespace FE::Graphics::Vulkan`.
 - Keep anonymous helper functions in an unnamed namespace inside the implementation file when they are local to that translation unit.
