@@ -1,4 +1,3 @@
-#include <Core/IO/AssetManager.h>
 #include <Core/IO/MemoryStream.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Framework/Entities/EntityCollection.h>
@@ -6,26 +5,6 @@
 
 namespace FE::Framework
 {
-    namespace
-    {
-        IO::DefaultStreamer GEntityAssetStreamer;
-    } // namespace
-
-
-    void RegisterEntityAssetStreamers()
-    {
-        IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<EntityCollection>(), &GEntityAssetStreamer);
-        IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<EntityCollectionInstanceAsset>(), &GEntityAssetStreamer);
-    }
-
-
-    void UnregisterEntityAssetStreamers()
-    {
-        IO::AssetManager::UnregisterStreamer(Rtti::GetTypeID<EntityCollection>(), &GEntityAssetStreamer);
-        IO::AssetManager::UnregisterStreamer(Rtti::GetTypeID<EntityCollectionInstanceAsset>(), &GEntityAssetStreamer);
-    }
-
-
     void EntityDependencyRecord::BeforeSerialize(Serialization::SerializationContext& context) const
     {
         context.VisitAssetReference(m_asset, m_expectedType, festd::to_underlying(m_kind));
@@ -43,6 +22,8 @@ namespace FE::Framework
 
     bool EntityCollection::CookComponent(EntityRecord& entity, const Rtti::Type& type, const void* value)
     {
+        FE_PROFILER_ZONE();
+
         if (!value || !type.m_serialize || !type.m_deserialize || !type.m_defaultConstructor)
             return false;
 
@@ -96,6 +77,8 @@ namespace FE::Framework
 
     bool EntityCollection::Validate() const
     {
+        FE_PROFILER_ZONE();
+
         for (uint32_t index = 0; index < m_entities.size(); ++index)
         {
             const auto& entity = m_entities[index];
@@ -115,7 +98,7 @@ namespace FE::Framework
                 if (++depth > m_entities.size())
                     return false;
 
-                auto found = festd::find_if(m_entities.begin(), m_entities.end(), [&](const auto& record) {
+                auto found = festd::find_if(m_entities.begin(), m_entities.end(), [&](const EntityRecord& record) {
                     return record.m_uuid == parent;
                 });
                 if (found == m_entities.end())
@@ -155,6 +138,8 @@ namespace FE::Framework
 
     bool EntityCollection::ValidatePayloads() const
     {
+        FE_PROFILER_ZONE();
+
         if (!Validate())
             return false;
 
@@ -196,11 +181,13 @@ namespace FE::Framework
 
                 for (const auto& expected : dependencies)
                 {
-                    const auto found =
-                        festd::find_if(component.m_dependencies.begin(), component.m_dependencies.end(), [&](const auto& actual) {
-                            return actual.m_asset == expected.m_asset && actual.m_expectedType == expected.m_expectedType
-                                && actual.m_kind == expected.m_kind;
-                        });
+                    const auto found = festd::find_if(component.m_dependencies.begin(),
+                                                      component.m_dependencies.end(),
+                                                      [&](const EntityDependencyRecord& actual) {
+                                                          return actual.m_asset == expected.m_asset
+                                                              && actual.m_expectedType == expected.m_expectedType
+                                                              && actual.m_kind == expected.m_kind;
+                                                      });
 
                     if (found == component.m_dependencies.end())
                         return false;
@@ -218,16 +205,16 @@ namespace FE::Framework
             return false;
 
         if (!m_rootUuid.IsValid())
-            m_rootUuid = NewEntityUuid();
+            m_rootUuid = Uuid::Random();
 
         festd::vector<EntityUuidBinding> bindings;
         for (const auto& entity : collection.m_entities)
         {
-            auto found = festd::find_if(m_bindings.begin(), m_bindings.end(), [&](const auto& binding) {
+            auto found = festd::find_if(m_bindings.begin(), m_bindings.end(), [&](const EntityUuidBinding& binding) {
                 return binding.m_sourceUuid == entity.m_uuid;
             });
 
-            bindings.push_back({ entity.m_uuid, found == m_bindings.end() ? NewEntityUuid() : found->m_entityUuid });
+            bindings.push_back({ entity.m_uuid, found == m_bindings.end() ? Uuid::Random() : found->m_entityUuid });
         }
 
         m_bindings = std::move(bindings);
@@ -246,12 +233,12 @@ namespace FE::Framework
 
         EntityCollectionInstanceAsset copy = *this;
         festd::vector<EntityUuidBinding> remapping;
-        copy.m_rootUuid = NewEntityUuid();
+        copy.m_rootUuid = Uuid::Random();
         remapping.push_back({ m_rootUuid, copy.m_rootUuid });
 
         for (uint32_t index = 0; index < copy.m_bindings.size(); ++index)
         {
-            copy.m_bindings[index].m_entityUuid = NewEntityUuid();
+            copy.m_bindings[index].m_entityUuid = Uuid::Random();
             remapping.push_back({ m_bindings[index].m_entityUuid, copy.m_bindings[index].m_entityUuid });
         }
 
@@ -340,7 +327,7 @@ namespace FE::Framework
         for (const auto& binding : m_bindings)
         {
             const auto found =
-                festd::find_if(collection.m_entities.begin(), collection.m_entities.end(), [&](const auto& entity) {
+                festd::find_if(collection.m_entities.begin(), collection.m_entities.end(), [&](const EntityRecord& entity) {
                     return entity.m_uuid == binding.m_sourceUuid;
                 });
 

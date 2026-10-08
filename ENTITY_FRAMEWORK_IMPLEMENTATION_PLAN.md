@@ -71,7 +71,7 @@ The existing entity prototype is not a correctness reference. Audit chunk alignm
 - Use fixed 16 KiB normal chunks with aligned component columns, occupancy/active masks, row-to-entity lookup, and explicit capacity/count. Oversized component layouts use an aligned larger chunk capable of holding at least one row.
 - Compact occupied rows when safe; update the moved entity's location and transfer associated lifecycle/change metadata. Inactive/loading rows remain allocated but are excluded from ordinary queries.
 - Components retained during migration preserve their lifecycle state. Move-construct into destination storage and destroy moved-from objects exactly once. Never invoke deactivate/activate merely because storage changed.
-- Require no-throw relocation for chunk-stored components. Reject registration of an unsupported type with a useful diagnostic. Address-sensitive resources live behind stable handles or engine-managed external objects.
+- Require move construction and destruction for chunk-stored components. Assert on registration of an unsupported type. Address-sensitive resources live behind stable handles or engine-managed external objects.
 - Sparse transition records track pending component additions and failures; do not add a vtable or a large state structure to every component object.
 
 ## 4. RTTI and component lifecycle

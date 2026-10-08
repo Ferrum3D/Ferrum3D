@@ -6,6 +6,7 @@ namespace FE::Framework
     Archetype::Archetype(const festd::span<const EntityComponentInfo* const> columns)
     {
         m_columns.assign(columns.begin(), columns.end());
+
         uint32_t rowSize = 0;
         for (const auto* column : columns)
         {
@@ -80,7 +81,7 @@ namespace FE::Framework
         m_data = static_cast<std::byte*>(Memory::DefaultAllocate(archetype.m_byteSize, archetype.m_alignment));
         m_entities.resize(archetype.m_capacity, nullptr);
         m_versions.resize(archetype.m_columns.size(), 0);
-        m_stages.resize(archetype.m_capacity * archetype.m_columns.size(), 0);
+        m_stages.resize(archetype.m_capacity * archetype.m_columns.size(), ComponentStage::kNone);
     }
 
 
@@ -97,7 +98,7 @@ namespace FE::Framework
     }
 
 
-    uint8_t& ArchetypeChunk::Stage(const uint32_t row, const uint32_t column)
+    ComponentStage& ArchetypeChunk::Stage(const uint32_t row, const uint32_t column)
     {
         return m_stages[column * m_archetype.m_capacity + row];
     }
@@ -110,7 +111,7 @@ namespace FE::Framework
         const uint32_t row = m_count++;
         m_entities[row] = &entity;
         for (uint32_t column = 0; column < m_archetype.m_columns.size(); ++column)
-            Stage(row, column) = 0;
+            Stage(row, column) = ComponentStage::kNone;
 
         return row;
     }
@@ -119,6 +120,7 @@ namespace FE::Framework
     void ArchetypeChunk::Free(const uint32_t row)
     {
         FE_Assert(row < m_count);
+
         const uint32_t last = --m_count;
         if (row != last)
         {

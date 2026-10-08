@@ -238,7 +238,7 @@ namespace {{ type.namespace }}
             object.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
-            object.Field("{{ field.serialization_name }}", {{ field.name }});
+            object.Field("{{ field.name }}", {{ field.name }});
         {%- endfor %}
         }
 
@@ -259,9 +259,9 @@ namespace {{ type.namespace }}
         {%- endfor %}
         {%- for field in type.serialization_fields %}
         {%- if field.is_bitfield %}
-            object.Field("{{ field.serialization_name }}", bitfield_temp_{{ field.name }});
+            object.Field("{{ field.name }}", bitfield_temp_{{ field.name }});
         {%- else %}
-            object.Field("{{ field.serialization_name }}", {{ field.name }});
+            object.Field("{{ field.name }}", {{ field.name }});
         {%- endif %}
         {%- endfor %}
         {%- for field in type.serialization_fields %}
@@ -292,7 +292,7 @@ namespace {{ type.namespace }}
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<{{ base.qualified_name }}>());
         {%- endfor %}
         {%- for field in type.serialization_fields %}
-            hasher.Update("{{ field.serialization_name }}", {{ field.serialization_name|length }});
+            hasher.Update("{{ field.name }}", {{ field.name|length }});
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype({{ field.name }})>());
         {%- endfor %}
             hasher.Update({{ type.serialization_version or 0 }});

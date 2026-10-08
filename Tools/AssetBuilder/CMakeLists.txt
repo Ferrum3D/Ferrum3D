@@ -43,8 +43,7 @@ target_link_libraries(AssetBuilder
         tiny_gltf
         rapidjson
         Luau.Compiler
-        Luau.VM
-        bcrypt)
+        Luau.VM)
 
 get_property("TARGET_SOURCE_FILES" TARGET AssetBuilder PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

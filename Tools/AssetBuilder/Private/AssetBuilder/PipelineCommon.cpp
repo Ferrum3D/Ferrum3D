@@ -1,8 +1,6 @@
 #include <AssetBuilder/PipelineInternal.h>
-#include <Core/Base/PlatformInclude.h>
 #include <Core/IO/FileStream.h>
 #include <Core/Logging/Logger.h>
-#include <bcrypt.h>
 
 namespace FE::AssetBuilder
 {
@@ -115,15 +113,7 @@ namespace FE::AssetBuilder
 
         IO::AssetID GenerateAssetId()
         {
-            IO::AssetID result{ kForceInit };
-            const NTSTATUS status =
-                BCryptGenRandom(nullptr, result.data(), static_cast<ULONG>(result.size()), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
-            if (status < 0)
-                return IO::AssetID::kNull;
-
-            result.m_bytes[6] = (result.m_bytes[6] & 0x0f) | 0x40;
-            result.m_bytes[8] = (result.m_bytes[8] & 0x3f) | 0x80;
-            return result;
+            return Uuid::Random();
         }
 
 

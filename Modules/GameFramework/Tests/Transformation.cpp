@@ -119,6 +119,97 @@ TEST_F(TransformationFixture, DeepChainAndLateChildrenPropagateOptionalScaleChan
 }
 
 
+TEST_F(TransformationFixture, MixedScaleHierarchiesUpdateWithOptionalScale)
+{
+    Uuid ids[2][4];
+    bool scaled[2][4];
+    Vector3 scales[2][4];
+    EntityCommandList commands(m_world);
+    for (uint32_t tree = 0; tree < 2; ++tree)
+    {
+        EntityToken parent;
+        for (uint32_t depth = 0; depth < 4; ++depth)
+        {
+            ids[tree][depth] = Uuid::Random();
+            auto child = Add(commands, ids[tree][depth], Transform::Translation(Vector3(1, 0, 0)));
+            scaled[tree][depth] = (tree + depth) % 2 == 0;
+            scales[tree][depth] = Vector3(2, 3, 4);
+            if (scaled[tree][depth])
+                commands.AddComponent(child, NonUniformScaleComponent{ scales[tree][depth] });
+
+            if (depth != 0)
+                commands.SetParent(child, parent, ReparentMode::kPreserveLocal);
+
+            parent = child;
+        }
+    }
+    m_world.Submit(std::move(commands));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+
+    auto verify = [&] {
+        for (uint32_t tree = 0; tree < 2; ++tree)
+        {
+            Matrix4x4 parent = Matrix4x4::kIdentity;
+            for (uint32_t depth = 0; depth < 4; ++depth)
+            {
+                Matrix4x4 local = Transform::ToMatrix(Transform::Translation(Vector3(1, 0, 0)));
+                if (scaled[tree][depth])
+                    local = Matrix4x4::Scale(scales[tree][depth]) * local;
+
+                const Matrix4x4 expected = local * parent;
+                const auto* output = m_world.Find(ids[tree][depth])->FindComponent<const WorldTransformComponent>();
+                for (uint32_t i = 0; i < 16; ++i)
+                    EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+
+                parent = expected;
+            }
+        }
+    };
+    m_world.BeginUpdate();
+    const Rc<WaitGroup> completion[] = { m_system.GetCompletion() };
+    EXPECT_FALSE(completion[0]->IsSignaled());
+    ASSERT_TRUE(m_world.SchedulePhase(FE::GameFramework::Phases::Transformation));
+    m_world.ScheduleStage(FE::Framework::Phases::PostUpdate, verify, completion);
+    ASSERT_TRUE(m_world.ExecuteSchedule());
+    EXPECT_TRUE(completion[0]->IsSignaled());
+    ASSERT_TRUE(m_world.EndUpdate());
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 8);
+    Tick();
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
+
+    scales[0][0] = Vector3(3, 4, 5);
+    EntityCommandList change(m_world);
+    change.ReplaceComponent(m_world.Find(ids[0][0])->GetID(), NonUniformScaleComponent{ scales[0][0] });
+    m_world.Submit(std::move(change));
+    Tick();
+    verify();
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 8);
+    Tick();
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
+
+    EntityCommandList flip(m_world);
+    for (uint32_t tree = 0; tree < 2; ++tree)
+    {
+        for (uint32_t depth = 0; depth < 4; ++depth)
+        {
+            const EntityID id = m_world.Find(ids[tree][depth])->GetID();
+            if (scaled[tree][depth])
+                flip.RemoveComponent<NonUniformScaleComponent>(id);
+            else
+                flip.AddComponent(id, NonUniformScaleComponent{ scales[tree][depth] });
+
+            scaled[tree][depth] = !scaled[tree][depth];
+        }
+    }
+    m_world.Submit(std::move(flip));
+    Tick();
+    verify();
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 8);
+    Tick();
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
+}
+
+
 TEST_F(TransformationFixture, PreserveWorldUsesAuthoredTransformsBeforeFirstTick)
 {
     EntityCommandList commands(m_world);
@@ -221,7 +312,7 @@ TEST_F(TransformationFixture, ManyShallowTreesPublishEveryDerivedTransform)
     festd::vector<Uuid> children;
     for (uint32_t tree = 0; tree < 64; ++tree)
     {
-        const auto uuid = NewEntityUuid();
+        const auto uuid = Uuid::Random();
         children.push_back(uuid);
         auto parent = Add(commands, Uuid::kNull, Transform::Translation(Vector3(float(tree), 0, 0)));
         auto child = Add(commands, uuid, Transform::Translation(Vector3(1, 0, 0)));

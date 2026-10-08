@@ -38,6 +38,7 @@ namespace FE::Simd
             return _mm256_blendv_ps(vector, valueBroadcast, _mm256_castsi256_ps(cmpMask));
         }
 
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ExtractLane(const __m256 vector, const int32_t index)
         {
             const __m256 shuffled = _mm256_permutevar8x32_ps(vector, _mm256_set1_epi32(index));
@@ -50,15 +51,6 @@ namespace FE::Simd
     {
         inline constexpr uint32_t kByteSize = sizeof(__m128);
         inline constexpr uint32_t kLaneCount = kByteSize / sizeof(float);
-
-
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m128 FE_VECTORCALL Blend(const __m128 lhs, const __m128 rhs, const uint32_t mask)
-        {
-            const __m128i laneBits = _mm_setr_epi32(1, 2, 4, 8);
-            const __m128i selected = _mm_and_si128(_mm_set1_epi32(static_cast<int32_t>(mask)), laneBits);
-            const __m128 blendMask = _mm_castsi128_ps(_mm_cmpeq_epi32(selected, laneBits));
-            return _mm_blendv_ps(lhs, rhs, blendMask);
-        }
 
 
         namespace Masks
@@ -86,5 +78,14 @@ namespace FE::Simd
 
             inline const __m128 kFloat1110 = _mm_setr_ps(1.0f, 1.0f, 1.0f, 0.0f);
         } // namespace Constants
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m128 FE_VECTORCALL Blend(const __m128 lhs, const __m128 rhs, const uint32_t mask)
+        {
+            const __m128i laneBits = _mm_setr_epi32(1, 2, 4, 8);
+            const __m128i selected = _mm_and_si128(_mm_set1_epi32(static_cast<int32_t>(mask)), laneBits);
+            const __m128 blendMask = _mm_castsi128_ps(_mm_cmpeq_epi32(selected, laneBits));
+            return _mm_blendv_ps(lhs, rhs, blendMask);
+        }
     } // namespace SSE
 } // namespace FE::Simd

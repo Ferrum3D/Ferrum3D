@@ -338,52 +338,6 @@ namespace FE::Framework::Tests
 
 namespace FE::Framework::Tests
 {
-    const Rtti::TypeID ThrowingMove::TypeID = Rtti::TypeID{
-        0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x06,
-    };
-
-    namespace
-    {
-        Rtti::Type& RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6006()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& ThrowingMove::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6006();
-    }
-
-    void ThrowingMove::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_1c7ec0da7e5b4ef297ef8a0b846c6006();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2,
-            0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x06, // FE::Framework::Tests::ThrowingMove
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<ThrowingMove>(typeInstance,
-                                           Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                           "FE::Framework::Tests::ThrowingMove",
-                                           kBaseClassTypeIDs,
-                                           kAttributes,
-                                           kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_1c7ec0da7e5b4ef297ef8a0b846c6006(&ThrowingMove::Reflect);
-} // namespace FE::Framework::Tests
-
-
-namespace FE::Framework::Tests
-{
     const Rtti::TypeID Hook::TypeID = Rtti::TypeID{
         0x1c, 0x7e, 0xc0, 0xda, 0x7e, 0x5b, 0x4e, 0xf2, 0x97, 0xef, 0x8a, 0x0b, 0x84, 0x6c, 0x60, 0x07,
     };

@@ -81,6 +81,9 @@ namespace FE
 
         static const Uuid kNull;
 
+        //! @brief Generate a version-4 UUID using the platform random source. Returns null if the source fails.
+        [[nodiscard]] static Uuid Random();
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Uuid FE_VECTORCALL LoadUnaligned(const void* values)
         {
             return Uuid{ _mm_loadu_si128(static_cast<const __m128i*>(values)) };

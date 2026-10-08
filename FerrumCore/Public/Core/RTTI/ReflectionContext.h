@@ -138,14 +138,12 @@ namespace FE::Rtti
             type.m_defaultConstructor = nullptr;
             type.m_copyConstructor = nullptr;
             type.m_moveConstructor = nullptr;
-            type.m_noThrowMove = false;
             type.m_destructor = nullptr;
             if constexpr (std::is_move_constructible_v<T>)
             {
                 type.m_moveConstructor = [](void* storage, void* source) {
                     ::new (storage) T(std::move(*static_cast<T*>(source)));
                 };
-                type.m_noThrowMove = std::is_nothrow_move_constructible_v<T>;
             }
             if constexpr (std::is_default_constructible_v<T>)
             {

@@ -1,21 +1,11 @@
 #include <Core/Threading/Thread.h>
-#include <Framework/Entities/EntityRuntime.h>
-#include <Windows.h>
-#include <bcrypt.h>
-
-#pragma comment(lib, "bcrypt.lib")
+#include <Framework/Entities/EntityCommandListInternal.h>
+#include <Framework/Entities/EntityWorld.h>
 
 namespace FE::Framework
 {
-    Uuid NewEntityUuid()
-    {
-        Uuid result{ kForceInit };
-        FE_Verify(BCryptGenRandom(nullptr, result.data(), 16, BCRYPT_USE_SYSTEM_PREFERRED_RNG) >= 0);
-        result.m_bytes[6] = (result.m_bytes[6] & 0xf) | 0x40;
-        result.m_bytes[8] = (result.m_bytes[8] & 0x3f) | 0x80;
-        return result;
-    }
-
+    using Internal::Command;
+    using Internal::CommandKind;
 
     uint64_t Internal::NextCommandListID()
     {
@@ -76,21 +66,23 @@ namespace FE::Framework
     EntityToken EntityCommandList::CreateEntity(EntityRegistry& registry, const Env::Name name, const Uuid uuid,
                                                 const ResidencyScope residency)
     {
+        FE_Assert(m_impl && &registry.GetWorld() == m_impl->m_world);
+
         EntityToken token{ m_impl->m_id, m_impl->m_created++ };
         Command command{ CommandKind::kCreate, token };
         command.m_registry = &registry;
         command.m_registryId = registry.GetID();
         command.m_residency = residency;
         command.m_name = name;
-        command.m_uuid = uuid.IsValid() ? uuid : NewEntityUuid();
-        m_impl->m_commands.push_back(command);
+        command.m_uuid = uuid.IsValid() ? uuid : Uuid::Random();
+        m_impl->Record(command);
         return token;
     }
 
 
     void EntityCommandList::Destroy(const EntityTarget target)
     {
-        m_impl->m_commands.push_back({ CommandKind::kDestroy, target });
+        m_impl->Record({ CommandKind::kDestroy, target });
     }
 
 
@@ -98,7 +90,7 @@ namespace FE::Framework
     {
         Command command{ CommandKind::kRename, target };
         command.m_name = name;
-        m_impl->m_commands.push_back(command);
+        m_impl->Record(command);
     }
 
 
@@ -107,7 +99,7 @@ namespace FE::Framework
         Command command{ CommandKind::kParent, target };
         command.m_parent = parent;
         command.m_reparentMode = mode;
-        m_impl->m_commands.push_back(command);
+        m_impl->Record(command);
     }
 
 
@@ -115,22 +107,24 @@ namespace FE::Framework
     {
         Command command{ CommandKind::kActive, target };
         command.m_active = active;
-        m_impl->m_commands.push_back(command);
+        m_impl->Record(command);
     }
 
 
     void EntityCommandList::Unload(const EntityTarget target)
     {
-        m_impl->m_commands.push_back({ CommandKind::kUnload, target });
+        m_impl->Record({ CommandKind::kUnload, target });
     }
 
 
     void EntityCommandList::UnloadRegistry(EntityRegistry& registry)
     {
+        FE_Assert(m_impl && &registry.GetWorld() == m_impl->m_world);
+
         Command command{ CommandKind::kUnloadRegistry, {} };
         command.m_registry = &registry;
         command.m_registryId = registry.GetID();
-        m_impl->m_commands.push_back(command);
+        m_impl->Record(command);
     }
 
 
@@ -138,7 +132,7 @@ namespace FE::Framework
     {
         Command command{ CommandKind::kRemove, target };
         command.m_type = type;
-        m_impl->m_commands.push_back(command);
+        m_impl->Record(command);
     }
 
 
@@ -148,6 +142,6 @@ namespace FE::Framework
         command.m_component = &info;
         command.m_type = info.m_type->m_id;
         command.m_payload = storage;
-        m_impl->m_commands.push_back(command);
+        m_impl->Record(command);
     }
 } // namespace FE::Framework

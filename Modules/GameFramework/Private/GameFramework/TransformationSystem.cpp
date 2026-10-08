@@ -13,6 +13,7 @@ namespace FE::GameFramework
                 if (!std::isfinite(value))
                     return false;
             }
+
             return true;
         }
 
@@ -62,6 +63,7 @@ namespace FE::GameFramework
                 if (std::abs(reconstructed.m_values[i] - matrix.m_values[i]) > tolerance)
                     return false;
             }
+
             return true;
         }
 
@@ -78,10 +80,12 @@ namespace FE::GameFramework
                 const auto* local = context.Read<TransformComponent>(entity);
                 if (!local || !context.Read<WorldTransformComponent>(entity))
                     break;
+
                 const auto* scale = context.Read<NonUniformScaleComponent>(entity);
                 result = result * ComposeLocal(*local, scale);
                 entity = context.GetParent(entity);
             }
+
             return IsFinite(result) && IsAffine(result);
         }
 
@@ -129,6 +133,7 @@ namespace FE::GameFramework
 
                 scale->m_scale = candidateScale;
             }
+
             return true;
         }
     } // namespace
@@ -158,18 +163,20 @@ namespace FE::GameFramework
                                                        const NonUniformScaleComponent*,
                                                        Framework::Parent<const WorldTransformComponent*>,
                                                        WorldTransformComponent>;
-        m_completion = TransformQuery::TraverseChanged(
-            context,
-            Phases::Transformation,
-            m_changes,
-            [](const TransformComponent& local,
-               const NonUniformScaleComponent* scale,
-               const WorldTransformComponent* parent,
-               WorldTransformComponent& output) {
-                // Row-vector convention: apply the scale modifier, then local transform, then parent world.
-                const Matrix4x4 effectiveLocal = ComposeLocal(local, scale);
-                output.m_world = parent ? effectiveLocal * parent->m_world : effectiveLocal;
-            },
-            Framework::ExecutionPolicy::kParallelHierarchyTrees);
+
+        const auto updateWorldTransforms = [](const TransformComponent& local,
+                                              const NonUniformScaleComponent* scale,
+                                              const WorldTransformComponent* parent,
+                                              WorldTransformComponent& output) {
+            // Row-vector convention: apply the scale modifier, then local transform, then parent world.
+            const Matrix4x4 effectiveLocal = ComposeLocal(local, scale);
+            output.m_world = parent ? effectiveLocal * parent->m_world : effectiveLocal;
+        };
+
+        m_completion = TransformQuery::TraverseChanged(context,
+                                                       Phases::Transformation,
+                                                       m_changes,
+                                                       updateWorldTransforms,
+                                                       Framework::ExecutionPolicy::kParallel);
     }
 } // namespace FE::GameFramework

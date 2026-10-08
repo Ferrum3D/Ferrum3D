@@ -64,17 +64,20 @@ TEST_F(CollectionFixture, RepeatedSpawnOwnsDataAndRemapsOnlyInternalReferences)
     Tick();
     EXPECT_EQ(m_world.GetMaterializationStatus(first).m_state, MaterializationState::kReady);
     EXPECT_EQ(m_world.GetMaterializationStatus(second).m_state, MaterializationState::kReady);
+
     const auto a = m_world.GetMaterializationBindings(first);
     const auto b = m_world.GetMaterializationBindings(second);
     ASSERT_EQ(a.size(), 2);
     ASSERT_EQ(b.size(), 2);
     EXPECT_NE(a[0].m_entityUuid, b[0].m_entityUuid);
+
     auto* parent = m_world.Find(a[0].m_entityUuid);
     auto* child = m_world.Find(a[1].m_entityUuid);
     ASSERT_NE(parent, nullptr);
     ASSERT_NE(child, nullptr);
     EXPECT_EQ(child->GetParent(), parent);
     EXPECT_EQ(parent->FindComponent<Number>()->m_value, 42);
+
     const auto* references = child->FindComponent<ReferenceComponent>();
     EXPECT_EQ(references->m_internal.Resolve(m_world), parent);
     EXPECT_EQ(references->m_external.m_uuid, kExternal);
@@ -92,10 +95,12 @@ TEST_F(CollectionFixture, PersistentMembershipDeduplicatesAndReloadsStableBindin
     Tick();
     ASSERT_EQ(m_world.GetMaterializationStatus(first).m_state, MaterializationState::kReady);
     EXPECT_EQ(first, m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection));
+
     const auto oldId = m_world.Find(placement.m_bindings[0].m_entityUuid)->GetID();
     EntityReference reference{ placement.m_bindings[0].m_entityUuid, kPlacement };
     m_world.RemoveRegistry(m_registry);
     EXPECT_EQ(reference.Resolve(m_world), nullptr);
+
     auto& owner = m_world.CreateRegistry();
     const auto reloaded = m_world.LoadPlacement(owner, kPlacement, placement, m_collection);
     Tick();
@@ -110,21 +115,25 @@ TEST_F(CollectionFixture, InvalidSchemaBindingsAndPayloadRollbackAllAllocatedRow
 {
     auto invalid = m_collection;
     ++invalid.m_entities[1].m_components[0].m_schemaHash;
+
     auto schema = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;
     invalid.m_entities[0].m_components[0].m_type = Rtti::GetTypeID<Extra>();
+
     auto unknown = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;
     --invalid.m_entities[1].m_components[0].m_payloadSize;
+
     auto corrupt = m_world.SpawnCollection(m_registry, invalid);
     auto placement = Placement();
     placement.m_bindings[0].m_entityUuid = placement.m_rootUuid;
+
     auto bindings = m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection);
     Tick();
     for (auto token : { schema, unknown, corrupt, bindings })
     {
         EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kFailed);
-        EXPECT_FALSE(m_world.GetMaterializationStatus(token).m_error.empty());
+        EXPECT_EQ(m_world.GetMaterializationStatus(token).m_error, "Invalid entity asset");
     }
     EXPECT_EQ(m_world.GetEntityCount(), 0);
     EXPECT_EQ(m_world.GetChunkCount(), 0);
@@ -153,12 +162,14 @@ TEST_F(CollectionFixture, BindingMaintenanceAndCopiesKeepSourceIdentity)
     m_collection.m_entities[1].m_parentUuid = Uuid::kNull;
     m_collection.m_entities.erase(m_collection.m_entities.begin());
     EntityRecord added;
-    added.m_uuid = NewEntityUuid();
+    added.m_uuid = Uuid::Random();
     m_collection.m_entities.push_back(added);
+
     const auto keptUuid = placement.m_bindings[1].m_entityUuid;
     ASSERT_TRUE(placement.UpdateBindings(m_collection));
     EXPECT_EQ(placement.m_bindings[0].m_entityUuid, keptUuid);
     EXPECT_NE(placement.m_bindings[1].m_entityUuid, oldUuid);
+
     auto copy = placement;
     ASSERT_TRUE(copy.MakeIndependentCopy());
     EXPECT_NE(copy.m_rootUuid, placement.m_rootUuid);
@@ -170,13 +181,14 @@ TEST_F(CollectionFixture, BindingMaintenanceAndCopiesKeepSourceIdentity)
 
 TEST_F(CollectionFixture, CollectionSerializationReplaysOpaqueDependencyMetadata)
 {
-    const auto asset = NewEntityUuid();
+    const auto asset = Uuid::Random();
     EntityRecord record;
-    record.m_uuid = NewEntityUuid();
+    record.m_uuid = Uuid::Random();
     ASSERT_TRUE(m_collection.CookComponent(
         record,
         AssetComponent{ IO::Link<Number>(asset), IO::Link<Number, IO::DependencyKind::kSoft>(kExternal) }));
     m_collection.m_entities.push_back(std::move(record));
+
     uint32_t hard = 0;
     IO::WriteOnlyMemoryStream stream;
     Serialization::TaggedBinaryFormat format;
@@ -204,13 +216,17 @@ TEST_F(CollectionFixture, PlacementCopyRemapsCookedRootReferences)
     const auto boundUuid = placement.m_bindings.front().m_entityUuid;
     ASSERT_TRUE(placement.m_root.CookComponent(placement.m_root.m_entities.front(),
                                                ReferenceComponent{ { boundUuid, kPlacement }, { kExternal, kPlacement } }));
+
     auto copy = placement;
     ASSERT_TRUE(copy.MakeIndependentCopy());
-    auto token = m_world.LoadPlacement(m_registry, NewEntityUuid(), copy, m_collection);
+
+    auto token = m_world.LoadPlacement(m_registry, Uuid::Random(), copy, m_collection);
     Tick();
     ASSERT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kReady);
+
     const auto* root = m_world.Find(copy.m_rootUuid);
     ASSERT_NE(root, nullptr);
+
     const auto* references = root->FindComponent<const ReferenceComponent>();
     ASSERT_NE(references, nullptr);
     EXPECT_EQ(references->m_internal.m_uuid, copy.m_bindings.front().m_entityUuid);
@@ -224,15 +240,18 @@ TEST_F(CollectionFixture, ConflictingPlacementRootsAndInvalidHierarchyRejectWith
 {
     auto placement = Placement();
     auto first = m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection);
-    auto conflicting = m_world.LoadPlacement(m_registry, NewEntityUuid(), placement, m_collection);
+    auto conflicting = m_world.LoadPlacement(m_registry, Uuid::Random(), placement, m_collection);
     auto invalid = m_collection;
     invalid.m_entities.front().m_parentUuid = kChild;
+
     auto cycle = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;
     invalid.m_entities.front().m_parentUuid = kExternal;
+
     auto externalParent = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;
     invalid.m_entities.front().m_components.front().m_payloadOffset = UINT32_MAX;
+
     auto offset = m_world.SpawnCollection(m_registry, invalid);
     Tick();
     ASSERT_EQ(m_world.GetMaterializationStatus(first).m_state, MaterializationState::kReady);
@@ -270,16 +289,19 @@ TEST(CollectionMaterialization, PendingDependenciesPreventPublicationAndCancelWi
     } assets;
     EntityWorld world(&assets);
     world.Components().Register<AssetComponent>();
+
     auto& registry = world.CreateRegistry();
     EntityCollection collection;
     EntityRecord record;
-    record.m_uuid = NewEntityUuid();
-    ASSERT_TRUE(collection.CookComponent(record, AssetComponent{ IO::Link<Number>(NewEntityUuid()), {} }));
+    record.m_uuid = Uuid::Random();
+    ASSERT_TRUE(collection.CookComponent(record, AssetComponent{ IO::Link<Number>(Uuid::Random()), {} }));
     collection.m_entities.push_back(std::move(record));
+
     const auto token = world.SpawnCollection(registry, collection);
     ASSERT_TRUE(world.CommitBootstrap());
     EXPECT_EQ(world.GetMaterializationStatus(token).m_state, MaterializationState::kPending);
     ASSERT_EQ(assets.m_acquisitions, 1);
+
     const auto uuid = world.GetMaterializationBindings(token).front().m_entityUuid;
     EntityReference reference{ uuid };
     EXPECT_EQ(reference.Resolve(world), nullptr);
@@ -298,15 +320,17 @@ TEST_F(CollectionFixture, LifecycleCanQueueMoreSpawnsWithoutInvalidatingCurrentO
     m_world.Components().Register<SpawnFromLoad>();
     EntityCollection triggered;
     EntityRecord record;
-    record.m_uuid = NewEntityUuid();
+    record.m_uuid = Uuid::Random();
     ASSERT_TRUE(triggered.CookComponent(record, SpawnFromLoad{}));
     triggered.m_entities.push_back(std::move(record));
     SpawnFromLoad::s_collection = &m_collection;
     SpawnFromLoad::s_operations.clear();
+
     auto cleanup = festd::defer([] {
         SpawnFromLoad::s_collection = nullptr;
         SpawnFromLoad::s_operations.clear();
     });
+
     auto first = m_world.SpawnCollection(m_registry, triggered);
     Tick();
     EXPECT_EQ(m_world.GetMaterializationStatus(first).m_state, MaterializationState::kReady);
@@ -331,6 +355,7 @@ TEST_F(CollectionFixture, DestroyingPlacementRootRetiresMembershipAndPermitsExpl
     m_world.Submit(std::move(commands));
     Tick();
     EXPECT_EQ(m_world.GetMaterializationStatus(first).m_state, MaterializationState::kCanceled);
+
     auto reloaded = m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection);
     EXPECT_NE(reloaded, first);
     Tick();
@@ -338,7 +363,7 @@ TEST_F(CollectionFixture, DestroyingPlacementRootRetiresMembershipAndPermitsExpl
 }
 
 
-TEST_F(CollectionFixture, GeneratedReferenceSerializerPreservesFieldNames)
+TEST_F(CollectionFixture, GeneratedReferenceSerializerUsesReflectedFieldNames)
 {
     const EntityReference source{ kSource, kPlacement };
     IO::WriteOnlyMemoryStream stream;
@@ -347,10 +372,11 @@ TEST_F(CollectionFixture, GeneratedReferenceSerializerPreservesFieldNames)
     ASSERT_EQ(writer.Store(source), Serialization::ResultCode::kSuccess);
     festd::pmr::vector<std::byte> bytes;
     stream.DumpAll(bytes);
+
     const festd::string_view text(reinterpret_cast<const char*>(bytes.data()), bytes.size());
-    EXPECT_NE(text.find("\"uuid\""), text.end());
-    EXPECT_NE(text.find("\"placementAsset\""), text.end());
-    EXPECT_EQ(text.find("\"m_uuid\""), text.end());
+    EXPECT_NE(text.find("\"m_uuid\""), text.end());
+    EXPECT_NE(text.find("\"m_placementAsset\""), text.end());
+    EXPECT_EQ(text.find("\"uuid\""), text.end());
     IO::ReadOnlyMemoryStream input(bytes);
     Serialization::JsonFormat loadFormat;
     Serialization::DeserializationContext reader(&input, loadFormat);
@@ -374,6 +400,7 @@ TEST_F(CollectionFixture, FailedReferenceDeserializationDoesNotRemap)
     IO::ReadOnlyMemoryStream input(bytes);
     Serialization::PackedBinaryFormat loadFormat;
     Serialization::DeserializationContext reader(&input, loadFormat);
+
     uint32_t remaps = 0;
     reader.SetObjectReferenceRemapper(&remaps, [](void* data, Uuid) {
         ++*static_cast<uint32_t*>(data);

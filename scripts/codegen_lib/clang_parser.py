@@ -112,7 +112,6 @@ def is_codegen_attribute(annotation: str) -> bool:
         annotation == "SerializeGenerated"
         or annotation == "SkipSerializing"
         or annotation.startswith("EnumName:")
-        or annotation.startswith("SerializeName:")
         or annotation.startswith("ReflectBasic=")
         or annotation.startswith("ReflectFull")
     )
@@ -132,10 +131,6 @@ def parse_attributes(node: cindex.Cursor) -> dict[str, str]:
 
         if annotation_list.startswith("EnumName:"):
             attributes["EnumName"] = annotation_list.removeprefix("EnumName:")
-            continue
-
-        if annotation_list.startswith("SerializeName:"):
-            attributes["SerializeName"] = annotation_list.removeprefix("SerializeName:")
             continue
 
         for annotation in annotation_list.split(";"):

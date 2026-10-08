@@ -13,12 +13,15 @@ namespace
     {
         static inline int s_live = 0;
         int m_value = 17;
+
         Movable()
         {
             ++s_live;
         }
+
+
         Movable(const Movable&) = delete;
-        Movable(Movable&& other) noexcept
+        Movable(Movable&& other)
             : m_value(std::exchange(other.m_value, -1))
         {
             ++s_live;
@@ -38,12 +41,6 @@ namespace
         Immovable(const Immovable&) = delete;
         Immovable(Immovable&&) = delete;
     };
-
-
-    struct Throwing
-    {
-        Throwing(Throwing&&) noexcept(false) {}
-    };
 } // namespace
 
 TEST(RTTIMove, TypeErasedMoveDestroysBothObjectsExactlyOnce)
@@ -53,7 +50,7 @@ TEST(RTTIMove, TypeErasedMoveDestroysBothObjectsExactlyOnce)
     context.ReflectBuiltinType<Movable>(type, FE::Uuid::kNull, "Movable");
     ASSERT_NE(type.m_moveConstructor, nullptr);
     ASSERT_EQ(type.m_copyConstructor, nullptr);
-    ASSERT_TRUE(type.m_noThrowMove);
+
     alignas(Movable) std::byte source[sizeof(Movable)], destination[sizeof(Movable)];
     type.m_defaultConstructor(source);
     type.m_moveConstructor(destination, source);
@@ -65,14 +62,11 @@ TEST(RTTIMove, TypeErasedMoveDestroysBothObjectsExactlyOnce)
     EXPECT_EQ(Movable::s_live, 0);
 }
 
-TEST(RTTIMove, UnsupportedAndThrowingMovesHaveDistinctMetadata)
+
+TEST(RTTIMove, UnsupportedMoveHasNoConstructor)
 {
     Context context;
-    FE::Rtti::Type immovable, throwing;
-    context.ReflectBuiltinType<Immovable>(immovable, FE::Uuid::kNull, "Immovable");
-    context.ReflectBuiltinType<Throwing>(throwing, FE::Uuid::kNull, "Throwing");
-    EXPECT_EQ(immovable.m_moveConstructor, nullptr);
-    EXPECT_FALSE(immovable.m_noThrowMove);
-    EXPECT_NE(throwing.m_moveConstructor, nullptr);
-    EXPECT_FALSE(throwing.m_noThrowMove);
+    FE::Rtti::Type type;
+    context.ReflectBuiltinType<Immovable>(type, FE::Uuid::kNull, "Immovable");
+    EXPECT_EQ(type.m_moveConstructor, nullptr);
 }

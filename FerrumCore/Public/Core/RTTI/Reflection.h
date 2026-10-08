@@ -164,7 +164,6 @@ namespace FE::Rtti
         DefaultConstructor m_defaultConstructor = nullptr;
         CopyConstructor m_copyConstructor = nullptr;
         MoveConstructor m_moveConstructor = nullptr;
-        bool m_noThrowMove = false;
         Destructor m_destructor = nullptr;
         Serialize m_serialize = nullptr;
         Deserialize m_deserialize = nullptr;

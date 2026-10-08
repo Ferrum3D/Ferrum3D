@@ -20,12 +20,10 @@ namespace
             return { {}, ++m_acquires };
         }
 
-
         LifecycleResult Poll(const EntityAssetRequest&, Rtti::TypeID) override
         {
             return m_status;
         }
-
 
         void Release(EntityAssetRequest& request) override
         {
@@ -45,13 +43,13 @@ namespace
         FakeAssets m_assets;
         EntityWorld m_world{ &m_assets };
         EntityRegistry& m_registry = m_world.CreateRegistry();
+
         void SetUp() override
         {
             Hook::s_trace.clear();
             Hook::s_pending = Hook::s_failStage = 0;
             CustomLoad::s_unloads = 0;
         }
-
 
         Entity& Spawn(Uuid uuid = kRoot, int32_t value = 7)
         {
@@ -62,7 +60,6 @@ namespace
             EXPECT_TRUE(m_world.CommitBootstrap());
             return *m_world.Find(uuid);
         }
-
 
         template<class... Terms, class Function>
         uint32_t Count(Function&& function)
@@ -86,6 +83,7 @@ namespace
         }
     };
 } // namespace
+
 
 TEST_F(WorldFixture, IdentityMigrationAndMoveOnlyCompaction)
 {
@@ -121,7 +119,7 @@ TEST_F(WorldFixture, IdentityMigrationAndMoveOnlyCompaction)
 }
 
 
-TEST_F(WorldFixture, OverAlignedOversizedAndUnsupportedRelocation)
+TEST_F(WorldFixture, OverAlignedAndOversizedComponents)
 {
     EntityCommandList commands(m_world);
     auto token = commands.CreateEntity(m_registry, "big", kRoot);
@@ -129,7 +127,6 @@ TEST_F(WorldFixture, OverAlignedOversizedAndUnsupportedRelocation)
     Huge huge;
     huge.m_data[69999] = 81;
     ASSERT_TRUE(commands.AddComponent(token, std::move(huge)));
-    EXPECT_FALSE(commands.AddComponent(token, ThrowingMove{}));
     m_world.Submit(std::move(commands));
     ASSERT_TRUE(m_world.CommitBootstrap());
     auto* entity = m_world.Find(kRoot);
@@ -167,7 +164,7 @@ TEST_F(WorldFixture, NextFrameGateCannotBeBypassedWithRepeatedCommit)
     ASSERT_TRUE(m_world.Commit());
     ASSERT_TRUE(m_world.Commit());
     EXPECT_EQ(m_world.Find(kRoot, false), nullptr);
-    EXPECT_FALSE(m_world.CommitBootstrap());
+    EXPECT_DEATH(m_world.CommitBootstrap(), "");
     ASSERT_TRUE(m_world.EndUpdate());
     m_world.BeginUpdate();
     ASSERT_NE(m_world.Find(kRoot), nullptr);
@@ -227,9 +224,7 @@ TEST_F(WorldFixture, InvalidRegistryParentAndForeignTokensAreRejected)
     EXPECT_EQ(m_world.Find(kOther, false), nullptr);
     EntityCommandList first(m_world), second(m_world);
     auto token = first.CreateEntity(m_registry, {}, kChild);
-    second.Rename(token, "invalid");
-    m_world.Submit(std::move(second));
-    EXPECT_FALSE(m_world.CommitBootstrap());
+    EXPECT_DEATH(second.Rename(token, "invalid"), "");
 }
 
 
@@ -432,6 +427,110 @@ TEST_F(WorldFixture, QueriesIncludeEveryRegistryAndOptionalEntityArgument)
 }
 
 
+TEST_F(WorldFixture, WithoutFiltersHaveNoArgumentsOrDataAccess)
+{
+    Spawn();
+    EntityCommandList commands(m_world);
+    auto child = commands.CreateEntity(m_registry, {}, kChild);
+    commands.AddComponent(child, Number{ 9 });
+    commands.AddComponent(child, Extra{ 3 });
+    auto other = commands.CreateEntity(m_registry, {}, kOther);
+    commands.AddComponent(other, Number{ 11 });
+    commands.AddComponent(other, Hook{ 1 });
+    m_world.Submit(std::move(commands));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+
+    m_world.BeginUpdate();
+    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+    uint32_t filtered = 0;
+    uint32_t filterOnly = 0;
+    uint32_t optional = 0;
+    Query<Without<Extra>, const Number, Without<Hook>>::Traverse(context,
+                                                                 Phases::Update,
+                                                                 [&](Entity& entity, const Number& number) {
+                                                                     EXPECT_EQ(entity.GetUuid(), kRoot);
+                                                                     EXPECT_EQ(number.m_value, 7);
+                                                                     ++filtered;
+                                                                 });
+    Query<Without<Extra>>::Traverse(context, Phases::Update, [&] {
+        ++filterOnly;
+    });
+    Query<const Number*, Without<Extra>>::Traverse(context, Phases::Update, [&](const Number* number) {
+        EXPECT_NE(number, nullptr);
+        ++optional;
+    });
+    Query<Extra>::Traverse(context, Phases::Update, [](Extra& extra) {
+        ++extra.m_value;
+    });
+    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
+    ASSERT_TRUE(m_world.ExecuteSchedule());
+    EXPECT_EQ(filtered, 1);
+    EXPECT_EQ(filterOnly, 2);
+    EXPECT_EQ(optional, 2);
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_conflictEdges, 0);
+    ASSERT_TRUE(m_world.EndUpdate());
+}
+
+
+TEST_F(WorldFixture, WithoutFiltersObserveComponentAdditionAndRemoval)
+{
+    Entity& entity = Spawn();
+    ChangeCursor changes;
+    auto count = [&] {
+        m_world.BeginUpdate();
+        EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+        uint32_t matched = 0;
+        Query<const Number, Without<Extra>>::TraverseChanged(context, Phases::Update, changes, [&](const Number&) {
+            ++matched;
+        });
+        EXPECT_TRUE(m_world.SchedulePhase(Phases::Update));
+        EXPECT_TRUE(m_world.ExecuteSchedule());
+        EXPECT_TRUE(m_world.EndUpdate());
+        return matched;
+    };
+    EXPECT_EQ(count(), 1);
+    EXPECT_EQ(count(), 0);
+
+    EntityCommandList add(m_world);
+    add.AddComponent(entity.GetID(), Extra{ 3 });
+    m_world.Submit(std::move(add));
+    EXPECT_EQ(count(), 0);
+
+    EntityCommandList remove(m_world);
+    remove.RemoveComponent<Extra>(entity.GetID());
+    m_world.Submit(std::move(remove));
+    EXPECT_EQ(count(), 1);
+    EXPECT_EQ(count(), 0);
+}
+
+
+TEST_F(WorldFixture, WithoutSelfComponentAllowsTheSameParentComponent)
+{
+    Spawn();
+    EntityCommandList commands(m_world);
+    auto child = commands.CreateEntity(m_registry, {}, kChild);
+    commands.AddComponent(child, Extra{ 3 });
+    commands.SetParent(child, m_world.Find(kRoot)->GetID());
+    m_world.Submit(std::move(commands));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+
+    m_world.BeginUpdate();
+    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+    uint32_t matched = 0;
+    CascadeQuery<Without<Number>, Parent<const Number>, const Extra>::Traverse(context,
+                                                                               Phases::Update,
+                                                                               [&](const Number& parent, const Extra& extra) {
+                                                                                   EXPECT_EQ(parent.m_value, 7);
+                                                                                   EXPECT_EQ(extra.m_value, 3);
+                                                                                   ++matched;
+                                                                               });
+    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
+    ASSERT_TRUE(m_world.ExecuteSchedule());
+    EXPECT_EQ(matched, 1);
+    ASSERT_TRUE(m_world.EndUpdate());
+}
+
+
 TEST_F(WorldFixture, ExplicitPrerequisitesOverrideCollectionOrderAndEmptyWorkCompletes)
 {
     Entity& entity = Spawn();
@@ -455,37 +554,51 @@ TEST_F(WorldFixture, ExplicitPrerequisitesOverrideCollectionOrderAndEmptyWorkCom
 }
 
 
-TEST_F(WorldFixture, InvalidSchedulesExecuteNoCallbacks)
+TEST_F(WorldFixture, InvalidSchedulesAssertBeforeCallbacks)
 {
     Spawn();
-    int calls = 0;
     for (int scenario = 0; scenario < 3; ++scenario)
     {
-        m_world.BeginUpdate();
-        EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-        auto first = Query<Number>::Traverse(context, Phases::PostUpdate, [&](Number&) {
-            ++calls;
-        });
-        if (scenario == 0)
-            m_world.SchedulePhase(Phases::PreUpdate);
-        else if (scenario == 1)
-        {
-            m_world.SchedulePhase(Phases::PostUpdate);
-            EXPECT_FALSE(m_world.SchedulePhase(Phases::PostUpdate));
-        }
-        else
-        {
-            Query<Number>::Traverse(context, Phases::PreUpdate, { first }, [&](Number&) {
-                ++calls;
-            });
-            m_world.SchedulePhase(Phases::PreUpdate);
-            m_world.SchedulePhase(Phases::PostUpdate);
-        }
-        EXPECT_FALSE(m_world.ExecuteSchedule());
-        EXPECT_EQ(calls, 0);
-        EXPECT_FALSE(m_world.EndUpdate());
-        EXPECT_TRUE(first->IsSignaled());
+        EXPECT_DEATH(([&] {
+                         m_world.BeginUpdate();
+                         EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+                         auto first = Query<Number>::Traverse(context, Phases::PostUpdate, [](Number&) {
+                             ADD_FAILURE();
+                         });
+                         if (scenario == 0)
+                         {
+                             m_world.SchedulePhase(Phases::PreUpdate);
+                         }
+                         else if (scenario == 1)
+                         {
+                             m_world.SchedulePhase(Phases::PostUpdate);
+                             m_world.SchedulePhase(Phases::PostUpdate);
+                         }
+                         else
+                         {
+                             Query<Number>::Traverse(context, Phases::PreUpdate, { first }, [](Number&) {
+                                 ADD_FAILURE();
+                             });
+                             m_world.SchedulePhase(Phases::PreUpdate);
+                             m_world.SchedulePhase(Phases::PostUpdate);
+                         }
+
+                         m_world.ExecuteSchedule();
+                     }()),
+                     "");
     }
+}
+
+
+TEST_F(WorldFixture, IncompleteUpdateScheduleAsserts)
+{
+    Spawn();
+    m_world.BeginUpdate();
+    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+    Query<Number>::Traverse(context, Phases::Update, [](Number&) {
+        ADD_FAILURE();
+    });
+    EXPECT_DEATH(m_world.EndUpdate(), "");
 }
 
 
@@ -499,8 +612,8 @@ TEST_F(WorldFixture, PhaseCannotDependOnWorkItHasNotScheduledYet)
     });
     Rc<WaitGroup> prerequisite[] = { group };
     m_world.SchedulePhase(Phases::Update, prerequisite);
-    EXPECT_FALSE(m_world.ExecuteSchedule());
-    EXPECT_FALSE(m_world.EndUpdate());
+    EXPECT_DEATH(m_world.ExecuteSchedule(), "");
+    EXPECT_DEATH(m_world.EndUpdate(), "");
 }
 
 
@@ -677,8 +790,8 @@ TEST_F(WorldFixture, FrameworkCyclesAreRejectedBeforeAnyExecution)
     });
     ASSERT_TRUE(m_world.AddPrerequisite(*a, b));
     m_world.SchedulePhase(Phases::Update);
-    EXPECT_FALSE(m_world.ExecuteSchedule());
-    EXPECT_FALSE(m_world.EndUpdate());
+    EXPECT_DEATH(m_world.ExecuteSchedule(), "");
+    EXPECT_DEATH(m_world.EndUpdate(), "");
 }
 
 
@@ -960,12 +1073,12 @@ TEST_F(WorldFixture, OverlappingSubtreeCommandsFromIndependentListsAreRejected)
 }
 
 
-TEST_F(WorldFixture, SerialAndParallelChunkPoliciesExecute)
+TEST_F(WorldFixture, SequentialAndParallelQueriesExecute)
 {
     Spawn();
     m_world.BeginUpdate();
     EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    Query<Number>::Traverse(context, Phases::Update, ExecutionPolicy::kParallelChunks, [](Number& number) {
+    Query<Number>::Traverse(context, Phases::Update, ExecutionPolicy::kParallel, [](Number& number) {
         ++number.m_value;
     });
     m_world.SchedulePhase(Phases::Update);
@@ -1043,7 +1156,7 @@ TEST_F(WorldFixture, ParallelChunksOverlapAndKeepEntityLookupAccessOnSuspendedFi
     const Rc<WaitGroup> entered = WaitGroup::Create(2);
     Query<const Huge, Number>::Traverse(context,
                                         Phases::Update,
-                                        ExecutionPolicy::kParallelChunks,
+                                        ExecutionPolicy::kParallel,
                                         [&](Entity& entity, const Huge&, Number& number) {
                                             entered->Signal();
                                             entered->Wait();
@@ -1106,7 +1219,7 @@ TEST_F(WorldFixture, CascadeParentCompletesBeforeChildForSerialAndParallelTrees)
     commands.SetParent(leaf, child);
     m_world.Submit(std::move(commands));
     ASSERT_TRUE(m_world.CommitBootstrap());
-    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallelHierarchyTrees })
+    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallel })
     {
         m_world.BeginUpdate();
         EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
@@ -1137,7 +1250,7 @@ TEST_F(WorldFixture, IndependentTreeBatchesOverlap)
     m_world.BeginUpdate();
     EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
     const Rc<WaitGroup> entered = WaitGroup::Create(2);
-    CascadeQuery<Number>::Traverse(context, Phases::Update, ExecutionPolicy::kParallelHierarchyTrees, [&](Number& number) {
+    CascadeQuery<Number>::Traverse(context, Phases::Update, ExecutionPolicy::kParallel, [&](Number& number) {
         if (number.m_value == 0 || number.m_value == 16)
         {
             entered->Signal();
@@ -1166,7 +1279,7 @@ TEST_F(WorldFixture, SameSystemSequentialWorkGetsExclusionAndParallelWorkCanOver
         std::atomic<uint32_t> m_inside = 0;
         void Update(EntityUpdateContext& context) override
         {
-            auto callback = [&](const auto&) {
+            auto callback = [&] {
                 const uint32_t previous = m_inside.fetch_add(1);
                 if (m_policy == ExecutionPolicy::kSequential)
                     EXPECT_EQ(previous, 0);
@@ -1177,12 +1290,16 @@ TEST_F(WorldFixture, SameSystemSequentialWorkGetsExclusionAndParallelWorkCanOver
                 }
                 m_inside.fetch_sub(1);
             };
-            Query<const Number>::Traverse(context, Phases::Update, m_policy, callback);
-            Query<const Extra>::Traverse(context, Phases::Update, m_policy, callback);
+            Query<const Number>::Traverse(context, Phases::Update, m_policy, [callback](const Number&) {
+                callback();
+            });
+            Query<const Extra>::Traverse(context, Phases::Update, m_policy, [callback](const Extra&) {
+                callback();
+            });
         }
     } system;
     m_world.AddSystem(system);
-    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallelChunks })
+    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallel })
     {
         system.m_policy = policy;
         system.m_entered = WaitGroup::Create(2);
@@ -1222,20 +1339,6 @@ TEST_F(WorldFixture, ChangedConsumersAreIndependentAndAdvanceOnlyAfterCompletion
     m_world.Submit(std::move(commands));
     EXPECT_EQ(consume(first), 1);
     EXPECT_EQ(consume(second), 1);
-}
-
-
-TEST_F(WorldFixture, CascadeChunkPolicyIsRejectedBeforeCallbacks)
-{
-    Spawn();
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    CascadeQuery<Number>::Traverse(context, Phases::Update, ExecutionPolicy::kParallelChunks, [](Number&) {
-        ADD_FAILURE();
-    });
-    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
-    EXPECT_FALSE(m_world.ExecuteSchedule());
-    EXPECT_FALSE(m_world.EndUpdate());
 }
 
 
@@ -1318,19 +1421,22 @@ TEST_F(WorldFixture, SharedChangeCursorAndAliasingParallelParentTermsAreRejected
         ADD_FAILURE();
     });
     ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
-    EXPECT_FALSE(m_world.ExecuteSchedule());
-    EXPECT_FALSE(m_world.EndUpdate());
+    EXPECT_DEATH(m_world.ExecuteSchedule(), "");
+    EXPECT_DEATH(m_world.EndUpdate(), "");
+}
+
+
+TEST_F(WorldFixture, AliasingParallelParentTermsAssert)
+{
+    Spawn();
     m_world.BeginUpdate();
     EntityUpdateContext next{ m_world, nullptr, m_world.GetEpoch() };
-    Query<Number, Parent<const Number*>>::Traverse(next,
-                                                   Phases::Update,
-                                                   ExecutionPolicy::kParallelChunks,
-                                                   [](Number&, const Number*) {
-                                                       ADD_FAILURE();
-                                                   });
+    Query<Number, Parent<const Number*>>::Traverse(next, Phases::Update, ExecutionPolicy::kParallel, [](Number&, const Number*) {
+        ADD_FAILURE();
+    });
     ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
-    EXPECT_FALSE(m_world.ExecuteSchedule());
-    EXPECT_FALSE(m_world.EndUpdate());
+    EXPECT_DEATH(m_world.ExecuteSchedule(), "");
+    EXPECT_DEATH(m_world.EndUpdate(), "");
 }
 
 
@@ -1479,4 +1585,28 @@ TEST_F(WorldFixture, DeactivationCancelsCandidateLoadingButRetainsItsAuthoredVal
     EXPECT_TRUE(inactive->IsActive());
     EXPECT_EQ(inactive->FindComponent<AssetComponent>()->m_hard.GetAssetID(), kOther);
     EXPECT_EQ(m_assets.m_acquires, 3);
+}
+
+
+TEST_F(WorldFixture, MissingDependencyLayoutCanBeRetriedWithItsRequiredComponent)
+{
+    const Rtti::TypeID dependencies[] = { Rtti::GetTypeID<Number>() };
+    ASSERT_TRUE(m_world.Components().Register<Extra>(dependencies));
+    EntityCommandList missing(m_world);
+    auto token = missing.CreateEntity(m_registry, {}, kRoot);
+    missing.AddComponent(token, Extra{ 2 });
+    m_world.Submit(std::move(missing));
+    EXPECT_FALSE(m_world.CommitBootstrap());
+    EXPECT_EQ(m_world.GetEntityCount(), 0);
+
+    EntityCommandList valid(m_world);
+    token = valid.CreateEntity(m_registry, {}, kRoot);
+    valid.AddComponent(token, Extra{ 2 });
+    valid.AddComponent(token, Number{ 1 });
+    m_world.Submit(std::move(valid));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    const Entity* entity = m_world.Find(kRoot);
+    ASSERT_NE(entity, nullptr);
+    EXPECT_EQ(entity->FindComponent<const Extra>()->m_value, 2);
+    EXPECT_EQ(entity->FindComponent<const Number>()->m_value, 1);
 }

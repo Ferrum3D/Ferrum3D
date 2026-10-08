@@ -44,7 +44,6 @@ class FieldInfo:
         self.array_size = array_size
         self.is_bitfield = is_bitfield
         self.display_name = codegen_attributes.get("EnumName", name)
-        self.serialization_name = codegen_attributes.get("SerializeName", name)
 
     @property
     def skip_serializing(self) -> bool:

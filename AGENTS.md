@@ -85,6 +85,7 @@ This only changes the current process environment. It leaves the normal Windows 
 - Keep comments sparse. Use comments for namespace endings, complex intent, or non-obvious behavior rather than restating the code.
 - Prefer generated serialization via `FE_RTTI_Serialize()` whenever reflection can express the serialized fields. Write a manual `Serializer` only when generated serialization cannot represent the required contract.
 - Avoid unnecessary casts, e.g. most `festd` containers' `size_type` is `uint32_t` so `static_cast<uint32_t>(vec.size())` is redundant.
+- Never use `auto` in lambda parameters.
 
 For example, the early return and inner conditional below have single-line bodies. The outer loop and wrapped call have multi-line bodies and require braces:
 

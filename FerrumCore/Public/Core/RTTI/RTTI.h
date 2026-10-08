@@ -21,7 +21,6 @@
 #endif
 
 #define FE_ENUMNAME(name) FE_CODEGEN_ATTRIBUTE("EnumName:" name)
-#define FE_SERIALIZE_NAME(name) FE_CODEGEN_ATTRIBUTE("SerializeName:" name)
 #define FE_SKIP_SERIALIZING FE_CODEGEN_ATTRIBUTE("SkipSerializing")
 
 
@@ -218,6 +217,7 @@ public:                                                                         
     {
         if constexpr (Internal::kIsRTTIDefined<T>)
             return T::TypeID;
+
         else
             return TypeID::kNull;
     }
@@ -260,6 +260,7 @@ public:                                                                         
         if (Build::IsDebug())
         {
             using DestinationClass = std::remove_const_t<std::remove_pointer_t<TDstPtr>>;
+
             auto* dest = source->RTTI_TryCast(DestinationClass::TypeID);
             FE_Assert(static_cast<TDstPtr>(dest) == static_cast<TDstPtr>(source), "AssertCast failed");
         }

@@ -17,7 +17,7 @@ namespace
         IO::Path m_directory;
         void SetUp() override
         {
-            m_directory = IO::Path(FE_ENTITY_ASSET_TEST_OUTPUT) / Fmt::Format("{}", NewEntityUuid());
+            m_directory = IO::Path(FE_ENTITY_ASSET_TEST_OUTPUT) / Fmt::Format("{}", Uuid::Random());
         }
 
 
@@ -29,7 +29,7 @@ namespace
             auto& artifact = file.m_artifacts.emplace_back();
             artifact.m_productKey = "Serialized/Primary";
             artifact.m_name = name;
-            artifact.m_assetId = NewEntityUuid();
+            artifact.m_assetId = Uuid::Random();
             artifact.m_assetTypeId = Rtti::GetTypeID<T>();
             artifact.m_buildSettings.Emplace<T>(value);
             const auto id = artifact.m_assetId;
@@ -59,10 +59,10 @@ TEST_F(CollectionAssetsIntegration, ImportedDefinitionsReleaseWhileNestedRuntime
 {
     const auto leaf = BuildDefinition("leaf.asset", Number{ 73 });
     const auto nested = BuildDefinition("nested.asset", AssetComponent{ IO::Link<Number>(leaf), {} });
-    const auto soft = NewEntityUuid();
+    const auto soft = Uuid::Random();
     EntityCollection collection;
     EntityRecord record;
-    record.m_uuid = NewEntityUuid();
+    record.m_uuid = Uuid::Random();
     ASSERT_TRUE(collection.CookComponent(
         record,
         CollectionAssets{ IO::Link<AssetComponent>(nested), IO::Link<Number, IO::DependencyKind::kSoft>(soft) }));
@@ -81,9 +81,7 @@ TEST_F(CollectionAssetsIntegration, ImportedDefinitionsReleaseWhileNestedRuntime
     ASSERT_TRUE(AssetBuilder::BuildAsset({ path, {}, m_directory }));
     IO::ArtifactStore::SetCatalogSource(m_directory);
     IO::AssetManager::Init();
-    RegisterEntityAssetStreamers();
     auto shutdown = festd::defer([] {
-        UnregisterEntityAssetStreamers();
         IO::AssetManager::Shutdown();
     });
     EntityWorld world;
@@ -124,7 +122,7 @@ TEST_F(CollectionAssetsIntegration, PersistentAssetDuplicateCancellationAndReloa
 {
     EntityCollection collection;
     EntityRecord record;
-    record.m_uuid = NewEntityUuid();
+    record.m_uuid = Uuid::Random();
     ASSERT_TRUE(collection.CookComponent(record, Number{ 91 }));
     collection.m_entities.push_back(std::move(record));
     const auto collectionPath = m_directory / "collection.asset";
@@ -143,9 +141,7 @@ TEST_F(CollectionAssetsIntegration, PersistentAssetDuplicateCancellationAndReloa
     ASSERT_TRUE(AssetBuilder::BuildAsset({ path, {}, m_directory }));
     IO::ArtifactStore::SetCatalogSource(m_directory);
     IO::AssetManager::Init();
-    RegisterEntityAssetStreamers();
     auto shutdown = festd::defer([] {
-        UnregisterEntityAssetStreamers();
         IO::AssetManager::Shutdown();
     });
     EntityWorld world;

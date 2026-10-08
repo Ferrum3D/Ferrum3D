@@ -1,5 +1,5 @@
-#include <Core/Threading/Thread.h>
-#include <Framework/Entities/EntityRuntime.h>
+#include <Framework/Entities/EntityResidencySet.h>
+#include <Framework/Entities/EntityWorld.h>
 
 namespace FE::Framework
 {

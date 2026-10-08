@@ -427,9 +427,9 @@ namespace FE::Framework
             BeforeSerialize(context);
         if (auto object = context.BeginObject())
         {
-            object.Field("asset", m_asset);
-            object.Field("expectedType", m_expectedType);
-            object.Field("kind", m_kind);
+            object.Field("m_asset", m_asset);
+            object.Field("m_expectedType", m_expectedType);
+            object.Field("m_kind", m_kind);
         }
 
         return context.GetResultCode();
@@ -439,9 +439,9 @@ namespace FE::Framework
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("asset", m_asset);
-            object.Field("expectedType", m_expectedType);
-            object.Field("kind", m_kind);
+            object.Field("m_asset", m_asset);
+            object.Field("m_expectedType", m_expectedType);
+            object.Field("m_kind", m_kind);
         }
 
         return context.GetResultCode();
@@ -455,11 +455,11 @@ namespace FE::Framework
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("asset", 5);
+            hasher.Update("m_asset", 7);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_asset)>());
-            hasher.Update("expectedType", 12);
+            hasher.Update("m_expectedType", 14);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_expectedType)>());
-            hasher.Update("kind", 4);
+            hasher.Update("m_kind", 6);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_kind)>());
             hasher.Update(0);
             return hasher.Finalize();
@@ -763,30 +763,30 @@ namespace FE::Framework
         static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_type
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_version
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_dependencies
             0x76, 0xe0, 0xd6, 0x16, 0xa6, 0x46, 0x42, 0x2a,
             0xb5, 0x06, 0x07, 0xad, 0xbe, 0x41, 0x75, 0x6b, // uint64_t m_schemaHash
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_version
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_payloadOffset
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_payloadSize
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_dependencies
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_type = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_version = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependencies = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_schemaHash = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_version = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_payloadOffset = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_payloadSize = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependencies = {};
 
         static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_type",
@@ -794,30 +794,30 @@ namespace FE::Framework
                                                         &EntityComponentRecord::m_type,
                                                         kAttributes_m_type,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_version",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dependencies",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &EntityComponentRecord::m_version,
-                                                        kAttributes_m_version,
+                                                        &EntityComponentRecord::m_dependencies,
+                                                        kAttributes_m_dependencies,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_schemaHash",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &EntityComponentRecord::m_schemaHash,
                                                         kAttributes_m_schemaHash,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_payloadOffset",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_version",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &EntityComponentRecord::m_version,
+                                                        kAttributes_m_version,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_payloadOffset",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &EntityComponentRecord::m_payloadOffset,
                                                         kAttributes_m_payloadOffset,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_payloadSize",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &EntityComponentRecord::m_payloadSize,
                                                         kAttributes_m_payloadSize,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dependencies",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &EntityComponentRecord::m_dependencies,
-                                                        kAttributes_m_dependencies,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -836,11 +836,11 @@ namespace FE::Framework
         if (auto object = context.BeginObject())
         {
             object.Field("m_type", m_type);
-            object.Field("m_version", m_version);
+            object.Field("m_dependencies", m_dependencies);
             object.Field("m_schemaHash", m_schemaHash);
+            object.Field("m_version", m_version);
             object.Field("m_payloadOffset", m_payloadOffset);
             object.Field("m_payloadSize", m_payloadSize);
-            object.Field("m_dependencies", m_dependencies);
         }
 
         return context.GetResultCode();
@@ -851,11 +851,11 @@ namespace FE::Framework
         if (auto object = context.BeginObject())
         {
             object.Field("m_type", m_type);
-            object.Field("m_version", m_version);
+            object.Field("m_dependencies", m_dependencies);
             object.Field("m_schemaHash", m_schemaHash);
+            object.Field("m_version", m_version);
             object.Field("m_payloadOffset", m_payloadOffset);
             object.Field("m_payloadSize", m_payloadSize);
-            object.Field("m_dependencies", m_dependencies);
         }
 
         return context.GetResultCode();
@@ -871,16 +871,16 @@ namespace FE::Framework
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
             hasher.Update("m_type", 6);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_type)>());
-            hasher.Update("m_version", 9);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_version)>());
+            hasher.Update("m_dependencies", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_dependencies)>());
             hasher.Update("m_schemaHash", 12);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_schemaHash)>());
+            hasher.Update("m_version", 9);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_version)>());
             hasher.Update("m_payloadOffset", 15);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_payloadOffset)>());
             hasher.Update("m_payloadSize", 13);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_payloadSize)>());
-            hasher.Update("m_dependencies", 14);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_dependencies)>());
             hasher.Update(0);
             return hasher.Finalize();
         }();
@@ -965,8 +965,8 @@ namespace FE::Framework
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("uuid", m_uuid);
-            object.Field("placementAsset", m_placementAsset);
+            object.Field("m_uuid", m_uuid);
+            object.Field("m_placementAsset", m_placementAsset);
         }
 
         return context.GetResultCode();
@@ -976,8 +976,8 @@ namespace FE::Framework
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("uuid", m_uuid);
-            object.Field("placementAsset", m_placementAsset);
+            object.Field("m_uuid", m_uuid);
+            object.Field("m_placementAsset", m_placementAsset);
         }
         if (context.IsValid())
             AfterDeserialize(context);
@@ -993,9 +993,9 @@ namespace FE::Framework
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("uuid", 4);
+            hasher.Update("m_uuid", 6);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_uuid)>());
-            hasher.Update("placementAsset", 14);
+            hasher.Update("m_placementAsset", 16);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_placementAsset)>());
             hasher.Update(0);
             return hasher.Finalize();

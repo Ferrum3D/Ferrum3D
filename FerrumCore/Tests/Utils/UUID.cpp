@@ -1,4 +1,5 @@
 #include <Core/Math/UUID.h>
+#include <Core/Strings/Format.h>
 #include <Tests/Common/TestCommon.h>
 #include <festd/string.h>
 
@@ -74,4 +75,19 @@ TEST(UUID, Init)
     const FE::Uuid uuid1 = FE::Uuid::Parse("62e1b7a1-c14a-4129-ac57-7e77289123e9");
     const FE::Uuid uuid2{ 0x62, 0xe1, 0xb7, 0xa1, 0xc1, 0x4a, 0x41, 0x29, 0xac, 0x57, 0x7e, 0x77, 0x28, 0x91, 0x23, 0xe9 };
     EXPECT_EQ(uuid1, uuid2);
+}
+
+
+TEST(UUID, RandomUsesVersion4AndRoundTrips)
+{
+    const FE::Uuid first = FE::Uuid::Random();
+    const FE::Uuid second = FE::Uuid::Random();
+    ASSERT_TRUE(first.IsValid());
+    ASSERT_TRUE(second.IsValid());
+    EXPECT_NE(first, second);
+    EXPECT_EQ(first.m_bytes[6] & 0xf0, 0x40);
+    EXPECT_EQ(first.m_bytes[8] & 0xc0, 0x80);
+    const auto formatted = FE::Fmt::Format("{}", first);
+    const FE::Uuid parsed(FE::festd::ascii_view(formatted.data(), formatted.size()));
+    EXPECT_EQ(parsed, first);
 }

@@ -28,7 +28,6 @@ namespace FE::GameFramework
         return RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600001();
     }
 
-
     void TransformComponent::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600001();
@@ -63,7 +62,6 @@ namespace FE::GameFramework
                                                  kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600001(&TransformComponent::Reflect);
 
     FE::Serialization::ResultCode TransformComponent::Serialize(FE::Serialization::SerializationContext& context) const
@@ -76,7 +74,6 @@ namespace FE::GameFramework
         return context.GetResultCode();
     }
 
-
     FE::Serialization::ResultCode TransformComponent::Deserialize(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
@@ -86,7 +83,6 @@ namespace FE::GameFramework
 
         return context.GetResultCode();
     }
-
 
     uint64_t TransformComponent::RTTI_GetSerializationSchemaHash()
     {
@@ -104,7 +100,6 @@ namespace FE::GameFramework
 
         return kHash;
     }
-
 
     uint32_t TransformComponent::RTTI_GetSerializationVersion()
     {
@@ -133,7 +128,6 @@ namespace FE::GameFramework
     {
         return RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600002();
     }
-
 
     void NonUniformScaleComponent::Reflect(Rtti::ReflectionContext& context)
     {
@@ -168,7 +162,6 @@ namespace FE::GameFramework
                                                        kFields);
     }
 
-
     static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600002(&NonUniformScaleComponent::Reflect);
 
     FE::Serialization::ResultCode NonUniformScaleComponent::Serialize(FE::Serialization::SerializationContext& context) const
@@ -181,7 +174,6 @@ namespace FE::GameFramework
         return context.GetResultCode();
     }
 
-
     FE::Serialization::ResultCode NonUniformScaleComponent::Deserialize(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
@@ -191,7 +183,6 @@ namespace FE::GameFramework
 
         return context.GetResultCode();
     }
-
 
     uint64_t NonUniformScaleComponent::RTTI_GetSerializationSchemaHash()
     {
@@ -209,7 +200,6 @@ namespace FE::GameFramework
 
         return kHash;
     }
-
 
     uint32_t NonUniformScaleComponent::RTTI_GetSerializationVersion()
     {
@@ -238,7 +228,6 @@ namespace FE::GameFramework
     {
         return RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600003();
     }
-
 
     void WorldTransformComponent::Reflect(Rtti::ReflectionContext& context)
     {
@@ -273,7 +262,6 @@ namespace FE::GameFramework
                                                       kAttributes,
                                                       kFields);
     }
-
 
     static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600003(&WorldTransformComponent::Reflect);
 } // namespace FE::GameFramework

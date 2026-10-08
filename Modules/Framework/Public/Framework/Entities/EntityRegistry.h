@@ -4,18 +4,24 @@
 namespace FE::Framework
 {
     // Runtime ownership/residency group, never a simulation boundary. World owns its lifetime.
+    //! @brief World-owned ownership and asset residency group, not a simulation boundary.
     struct EntityRegistry final
     {
+        //! @brief Return the owning world; registries never define separate simulation boundaries.
         [[nodiscard]] EntityWorld& GetWorld() const
         {
+            //! @brief Owning world or its incarnation; borrowed where represented as a reference.
             return *m_world;
         }
 
+        //! @brief Return the world-local incarnation used to reject commands for removed registries.
         [[nodiscard]] uint64_t GetID() const
         {
+            //! @brief Stable identity key.
             return m_id;
         }
 
+        //! @brief Inspect shared acquisitions used by entities with registry-scoped residency.
         [[nodiscard]] const EntityResidencySet& GetResidency() const
         {
             return m_residency;

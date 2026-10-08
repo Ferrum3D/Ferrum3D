@@ -1,30 +1,34 @@
-#include <Core/Threading/Thread.h>
-#include <Framework/Entities/EntityRuntime.h>
+#include <Framework/Entities/Entity.h>
+#include <Framework/Entities/EntityRegistry.h>
+#include <Framework/Entities/EntityResources.h>
+#include <Framework/Entities/EntityWorld.h>
 
 namespace FE::Framework
 {
-    Entity::Entity(EntityWorld& world, EntityRegistry& registry, const EntityID id, const Uuid uuid, const Env::Name name)
-        : m_world(&world)
-        , m_registry(&registry)
+    Entity::Entity(EntityRegistry& registry, const EntityID id, const Uuid uuid, const Env::Name name)
+        : m_uuid(uuid)
         , m_id(id)
-        , m_uuid(uuid)
         , m_name(name)
+        , m_registry(&registry)
     {
-        m_runtime = Memory::DefaultNew<Runtime>();
     }
 
 
     Entity::~Entity()
     {
-        FE_Assert(m_runtime->m_assets.empty() && m_runtime->m_replacements.empty());
-        Memory::DefaultDelete(m_runtime->m_residency);
+        FE_Assert(!m_resources || (m_resources->m_assets.empty() && m_resources->m_replacements.empty()));
+        Memory::DefaultDelete(m_resources);
+    }
 
-        Memory::DefaultDelete(m_runtime);
+
+    EntityWorld& Entity::GetWorld() const
+    {
+        return m_registry->GetWorld();
     }
 
 
     void* Entity::FindComponent(const Rtti::TypeID type, const bool write) const
     {
-        return m_world->LookupComponent(*this, type, write);
+        return GetWorld().LookupComponent(*this, type, write);
     }
 } // namespace FE::Framework
