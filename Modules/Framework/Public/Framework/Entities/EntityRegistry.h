@@ -27,16 +27,24 @@ namespace FE::Framework
             return m_residency;
         }
 
+        //! @brief Persistent ownership key used by world definitions and snapshots.
+        [[nodiscard]] Uuid GetKey() const
+        {
+            return m_key;
+        }
+
     private:
         friend EntityWorld;
         EntityWorld* m_world;
         const uint64_t m_id;
+        const Uuid m_key;
         EntityResidencySet m_residency;
         bool m_unloading = false;
 
-        EntityRegistry(EntityWorld& world, EntityAssetServices& services, uint64_t id)
+        EntityRegistry(EntityWorld& world, EntityAssetServices& services, uint64_t id, Uuid key)
             : m_world(&world)
             , m_id(id)
+            , m_key(key)
             , m_residency(services)
         {
         }

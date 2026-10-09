@@ -4,6 +4,7 @@
 #include <AssetBuilder/PipelineInternal.h>
 #include <AssetBuilder/TextureProcessor.h>
 #include <Framework/Entities/EntityCollection.h>
+#include <Framework/Entities/EntityWorldAsset.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
 
@@ -110,6 +111,14 @@ namespace FE::AssetBuilder::Internal
                     Logger::LogError("Invalid entity placement definition");
                     return false;
                 }
+            }
+
+            const auto* world = request.m_artifact.m_buildSettings.TryGet<Framework::EntityWorldAsset>();
+            const auto* snapshot = request.m_artifact.m_buildSettings.TryGet<Framework::EntityWorldSnapshotAsset>();
+            if ((world && !world->Validate()) || (snapshot && !snapshot->Validate()))
+            {
+                Logger::LogError("Invalid entity world asset");
+                return false;
             }
 
             ArtifactWriter writer(request.m_outputDirectory, request.m_artifact.m_assetId, request.m_artifact.m_assetTypeId);

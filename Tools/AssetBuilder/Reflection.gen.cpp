@@ -11,6 +11,12 @@
 #include <AssetBuilder/TextureProcessor.h>
 
 
+namespace FE
+{
+    void CallLinkerAnchor_AssetBuilder() {}
+} // namespace FE
+
+
 namespace FE::AssetBuilder
 {
     const Rtti::TypeID AssetFile::TypeID = Rtti::TypeID{
@@ -316,6 +322,9 @@ namespace FE::AssetBuilder
                                                             kBaseClassTypeIDs,
                                                             kAttributes,
                                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MaterialInstanceBuildSettings*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_42707ccb12484abba6a8067b1d2d6a0b(&MaterialInstanceBuildSettings::Reflect);
@@ -972,6 +981,9 @@ namespace FE::AssetBuilder
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
                                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MaterialBuildSettings*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_a5f968e2282c4364957bdc52cc51014d(&MaterialBuildSettings::Reflect);

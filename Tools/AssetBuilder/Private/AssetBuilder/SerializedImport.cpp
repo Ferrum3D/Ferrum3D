@@ -2,8 +2,6 @@
 #include <Core/IO/MemoryStream.h>
 #include <Core/Logging/Logger.h>
 #include <Core/Serialization/BinarySerialization.h>
-#include <Framework/Entities/EntityCollection.h>
-#include <GameFramework/TransformComponents.h>
 
 namespace FE::AssetBuilder::Internal
 {
@@ -47,9 +45,6 @@ namespace FE::AssetBuilder::Internal
 
     bool ImportSerializedAsset(const Rtti::TypeID assetTypeId, const IO::Path& assetFilePath)
     {
-        (void)Rtti::GetType<Framework::EntityCollection>();
-        (void)Rtti::GetType<Framework::EntityCollectionInstanceAsset>();
-        (void)Rtti::GetType<GameFramework::TransformComponent>();
         const Rtti::Type* type = Rtti::TypeRegistry::FindType(assetTypeId);
         if (type == nullptr)
         {

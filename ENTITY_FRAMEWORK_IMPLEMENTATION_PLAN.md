@@ -1,6 +1,6 @@
 ï»¿# Entity framework implementation plan
 
-Status: Stages 1–8 implemented. The reusable entity runtime, collection assets, persistent placement materialization and generic tests are in `Modules/Framework`. Affine transformation components, reparent integration and TransformationSystem are in `Modules/GameFramework`. AssetBuilder imports/cooks collection and placement definitions. Stages 9–11 remain planned. See `Modules/Framework/ENTITY_FRAMEWORK.md` and `Modules/GameFramework/README.md`.
+Status: Stages 1-10 implemented. The reusable entity runtime, world/collection/snapshot assets and generic tests are in `Modules/Framework`. Engine transformation, graphics and streaming systems are in `Modules/GameFramework`. AssetBuilder cooks the definitions; GameSample loads a two-entity Helmet/camera world from disk. Stage 11 remains planned. See `Modules/Framework/ENTITY_FRAMEWORK.md`, `Modules/GameFramework/README.md` and `Samples/GameSample/README.md`.
 
 This plan replaces the old `Modules/Framework/.../Entities` prototype with a hybrid entity/ECS framework. Entity objects provide stable identity and hierarchy. Components reside in packed archetype chunks. World systems submit deferred query work into application-scheduled phases. Assets describe worlds, reusable collections, and persistent placements; registries own runtime entity groups and residency without defining simulation boundaries.
 
@@ -46,7 +46,7 @@ The initial scheduler tracks component accesses only. Systems are responsible fo
 | `Modules/Graphics/Framework/.../Scene` and `Features/Mesh` | Render scenes, instance handles, transform updates | Integrate through render systems in a separate layer |
 | `Tools/AssetBuilder` | Serialized asset import and dependency collection | Build world, collection, placement, and snapshot artifacts |
 
-`FeFramework` continues to depend on `FeCore`, not on `FeGraphics`. Transform components/systems belong in Framework. Graphics-specific components and render systems belong in the Graphics project, which can depend on Framework. Avoid a circular module dependency.
+`FeFramework` continues to depend on `FeCore`. Engine transformation, graphics and streaming components/systems belong in `FeGameFramework`, which depends on Framework and Graphics. Graphics owns scene/resource implementations. Avoid a circular module dependency.
 
 The existing entity prototype is not a correctness reference. Audit chunk alignment, allocation metadata initialization, allocation release, archetype-key collision handling, move-source destruction, and relocation mappings before reusing code.
 
@@ -78,7 +78,7 @@ The existing entity prototype is not a correctness reference. Audit chunk alignm
 
 ### Generic RTTI extension
 
-Add an optional move-constructor callback and a no-throw-move capability flag to `Rtti::Type`. Bind them in `ReflectionContext` using C++20 traits. Reflection registration remains the single source of generic type size, alignment, construction, move, destruction, and serialization operations.
+Add an optional move-constructor callback to `Rtti::Type`. Bind it in `ReflectionContext` using C++20 traits. Exceptions are disabled, so a separate no-throw capability flag is unnecessary. Reflection registration remains the single source of generic type size, alignment, construction, move, destruction, and serialization operations.
 
 Framework keeps a component operations table containing a reference to `Rtti::Type`, optional detected lifecycle callbacks, and component-specific policies. It does not duplicate persistent type identity or generic object operations. Plain data components need only reflected type registration.
 
@@ -320,7 +320,7 @@ Dependencies: Stage 1.
 
 Work:
 
-- Extend RTTI with optional move construction and no-throw capability metadata; add focused Core RTTI tests.
+- Extend RTTI with optional move construction; add focused Core RTTI tests.
 - Replace component IDs/duplicated generic metadata with RTTI-backed registration and dense internal indices.
 - Implement immutable 64-bit entity IDs, world incarnation allocation, generation validation, UUID lookup, and stable entity pools.
 - Rebuild aligned chunk layouts, canonical archetype matching, active metadata, compaction, migration, and memory release.
@@ -448,7 +448,7 @@ Dependencies: Stage 8.
 
 Work:
 
-- Implement EntityWorldAsset definitions and explicit world construction with application-provided system factories/service bindings.
+- Implement EntityWorldAsset definitions and explicit world construction with reflected default-constructible systems/application service bindings.
 - Implement full concrete snapshot capture/restore, ownership-group keys, persistent placement bookkeeping, and UUID-preserving reload.
 - Add a world streaming system in GameFramework that owns placement requests and runtime registries without adding simulation boundaries.
 - Support registry load/unload requests and failed/canceled operation diagnostics.
@@ -470,7 +470,7 @@ Work:
 - Add graphics mesh/camera components as needed and render world systems in GameFramework. Store scene instance handles as transient state; preserve component relocatability.
 - Activation/deactivation creates/destroys graphics membership at safe points; scheduled sequential extraction updates changed transforms/material state.
 - Order extraction after transformation completion and before existing graphics scene processing/render submission. Avoid renderer-side raw component pointers.
-- Add a sample that loads a world with a persistent hierarchy, streams a second registry, repeatedly spawns an effect collection, reparents an entity, and saves/restores modified state.
+- Add GameSample loading a cooked disk world containing one Helmet mesh entity and one camera entity. Reuse Renderer's model/material assets. Keep streaming and snapshot validation in focused tests; exclude effects and the larger demonstration from this sample.
 
 Acceptance:
 
@@ -513,3 +513,7 @@ Acceptance:
 Deliver Stages 1 through 5 first: RTTI-based movable chunk storage, stable entities and hierarchy, next-frame commands, complete lifecycle/residency, and deferred serial queries with explicit phase/prerequisite validation. This milestone establishes observable behavior before adding parallelism.
 
 Then add parallel execution and transform tracking, followed by asset materialization/persistence and graphics integration. Persistent assets are implemented against the validated runtime contracts rather than freezing serialization around the old prototype.
+
+### Stage 9/10 implementation scope (GameSample)
+
+World definitions select default-constructible WorldSystem types through registered reflection and contain concrete entity records grouped by persistent registry UUIDs. Snapshots capture concrete values and placement membership; restoration never expands source collections. GameFramework owns streaming, camera and mesh systems. Graphics scene membership is transient. Extraction runs after transformation and before rendering. GameSample loads a cooked world asset containing exactly a Helmet mesh entity and a camera entity. Effects and the larger multi-registry demonstration are excluded from this sample.

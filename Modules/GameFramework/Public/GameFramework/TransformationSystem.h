@@ -13,6 +13,8 @@ namespace FE::GameFramework
     //! @brief Register transform layouts and publish parent-before-child world matrices through a cascade query.
     struct TransformationSystem final : Framework::WorldSystem
     {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae10a1");
+
         //! @brief Register authored/runtime companions and install transactional transform reparenting.
         void Init(Framework::EntityWorld& world) override;
         //! @brief Detach the reparent handler before the system is removed.

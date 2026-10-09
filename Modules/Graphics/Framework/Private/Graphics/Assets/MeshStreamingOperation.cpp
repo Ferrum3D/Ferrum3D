@@ -62,9 +62,7 @@ namespace FE::Graphics
             destinationOffset += read.m_data.size();
         }
 
-        if (IsCancellationRequested())
-            return;
-
+        // Always transfer builder allocations to the operation so cancellation can release them.
         m_commandList = builder.Build(&m_commandAllocator, m_uploadDone.Get());
         m_prepareSucceeded = true;
     }

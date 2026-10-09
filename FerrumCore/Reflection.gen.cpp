@@ -37,6 +37,12 @@
 #include <festd/string.h>
 
 
+namespace FE
+{
+    void CallLinkerAnchor_Core() {}
+} // namespace FE
+
+
 namespace FE::Cli
 {
     const Rtti::TypeID Command::TypeID = Rtti::TypeID{
@@ -121,6 +127,9 @@ namespace FE::Cli
                                       kBaseClassTypeIDs,
                                       kAttributes,
                                       kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Command*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_01ddd116d09049e498b94100cfb50509(&Command::Reflect);
@@ -289,6 +298,9 @@ namespace FE::Cli
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Subcommand*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_0f01e827c9d943f0896947bf6d035b82(&Subcommand::Reflect);
@@ -555,6 +567,9 @@ namespace FE::IO::Async
                                           kBaseClassTypeIDs,
                                           kAttributes,
                                           kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<IController*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2427b1d9f1a54a1ba804eb9aca502c28(&IController::Reflect);
@@ -657,6 +672,9 @@ namespace FE::IO
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<FileStream*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_25bf9144cf174085b0d4f269d5f7ccb7(&FileStream::Reflect);
@@ -1016,6 +1034,9 @@ namespace FE::IO
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<StreamBase*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2f74ff8d4d8144be962a9d30669e03c8(&StreamBase::Reflect);
@@ -1412,6 +1433,9 @@ namespace FE::IO::Async
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Controller*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4f28d2d71ab44279a3bda1d15b2f5ba9(&Controller::Reflect);
@@ -1631,6 +1655,9 @@ namespace FE::IO::Async
                                                        kBaseClassTypeIDs,
                                                        kAttributes,
                                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<OverlappedAsyncIOBackend*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_70064b01c4644ad78169c61c9d37419a(&OverlappedAsyncIOBackend::Reflect);
@@ -1878,6 +1905,9 @@ namespace FE::IO::Async
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<IAsyncIOBackend*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_780d7b1990844d599a45a913994efed6(&IAsyncIOBackend::Reflect);
@@ -2830,6 +2860,9 @@ namespace FE::Memory
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
                                                    kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<RefCountedObjectBase*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b4fa5c6369c046668a92726f070d769b(&RefCountedObjectBase::Reflect);
@@ -3256,6 +3289,9 @@ namespace FE::IO::Async
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
                                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<DefaultAsyncIOBackend*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c1752d59034346d0b95a127eb2321cc7(&DefaultAsyncIOBackend::Reflect);
@@ -3345,6 +3381,9 @@ namespace FE::Cli
                                      kBaseClassTypeIDs,
                                      kAttributes,
                                      kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Parser*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c3c49654fe984ce6b75906d7ef4eaa0f(&Parser::Reflect);
@@ -3539,6 +3578,9 @@ namespace FE::IO
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<BufferedStream*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ccad9e96a9c7454394141a0e00e8d5b6(&BufferedStream::Reflect);
@@ -4272,6 +4314,9 @@ namespace FE::IO
                                       kBaseClassTypeIDs,
                                       kAttributes,
                                       kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<IStream*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_fd697dc5020e4998adf29dfaf48e2a75(&IStream::Reflect);

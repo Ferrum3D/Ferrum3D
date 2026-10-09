@@ -1,0 +1,264 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "Helmet world",
+                "m_assetId": "AAA69126-4427-4055-B1C4-04013AAE10A0",
+                "m_assetTypeId": "AAA69126-4427-4055-B1C4-04013AAE0902",
+                "m_buildSettings": {
+                    "m_typeId": "AAA69126-4427-4055-B1C4-04013AAE0902",
+                    "m_value": {
+                        "m_systems": [
+                            "AAA69126-4427-4055-B1C4-04013AAE10A1",
+                            "AAA69126-4427-4055-B1C4-04013AAE10A2",
+                            "AAA69126-4427-4055-B1C4-04013AAE10A3"
+                        ],
+                        "m_services": [
+                            "AAA69126-4427-4055-B1C4-04013AAE10A5",
+                            "AAA69126-4427-4055-B1C4-04013AAE10A4"
+                        ],
+                        "m_registries": [
+                            {
+                                "m_key": "AAA69126-4427-4055-B1C4-04013AAE10B0",
+                                "m_entities": {
+                                    "m_entities": [
+                                        {
+                                            "m_uuid": "AAA69126-4427-4055-B1C4-04013AAE10B1",
+                                            "m_parentUuid": "00000000-0000-0000-0000-000000000000",
+                                            "m_name": "Helmet",
+                                            "m_components": [
+                                                {
+                                                    "m_type": "AAA69126-4427-4055-B1C4-04013AAE1001",
+                                                    "m_dependencies": [
+                                                        {
+                                                            "m_asset": "968E3679-1025-43A2-AB3E-967494F90D35",
+                                                            "m_expectedType": "2D0926A6-8312-4D3C-8675-F67BB9A62B67",
+                                                            "m_kind": 0
+                                                        },
+                                                        {
+                                                            "m_asset": "44B73EB3-0933-4221-96C8-C9E09CBF36FD",
+                                                            "m_expectedType": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                                                            "m_kind": 0
+                                                        }
+                                                    ],
+                                                    "m_schemaHash": 7881118869388252326,
+                                                    "m_version": 0,
+                                                    "m_payloadOffset": 0,
+                                                    "m_payloadSize": 40
+                                                },
+                                                {
+                                                    "m_type": "A8CDB00D-20CE-4780-B08D-211D0F600001",
+                                                    "m_dependencies": [],
+                                                    "m_schemaHash": 12070577017155439567,
+                                                    "m_version": 0,
+                                                    "m_payloadOffset": 40,
+                                                    "m_payloadSize": 40
+                                                }
+                                            ],
+                                            "m_active": true,
+                                            "m_residency": 0
+                                        },
+                                        {
+                                            "m_uuid": "AAA69126-4427-4055-B1C4-04013AAE10B2",
+                                            "m_parentUuid": "00000000-0000-0000-0000-000000000000",
+                                            "m_name": "Camera",
+                                            "m_components": [
+                                                {
+                                                    "m_type": "AAA69126-4427-4055-B1C4-04013AAE1002",
+                                                    "m_dependencies": [],
+                                                    "m_schemaHash": 12480589122995095919,
+                                                    "m_version": 0,
+                                                    "m_payloadOffset": 80,
+                                                    "m_payloadSize": 24
+                                                },
+                                                {
+                                                    "m_type": "A8CDB00D-20CE-4780-B08D-211D0F600001",
+                                                    "m_dependencies": [],
+                                                    "m_schemaHash": 12070577017155439567,
+                                                    "m_version": 0,
+                                                    "m_payloadOffset": 104,
+                                                    "m_payloadSize": 40
+                                                }
+                                            ],
+                                            "m_active": true,
+                                            "m_residency": 0
+                                        }
+                                    ],
+                                    "m_payload": [
+                                        166,
+                                        122,
+                                        223,
+                                        242,
+                                        17,
+                                        224,
+                                        198,
+                                        243,
+                                        150,
+                                        142,
+                                        54,
+                                        121,
+                                        16,
+                                        37,
+                                        67,
+                                        162,
+                                        171,
+                                        62,
+                                        150,
+                                        116,
+                                        148,
+                                        249,
+                                        13,
+                                        53,
+                                        68,
+                                        183,
+                                        62,
+                                        179,
+                                        9,
+                                        51,
+                                        66,
+                                        33,
+                                        150,
+                                        200,
+                                        201,
+                                        224,
+                                        156,
+                                        191,
+                                        54,
+                                        253,
+                                        26,
+                                        47,
+                                        210,
+                                        113,
+                                        74,
+                                        189,
+                                        197,
+                                        1,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        160,
+                                        63,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        128,
+                                        63,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        128,
+                                        63,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        46,
+                                        189,
+                                        59,
+                                        179,
+                                        139,
+                                        55,
+                                        13,
+                                        66,
+                                        13,
+                                        238,
+                                        85,
+                                        183,
+                                        59,
+                                        70,
+                                        113,
+                                        63,
+                                        57,
+                                        142,
+                                        227,
+                                        63,
+                                        10,
+                                        215,
+                                        35,
+                                        60,
+                                        0,
+                                        0,
+                                        122,
+                                        68,
+                                        26,
+                                        47,
+                                        210,
+                                        113,
+                                        74,
+                                        189,
+                                        197,
+                                        1,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        64,
+                                        64,
+                                        0,
+                                        0,
+                                        0,
+                                        193,
+                                        0,
+                                        0,
+                                        128,
+                                        63,
+                                        11,
+                                        23,
+                                        224,
+                                        61,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        180,
+                                        138,
+                                        109,
+                                        63
+                                    ]
+                                },
+                                "m_placements": []
+                            }
+                        ]
+                    }
+                },
+                "m_dependencies": [
+                    {
+                        "m_assetId": "968E3679-1025-43A2-AB3E-967494F90D35",
+                        "m_expectedTypeId": "2D0926A6-8312-4D3C-8675-F67BB9A62B67",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "44B73EB3-0933-4221-96C8-C9E09CBF36FD",
+                        "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                        "m_kind": 0
+                    }
+                ],
+                "m_lastBuildKey": "C0B4C481-15EC-4944-B80C-EAA95357D5AF",
+                "m_builtArtifactId": "55DE4B4E-56F9-473F-B85F-9F3BE7467BB6",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

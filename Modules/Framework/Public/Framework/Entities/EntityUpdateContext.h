@@ -18,6 +18,8 @@ namespace FE::Framework
     //! @brief Application-owned system that records deferred traversals and remains alive until Shutdown.
     struct WorldSystem
     {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09fe");
+
         //! @brief Destroy a system after removing it from the world.
         virtual ~WorldSystem() = default;
         //! @brief Initialize a borrowed system when AddSystem registers it.
@@ -26,6 +28,6 @@ namespace FE::Framework
         //! @brief Release world integration before the system is detached or the world is destroyed.
         virtual void Shutdown(EntityWorld&) {}
         //! @brief Record this epoch's traversals; do not inspect live component data or wait during collection.
-        virtual void Update(EntityUpdateContext&) = 0;
+        virtual void Update(EntityUpdateContext& context) = 0;
     };
 } // namespace FE::Framework

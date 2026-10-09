@@ -17,6 +17,7 @@ namespace FE::Framework
     struct EntityCommandList;
     struct EntityUpdateContext;
     struct WorldSystem;
+    struct WorldService;
 
     //! @brief Generation-checked runtime identity, valid only within its owning world incarnation.
     struct EntityID final

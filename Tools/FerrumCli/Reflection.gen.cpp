@@ -8,6 +8,12 @@
 #include <FerrumCli/CommandLine.h>
 
 
+namespace FE
+{
+    void CallLinkerAnchor_FerrumCli() {}
+} // namespace FE
+
+
 namespace FE::FerrumCli
 {
     const Rtti::TypeID CommandLineParser::TypeID = Rtti::TypeID{
@@ -110,6 +116,9 @@ namespace FE::FerrumCli
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<CommandLineParser*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2b409ccd3ca446a0ba2148b1d92aed2b(&CommandLineParser::Reflect);
@@ -241,6 +250,9 @@ namespace FE::FerrumCli
                                      kBaseClassTypeIDs,
                                      kAttributes,
                                      kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Import*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_3f4138aa84a94c02889b0e2b090be723(&Import::Reflect);
@@ -373,6 +385,9 @@ namespace FE::FerrumCli
                                     kBaseClassTypeIDs,
                                     kAttributes,
                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Build*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4d105b8d0e84460b98bc8a4c3710a193(&Build::Reflect);

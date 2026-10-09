@@ -1,6 +1,6 @@
-# Entity framework runtime (Stages 1-6 and Stage 7 change tracking)
+# Entity framework runtime (Stages 1-10)
 
-`FeFramework` depends on Core only. The runtime and `FeFrameworkTests` require no graphics device. The base entity runtime, scheduler, generic change tracking and their tests stay in Framework. Engine systems live in `FeGameFramework`; its TransformationSystem begins Stage 7. Graphics systems will be implemented there in Stage 10.
+`FeFramework` depends on Core only. The runtime and `FeFrameworkTests` require no graphics device. The base entity runtime, scheduler, generic change tracking and their tests stay in Framework. Engine systems live in `FeGameFramework`; it owns transformation, streaming and graphics systems. GameSample loads a cooked disk world through the same asset/runtime path.
 
 ## Ownership and safe points
 
@@ -125,11 +125,23 @@ AssetBuilder provides `ImportEntityCollection(output, collection)` and `ImportEn
 
 Tests remain under Framework: `FeFrameworkTests` covers the generic runtime and deterministic materialization; `FeFrameworkAssetTests` exercises real import/build/load, transitive residency, cancellation and persistent reload. Engine transformation tests are in `FeGameFrameworkTests`.
 
+## World definitions, snapshots and streaming
+
+`EntityWorldAsset` selects systems and services by reflected type IDs and describes registries using persistent UUID keys, concrete collections and soft placement links. `EntityWorldInstance::Load` default-constructs the selected `WorldService` types, then the `WorldSystem` types, through reflection, then loads the definition into its independent world. Systems and services use engine allocation and type-erased ownership. Unknown, duplicate, abstract, incompatible and non-default-constructible types reject loading; reflection casts adjust base addresses for multiple inheritance. Services survive entity teardown and system shutdown. `EntityWorld::AddService` and `RemoveService` support explicit borrowed registration, and `FindService<T>` resolves reflected service types or bases. World services update before structural commit without recording scheduled traversals. Component hooks access them through the owning world. `GetStatus` reports completion or failure of the initial materialization. Tick AssetManager while pending; use `CommitBootstrap` only during startup. A registry's key survives save/reload while its runtime ID is newly allocated.
+
+`EntityWorldInstance::Capture` saves the selected system type IDs plus current concrete entities, names, sibling order, hierarchy, authored components, activation intent, residency scope and surviving placement membership. Computed/transient components are omitted. Capture runs at a closed main-thread boundary and rejects pending commands or lifecycle/materialization transitions; `GetLastError` reports the blocking category. `Restore` reconstructs this concrete state directly, recreates transient companions and reacquires dependencies; it does not reload the original collection and therefore does not recreate deleted source entities. Placement bookkeeping retains original bindings for reference diagnostics without introducing a hard dependency on the original placement asset. UUIDs persist and runtime IDs change.
+
+GameFramework's `WorldStreamingService` accepts main-thread placement load and registry unload requests. `WorldService::Update` applies requests before the world's safe-point commit and traversal collection. Unloading cancels pending materialization before destroying membership; a later load preserves concrete UUIDs with fresh runtime handles. Every loaded registry participates in the same world queries and schedule.
+
+`RecordStage` records a main-thread stage in a phase that the application will schedule explicitly. Systems can use it with traversal prerequisites to submit external scene/view updates after collecting changed entity IDs. `ScheduleStage` additionally inserts that phase into the application schedule. Main-thread scene submission avoids retaining raw component addresses across migrations.
+
+`FeFrameworkTests` covers independent world instances and concrete snapshot restoration; `FeFrameworkAssetTests` cooks, loads and round-trips world/snapshot assets through the default streamer. `FeGameFrameworkTests` covers asynchronous registry streaming, cancellation, failed loads and graphics extraction. See `Samples/GameSample/README.md` for the two-entity disk-world example.
+
 ## Runtime storage and validation
 
 Entity metadata uses a 96-byte layout on the current 64-bit target. Hierarchy links use `Memory::ShortPtr`; the world is obtained from the registry. Readiness is stored directly in Entity. Asset contributions, per-entity residency, and pending replacements share an 80-byte resource block allocated only when needed. Empty entities and ordinary data components allocate no separate runtime state. World and command-list implementations remain private: the former hides scheduler/asset storage, and the latter transfers ownership of its arena and payloads on submission. Their declarations live in separate internal headers; lifecycle resource metadata has its own header.
 
-Command records occupy 128 bytes, component envelopes 64 bytes, and authored entity records 160 bytes. Transactional command processing prepares component lists only for component edits or transform inspection. Metadata-only edits avoid copying every entity's component list. Validation and migration share cached canonical archetypes; failed dependency layouts are rejected before entering the cache. Materialization keeps record and payload ownership together in a single temporary array.
+Command records occupy 128 bytes and component envelopes 64 bytes. Authored records also retain activation intent and residency scope. Transactional command processing prepares component lists only for component edits or transform inspection. Metadata-only edits avoid copying every entity's component list. Validation and migration share cached canonical archetypes; failed dependency layouts are rejected before entering the cache. Materialization keeps record and payload ownership together in a single temporary array.
 
 Runtime content checks reject invalid envelopes, payload bounds, schemas, hierarchy, or bindings with `Invalid entity asset`. Asset unavailability, UUID ownership conflicts, and lifecycle failure remain distinct recoverable outcomes. Internal companion registration and API sequencing are engine invariants and use assertions. Cooked content continues to fail without assertions. Generated serialization uses reflected field names; no legacy naming aliases are retained. Rebuild entity assets after the schema changes.
 

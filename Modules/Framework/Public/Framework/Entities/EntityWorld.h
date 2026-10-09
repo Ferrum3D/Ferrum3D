@@ -6,6 +6,7 @@
 #include <Framework/Entities/EntityRegistry.h>
 #include <Framework/Entities/EntityReparent.h>
 #include <Framework/Entities/EntityUpdateContext.h>
+#include <Framework/Entities/WorldService.h>
 
 namespace FE::Framework
 {
@@ -124,9 +125,9 @@ namespace FE::Framework
     //! @brief Own entities, storage, and a shared schedule across all registries; safe points require the main thread.
     struct EntityWorld final
     {
-        //! @brief Create an empty world; asset services and application services must outlive it.
-        explicit EntityWorld(EntityAssetServices* assets = nullptr, void* services = nullptr);
-        //! @brief Shut down systems and release all world-owned entities and residency.
+        //! @brief Create an empty world; borrowed asset services must outlive it.
+        explicit EntityWorld(EntityAssetServices* assets = nullptr);
+        //! @brief Release world-owned entities and residency, then shut down systems and services.
         ~EntityWorld();
 
         EntityWorld(const EntityWorld&) = delete;
@@ -138,9 +139,21 @@ namespace FE::Framework
         [[nodiscard]] Entity* Find(Uuid uuid, bool activeOnly = true) const;
 
         //! @brief Create a world-owned residency group at a main-thread safe point.
-        EntityRegistry& CreateRegistry();
+        EntityRegistry& CreateRegistry(Uuid key = Uuid::kNull);
+        //! @brief Find a live ownership group by persistent key.
+        [[nodiscard]] EntityRegistry* FindRegistry(Uuid key) const;
+        //! @brief Load concrete entities without remapping UUIDs or creating an extra root.
+        MaterializationToken LoadEntities(EntityRegistry& registry, const EntityCollection& entities);
+        //! @brief Load a definition into an empty world after application systems have registered its component types.
+        bool LoadDefinition(const EntityWorldAsset& definition, festd::vector<MaterializationToken>* operations = nullptr);
+        //! @brief Capture settled concrete values; leaves output untouched on failure.
+        bool CaptureSnapshot(EntityWorldSnapshotAsset& snapshot) const;
+        //! @brief Restore into an empty world; transient columns are regenerated from registered companions.
+        bool RestoreSnapshot(const EntityWorldSnapshotAsset& snapshot, festd::vector<MaterializationToken>* operations = nullptr);
         //! @brief Cancel its pending work and destroy its entities; the registry reference becomes invalid.
         void RemoveRegistry(EntityRegistry& registry);
+        //! @brief Remove all registries and cancel pending materializations while retaining system registrations.
+        void Clear();
 
         //! @brief Return the world-owned registry; register policies before component instances are created.
         EntityComponentRegistry& Components();
@@ -180,6 +193,18 @@ namespace FE::Framework
         //! @brief Shut down and detach a borrowed system outside an update epoch.
         void RemoveSystem(WorldSystem& system);
 
+        //! @brief Borrow and initialize a service at a closed main-thread boundary; it must outlive registration.
+        void AddService(WorldService& service);
+        //! @brief Shut down and detach a service after clearing entities, outside an update epoch.
+        void RemoveService(WorldService& service);
+        //! @brief Find a registered service by reflected type or base; the pointer is borrowed until removal.
+        template<class T>
+            requires std::derived_from<T, WorldService>
+        [[nodiscard]] T* FindService() const
+        {
+            return static_cast<T*>(FindService(Rtti::GetTypeID<T>()));
+        }
+
         //! @brief Append one phase to execution order; duplicate phases and closed epochs are programmer errors.
         bool SchedulePhase(Phase phase, festd::span<const Rc<WaitGroup>> prerequisites = {});
 
@@ -187,12 +212,20 @@ namespace FE::Framework
         template<class Callable>
         Rc<WaitGroup> ScheduleStage(Phase stage, Callable&& callable, festd::span<const Rc<WaitGroup>> prerequisites = {})
         {
-            using Function = std::decay_t<Callable>;
-            static_assert(std::is_invocable_r_v<void, Function&>, "Application stage callback takes no arguments");
             if (!SchedulePhase(stage))
                 return {};
 
-            //! @brief Allocate callback storage for the open epoch; storage remains valid until EndUpdate.
+            return RecordStage(stage, std::forward<Callable>(callable), prerequisites);
+        }
+
+
+        //! @brief Record main-thread work in an application-ordered phase without scheduling that phase implicitly.
+        template<class Callable>
+        Rc<WaitGroup> RecordStage(Phase stage, Callable&& callable, festd::span<const Rc<WaitGroup>> prerequisites = {})
+        {
+            using Function = std::decay_t<Callable>;
+            static_assert(std::is_invocable_r_v<void, Function&>, "Stage callback takes no arguments");
+
             void* storage = AllocateTraversal(sizeof(Function), alignof(Function));
             ::new (storage) Function(std::forward<Callable>(callable));
             return RecordStage({ stage,
@@ -248,5 +281,6 @@ namespace FE::Framework
         Impl* m_impl;
 
         Rc<WaitGroup> RecordStage(const StageDesc& desc);
+        void* FindService(Rtti::TypeID type) const;
     };
 } // namespace FE::Framework

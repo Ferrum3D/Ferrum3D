@@ -193,9 +193,7 @@ namespace FE::Graphics::Vulkan
                 for (const Core::InternalAsyncCopyCommands::AsyncInvokeFunctorCommand& command : item->m_completionCallbacks)
                     command.m_functor(command.m_context);
 
-                if (item->m_queueItem.m_signalWaitGroup)
-                    item->m_queueItem.m_signalWaitGroup->Signal();
-
+                const Rc<WaitGroup> completion = item->m_queueItem.m_signalWaitGroup;
                 item->m_queueItem.m_buffer.Free();
                 m_freeCommandBuffers.push_back(item->m_commandBuffer);
                 for (const VmaVirtualAllocation stagingAllocation : item->m_stagingAllocations)
@@ -203,6 +201,10 @@ namespace FE::Graphics::Vulkan
 
                 m_processingItems.pop_front();
                 m_processingItemPool.Delete(item);
+
+                // Completion lets the producer destroy the command allocator and upload sources.
+                if (completion)
+                    completion->Signal();
 
                 anyProgress = true;
             }
@@ -584,13 +586,6 @@ namespace FE::Graphics::Vulkan
 
         m_processingItems.reserve(m_processingItems.get_container().capacity());
 
-        m_thread = Threading::CreateThread(
-            "AsyncCopyThread",
-            [](const uintptr_t data) {
-                reinterpret_cast<AsyncCopyQueue*>(data)->ThreadProc();
-            },
-            reinterpret_cast<uintptr_t>(this));
-
         m_threadEvent = Threading::Event::CreateManualReset();
         m_suspendEvent = Threading::Event::CreateManualReset();
 
@@ -614,6 +609,14 @@ namespace FE::Graphics::Vulkan
         const Device* vkDevice = ImplCast(m_device);
         const uint32_t transferQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kTransfer);
         vkGetDeviceQueue(vkDevice->GetNative(), transferQueueFamilyIndex, 0, &m_queue);
+
+        // The worker must not observe partially initialized events or queue resources.
+        m_thread = Threading::CreateThread(
+            "AsyncCopyThread",
+            [](const uintptr_t data) {
+                reinterpret_cast<AsyncCopyQueue*>(data)->ThreadProc();
+            },
+            reinterpret_cast<uintptr_t>(this));
     }
 
 
@@ -626,14 +629,14 @@ namespace FE::Graphics::Vulkan
             m_threadEvent.Send();
         }
 
+        Threading::CloseThread(m_thread);
+
         {
             const auto detached = Common::ImplCast(m_uploadBuffer.Get())->DetachInstance();
             auto* instance = Rtti::AssertCast<BufferInstance*>(detached.m_instance);
             instance->Invalidate(m_device);
             BufferInstance::Delete(instance);
         }
-
-        Threading::CloseThread(m_thread);
     }
 
 

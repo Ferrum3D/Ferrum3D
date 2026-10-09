@@ -72,15 +72,13 @@ namespace FE::Framework
     };
 
 
-    //! @brief Lifecycle access to the entity, owning world, and optional application services.
+    //! @brief Lifecycle access to the entity and its owning world services.
     struct ComponentContext
     {
         //! @brief Entity currently undergoing the lifecycle operation.
         Entity& m_entity;
         //! @brief Owning world or its incarnation; borrowed where represented as a reference.
         EntityWorld& m_world;
-        //! @brief Borrowed application services, optionally null.
-        void* m_services = nullptr;
     };
 
 

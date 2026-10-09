@@ -20,6 +20,7 @@ namespace FE::Graphics
         ~RendererImpl() override;
 
         Scene* CreateScene() override;
+        void DestroyScene(Scene* scene) override;
         void Render(Scene* scene, Core::Viewport* viewport) override;
 
         Core::GraphicsQueue* GetGraphicsQueue() const override;
@@ -34,7 +35,6 @@ namespace FE::Graphics
         }
 
     private:
-        void EnsureDatabase();
         void EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc);
         void EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,

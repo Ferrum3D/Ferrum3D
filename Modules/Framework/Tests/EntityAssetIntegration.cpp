@@ -4,6 +4,7 @@
 #include <Core/Strings/Format.h>
 #include <Core/Threading/Thread.h>
 #include <EntityTestTypes.h>
+#include <Framework/Entities/EntityWorldAsset.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -165,4 +166,60 @@ TEST_F(CollectionAssetsIntegration, PersistentAssetDuplicateCancellationAndReloa
     ASSERT_NE(entity, nullptr);
     EXPECT_NE(entity->GetID(), oldId);
     EXPECT_EQ(entity->FindComponent<const Number>()->m_value, 91);
+}
+
+TEST_F(CollectionAssetsIntegration, WorldAndConcreteSnapshotRoundTripThroughDefaultAssetStreamer)
+{
+    EntityWorldAsset definition;
+    auto& group = definition.m_registries.emplace_back();
+    group.m_key = Uuid::Random();
+    EntityRecord record;
+    record.m_uuid = Uuid::Random();
+    const Uuid uuid = record.m_uuid;
+    ASSERT_TRUE(group.m_entities.CookComponent(record, Number{ 31 }));
+    group.m_entities.m_entities.push_back(std::move(record));
+    const auto worldId = BuildDefinition("world.asset", definition);
+    IO::ArtifactStore::SetCatalogSource(m_directory);
+    IO::AssetManager::Init();
+    auto cleanup = festd::defer([] {
+        IO::AssetManager::Shutdown();
+    });
+    auto load = [](IO::AssetRequest& request) {
+        for (uint32_t i = 0; i < 5000 && !request.IsCompleted(); ++i)
+        {
+            IO::AssetManager::Tick();
+            Threading::Sleep(1);
+        }
+        EXPECT_EQ(request.GetResult(), IO::AssetLoadResult::kSucceeded);
+    };
+    auto worldRequest = IO::AssetManager::LoadAsset(IO::Link<EntityWorldAsset>(worldId));
+    load(worldRequest);
+    EntityWorld world;
+    world.Components().Register<Number>();
+    {
+        const auto value = IO::AssetHandle<EntityWorldAsset>(worldRequest.GetAssetSlot()).Read();
+        ASSERT_TRUE(value);
+        ASSERT_TRUE(world.LoadDefinition(*value.Get()));
+    }
+    ASSERT_TRUE(world.CommitBootstrap());
+    worldRequest.Reset();
+    world.Find(uuid)->FindComponent<Number>()->m_value = 55;
+    EntityWorldSnapshotAsset snapshot;
+    ASSERT_TRUE(world.CaptureSnapshot(snapshot));
+    const auto snapshotId = BuildDefinition("snapshot.asset", snapshot);
+    world.Clear();
+    auto snapshotRequest = IO::AssetManager::LoadAsset(IO::Link<EntityWorldSnapshotAsset>(snapshotId));
+    load(snapshotRequest);
+    EntityWorld restored;
+    restored.Components().Register<Number>();
+    {
+        const auto value = IO::AssetHandle<EntityWorldSnapshotAsset>(snapshotRequest.GetAssetSlot()).Read();
+        ASSERT_TRUE(value);
+        ASSERT_TRUE(restored.RestoreSnapshot(*value.Get()));
+    }
+    ASSERT_TRUE(restored.CommitBootstrap());
+    snapshotRequest.Reset();
+    ASSERT_NE(restored.Find(uuid), nullptr);
+    EXPECT_EQ(restored.Find(uuid)->FindComponent<const Number>()->m_value, 55);
+    EXPECT_EQ(restored.FindRegistry(group.m_key)->GetKey(), group.m_key);
 }

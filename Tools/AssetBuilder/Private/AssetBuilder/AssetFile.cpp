@@ -1,4 +1,7 @@
 #include <AssetBuilder/AssetFile.h>
+#include <Framework/Reflection.gen.h>
+#include <GameFramework/Reflection.gen.h>
+#include <Graphics/Reflection.gen.h>
 
 #include <Core/IO/FileStream.h>
 #include <Core/Serialization/JsonSerialization.h>
@@ -7,6 +10,11 @@ namespace FE::AssetBuilder
 {
     bool LoadAssetFile(const IO::Path& path, AssetFile& result)
     {
+        // The file names types by UUID; retain complete module reflection before type-erased deserialization.
+        CallLinkerAnchor_Framework();
+        CallLinkerAnchor_GameFramework();
+        CallLinkerAnchor_Graphics();
+
         auto fileResult = IO::FileStream::Open(path, IO::OpenMode::kReadOnly);
         if (!fileResult)
             return false;

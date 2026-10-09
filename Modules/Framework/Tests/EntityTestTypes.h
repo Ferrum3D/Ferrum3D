@@ -1,6 +1,7 @@
 #pragma once
 #include <Framework/Entities/EntityComponentRegistry.h>
 #include <Framework/Entities/EntityReference.h>
+#include <Framework/Entities/EntityWorld.h>
 
 namespace FE::Framework::Tests
 {
@@ -182,5 +183,99 @@ namespace FE::Framework::Tests
         {
             ++s_unloads;
         }
+    };
+
+
+    struct SnapshotSystem : WorldSystem
+    {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f0");
+        static inline int32_t s_live = 0;
+
+        SnapshotSystem()
+        {
+            ++s_live;
+        }
+
+
+        ~SnapshotSystem() override
+        {
+            --s_live;
+        }
+
+
+        void Init(EntityWorld& world) override
+        {
+            world.Components().Register<Number>();
+            world.Components().Register<ReferenceComponent>();
+            world.Components().Register<Extra>({}, { true });
+            world.Components().AddRuntimeCompanion<Number, Extra>();
+        }
+
+
+        void Update(EntityUpdateContext&) override {}
+    };
+
+
+    struct SystemPrefix
+    {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f1");
+        virtual ~SystemPrefix() = default;
+        uint64_t m_padding = 0;
+    };
+
+
+    struct OffsetSnapshotSystem final
+        : SystemPrefix
+        , SnapshotSystem
+    {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f2");
+    };
+
+
+    struct SnapshotService : WorldService
+    {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f4");
+        static inline int32_t s_live = 0;
+        static inline bool s_shutdownSawEmptyWorld = false;
+        uint32_t m_updates = 0;
+
+        SnapshotService()
+        {
+            ++s_live;
+        }
+
+
+        ~SnapshotService() override
+        {
+            --s_live;
+        }
+
+
+        void Shutdown(EntityWorld& world) override
+        {
+            s_shutdownSawEmptyWorld = world.GetEntityCount() == 0;
+        }
+
+
+        void Update(EntityWorld&) override
+        {
+            ++m_updates;
+        }
+    };
+
+
+    struct OffsetSnapshotService final
+        : SystemPrefix
+        , SnapshotService
+    {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f5");
+    };
+
+
+    struct NonDefaultSystem final : WorldSystem
+    {
+        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f3");
+        explicit NonDefaultSystem(uint32_t) {}
+        void Update(EntityUpdateContext&) override {}
     };
 } // namespace FE::Framework::Tests

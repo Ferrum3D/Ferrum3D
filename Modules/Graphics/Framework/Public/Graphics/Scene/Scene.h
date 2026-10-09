@@ -71,6 +71,8 @@ namespace FE::Graphics
         }
 
         [[nodiscard]] virtual View* CreateView() = 0;
+        //! @brief Remove scene ownership of a camera View; callers release their retained reference separately.
+        virtual void DestroyView(View* view) = 0;
         [[nodiscard]] virtual uint32_t GetViewCount() const = 0;
         [[nodiscard]] virtual View* GetView(uint32_t index) const = 0;
 

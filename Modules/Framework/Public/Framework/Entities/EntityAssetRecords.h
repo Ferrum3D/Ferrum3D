@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/IO/Assets.h>
+#include <Framework/Entities/Base.h>
 #include <festd/string.h>
 #include <festd/vector.h>
 
@@ -53,6 +54,10 @@ namespace FE::Framework
         festd::string m_name;
         //! @brief Component envelopes in authored order.
         festd::inline_vector<EntityComponentRecord> m_components;
+        //! @brief Saved activation intent; inactive records remain allocated and excluded from queries.
+        bool m_active = true;
+        //! @brief Saved dependency deduplication scope.
+        ResidencyScope m_residency = ResidencyScope::kEntity;
         FE_RTTI_Reflect("b9dbe80d-6ab0-486a-ab00-000000000011");
         FE_RTTI_Serialize();
     };

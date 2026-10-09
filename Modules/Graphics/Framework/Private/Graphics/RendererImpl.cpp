@@ -46,32 +46,64 @@ namespace FE::Graphics
         m_resourcePool = m_device->CreateResourcePool(m_graphicsQueue.Get(), m_asyncCopyQueue.Get());
         m_frameGraph = m_device->CreateFrameGraph(m_descriptorManager.Get(), m_resourcePool.Get(), m_graphicsQueue.Get());
         m_renderQueueUploader.Setup("RenderQueueUploader", m_resourcePool.Get(), 16 * 1024 * 1024);
+
+        m_database = festd::make_unique<DB::Database>(m_device.Get(), m_resourcePool.Get());
+        m_materialParameters = festd::make_unique<MaterialParameterAllocator>(m_device.Get(), m_resourcePool.Get());
     }
 
 
     RendererImpl::~RendererImpl()
     {
+        FE_PROFILER_ZONE();
+        m_asyncCopyQueue->Drain();
         m_device->WaitIdle();
+        m_scenes.clear();
         m_renderQueueUploader.Shutdown();
+        m_frameGraph.Reset();
+        m_materialParameters.reset();
+        m_database.reset();
+        m_mainColorTarget.Reset();
+        m_mainDepthTarget.Reset();
+        m_descriptorManager.Reset();
+        m_device->WaitIdle();
+
+        // Queued shader publications retain resources. Release them while the pool and transfer queue are still alive.
+        m_graphicsQueue.Reset();
+        m_device->WaitIdle();
+        m_asyncCopyQueue.Reset();
+        m_device->WaitIdle();
     }
 
 
     Scene* RendererImpl::CreateScene()
     {
-        EnsureDatabase();
-
         Rc<Scene> scene = Memory::DefaultNew<SceneImpl>(this);
         m_scenes.push_back(scene);
         return scene.Get();
     }
 
 
+    void RendererImpl::DestroyScene(Scene* scene)
+    {
+        const auto found = festd::find_if(m_scenes.begin(), m_scenes.end(), [scene](const Rc<Scene>& candidate) {
+            return candidate.Get() == scene;
+        });
+        FE_Assert(found != m_scenes.end());
+        m_scenes.erase(found);
+    }
+
+
     void RendererImpl::Render(Scene* scene, Core::Viewport* viewport)
     {
         FE_Assert(scene != nullptr);
-        FE_Assert(viewport != nullptr);
+        bool hasEnabledView = false;
+        for (uint32_t i = 0; i < scene->GetViewCount(); ++i)
+            hasEnabledView |= scene->GetView(i)->IsEnabled();
 
-        EnsureDatabase();
+        if (!hasEnabledView)
+            return;
+
+        FE_Assert(viewport != nullptr);
 
         m_graphicsQueue->BeginFrame();
         viewport->AcquireNextImage();
@@ -93,9 +125,12 @@ namespace FE::Graphics
 
         for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
         {
+            View* view = scene->GetView(viewIndex);
+            if (!view->IsEnabled())
+                continue;
+
             FE_FG_SCOPE(*m_frameGraph, Fmt::FixedFormat("View{}", viewIndex));
             m_frameGraph->GetBlackboard().Reset();
-            View* view = scene->GetView(viewIndex);
             SetupFrameGraph(*m_frameGraph, m_frameGraph->GetBlackboard(), *scene, *view, *viewport);
         }
 
@@ -139,16 +174,6 @@ namespace FE::Graphics
     MaterialParameterAllocator* RendererImpl::GetMaterialParameterAllocator() const
     {
         return m_materialParameters.get();
-    }
-
-
-    void RendererImpl::EnsureDatabase()
-    {
-        if (m_database != nullptr)
-            return;
-
-        m_database = festd::make_unique<DB::Database>(m_device.Get(), m_resourcePool.Get());
-        m_materialParameters = festd::make_unique<MaterialParameterAllocator>(m_device.Get(), m_resourcePool.Get());
     }
 
 

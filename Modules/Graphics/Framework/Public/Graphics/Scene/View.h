@@ -72,6 +72,19 @@ namespace FE::Graphics
             return m_inverseViewProjectionMatrix;
         }
 
+        //! @brief Enable or disable this view in scene rendering without removing it from its scene.
+        void SetEnabled(bool enabled)
+        {
+            m_enabled = enabled;
+        }
+
+
+        //! @brief Return whether the renderer should process this view.
+        [[nodiscard]] bool IsEnabled() const
+        {
+            return m_enabled;
+        }
+
         void SetCameraTransform(const Transform& transform);
         void SetProjection(float fovY, float aspectRatio, float near, float far);
         virtual void Update(Core::FrameGraphBlackboard& blackboard) = 0;
@@ -93,6 +106,7 @@ namespace FE::Graphics
         float m_aspectRatio = 1.0f;
         float m_nearPlane = 1.0f;
         float m_farPlane = 100.0f;
+        bool m_enabled = true;
 
         Matrix4x4 m_viewMatrix = Matrix4x4::kIdentity;
         Matrix4x4 m_projectionMatrix = Matrix4x4::kIdentity;

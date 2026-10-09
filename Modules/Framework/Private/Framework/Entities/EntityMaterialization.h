@@ -18,6 +18,7 @@ namespace FE::Framework
         uint64_t m_eligibleEpoch = 0;
         EntityID m_root;
         MaterializationState m_state = MaterializationState::kPending;
+        bool m_concrete = false;
         bool m_placement = false;
         bool m_hasDefinition = false;
     };

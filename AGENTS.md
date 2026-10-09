@@ -6,10 +6,10 @@ Scope: this file applies to the whole repository.
 
 - `FerrumCore/` contains the core runtime library. Public API headers live under `FerrumCore/Public`, implementation details under `FerrumCore/Private`, and tests under `FerrumCore/Tests`.
 - `Modules/` contains engine modules. Modules follow the same `Public` and `Private` split used by `FerrumCore`.
-- `Modules/Framework/` contains the generic entity runtime, command processing, lifecycle, queries, scheduling, and collection assets. Keep engine-independent runtime tests in `Modules/Framework/Tests` (`FeFrameworkTests` and `FeFrameworkAssetTests`).
-- `Modules/GameFramework/` contains engine-specific components and systems, including transforms and future graphics or streaming integration. Keep these systems out of Framework; their tests live in `Modules/GameFramework/Tests` (`FeGameFrameworkTests`).
+- `Modules/Framework/` contains the generic entity runtime, command processing, lifecycle, queries, scheduling, and world/collection/snapshot assets. Keep engine-independent runtime tests in `Modules/Framework/Tests` (`FeFrameworkTests` and `FeFrameworkAssetTests`).
+- `Modules/GameFramework/` contains engine-specific components and systems, including transforms, graphics extraction and world streaming services. `GameFramework::Application` owns shared engine startup, execution and teardown. Keep these systems out of Framework; their tests live in `Modules/GameFramework/Tests` (`FeGameFrameworkTests` and the standalone `FeGameFrameworkReflectionLinkTests`).
 - `Modules/Graphics/Core/` is the low-level graphics module. Backend-independent public interfaces live in `Public/Graphics/Core`, shared private implementation lives in `Private/Graphics/Core/Common`, and Vulkan-specific implementation lives in `Private/Graphics/Core/Vulkan`.
-- `Samples/` contains sample applications such as `FrameGraph` and `Renderer`.
+- `Samples/` contains sample applications such as `FrameGraph`, `Renderer`, and `GameSample`. `GameSample` loads a cooked two-entity Helmet world and exercises GameFramework camera/mesh extraction. Its asset build target reuses Renderer's cooked model/material dependencies.
 - `Tools/` contains standalone tools such as `AssetBuilder` and `TextureCompressor`.
 - `ThirdParty/` contains vendored dependencies. Avoid style-only churn or broad edits there unless the task is explicitly about that dependency.
 - `cmake/` contains project CMake helpers. `cmake-build/` contains generated build trees and should not be edited as source.
@@ -19,7 +19,7 @@ When adding C++ files, add them to the nearest `CMakeLists.txt` source list, usu
 
 After adding or removing files, run `configure.bat` from the repository root to regenerate the project files.
 
-When changing classes that use `FE_RTTI`, run `scripts/codegen.py` to regenerate the RTTI output.
+When changing classes that use `FE_RTTI`, run `scripts/codegen.py` to regenerate the RTTI output. The generator also emits module linker anchors in `Reflection.gen.cpp` and public `Reflection.gen.h` headers; call those at application/tool entry points instead of discarding `Rtti::GetType<T>()` results to force linkage.
 
 ## Build Troubleshooting
 

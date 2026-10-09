@@ -36,6 +36,12 @@
 #include <Shaders/Passes/Tools/Downsample/Downsample.h>
 
 
+namespace FE
+{
+    void CallLinkerAnchor_Graphics() {}
+} // namespace FE
+
+
 namespace FE::Graphics
 {
     const Rtti::TypeID MeshGroupTable::TypeID = Rtti::TypeID{
@@ -117,6 +123,9 @@ namespace FE::Graphics
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MeshGroupTable*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_03321e1e0a925203b75c027838609287(&MeshGroupTable::Reflect);
@@ -298,6 +307,9 @@ namespace FE::Graphics
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MeshMemberTable*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_10ad85c9459c570cb6ed5813e489b160(&MeshMemberTable::Reflect);
@@ -385,6 +397,9 @@ namespace FE::Graphics
                                        kBaseClassTypeIDs,
                                        kAttributes,
                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ViewImpl*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_113ac82790ac48f79a7a4c7ae0695ad8(&ViewImpl::Reflect);
@@ -651,6 +666,9 @@ namespace FE::Graphics
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MeshSceneModule*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1784843c50854289aa8204c480e423ee(&MeshSceneModule::Reflect);
@@ -1017,6 +1035,9 @@ namespace FE::Graphics
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MeshBatchTable*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1f14d47fbee35efa93d27f97311a9ed3(&MeshBatchTable::Reflect);
@@ -1095,6 +1116,9 @@ namespace FE::Graphics
                                     kBaseClassTypeIDs,
                                     kAttributes,
                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Scene*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_20121f058d10442799252dba388379c9(&Scene::Reflect);
@@ -1174,6 +1198,9 @@ namespace FE::Graphics
                                                  kBaseClassTypeIDs,
                                                  kAttributes,
                                                  kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<RendererModuleBase*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_273b0f50b9914323a5166c87bbcd83a1(&RendererModuleBase::Reflect);
@@ -1377,6 +1404,9 @@ namespace FE::Graphics
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ModelAsset*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2d0926a683124d3c8675f67bb9a62b67(&ModelAsset::Reflect);
@@ -1712,6 +1742,9 @@ namespace FE::Graphics::OpaquePass
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_38d17f978b8f40e0aef73b828c04182e(&ViewModule::Reflect);
@@ -1799,6 +1832,9 @@ namespace FE::Graphics
                                                kBaseClassTypeIDs,
                                                kAttributes,
                                                kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MeshLodInfoTable*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_429a06b50beb517187f818737671fb7f(&MeshLodInfoTable::Reflect);
@@ -1926,6 +1962,9 @@ namespace FE::Graphics
                                         kBaseClassTypeIDs,
                                         kAttributes,
                                         kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MeshAsset*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_44ebc248fd5e4cf4ab4c09511b78362c(&MeshAsset::Reflect);
@@ -2086,6 +2125,9 @@ namespace FE::Graphics
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
                                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MaterialInstanceAsset*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_44f1653fb7164e1da631eaa8e728dc08(&MaterialInstanceAsset::Reflect);
@@ -2215,6 +2257,9 @@ namespace FE::Graphics
                                    kBaseClassTypeIDs,
                                    kAttributes,
                                    kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<View*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4b83afa470b94af98ab81082c6b49849(&View::Reflect);
@@ -2505,6 +2550,9 @@ namespace FE::Graphics::DepthPrepass
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_682bb365e2a546d7a859d9621f16aae1(&ViewModule::Reflect);
@@ -2882,6 +2930,9 @@ namespace FE::Graphics
                                         kBaseClassTypeIDs,
                                         kAttributes,
                                         kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<SceneImpl*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_75336687960e4693ae02a6dcda770fac(&SceneImpl::Reflect);
@@ -2961,6 +3012,9 @@ namespace FE::Graphics
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<SceneModuleBase*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7729e6838638471281d3b1c78b16bfe3(&SceneModuleBase::Reflect);
@@ -3040,6 +3094,9 @@ namespace FE::Graphics
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ViewModuleBase*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_77bc4de9a7924a65bcb8f23556551774(&ViewModuleBase::Reflect);
@@ -3176,6 +3233,9 @@ namespace FE::Graphics
                                            kBaseClassTypeIDs,
                                            kAttributes,
                                            kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<TextureAsset*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_78a8f995b51c42e0856d922999074183(&TextureAsset::Reflect);
@@ -3525,6 +3585,9 @@ namespace FE::Graphics
                                        kBaseClassTypeIDs,
                                        kAttributes,
                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Renderer*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_8666f7783bbf44cb87b6aa1c7b2089d7(&Renderer::Reflect);
@@ -3710,6 +3773,9 @@ namespace FE::Graphics
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MaterialAsset*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_8a685626dfe14e08a4b09be046f58a5d(&MaterialAsset::Reflect);
@@ -3852,6 +3918,9 @@ namespace FE::Graphics
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MeshInstanceTable*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_8a836070a79850fba93b6fe5848b70b9(&MeshInstanceTable::Reflect);
@@ -4268,6 +4337,9 @@ namespace FE::Graphics::DB
                                         kBaseClassTypeIDs,
                                         kAttributes,
                                         kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<TableBase*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b0b292173d304b3580269d0eb91b8fd2(&TableBase::Reflect);
@@ -4735,6 +4807,9 @@ namespace FE::Graphics
                                            kBaseClassTypeIDs,
                                            kAttributes,
                                            kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<RendererImpl*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_cfd1e397fc2e4f9b99f34cf67f695b1e(&RendererImpl::Reflect);
@@ -4822,6 +4897,9 @@ namespace FE::Graphics
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
                                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<MaterialInstanceTable*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_da93720cb6a558c29859e0a2bb3ca5f8(&MaterialInstanceTable::Reflect);

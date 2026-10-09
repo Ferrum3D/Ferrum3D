@@ -26,18 +26,19 @@ INCLUDE_PATTERN = re.compile(r'^\s*#\s*include\s*(?:"([^"]+)"|<([^>]+)>)', re.MU
 class Project:
     name: str
     root: Path
+    include_prefix: str = ""
 
 
 REFLECTION_PROJECTS = [
-    Project("Core", PROJECT_DIR / "FerrumCore"),
+    Project("Core", PROJECT_DIR / "FerrumCore", "Core"),
     Project("CoreTests", PROJECT_DIR / "FerrumCore/Tests"),
-    Project("Framework", PROJECT_DIR / "Modules/Framework"),
+    Project("Framework", PROJECT_DIR / "Modules/Framework", "Framework"),
     Project("FrameworkTests", PROJECT_DIR / "Modules/Framework/Tests"),
-    Project("GameFramework", PROJECT_DIR / "Modules/GameFramework"),
-    Project("GraphicsCore", PROJECT_DIR / "Modules/Graphics/Core"),
-    Project("Graphics", PROJECT_DIR / "Modules/Graphics/Framework"),
-    Project("AssetBuilder", PROJECT_DIR / "Tools/AssetBuilder"),
-    Project("FerrumCli", PROJECT_DIR / "Tools/FerrumCli"),
+    Project("GameFramework", PROJECT_DIR / "Modules/GameFramework", "GameFramework"),
+    Project("GraphicsCore", PROJECT_DIR / "Modules/Graphics/Core", "Graphics/Core"),
+    Project("Graphics", PROJECT_DIR / "Modules/Graphics/Framework", "Graphics"),
+    Project("AssetBuilder", PROJECT_DIR / "Tools/AssetBuilder", "AssetBuilder"),
+    Project("FerrumCli", PROJECT_DIR / "Tools/FerrumCli", "FerrumCli"),
 ]
 
 
@@ -218,7 +219,8 @@ def main():
         clang_format_path=clang_format_path,
         clang_format_style=clang_format_style,
     )
-    generator.generate(reflected_types)
+    modules = {project.root: (project.name, project.include_prefix) for project in REFLECTION_PROJECTS}
+    generator.generate(reflected_types, modules)
 
     end_time = time.perf_counter()
     print(f'Completed in {end_time - start_time:.2f} seconds')

@@ -112,6 +112,15 @@ namespace FE::Graphics
 
         if (!m_prepareDone->IsSignaled())
             m_prepareDone->Wait();
+
+        // Prepared commands are still owned here until Tick submits them to the copy queue.
+        if (m_commandList)
+        {
+            m_commandList->m_buffer.Free();
+            Memory::Delete(m_commandList->m_allocator, m_commandList);
+            m_commandList = nullptr;
+        }
+
         if (m_uploadSubmitted && !m_uploadDone->IsSignaled())
             m_asyncCopyQueue->Drain();
     }

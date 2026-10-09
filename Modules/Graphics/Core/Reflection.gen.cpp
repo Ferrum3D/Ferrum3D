@@ -56,6 +56,12 @@
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 
+namespace FE
+{
+    void CallLinkerAnchor_GraphicsCore() {}
+} // namespace FE
+
+
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID TextureAccessPassDesc::TypeID = Rtti::TypeID{
@@ -265,6 +271,9 @@ namespace FE::Graphics::Vulkan
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ComputePipeline*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_0ed571f458c940d9aa58c70450fb0e6a(&ComputePipeline::Reflect);
@@ -360,6 +369,9 @@ namespace FE::Graphics::Vulkan
                                        kBaseClassTypeIDs,
                                        kAttributes,
                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Viewport*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1182bf4588b64763a120bc823919d74d(&Viewport::Reflect);
@@ -512,6 +524,9 @@ namespace FE::Graphics::Core
                                      kBaseClassTypeIDs,
                                      kAttributes,
                                      kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Buffer*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2249e0297abd4eee9d1dc59570fd27ef(&Buffer::Reflect);
@@ -591,6 +606,9 @@ namespace FE::Graphics::Core
                                      kBaseClassTypeIDs,
                                      kAttributes,
                                      kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Device*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_23d426e633224cb29800deba7c3deac0(&Device::Reflect);
@@ -678,6 +696,9 @@ namespace FE::Graphics::Core
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<FrameGraphContext*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_261c8b489a5f481ab31caa7d48bc0e33(&FrameGraphContext::Reflect);
@@ -765,6 +786,9 @@ namespace FE::Graphics::Core
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<AsyncCopyQueue*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2c1855f0034b47b7869af9512903212f(&AsyncCopyQueue::Reflect);
@@ -860,6 +884,9 @@ namespace FE::Graphics::Vulkan
                                            kBaseClassTypeIDs,
                                            kAttributes,
                                            kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ResourcePool*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_32b0d24a62eb47d5869d897424fd3439(&ResourcePool::Reflect);
@@ -1013,6 +1040,9 @@ namespace FE::Graphics::Vulkan
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<GraphicsQueue*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_3830a6268eee4ffe8f170195dde01262(&GraphicsQueue::Reflect);
@@ -1100,6 +1130,9 @@ namespace FE::Graphics::Core
                                            kBaseClassTypeIDs,
                                            kAttributes,
                                            kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ResourcePool*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_389492dc7ae24b58984c6a1529edfb41(&ResourcePool::Reflect);
@@ -1249,6 +1282,9 @@ namespace FE::Graphics::Common
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<FrameGraph*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_39f873dc8f3d4821ba6692fcd380b69a(&FrameGraph::Reflect);
@@ -1336,6 +1372,9 @@ namespace FE::Graphics::Vulkan
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<DeviceFactory*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4247535c3e9742e7a8691dc542afbf25(&DeviceFactory::Reflect);
@@ -1431,6 +1470,9 @@ namespace FE::Graphics::Vulkan
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<PipelineFactory*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_437e4387bde042da8986fa909d8bfede(&PipelineFactory::Reflect);
@@ -1534,6 +1576,9 @@ namespace FE::Graphics::Vulkan
                                                kBaseClassTypeIDs,
                                                kAttributes,
                                                kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<GraphicsPipeline*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4524c98fc97147eba8966c4ea33ca549(&GraphicsPipeline::Reflect);
@@ -1621,6 +1666,9 @@ namespace FE::Graphics::Core
                                        kBaseClassTypeIDs,
                                        kAttributes,
                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Resource*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_490b70ff2ce34b168466b64997ac87f5(&Resource::Reflect);
@@ -1828,6 +1876,9 @@ namespace FE::Graphics::Core
                                                kBaseClassTypeIDs,
                                                kAttributes,
                                                kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<GraphicsPipeline*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4ebe406cc4d740e5948591c18c8c2527(&GraphicsPipeline::Reflect);
@@ -1923,6 +1974,9 @@ namespace FE::Graphics::Common
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<FrameGraphContext*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_521a8cce6a614d51962c16abab20ae89(&FrameGraphContext::Reflect);
@@ -2002,6 +2056,9 @@ namespace FE::Graphics::Core
                                            kBaseClassTypeIDs,
                                            kAttributes,
                                            kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<DeviceObject*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_52579f0674cd415180994d4283e8b6b0(&DeviceObject::Reflect);
@@ -2105,6 +2162,9 @@ namespace FE::Graphics::Vulkan
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<FrameGraph*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_585305a006eb4b168ef126faaceb6ab8(&FrameGraph::Reflect);
@@ -2192,6 +2252,9 @@ namespace FE::Graphics::Core
                                        kBaseClassTypeIDs,
                                        kAttributes,
                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Viewport*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_6190ef25720248e9a4e7c5b123881d58(&Viewport::Reflect);
@@ -2279,6 +2342,9 @@ namespace FE::Graphics::Vulkan
                                                kBaseClassTypeIDs,
                                                kAttributes,
                                                kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderReflection*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_686e6ebe80384e26919c70834410bc1f(&ShaderReflection::Reflect);
@@ -2382,6 +2448,9 @@ namespace FE::Graphics::Common
                                      kBaseClassTypeIDs,
                                      kAttributes,
                                      kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Buffer*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_6e88784e191841ac93430e93cf07c3b4(&Buffer::Reflect);
@@ -2537,6 +2606,9 @@ namespace FE::Graphics::Core
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<DescriptorManager*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7238722e62414eb2b140c0545346dd57(&DescriptorManager::Reflect);
@@ -2686,6 +2758,9 @@ namespace FE::Graphics::Vulkan
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<AsyncCopyQueue*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_73a6b2da9bd1421eb27faa09da277f42(&AsyncCopyQueue::Reflect);
@@ -2781,6 +2856,9 @@ namespace FE::Graphics::Core
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ComputePipeline*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_768e754cd58b4fdcbc8d893e8a7e0438(&ComputePipeline::Reflect);
@@ -2876,6 +2954,9 @@ namespace FE::Graphics::Vulkan
                                     kBaseClassTypeIDs,
                                     kAttributes,
                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Fence*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_78363647338146f297b12a1ac8afc3c1(&Fence::Reflect);
@@ -2971,6 +3052,9 @@ namespace FE::Graphics::Vulkan
                                      kBaseClassTypeIDs,
                                      kAttributes,
                                      kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Device*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7ae4b80275af439eaa48bc72761b7b72(&Device::Reflect);
@@ -3066,6 +3150,9 @@ namespace FE::Graphics::Core
                                       kBaseClassTypeIDs,
                                       kAttributes,
                                       kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Texture*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_816f7fb8a3c44d22b8f0a88d8db78f47(&Texture::Reflect);
@@ -3145,6 +3232,9 @@ namespace FE::Graphics::Vulkan
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<BufferInstance*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_82bd426fa6c045bd9f678223ca9b70cc(&BufferInstance::Reflect);
@@ -3232,6 +3322,9 @@ namespace FE::Graphics::Common
                                      kBaseClassTypeIDs,
                                      kAttributes,
                                      kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Device*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_830776b920ac4d55b7dc685ea6d20cc2(&Device::Reflect);
@@ -3319,6 +3412,9 @@ namespace FE::Graphics::Core
                                            kBaseClassTypeIDs,
                                            kAttributes,
                                            kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<PipelineBase*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_8d4ec84b525c4a219fbd1c304f3471d2(&PipelineBase::Reflect);
@@ -3422,6 +3518,9 @@ namespace FE::Graphics::Common
                                       kBaseClassTypeIDs,
                                       kAttributes,
                                       kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Texture*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_99f7a91361ef4c879b27d06ca99f0d00(&Texture::Reflect);
@@ -3509,6 +3608,9 @@ namespace FE::Graphics::Core
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderCompilerDXC*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9daf49f94e5d4042b12367200dc60a14(&ShaderCompilerDXC::Reflect);
@@ -3588,6 +3690,9 @@ namespace FE::Graphics::Core
                                                kBaseClassTypeIDs,
                                                kAttributes,
                                                kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderReflection*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9ecff14f1d5a4997b6d5735e935a9d64(&ShaderReflection::Reflect);
@@ -3914,6 +4019,9 @@ namespace FE::Graphics::Common
                                                kBaseClassTypeIDs,
                                                kAttributes,
                                                kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ResourceInstance*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b498017dc07f40228c3d6f4c9ccf132b(&ResourceInstance::Reflect);
@@ -4126,6 +4234,9 @@ namespace FE::Graphics::Core
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderLibrary*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_be44fcfd554049f6aece569be88a8450(&ShaderLibrary::Reflect);
@@ -4213,6 +4324,9 @@ namespace FE::Graphics::Core
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<GraphicsQueue*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_bfa35db4e1aa491487fbd392b0308b34(&GraphicsQueue::Reflect);
@@ -4370,6 +4484,9 @@ namespace FE::Graphics::Vulkan
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<FrameGraphContext*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c27fc437a09a49f7b3b6dee56c0cf04f(&FrameGraphContext::Reflect);
@@ -4449,6 +4566,9 @@ namespace FE::Graphics::Vulkan
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<TextureInstance*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c47d99b8920d49b6a1b90f24143c3feb(&TextureInstance::Reflect);
@@ -4528,6 +4648,9 @@ namespace FE::Graphics::Core
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<DeviceFactory*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c6cc0410bb89484a8fd79df99ae3cd31(&DeviceFactory::Reflect);
@@ -4615,6 +4738,9 @@ namespace FE::Graphics::Core
                                               kBaseClassTypeIDs,
                                               kAttributes,
                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<PipelineFactory*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_cd16508a5f3447008d23af217b55ffd1(&PipelineFactory::Reflect);
@@ -4759,6 +4885,9 @@ namespace FE::Graphics::Core
                                     kBaseClassTypeIDs,
                                     kAttributes,
                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Fence*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_d815152fa41f45c881abf921f19e8aa3(&Fence::Reflect);
@@ -4846,6 +4975,9 @@ namespace FE::Graphics::Vulkan
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<DescriptorManager*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_d88b5624a48e4f199a0ae059375241c8(&DescriptorManager::Reflect);
@@ -4999,6 +5131,9 @@ namespace FE::Graphics::Vulkan
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderLibrary*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_e2254cbd679c431087cffa8da780bda1(&ShaderLibrary::Reflect);
@@ -5219,6 +5354,9 @@ namespace FE::Graphics::Core
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<FrameGraph*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ea57012475f44efc9c4969eb5eb0404c(&FrameGraph::Reflect);
@@ -5364,6 +5502,9 @@ namespace FE::Graphics::Vulkan
                                             kBaseClassTypeIDs,
                                             kAttributes,
                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<CommandBuffer*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f14e4f2267344747bb3cfe3ba6697e46(&CommandBuffer::Reflect);
@@ -5443,6 +5584,9 @@ namespace FE::Graphics::Core
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderCompiler*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f3d5e2841dbf40cc97907d97fa69b18d(&ShaderCompiler::Reflect);
@@ -5522,6 +5666,9 @@ namespace FE::Graphics::Core
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
                                                 kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderSourceCache*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_fe08f0a840b44c17b1528220dc1bf5f6(&ShaderSourceCache::Reflect);

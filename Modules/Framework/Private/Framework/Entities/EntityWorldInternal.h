@@ -28,16 +28,16 @@ namespace FE::Framework
         EntityComponentRegistry m_components;
         ComponentLoadingState m_loading;
         EntityAssetServices* m_assets;
-        void* m_services;
+        festd::vector<WorldService*> m_services;
         ReparentHandler m_reparentHandler = nullptr;
         festd::ascii_view m_error;
         uint64_t m_nextRegistryId = 1;
         uint16_t m_token;
         bool m_started = false;
 
-        Impl(EntityWorld& owner, EntityAssetServices* assets, void* services);
+        Impl(EntityWorld& owner, EntityAssetServices* assets);
         ~Impl();
-        EntityRegistry& CreateRegistry();
+        EntityRegistry& CreateRegistry(Uuid key);
         void RemoveRegistry(EntityRegistry& registry);
         void* LookupComponent(const Entity& entity, Rtti::TypeID type, bool write) const;
         void Submit(EntityCommandList&& commands);
@@ -56,6 +56,9 @@ namespace FE::Framework
         void AdvanceMaterializations(bool bootstrap);
 
         bool Materialize(uint32_t operation);
+        bool LoadDefinition(const EntityWorldAsset& definition, festd::vector<MaterializationToken>* operations);
+        bool CaptureSnapshot(EntityWorldSnapshotAsset& snapshot);
+        bool RestoreSnapshot(const EntityWorldSnapshotAsset& snapshot, festd::vector<MaterializationToken>* operations);
         Entity* AllocateEntity(EntityRegistry& registry, Env::Name name, Uuid uuid);
         void DestroyEntity(Entity& entity);
         void Reparent(Entity& entity, Entity* parent);

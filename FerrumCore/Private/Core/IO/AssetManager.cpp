@@ -375,10 +375,10 @@ namespace FE::IO
             }
             else
             {
-                operation.m_error = Fmt::FixedFormat("asset {} metadata stage failed at '{}': {}",
-                                                     operation.m_id,
-                                                     result.error().m_source,
-                                                     result.error().m_message);
+                operation.m_error = Fmt::Format("asset {} metadata stage failed at '{}': {}",
+                                                operation.m_id,
+                                                result.error().m_source,
+                                                result.error().m_message);
                 operation.m_state = State::kFailed;
             }
 
@@ -542,10 +542,10 @@ namespace FE::IO
                 }
 
                 if (controller->GetStatus() != Async::Status::kSucceeded)
-                    operation.m_error = Fmt::FixedFormat("asset {} artifact {} payload read failed at '{}'",
-                                                         operation.m_id,
-                                                         operation.m_record.m_artifactId,
-                                                         payload.m_resolvedDataSource.m_filePath);
+                    operation.m_error = Fmt::Format("asset {} artifact {} payload read failed at '{}'",
+                                                    operation.m_id,
+                                                    operation.m_record.m_artifactId,
+                                                    payload.m_resolvedDataSource.m_filePath);
 
                 size_t offset = 0;
                 for (const ArtifactChunkRecord& chunk : payload.m_chunks)
@@ -1551,6 +1551,14 @@ namespace FE::IO
         std::lock_guard lock{ GImpl->m_mutex };
         auto found = GImpl->m_slots.find(id);
         return found == GImpl->m_slots.end() ? nullptr : found->second;
+    }
+
+
+    Streamer* AssetManager::FindStreamer(const Rtti::TypeID type)
+    {
+        FE_Assert(GImpl && Threading::IsMainThread());
+        const auto found = GImpl->m_streamers.find(type);
+        return found == GImpl->m_streamers.end() ? nullptr : found->second;
     }
 
 

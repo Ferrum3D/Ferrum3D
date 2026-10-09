@@ -8,6 +8,12 @@
 #include <EntityTestTypes.h>
 
 
+namespace FE
+{
+    void CallLinkerAnchor_FrameworkTests() {}
+} // namespace FE
+
+
 namespace FE::Framework::Tests
 {
     const Rtti::TypeID Number::TypeID = Rtti::TypeID{
@@ -870,4 +876,519 @@ namespace FE::Framework::Tests
         return 0;
     }
 
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID SnapshotSystem::TypeID = Rtti::TypeID{
+        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf0,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f0(SnapshotSystem* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf0, // FE::Framework::Tests::SnapshotSystem (this type)
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae09f0()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SnapshotSystem::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_aaa6912644274055b1c404013aae09f0();
+    }
+
+    void* FE_VECTORCALL SnapshotSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f0(this, typeID);
+    }
+
+    const void* FE_VECTORCALL SnapshotSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f0(const_cast<SnapshotSystem*>(this), typeID);
+    }
+    void SnapshotSystem::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae09f0();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf0, // FE::Framework::Tests::SnapshotSystem
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<SnapshotSystem>(typeInstance,
+                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                             "FE::Framework::Tests::SnapshotSystem",
+                                             kBaseClassTypeIDs,
+                                             kAttributes,
+                                             kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<SnapshotSystem*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae09f0(&SnapshotSystem::Reflect);
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID SystemPrefix::TypeID = Rtti::TypeID{
+        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf1,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f1(SystemPrefix* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf1, // FE::Framework::Tests::SystemPrefix (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae09f1()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SystemPrefix::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_aaa6912644274055b1c404013aae09f1();
+    }
+
+    void* FE_VECTORCALL SystemPrefix::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f1(this, typeID);
+    }
+
+    const void* FE_VECTORCALL SystemPrefix::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f1(const_cast<SystemPrefix*>(this), typeID);
+    }
+    void SystemPrefix::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae09f1();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf1, // FE::Framework::Tests::SystemPrefix
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<SystemPrefix>(typeInstance,
+                                           Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                           "FE::Framework::Tests::SystemPrefix",
+                                           kBaseClassTypeIDs,
+                                           kAttributes,
+                                           kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<SystemPrefix*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae09f1(&SystemPrefix::Reflect);
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID OffsetSnapshotSystem::TypeID = Rtti::TypeID{
+        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf2,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f2(OffsetSnapshotSystem* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf2, // FE::Framework::Tests::OffsetSnapshotSystem (this type)
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf1, // FE::Framework::Tests::SystemPrefix
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf0, // FE::Framework::Tests::SnapshotSystem
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::Tests::SystemPrefix*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::Tests::SnapshotSystem*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 3 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae09f2()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& OffsetSnapshotSystem::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_aaa6912644274055b1c404013aae09f2();
+    }
+
+    void* FE_VECTORCALL OffsetSnapshotSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f2(this, typeID);
+    }
+
+    const void* FE_VECTORCALL OffsetSnapshotSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f2(const_cast<OffsetSnapshotSystem*>(this), typeID);
+    }
+    void OffsetSnapshotSystem::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae09f2();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf2, // FE::Framework::Tests::OffsetSnapshotSystem
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 3 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf1, // FE::Framework::Tests::SystemPrefix
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf0, // FE::Framework::Tests::SnapshotSystem
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<OffsetSnapshotSystem>(typeInstance,
+                                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                   "FE::Framework::Tests::OffsetSnapshotSystem",
+                                                   kBaseClassTypeIDs,
+                                                   kAttributes,
+                                                   kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<OffsetSnapshotSystem*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae09f2(&OffsetSnapshotSystem::Reflect);
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID NonDefaultSystem::TypeID = Rtti::TypeID{
+        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf3,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f3(NonDefaultSystem* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf3, // FE::Framework::Tests::NonDefaultSystem (this type)
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae09f3()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& NonDefaultSystem::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_aaa6912644274055b1c404013aae09f3();
+    }
+
+    void* FE_VECTORCALL NonDefaultSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f3(this, typeID);
+    }
+
+    const void* FE_VECTORCALL NonDefaultSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f3(const_cast<NonDefaultSystem*>(this), typeID);
+    }
+    void NonDefaultSystem::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae09f3();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf3, // FE::Framework::Tests::NonDefaultSystem
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<NonDefaultSystem>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Framework::Tests::NonDefaultSystem",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<NonDefaultSystem*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae09f3(&NonDefaultSystem::Reflect);
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID SnapshotService::TypeID = Rtti::TypeID{
+        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf4,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f4(SnapshotService* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf4, // FE::Framework::Tests::SnapshotService (this type)
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldService*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae09f4()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SnapshotService::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_aaa6912644274055b1c404013aae09f4();
+    }
+
+    void* FE_VECTORCALL SnapshotService::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f4(this, typeID);
+    }
+
+    const void* FE_VECTORCALL SnapshotService::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f4(const_cast<SnapshotService*>(this), typeID);
+    }
+    void SnapshotService::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae09f4();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf4, // FE::Framework::Tests::SnapshotService
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<SnapshotService>(typeInstance,
+                                              Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                              "FE::Framework::Tests::SnapshotService",
+                                              kBaseClassTypeIDs,
+                                              kAttributes,
+                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<SnapshotService*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae09f4(&SnapshotService::Reflect);
+} // namespace FE::Framework::Tests
+
+
+namespace FE::Framework::Tests
+{
+    const Rtti::TypeID OffsetSnapshotService::TypeID = Rtti::TypeID{
+        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf5,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f5(OffsetSnapshotService* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf5, // FE::Framework::Tests::OffsetSnapshotService (this type)
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf1, // FE::Framework::Tests::SystemPrefix
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf4, // FE::Framework::Tests::SnapshotService
+                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::Tests::SystemPrefix*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::Tests::SnapshotService*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 3 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldService*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae09f5()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& OffsetSnapshotService::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_aaa6912644274055b1c404013aae09f5();
+    }
+
+    void* FE_VECTORCALL OffsetSnapshotService::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f5(this, typeID);
+    }
+
+    const void* FE_VECTORCALL OffsetSnapshotService::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae09f5(const_cast<OffsetSnapshotService*>(this), typeID);
+    }
+    void OffsetSnapshotService::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae09f5();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf5, // FE::Framework::Tests::OffsetSnapshotService
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 3 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf1, // FE::Framework::Tests::SystemPrefix
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xf4, // FE::Framework::Tests::SnapshotService
+            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
+            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<OffsetSnapshotService>(typeInstance,
+                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                    "FE::Framework::Tests::OffsetSnapshotService",
+                                                    kBaseClassTypeIDs,
+                                                    kAttributes,
+                                                    kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<OffsetSnapshotService*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae09f5(&OffsetSnapshotService::Reflect);
 } // namespace FE::Framework::Tests

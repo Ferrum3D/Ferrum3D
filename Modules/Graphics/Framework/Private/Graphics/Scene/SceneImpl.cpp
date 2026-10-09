@@ -20,6 +20,16 @@ namespace FE::Graphics
     }
 
 
+    void SceneImpl::DestroyView(View* view)
+    {
+        const auto found = festd::find_if(m_views.begin(), m_views.end(), [view](const Rc<View>& candidate) {
+            return candidate.Get() == view;
+        });
+        FE_Assert(found != m_views.end());
+        m_views.erase(found);
+    }
+
+
     uint32_t SceneImpl::GetViewCount() const
     {
         return m_views.size();

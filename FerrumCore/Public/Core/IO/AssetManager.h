@@ -97,6 +97,9 @@ namespace FE::IO
         //! @brief Register a non-owning type-specific finalizer. Registration must remain valid until unregistered or Shutdown.
         static void RegisterStreamer(Rtti::TypeID typeId, Streamer* streamer);
 
+        //! @brief Borrow a registered type-specific streamer at a main-thread boundary; return null when none is registered.
+        [[nodiscard]] static Streamer* FindStreamer(Rtti::TypeID typeId);
+
         //! @brief Remove a matching type-specific streamer before its lifetime ends.
         static void UnregisterStreamer(Rtti::TypeID typeId, Streamer* streamer);
 

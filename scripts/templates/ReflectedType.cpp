@@ -220,6 +220,11 @@ namespace {{ type.namespace }}
         };
 
         context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields);
+        {%- if not type.is_member %}
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<{{ type.name }}*>(instance)->RTTI_TryCast(target);
+        };
+        {%- endif %}
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);

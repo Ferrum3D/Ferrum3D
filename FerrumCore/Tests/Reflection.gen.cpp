@@ -10,6 +10,12 @@
 #include <Serialization/SerializationTypes.h>
 
 
+namespace FE
+{
+    void CallLinkerAnchor_CoreTests() {}
+} // namespace FE
+
+
 namespace FE::Serialization::Tests
 {
     const Rtti::TypeID PackedDesc::TypeID = Rtti::TypeID{
@@ -249,6 +255,9 @@ namespace FE::Serialization::Tests
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<TestObject*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_cc51822c73864596a208f4a4950d63cb(&TestObject::Reflect);
@@ -419,6 +428,9 @@ namespace FE::Cli::Tests
                                     kBaseClassTypeIDs,
                                     kAttributes,
                                     kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Build*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_d5dd1441e7ec48e5970615434aa507d5(&Build::Reflect);
@@ -510,6 +522,9 @@ namespace FE::IO::Tests
                                              kBaseClassTypeIDs,
                                              kAttributes,
                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<SyntheticAsset*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_d734d82a479041e9b4282d639be4cf17(&SyntheticAsset::Reflect);
@@ -666,6 +681,9 @@ namespace FE::Cli::Tests
                                          kBaseClassTypeIDs,
                                          kAttributes,
                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<TestParser*>(instance)->RTTI_TryCast(target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ef03ae87b2df4fa0a77db92cc8e2015c(&TestParser::Reflect);

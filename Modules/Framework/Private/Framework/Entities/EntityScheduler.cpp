@@ -35,6 +35,9 @@ namespace FE::Framework
         ClearEpoch();
         m_world.m_started = true;
         ++m_epoch;
+        for (WorldService* service : m_world.m_services)
+            service->Update(m_world.m_owner);
+
         m_world.CommitImpl(false);
 
         m_updating = true;

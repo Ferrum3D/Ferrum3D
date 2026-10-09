@@ -155,6 +155,8 @@ namespace FE::Rtti
         using CopyConstructor = void (*)(void*, const void*);
         using MoveConstructor = void (*)(void*, void*);
         using Destructor = void (*)(void*);
+        //! @brief Cast a complete polymorphic instance to a reflected base, adjusting its address when needed.
+        using Cast = void* (*)(void*, TypeID);
         using Serialize = Serialization::ResultCode (*)(Serialization::SerializationContext&, const void*);
         using Deserialize = Serialization::ResultCode (*)(Serialization::DeserializationContext&, void*);
 
@@ -165,6 +167,8 @@ namespace FE::Rtti
         CopyConstructor m_copyConstructor = nullptr;
         MoveConstructor m_moveConstructor = nullptr;
         Destructor m_destructor = nullptr;
+        //! @brief Type-erased RTTI cast; null for types without polymorphic RTTI.
+        Cast m_cast = nullptr;
         Serialize m_serialize = nullptr;
         Deserialize m_deserialize = nullptr;
         festd::span<const TypeID> m_baseTypes;
