@@ -367,6 +367,24 @@ namespace FE::IO::Async
     }
 
 
+    void* SchedulerImpl::AllocateStagingMemory(const size_t byteSize)
+    {
+        std::lock_guard lock{ m_stagingLock };
+        return m_stagingAllocator.allocate(byteSize, Memory::kDefaultAlignment);
+    }
+
+
+    void SchedulerImpl::ReleaseStagingMemory(ReadGroup* group)
+    {
+        if (group->m_stagingMemory == nullptr)
+            return;
+
+        std::lock_guard lock{ m_stagingLock };
+        m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize, Memory::kDefaultAlignment);
+        group->m_stagingMemory = nullptr;
+    }
+
+
     void SchedulerImpl::EnqueueImpl(Operation* operation)
     {
         std::unique_lock lk{ m_queueLock };
@@ -549,7 +567,7 @@ namespace FE::IO::Async
             if (command.m_compressionMethod != Compression::Method::kNone)
             {
                 group->m_stagingMemorySize = command.m_compressedSize;
-                group->m_stagingMemory = m_stagingAllocator.allocate(command.m_compressedSize, Memory::kDefaultAlignment);
+                group->m_stagingMemory = AllocateStagingMemory(command.m_compressedSize);
 
                 readDestination = group->m_stagingMemory;
             }
@@ -594,8 +612,7 @@ namespace FE::IO::Async
             if (result != ResultCode::kSuccess)
             {
                 SetOperationResult(operation, result);
-                if (group->m_stagingMemory != nullptr)
-                    m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize, Memory::kDefaultAlignment);
+                ReleaseStagingMemory(group);
 
                 CompleteOperationWork(operation);
                 m_groupPool.Delete(group);
@@ -637,8 +654,7 @@ namespace FE::IO::Async
 
                     SetOperationResult(operation, blockResult);
 
-                    m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize, Memory::kDefaultAlignment);
-                    group->m_stagingMemory = nullptr;
+                    ReleaseStagingMemory(group);
 
                     CompleteOperationWork(operation);
                     m_groupPool.Delete(group);

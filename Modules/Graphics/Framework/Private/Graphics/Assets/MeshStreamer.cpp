@@ -74,9 +74,10 @@ namespace FE::Graphics
             }
             else if (entry.m_requestedLod > asset.m_residentLod)
             {
+                const uint32_t requestedLod = Math::Min(entry.m_requestedLod, asset.m_residentLod + 1);
                 asset.m_currentOperation = CreateMeshStreamingOperation_StreamIn(asset,
                                                                                  entry.m_artifact,
-                                                                                 entry.m_requestedLod,
+                                                                                 requestedLod,
                                                                                  m_device,
                                                                                  m_resourcePool,
                                                                                  m_asyncCopyQueue);

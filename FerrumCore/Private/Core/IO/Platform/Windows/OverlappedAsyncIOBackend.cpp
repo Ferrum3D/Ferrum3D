@@ -144,7 +144,7 @@ namespace FE::IO::Async
         else
         {
             if (m_pendingRequests.full())
-                m_pendingRequests.resize(m_pendingRequests.size() * 2);
+                m_pendingRequests.reserve(m_pendingRequests.capacity() * 2);
 
             m_pendingRequests.push_back(requestIndex);
         }
@@ -161,11 +161,10 @@ namespace FE::IO::Async
         CreateIoCompletionPort(read.m_file, m_completionPort, reinterpret_cast<ULONG_PTR>(&read), 0);
 
         DWORD bytesRead = 0;
-        if (ReadFile(read.m_file, read.m_destination, static_cast<DWORD>(read.m_size), &bytesRead, &read.m_overlapped))
-        {
-            m_finishedReads.push_back(&read);
-        }
-        else
+        ++m_dispatchedReadCount;
+
+        // Successful reads, including immediate completions, are delivered through IOCP exactly once.
+        if (!ReadFile(read.m_file, read.m_destination, static_cast<DWORD>(read.m_size), &bytesRead, &read.m_overlapped))
         {
             const DWORD error = GetLastError();
             if (error != ERROR_IO_PENDING)
@@ -197,6 +196,8 @@ namespace FE::IO::Async
         m_finishedReads.pop_back();
 
         completion = finishedRequest->m_completion;
+        FE_AssertDebug(m_dispatchedReadCount > 0);
+        --m_dispatchedReadCount;
         m_freeRequests.set(completion.m_handle.m_value);
         m_readRequests[completion.m_handle.m_value].Invalidate();
         DispatchQueuedReads();

@@ -14,10 +14,17 @@ namespace
 {
     struct CompletionLatch final
     {
+        explicit CompletionLatch(const uint32_t count = 1)
+            : m_remaining(count)
+        {
+        }
+
+
         void Signal()
         {
             std::lock_guard lock{ m_mutex };
-            m_called = true;
+            FE_Assert(m_remaining > 0);
+            --m_remaining;
             m_condition.NotifyAll();
         }
 
@@ -25,7 +32,7 @@ namespace
         {
             std::unique_lock lock{ m_mutex };
             m_condition.Wait(lock, [this] {
-                return m_called;
+                return m_remaining == 0;
             });
 
             return true;
@@ -33,7 +40,7 @@ namespace
 
         Threading::Mutex m_mutex;
         Threading::ConditionVariable m_condition;
-        bool m_called = false;
+        uint32_t m_remaining;
     };
 
 
@@ -450,6 +457,78 @@ TEST(AsyncStreamIO, CompressedReadAppend)
     ASSERT_EQ(destination.size(), source.size() * 2 + 9);
     EXPECT_TRUE(std::equal(destination.begin() + 9, destination.begin() + 9 + source.size(), source.begin()));
     EXPECT_TRUE(std::equal(destination.begin() + 9 + source.size(), destination.end(), source.begin()));
+}
+
+
+TEST(AsyncStreamIO, ConcurrentCompressedReads)
+{
+    constexpr uint32_t operationCount = 64;
+    constexpr uint32_t commandsPerOperation = 4;
+    constexpr uint32_t blockCount = 8;
+    const festd::vector<std::byte> source = MakeAsyncTestData(64 * 1024);
+    auto compressor = Compression::Compressor::Create(Compression::Method::kZstd);
+
+    size_t offsets[blockCount] = {};
+    size_t compressedSizes[blockCount] = {};
+    festd::vector<std::byte> compressedFile;
+    for (uint32_t blockIndex = 0; blockIndex < blockCount; ++blockIndex)
+    {
+        const uint32_t blockSize = (blockIndex + 1) * 8192;
+        festd::vector<std::byte> compressed(static_cast<uint32_t>(compressor.GetBounds(blockSize)));
+        const Compression::CompressionResult result =
+            compressor.Compress(source.data(), blockSize, compressed.data(), compressed.size());
+        ASSERT_EQ(result.m_result, Compression::ResultCode::kSuccess);
+
+        offsets[blockIndex] = compressedFile.size();
+        compressedSizes[blockIndex] = result.m_compressedSize;
+        compressedFile.insert(compressedFile.end(), compressed.begin(), compressed.begin() + result.m_compressedSize);
+    }
+
+    const IO::Path path = MakeTestPath("concurrent-compressed");
+    WriteTestFile(path, compressedFile);
+
+    for (uint32_t round = 0; round < 8; ++round)
+    {
+        festd::vector<festd::vector<std::byte>> destinations(operationCount);
+        Rc<IO::Async::IController> controllers[operationCount];
+        CompletionLatch latch(operationCount);
+
+        for (uint32_t operationIndex = 0; operationIndex < operationCount; ++operationIndex)
+        {
+            const uint32_t blockIndex = operationIndex % blockCount;
+            const uint32_t blockSize = (blockIndex + 1) * 8192;
+            destinations[operationIndex].resize(blockSize * commandsPerOperation);
+
+            IO::Async::Batch batch({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = compressedFile.size() });
+            for (uint32_t commandIndex = 0; commandIndex < commandsPerOperation; ++commandIndex)
+            {
+                batch.Read(destinations[operationIndex].data() + commandIndex * blockSize,
+                           blockSize,
+                           compressedSizes[blockIndex],
+                           Compression::Method::kZstd,
+                           offsets[blockIndex]);
+            }
+
+            batch.InvokeOnCompletion([&latch] {
+                latch.Signal();
+            });
+            controllers[operationIndex] = IO::Async::Read(std::move(batch));
+        }
+
+        ASSERT_TRUE(latch.Wait());
+        for (uint32_t operationIndex = 0; operationIndex < operationCount; ++operationIndex)
+        {
+            EXPECT_EQ(controllers[operationIndex]->GetStatus(), IO::Async::Status::kSucceeded);
+            EXPECT_EQ(controllers[operationIndex]->GetLastOperationResult(), IO::ResultCode::kSuccess);
+
+            const uint32_t blockSize = (operationIndex % blockCount + 1) * 8192;
+            for (uint32_t commandIndex = 0; commandIndex < commandsPerOperation; ++commandIndex)
+            {
+                const std::byte* destination = destinations[operationIndex].data() + commandIndex * blockSize;
+                EXPECT_TRUE(std::equal(destination, destination + blockSize, source.begin()));
+            }
+        }
+    }
 }
 
 

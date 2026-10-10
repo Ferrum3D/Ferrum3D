@@ -180,8 +180,11 @@ namespace FE::IO::Async
         Memory::SpinLockedPool<Controller> m_controllerPool{ "IO/Async/ControllerPool" };
 
         void* m_stagingMemory = nullptr;
+        Threading::SpinLock m_stagingLock;
         Memory::TLSFAllocator m_stagingAllocator;
 
+        void* AllocateStagingMemory(size_t byteSize);
+        void ReleaseStagingMemory(ReadGroup* group);
         void EnqueueImpl(Operation* operation);
         Operation* TryDequeue();
         void ProcessOperation(Operation* operation);

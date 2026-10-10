@@ -154,6 +154,7 @@ namespace FE::GameFramework
     int32_t Application::Run(const uint32_t maxFrames)
     {
         FE_Assert(Threading::IsMainThread() && m_world);
+
         uint32_t frames = 0;
         while (!m_platformApplication->IsCloseRequested())
         {

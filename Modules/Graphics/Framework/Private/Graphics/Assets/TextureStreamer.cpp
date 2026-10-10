@@ -76,9 +76,10 @@ namespace FE::Graphics
             }
             else if (entry.m_requestedMip > asset.m_residentMip)
             {
+                const uint32_t requestedMip = Math::Min(entry.m_requestedMip, asset.m_residentMip + 1);
                 asset.m_currentOperation = CreateTextureStreamingOperation_StreamIn(asset,
                                                                                     entry.m_artifact,
-                                                                                    entry.m_requestedMip,
+                                                                                    requestedMip,
                                                                                     m_device,
                                                                                     m_resourcePool,
                                                                                     m_asyncCopyQueue);
