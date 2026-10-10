@@ -100,11 +100,18 @@ namespace FE::GameFramework
     bool Application::LoadWorld(const IO::AssetID asset)
     {
         FE_PROFILER_ZONE();
+
         auto request = IO::AssetManager::LoadAsset(IO::Link<Framework::EntityWorldAsset>(asset));
         while (!request.IsCompleted())
         {
             IO::AssetManager::Tick();
             Threading::Sleep(1);
+        }
+
+        if (request.GetResult() != IO::AssetLoadResult::kSucceeded)
+        {
+            Logger::LogError("World asset is unavailable: {}", request.GetError());
+            return false;
         }
 
         const auto definition = IO::AssetHandle<Framework::EntityWorldAsset>(request.GetAssetSlot()).Read();
@@ -151,6 +158,7 @@ namespace FE::GameFramework
         while (!m_platformApplication->IsCloseRequested())
         {
             FE_PROFILER_ZONE_NAMED("Frame");
+
             m_platformApplication->PollEvents();
             if (m_platformApplication->IsCloseRequested())
                 break;
@@ -173,6 +181,7 @@ namespace FE::GameFramework
     void Application::Shutdown()
     {
         FE_PROFILER_ZONE();
+
         FE_Assert(Threading::IsMainThread());
         if (!m_device)
             return;

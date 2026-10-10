@@ -79,6 +79,6 @@ namespace FE::Framework
         //! @brief Authored placement root components or runtime membership root ID.
         EntityID m_root;
         //! @brief Borrowed recoverable diagnostic text.
-        festd::ascii_view m_error;
+        festd::string_view m_error;
     };
 } // namespace FE::Framework

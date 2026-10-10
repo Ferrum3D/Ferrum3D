@@ -240,6 +240,24 @@ TEST_F(CollectionFixture, PlacementCopyRemapsRootReferences)
 }
 
 
+TEST_F(CollectionFixture, FailedPlacementCanRetryWithTheSameAssetIdentity)
+{
+    auto placement = Placement();
+    auto invalid = placement;
+    invalid.m_bindings.front().m_sourceUuid = Uuid::Random();
+    const auto failed = m_world.LoadPlacement(m_registry, kPlacement, invalid, m_collection);
+    Tick();
+    ASSERT_EQ(m_world.GetMaterializationStatus(failed).m_state, MaterializationState::kFailed);
+    EXPECT_EQ(m_world.GetEntityCount(), 0);
+
+    const auto retry = m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection);
+    EXPECT_NE(retry, failed);
+    Tick();
+    ASSERT_EQ(m_world.GetMaterializationStatus(retry).m_state, MaterializationState::kReady);
+    EXPECT_EQ(m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection), retry);
+}
+
+
 TEST_F(CollectionFixture, ConflictingPlacementRootsAndInvalidHierarchyRejectWithoutDuplicates)
 {
     auto placement = Placement();

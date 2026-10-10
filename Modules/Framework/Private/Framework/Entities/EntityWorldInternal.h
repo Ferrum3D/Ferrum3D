@@ -14,19 +14,31 @@ namespace FE::Framework
 
     struct EntityWorld::Impl
     {
+        struct Transaction;
+
         struct PendingCommands
         {
             festd::vector<EntityCommandList::Impl*> m_lists;
             Threading::SpinLock m_lock;
         };
 
+
+        struct LifecycleWork
+        {
+            festd::vector<EntityID> m_replacements;
+            festd::vector<EntityID> m_roots;
+        };
+
         EntityWorld& m_owner;
         EntityStorage m_storage;
         EntityScheduler m_schedule;
         festd::vector<EntityMaterialization*> m_materializations;
+        festd::vector<uint32_t> m_activeMaterializations;
+        festd::unordered_dense_map<IO::AssetID, uint32_t> m_placements;
         PendingCommands m_pendingCommands;
         EntityComponentRegistry m_components;
         ComponentLoadingState m_loading;
+        LifecycleWork m_lifecycleWork;
         EntityAssetServices* m_assets;
         festd::vector<WorldService*> m_services;
         ReparentHandler m_reparentHandler = nullptr;
@@ -63,7 +75,7 @@ namespace FE::Framework
         void DestroyEntity(Entity& entity);
         void Reparent(Entity& entity, Entity* parent);
         Archetype* GetArchetype(festd::span<const EntityComponentInfo* const> columns);
-        void Migrate(Entity& entity, festd::span<const EntityComponentInfo* const> columns, festd::span<void* const> values);
+        void Migrate(Entity& entity, Archetype& archetype, festd::span<void* const> values);
         void AdvanceLifecycle();
         void PublishSubtree(Entity& entity);
         void UnloadSubtree(Entity& entity);
@@ -73,6 +85,7 @@ namespace FE::Framework
         bool PrepareSubtree(Entity& entity);
         bool ActivateSubtree(Entity& entity);
         void DeactivateSubtree(Entity& entity, bool keepAuthoredValues = true);
+        void DeactivateEntity(Entity& entity, bool keepAuthoredValues);
         void TeardownComponent(Entity& entity, uint32_t column, bool destroy);
         EntityResidencySet& ResidencyOwner(Entity& entity);
         void ReleaseAssets(Entity& entity, Rtti::TypeID component, uint64_t transition = 0);
@@ -84,7 +97,7 @@ namespace FE::Framework
         void AdvanceReplacements(Entity& entity);
         void CancelReplacements(Entity& entity, Rtti::TypeID type = Rtti::TypeID::kNull, bool keepAuthoredValues = false);
 
-        bool RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type);
+        void RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type);
         EntityResources& GetResources(Entity& entity);
     };
 } // namespace FE::Framework

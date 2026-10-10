@@ -1,7 +1,6 @@
 #include <AssetBuilder/PipelineInternal.h>
-#include <Core/IO/MemoryStream.h>
 #include <Core/Logging/Logger.h>
-#include <Core/Serialization/BinarySerialization.h>
+#include <Core/Serialization/DependencySerialization.h>
 
 namespace FE::AssetBuilder::Internal
 {
@@ -32,10 +31,12 @@ namespace FE::AssetBuilder::Internal
             return false;
 
         artifact.m_dependencies.clear();
-        IO::WriteOnlyMemoryStream stream;
-        Serialization::TaggedBinaryFormat format;
-        Serialization::SerializationContext context(&stream, format, &artifact, CollectSerializedAssetDependency);
-        if (context.Store(*type, artifact.m_buildSettings.GetValue()) == Serialization::ResultCode::kSuccess)
+        if (Serialization::VisitAssetReferences(*type,
+                                                artifact.m_buildSettings.GetValue(),
+                                                &artifact,
+                                                CollectSerializedAssetDependency,
+                                                Serialization::Format::kTaggedBinary)
+            == Serialization::ResultCode::kSuccess)
             return true;
 
         Logger::LogError("Failed to inspect dependencies for serialized asset type {}", artifact.m_assetTypeId);

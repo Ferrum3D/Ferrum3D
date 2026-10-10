@@ -49,6 +49,7 @@ namespace
                 EXPECT_TRUE(world.EndUpdate());
                 if (world.GetMaterializationStatus(token).m_state != MaterializationState::kPending)
                     return;
+
                 Threading::Sleep(1);
             }
             FAIL() << "Materialization did not complete";
@@ -155,6 +156,72 @@ TEST_F(CollectionAssetsIntegration, PersistentAssetDuplicateCancellationAndReloa
     EXPECT_NE(entity->GetID(), oldId);
     EXPECT_EQ(entity->FindComponent<const Number>()->m_value, 91);
 }
+
+TEST_F(CollectionAssetsIntegration, RuntimeTypeConstraintsKeepValidResidencyIndependent)
+{
+    const auto id = BuildDefinition("number.asset", Number{ 31 });
+    IO::ArtifactStore::SetCatalogSource(m_directory);
+    IO::AssetManager::Init();
+    auto cleanup = festd::defer([] {
+        IO::AssetManager::Shutdown();
+    });
+    EntityAssetServices services;
+    EntityResidencySet residency(services);
+    residency.Add(id, Rtti::GetTypeID<AssetComponent>());
+    residency.Add(id, Rtti::GetTypeID<Number>());
+    residency.Add(id, Rtti::GetTypeID<Number>());
+    EXPECT_EQ(residency.GetAcquisitionCount(), 2);
+    for (uint32_t iteration = 0; iteration < 5000; ++iteration)
+    {
+        IO::AssetManager::Tick();
+        if (residency.Poll(id, Rtti::GetTypeID<Number>()) != LifecycleResult::kPending)
+            break;
+
+        Threading::Sleep(1);
+    }
+    EXPECT_EQ(residency.Poll(id, Rtti::GetTypeID<Number>()), LifecycleResult::kSucceeded);
+    EXPECT_EQ(residency.Poll(id, Rtti::GetTypeID<AssetComponent>()), LifecycleResult::kFailed);
+    residency.Remove(id, Rtti::GetTypeID<AssetComponent>());
+    EXPECT_EQ(residency.GetAcquisitionCount(), 1);
+    residency.Remove(id, Rtti::GetTypeID<Number>());
+    EXPECT_EQ(residency.GetAcquisitionCount(), 1);
+    residency.Remove(id, Rtti::GetTypeID<Number>());
+    EXPECT_EQ(residency.GetAcquisitionCount(), 0);
+}
+
+
+TEST_F(CollectionAssetsIntegration, FailedDefinitionRetainsCoreDiagnosticAfterRequestRelease)
+{
+    const auto id = BuildDefinition("number.asset", Number{ 31 });
+    IO::ArtifactStore::SetCatalogSource(m_directory);
+    IO::AssetManager::Init();
+    auto cleanup = festd::defer([] {
+        IO::AssetManager::Shutdown();
+    });
+    auto loaded = IO::AssetManager::LoadAsset(IO::Link<Number>(id));
+    for (uint32_t iteration = 0; iteration < 5000 && !loaded.IsCompleted(); ++iteration)
+    {
+        IO::AssetManager::Tick();
+        Threading::Sleep(1);
+    }
+    ASSERT_EQ(loaded.GetResult(), IO::AssetLoadResult::kSucceeded);
+
+    EntityWorld world;
+    auto& registry = world.CreateRegistry();
+    const auto token = world.SpawnCollection(registry, id);
+    Pump(world, token);
+    const auto status = world.GetMaterializationStatus(token);
+    ASSERT_EQ(status.m_state, MaterializationState::kFailed);
+    EXPECT_FALSE(status.m_error.empty());
+    EXPECT_NE(status.m_error, "Entity asset unavailable");
+    const festd::string error(status.m_error);
+    IO::AssetManager::Tick();
+    world.BeginUpdate();
+    ASSERT_TRUE(world.EndUpdate());
+    EXPECT_EQ(world.GetMaterializationStatus(token).m_error, error);
+    EXPECT_EQ(world.GetEntityCount(), 0);
+}
+
 
 TEST_F(CollectionAssetsIntegration, WorldAndConcreteSnapshotRoundTripThroughDefaultAssetStreamer)
 {

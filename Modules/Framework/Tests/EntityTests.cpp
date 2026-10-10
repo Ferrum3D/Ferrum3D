@@ -272,6 +272,78 @@ TEST_F(WorldFixture, HooksInitializeChildrenFirstActivateParentsFirstAndTearDown
 }
 
 
+TEST_F(WorldFixture, SameLayoutReplacementPreservesRetainedComponentStorage)
+{
+    Entity& entity = Spawn();
+    EntityCommandList add(m_world);
+    add.AddComponent(entity.GetID(), MoveOnly{ 19 });
+    m_world.Submit(std::move(add));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    const auto* retained = entity.FindComponent<const MoveOnly>();
+    const int32_t moves = MoveOnly::s_moves;
+    const uint32_t chunks = m_world.GetChunkCount();
+
+    EntityCommandList replace(m_world);
+    replace.ReplaceComponent(entity.GetID(), Number{ 42 });
+    m_world.Submit(std::move(replace));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_EQ(entity.FindComponent<const MoveOnly>(), retained);
+    EXPECT_EQ(MoveOnly::s_moves, moves);
+    EXPECT_EQ(m_world.GetChunkCount(), chunks);
+    EXPECT_EQ(entity.FindComponent<const Number>()->m_value, 42);
+}
+
+
+TEST_F(WorldFixture, SparseTransactionDestroysSubtreeMovedUnderItsTarget)
+{
+    EntityCommandList create(m_world);
+    create.CreateEntity(m_registry, {}, kRoot);
+    auto other = create.CreateEntity(m_registry, {}, kOther);
+    auto child = create.CreateEntity(m_registry, {}, kChild);
+    create.SetParent(child, other);
+    m_world.Submit(std::move(create));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+
+    EntityCommandList edit(m_world);
+    edit.SetParent(m_world.Find(kOther)->GetID(), m_world.Find(kRoot)->GetID());
+    edit.Destroy(m_world.Find(kRoot)->GetID());
+    m_world.Submit(std::move(edit));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_EQ(m_world.GetEntityCount(), 0);
+}
+
+
+TEST_F(WorldFixture, DeepHierarchyFailureReleasesEachLoadedComponentOnce)
+{
+    constexpr uint32_t kDepth = 128;
+    EntityCommandList commands(m_world);
+    EntityToken parent;
+    for (uint32_t i = 0; i < kDepth; ++i)
+    {
+        const auto token = commands.CreateEntity(m_registry);
+        commands.AddComponent(token, Hook{ static_cast<int32_t>(i + 1) });
+        if (i != 0)
+            commands.SetParent(token, parent);
+
+        parent = token;
+    }
+    Hook::s_failStage = 3;
+    m_world.Submit(std::move(commands));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    for (uint32_t i = 0; i < kDepth; ++i)
+    {
+        const int32_t unloaded = static_cast<int32_t>((i + 1) * 10 + 6);
+        EXPECT_EQ(std::count(Hook::s_trace.begin(), Hook::s_trace.end(), unloaded), 1);
+    }
+    const auto trace = Hook::s_trace;
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    EXPECT_EQ(Hook::s_trace, trace);
+    m_world.Clear();
+    EXPECT_EQ(Hook::s_trace, trace);
+    Hook::s_failStage = 0;
+}
+
+
 TEST_F(WorldFixture, PendingAdditionLeavesExistingActiveComponentQueryable)
 {
     Entity& entity = Spawn();
@@ -1198,6 +1270,35 @@ TEST_F(WorldFixture, ExplicitReversePrerequisiteOrientsConflictingWork)
     ASSERT_FALSE(m_world.GetScheduleConflicts().empty());
     EXPECT_EQ(m_world.GetScheduleConflicts()[0].m_component, Rtti::GetTypeID<Number>());
     ASSERT_TRUE(m_world.EndUpdate());
+}
+
+
+TEST_F(WorldFixture, DependencyCompilationPreservesConflictOrdering)
+{
+    Spawn();
+    for (bool reverse : { false, true })
+    {
+        m_world.BeginUpdate();
+        EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+        festd::inline_vector<uint32_t> order;
+        auto first = Query<Number>::Traverse(context, Phases::Update, [&](Number&) {
+            order.push_back(0);
+        });
+        auto second = Query<Number>::Traverse(context, Phases::Update, [&](Number&) {
+            order.push_back(1);
+        });
+        Query<Number>::Traverse(context, Phases::Update, [&](Number&) {
+            order.push_back(2);
+        });
+        ASSERT_TRUE(m_world.AddPrerequisite(reverse ? *first : *second, reverse ? second : first));
+        ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
+        ASSERT_TRUE(m_world.ExecuteSchedule());
+        ASSERT_EQ(order.size(), 3);
+        EXPECT_EQ(order[0], reverse ? 1 : 0);
+        EXPECT_EQ(order[1], reverse ? 2 : 1);
+        EXPECT_EQ(order[2], reverse ? 0 : 2);
+        ASSERT_TRUE(m_world.EndUpdate());
+    }
 }
 
 

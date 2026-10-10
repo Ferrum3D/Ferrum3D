@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Serialization/Serialization.h>
 #include <Framework/Entities/EntityAssetRecords.h>
 #include <festd/span.h>
 
@@ -6,5 +7,6 @@ namespace FE::Framework
 {
     // Copy serialized fields into an initialized value, remapping internal entity references when requested.
     bool CopyComponent(const Rtti::Type& type, const void* source, void* destination,
-                       festd::span<const EntityUuidBinding> bindings = {});
+                       festd::span<const EntityUuidBinding> bindings = {}, void* referenceUserData = nullptr,
+                       Serialization::SerializationContext::AssetReferenceCallback referenceCallback = nullptr);
 } // namespace FE::Framework

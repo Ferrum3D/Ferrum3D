@@ -7,6 +7,10 @@ namespace FE::Framework
 {
     struct EntityStorage final
     {
+        ArchetypeChunk& GetAvailableChunk(Archetype& archetype, EntityRegistry& registry);
+        void RowAllocated(ArchetypeChunk& chunk);
+        void FreeRow(ArchetypeChunk& chunk, uint32_t row);
+
         struct Slot
         {
             Entity* m_entity = nullptr;
@@ -25,6 +29,26 @@ namespace FE::Framework
         uint64_t m_changeVersion = 1;
         uint64_t m_changeEra = 1;
         Threading::SpinLock m_versionLock;
+
+    private:
+        struct ChunkKey
+        {
+            Archetype* m_archetype;
+            EntityRegistry* m_registry;
+
+            bool operator==(const ChunkKey&) const = default;
+        };
+
+
+        struct ChunkKeyHash
+        {
+            size_t operator()(const ChunkKey& key) const
+            {
+                return HashAll(key.m_archetype, key.m_registry);
+            }
+        };
+
+        festd::unordered_dense_map<ChunkKey, festd::inline_vector<ArchetypeChunk*>, ChunkKeyHash> m_availableChunks;
     };
 
 

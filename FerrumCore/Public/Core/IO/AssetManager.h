@@ -83,6 +83,9 @@ namespace FE::IO
         //! @brief Acquire a root asset and asynchronously load its transitive hard-dependency closure.
         [[nodiscard]] static AssetRequest LoadAsset(AssetID assetId);
 
+        //! @brief Acquire a root with a runtime type constraint, validated during metadata discovery.
+        [[nodiscard]] static AssetRequest LoadAsset(AssetID assetId, Rtti::TypeID expectedTypeId);
+
 #if FE_DEVELOPMENT
         //! @brief Explicitly build and publish a fresh acyclic generation while preserving the usable current generation on failure.
         //!
@@ -141,9 +144,6 @@ namespace FE::IO
 
         //! Transition a pending acquisition to canceled without canceling work shared by other acquisitions.
         static void CancelRequest(Internal::AssetAcquisition* acquisition);
-
-        //! Acquire a root while preserving the type constraint supplied by a typed link.
-        [[nodiscard]] static AssetRequest LoadAsset(AssetID assetId, Rtti::TypeID expectedTypeId);
 
         struct Impl;
         static Impl* GImpl;

@@ -18,14 +18,8 @@ namespace FE::Framework
             StageInvoke m_stageInvoke = nullptr;
             ChangeCursor* m_cursor = nullptr;
             festd::vector<uint32_t> m_dependencies;
+            festd::vector<Rc<WaitGroup>> m_externalPrerequisites;
 
-            struct Mapping
-            {
-                const Archetype* m_archetype;
-                festd::vector<uint32_t> m_columns;
-            };
-
-            festd::vector<Mapping> m_mappings;
             ExecutionPolicy m_policy = ExecutionPolicy::kSequential;
             bool m_executed = false;
             bool m_cascade = false;
@@ -44,6 +38,7 @@ namespace FE::Framework
         {
             Phase m_phase;
             festd::vector<Rc<WaitGroup>> m_prerequisites;
+            festd::vector<uint32_t> m_traversals;
         };
     } // namespace Internal
 
@@ -76,13 +71,43 @@ namespace FE::Framework
         festd::span<const ScheduleConflict> GetConflicts() const;
 
         uint64_t m_epoch = 0;
-        bool m_collecting = false;
-        bool m_updating = false;
-        bool m_executing = false;
+
+        bool IsCollecting() const
+        {
+            return m_state == State::kCollecting;
+        }
+
+
+        bool IsUpdating() const
+        {
+            return m_state != State::kIdle;
+        }
+
+
+        bool IsExecuting() const
+        {
+            return m_state == State::kExecuting;
+        }
 
     private:
-        void PrepareTraversal(Traversal& traversal, festd::vector<ArchetypeChunk*>& chunks);
-        bool InvokeEntity(Traversal& traversal, Entity& entity, const festd::vector<ArchetypeChunk*>& chunks);
+        enum class State : uint8_t
+        {
+            kIdle,
+            kUpdating,
+            kCollecting,
+            kExecuting,
+            kStructuralStage
+        };
+        State m_state = State::kIdle;
+
+        struct PreparedChunk
+        {
+            ArchetypeChunk* m_chunk;
+            festd::inline_vector<uint32_t> m_columns;
+        };
+
+        void PrepareTraversal(const Traversal& traversal, festd::vector<PreparedChunk>& chunks);
+        bool InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk, festd::span<void*> values);
         void ExecuteTraversal(uint32_t index);
 
         EntityWorld::Impl& m_world;

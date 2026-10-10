@@ -270,7 +270,7 @@ namespace FE::Framework
         [[nodiscard]] void* LookupComponent(const Entity& entity, Rtti::TypeID type, bool write) const;
 
         //! @brief Contribute a hard dependency during a component loading hook; null IDs are optional.
-        bool RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type);
+        void RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type);
 
     private:
         friend struct EntityScheduler;

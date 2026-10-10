@@ -16,14 +16,15 @@ namespace FE::Framework
 
 
     bool CopyComponent(const Rtti::Type& type, const void* source, void* destination,
-                       festd::span<const EntityUuidBinding> bindings)
+                       festd::span<const EntityUuidBinding> bindings, void* referenceUserData,
+                       Serialization::SerializationContext::AssetReferenceCallback referenceCallback)
     {
         FE_PROFILER_ZONE();
         FE_Assert(type.m_serialize && type.m_deserialize && source && destination);
 
         IO::WriteOnlyMemoryStream stream;
         Serialization::PackedBinaryFormat format;
-        Serialization::SerializationContext writer(&stream, format);
+        Serialization::SerializationContext writer(&stream, format, referenceUserData, referenceCallback);
         if (writer.Store(type, source) != Serialization::ResultCode::kSuccess)
             return false;
 

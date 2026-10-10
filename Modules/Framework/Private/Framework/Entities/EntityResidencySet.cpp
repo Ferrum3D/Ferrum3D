@@ -3,23 +3,19 @@
 
 namespace FE::Framework
 {
-    EntityAssetRequest EntityAssetServices::Acquire(const IO::AssetID id, const Rtti::TypeID)
+    EntityAssetRequest EntityAssetServices::Acquire(const IO::AssetID id, const Rtti::TypeID expectedType)
     {
-        return { IO::AssetManager::LoadAsset(id), 0 };
+        return { IO::AssetManager::LoadAsset(id, expectedType), 0 };
     }
 
 
-    LifecycleResult EntityAssetServices::Poll(const EntityAssetRequest& request, const Rtti::TypeID expectedType)
+    LifecycleResult EntityAssetServices::Poll(const EntityAssetRequest& request, const Rtti::TypeID)
     {
         const auto result = request.m_request.GetResult();
         if (result == IO::AssetLoadResult::kPending)
             return LifecycleResult::kPending;
 
         if (result != IO::AssetLoadResult::kSucceeded)
-            return LifecycleResult::kFailed;
-
-        const auto* slot = request.m_request.GetAssetSlot();
-        if (expectedType.IsValid() && (!slot || slot->m_typeId != expectedType))
             return LifecycleResult::kFailed;
 
         return LifecycleResult::kSucceeded;
@@ -39,30 +35,29 @@ namespace FE::Framework
     }
 
 
-    bool EntityResidencySet::Add(const IO::AssetID id, const Rtti::TypeID expectedType)
+    void EntityResidencySet::Add(const IO::AssetID id, const Rtti::TypeID expectedType)
     {
         if (!id.IsValid())
-            return true;
+            return;
 
         for (auto& entry : m_entries)
         {
-            if (entry.m_id == id)
+            if (entry.m_id == id && entry.m_expectedType == expectedType)
             {
                 ++entry.m_contributors;
-                return true;
+                return;
             }
         }
 
         m_entries.push_back({ id, expectedType, m_services->Acquire(id, expectedType), 1 });
-        return true;
     }
 
 
-    void EntityResidencySet::Remove(const IO::AssetID id, const Rtti::TypeID)
+    void EntityResidencySet::Remove(const IO::AssetID id, const Rtti::TypeID expectedType)
     {
         for (auto it = m_entries.begin(); it != m_entries.end(); ++it)
         {
-            if (it->m_id != id)
+            if (it->m_id != id || it->m_expectedType != expectedType)
                 continue;
 
             if (--it->m_contributors == 0)
@@ -80,7 +75,7 @@ namespace FE::Framework
     {
         for (const auto& entry : m_entries)
         {
-            if (entry.m_id == id)
+            if (entry.m_id == id && entry.m_expectedType == expectedType)
                 return m_services->Poll(entry.m_request, expectedType);
         }
 
@@ -88,8 +83,8 @@ namespace FE::Framework
     }
 
 
-    bool ComponentLoadingContext::Require(const IO::AssetID id, const Rtti::TypeID expectedType) const
+    void ComponentLoadingContext::Require(const IO::AssetID id, const Rtti::TypeID expectedType) const
     {
-        return m_world.RequireAsset(m_entity, id, expectedType);
+        m_world.RequireAsset(m_entity, id, expectedType);
     }
 } // namespace FE::Framework

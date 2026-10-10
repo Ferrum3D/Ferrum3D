@@ -1,5 +1,6 @@
 #pragma once
 #include <Framework/Entities/EntityCollection.h>
+#include <festd/string.h>
 
 namespace FE::Framework
 {
@@ -10,9 +11,8 @@ namespace FE::Framework
         EntityCollection m_collection;
         festd::vector<EntityUuidBinding> m_bindings;
         festd::vector<EntityID> m_entities;
-        festd::ascii_view m_error;
+        festd::string m_error;
         IO::AssetRequest m_request;
-        IO::AssetRequest m_collectionRequest;
         EntityRegistry* m_registry = nullptr;
         uint64_t m_registryId = 0;
         uint64_t m_eligibleEpoch = 0;

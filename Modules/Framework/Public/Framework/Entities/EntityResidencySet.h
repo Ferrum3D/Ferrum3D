@@ -29,7 +29,7 @@ namespace FE::Framework
     };
 
 
-    //! @brief Deduplicate logical acquisitions by asset ID and count their contributors.
+    //! @brief Share acquisitions by asset ID and expected type, keeping incompatible consumers independent.
     struct EntityResidencySet final
     {
         explicit EntityResidencySet(EntityAssetServices& services)
@@ -42,13 +42,13 @@ namespace FE::Framework
         EntityResidencySet& operator=(const EntityResidencySet&) = delete;
 
         //! @brief Add one contributor; the first contributor starts acquisition and null IDs are ignored.
-        bool Add(IO::AssetID id, Rtti::TypeID expectedType);
+        void Add(IO::AssetID id, Rtti::TypeID expectedType);
         //! @brief Remove one contributor; release acquisition when the last contributor disappears.
         void Remove(IO::AssetID id, Rtti::TypeID expectedType);
 
         [[nodiscard]] LifecycleResult Poll(IO::AssetID id, Rtti::TypeID expectedType) const;
 
-        //! @brief Return distinct acquired asset count, not contributor count.
+        //! @brief Return the number of distinct asset/type acquisitions, independently of contributor count.
         [[nodiscard]] uint32_t GetAcquisitionCount() const
         {
             return m_entries.size();
@@ -83,6 +83,6 @@ namespace FE::Framework
     {
         // Required requests contribute to the same residency owner as serialized hard dependencies.
         //! @brief Request a hard dependency while Load is executing; polling participates in component readiness.
-        bool Require(IO::AssetID id, Rtti::TypeID expectedType = Rtti::TypeID::kNull) const;
+        void Require(IO::AssetID id, Rtti::TypeID expectedType = Rtti::TypeID::kNull) const;
     };
 } // namespace FE::Framework

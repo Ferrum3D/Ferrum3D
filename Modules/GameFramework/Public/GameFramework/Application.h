@@ -40,9 +40,11 @@ namespace FE::GameFramework
 
         Application();
         ~Application() override;
+
         //! @brief Create the window, graphics services and initial world on the main job fiber after Env::Init.
         bool Initialize(const ApplicationSettings& settings);
         void Shutdown();
+
         //! @brief Run until the window closes, or for a bounded frame count; leaves the job system running for Shutdown.
         int32_t Run(uint32_t maxFrames = 0);
         [[nodiscard]] Framework::EntityWorld& GetWorld();
