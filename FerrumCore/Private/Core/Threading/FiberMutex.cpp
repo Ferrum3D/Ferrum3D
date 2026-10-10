@@ -1,8 +1,16 @@
 #include <Core/Base/Base.h>
+#include <Core/Jobs/JobSystem.h>
 #include <Core/Threading/FiberMutex.h>
 
 namespace FE::Threading
 {
+    struct FiberMutex::Waiter final
+    {
+        Jobs::FiberWaitEntry m_entry;
+        Waiter* m_next = nullptr;
+    };
+
+
     FiberMutex::~FiberMutex()
     {
         FE_Assert(!m_held && !m_first);
@@ -31,8 +39,6 @@ namespace FE::Threading
                 return;
             }
 
-            waiter.m_ready = WaitGroup::Create();
-
             if (m_last)
                 m_last->m_next = &waiter;
             else
@@ -42,15 +48,13 @@ namespace FE::Threading
             ++m_waiters;
         }
 
-        TracyMessageL("FiberMutex::lock");
-        waiter.m_ready->Wait();
-        TracyMessageL("FiberMutex::lock acquired");
+        Jobs::JobSystem::Get().WaitForSignal(waiter.m_entry);
     }
 
 
     void FiberMutex::unlock()
     {
-        Rc<WaitGroup> ready;
+        Waiter* ready;
         {
             std::lock_guard guard(m_lock);
             FE_Assert(m_held);
@@ -59,14 +63,15 @@ namespace FE::Threading
                 m_held = false;
                 return;
             }
-            ready = m_first->m_ready;
+
+            ready = m_first;
             m_first = m_first->m_next;
             if (!m_first)
                 m_last = nullptr;
             --m_waiters;
         }
 
-        ready->Signal();
+        Jobs::JobSystem::Get().SignalWaitingFiber(ready->m_entry);
     }
 
 

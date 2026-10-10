@@ -150,6 +150,8 @@ namespace FE::Graphics::Vulkan
         dynamicStateCI.dynamicStateCount = festd::size(dynamicStates);
         pipelineCI.pDynamicState = &dynamicStateCI;
 
+        VkPipelineVertexInputStateCreateInfo vertexInputCI = {};
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyCI = {};
         if (isMeshShadingPipeline)
         {
             pipelineCI.pVertexInputState = nullptr;
@@ -160,7 +162,6 @@ namespace FE::Graphics::Vulkan
             festd::fixed_vector<VkVertexInputBindingDescription, Limits::kMaxVertexStreams> vertexBindings;
             festd::fixed_vector<VkVertexInputAttributeDescription, Limits::kMaxStreamChannels> vertexAttributes;
 
-            VkPipelineVertexInputStateCreateInfo vertexInputCI = {};
             vertexInputCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
             Bit::Traverse(m_desc.m_inputLayout.m_activeChannelsMask, [&](const uint32_t channelIndex) {
@@ -208,7 +209,6 @@ namespace FE::Graphics::Vulkan
             vertexInputCI.vertexAttributeDescriptionCount = vertexAttributes.size();
             pipelineCI.pVertexInputState = &vertexInputCI;
 
-            VkPipelineInputAssemblyStateCreateInfo inputAssemblyCI = {};
             inputAssemblyCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
             inputAssemblyCI.topology = Translate(m_desc.m_inputLayout.m_topology);
             pipelineCI.pInputAssemblyState = &inputAssemblyCI;

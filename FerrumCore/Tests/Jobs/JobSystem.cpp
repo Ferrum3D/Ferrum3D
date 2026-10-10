@@ -1,5 +1,5 @@
-#include <Core/Jobs/Jobs.h>
 #include <Core/Env/Environment.h>
+#include <Core/Jobs/Jobs.h>
 #include <Core/Threading/ConditionVariable.h>
 #include <Core/Threading/Mutex.h>
 #include <Core/Threading/Thread.h>
@@ -220,5 +220,82 @@ namespace FE::Tests
 
         schedulerWaitGroup->Wait();
         schedulerThread.Join();
+    }
+
+
+    TEST(JobSystem, ReadyFibersPreservePriorityAndMainThreadAffinity)
+    {
+        const Rc<WaitGroup> done = WaitGroup::Create(4);
+        Rc<WaitGroup> gates[3];
+        uint32_t order[4]{};
+        uint32_t next = 0;
+        for (uint32_t index = 0; index < 3; ++index)
+        {
+            gates[index] = WaitGroup::Create();
+            const Rc<WaitGroup> entered = WaitGroup::Create();
+            Jobs::Dispatch(
+                Jobs::FiberAffinityMask::kMainThread,
+                festd::span<WaitGroup* const>{},
+                static_cast<Jobs::Priority>(index),
+                [&, entered, index] {
+                    entered->Signal();
+                    gates[index]->Wait();
+                    EXPECT_EQ(Jobs::GetAffinityMaskForCurrentThread(), Jobs::FiberAffinityMask::kMainThread);
+                    order[next++] = index;
+                },
+                done.Get());
+            entered->Wait();
+        }
+
+        for (const Rc<WaitGroup>& gate : gates)
+            gate->Signal();
+
+        Jobs::Dispatch(
+            Jobs::FiberAffinityMask::kMainThread,
+            festd::span<WaitGroup* const>{},
+            Jobs::Priority::kHigh,
+            [&] {
+                order[next++] = 3;
+            },
+            done.Get());
+        done->Wait();
+
+        EXPECT_EQ(next, 4);
+        EXPECT_EQ(order[0], 2);
+        EXPECT_EQ(order[1], 3);
+        EXPECT_EQ(order[2], 1);
+        EXPECT_EQ(order[3], 0);
+    }
+
+
+    TEST(JobSystem, CombinedWaitsHandleDuplicateAndAlreadySignaledGroups)
+    {
+        const Rc<WaitGroup> signaled = WaitGroup::Create(0);
+        for (uint32_t iteration = 0; iteration < 64; ++iteration)
+        {
+            const Rc<WaitGroup> first = WaitGroup::Create();
+            const Rc<WaitGroup> second = WaitGroup::Create();
+            const Rc<WaitGroup> done = WaitGroup::Create(2);
+            uint32_t values[2]{};
+            Jobs::DispatchForeground(
+                [&, first] {
+                    values[0] = 17;
+                    first->Signal();
+                },
+                done.Get());
+            Jobs::DispatchBackground(
+                [&, second] {
+                    values[1] = 29;
+                    second->Signal();
+                },
+                done.Get());
+
+            WaitGroup* groups[] = { first.Get(),  signaled.Get(), second.Get(), first.Get(),    signaled.Get(),
+                                    second.Get(), first.Get(),    second.Get(), signaled.Get(), first.Get() };
+            WaitGroup::WaitAll(groups);
+            EXPECT_EQ(values[0], 17);
+            EXPECT_EQ(values[1], 29);
+            done->Wait();
+        }
     }
 } // namespace FE::Tests

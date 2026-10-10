@@ -5,6 +5,11 @@
 #include <Core/Threading/Semaphore.h>
 #include <Core/Threading/Thread.h>
 
+namespace FE::Threading
+{
+    struct FiberMutex;
+}
+
 namespace FE::Jobs
 {
     namespace Internal
@@ -16,11 +21,18 @@ namespace FE::Jobs
 
     struct FiberWaitEntry final : public ConcurrentQueue::Node
     {
-        std::atomic<uint64_t> m_orderHint = 0;
+        enum class State : uint8_t
+        {
+            kWaiting,
+            kSuspended,
+            kSignaled,
+        };
+
+        uint64_t m_orderHint = 0;
         FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
         Threading::FiberHandle m_fiber;
         Priority m_priority = Priority::kNormal;
-        std::atomic<bool> m_switchCompleted = false;
+        std::atomic<State> m_state = State::kWaiting;
     };
 
 
@@ -41,42 +53,60 @@ namespace FE::Jobs
 
     private:
         friend struct WaitGroup;
+        friend struct Threading::FiberMutex;
 
-        void SwitchFromWaitingFiber(const uint32_t workerIndex, FiberWaitEntry& entry)
-        {
-            Worker& worker = m_workers[workerIndex];
-            worker.m_lastWaitEntry = &entry;
-            worker.m_prevFiber = worker.m_currentFiber;
-            worker.m_currentFiber = m_fiberPool.Rent(false);
-
-            const char* switchMessage = worker.m_name.c_str();
-            const Context::TransferParams tp =
-                m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this), switchMessage);
-            CleanUpAfterSwitch(tp);
-        }
-
+        void WaitForSignal(FiberWaitEntry& entry);
+        void SignalWaitingFiber(FiberWaitEntry& entry);
+        void SwitchFromWaitingFiber(uint32_t workerIndex, FiberWaitEntry& entry);
         void AddReadyFiber(FiberWaitEntry* entry);
-
         void AddReadyJob(JobNode* job);
-        void CleanUpAfterSwitch(const Context::TransferParams transferParams)
+        void CleanUpAfterSwitch(Context::TransferParams transferParams);
+        bool TakeWork(uint32_t workerIndex, JobNode*& job, FiberWaitEntry*& entry, bool checkEmptyQueues = false);
+
+        // All queues at a priority share its lock, including producer access.
+        template<class T>
+        struct RunQueue final
         {
-            const uint32_t workerIndex = GetWorkerIndex();
-            Worker& worker = m_workers[workerIndex];
-            m_fiberPool.Update(worker.m_prevFiber, transferParams.m_contextHandle);
+            T* m_head = nullptr;
+            T* m_tail = nullptr;
 
-            if (worker.m_lastWaitEntry)
+            void Enqueue(T* node)
             {
-                worker.m_lastWaitEntry->m_switchCompleted.store(true, std::memory_order_release);
-                worker.m_lastWaitEntry = nullptr;
-            }
-            else if (worker.m_prevFiber)
-            {
-                FE_Assert(worker.m_lastWaitEntry == nullptr, "Wait entry was not cleaned up");
-                m_fiberPool.Return(worker.m_prevFiber);
+                node->m_next = nullptr;
+                if (m_tail)
+                    m_tail->m_next = node;
+                else
+                    m_head = node;
+
+                m_tail = node;
             }
 
-            worker.m_prevFiber.Reset();
+
+            T* Dequeue()
+            {
+                T* node = m_head;
+                m_head = static_cast<T*>(node->m_next);
+                if (!m_head)
+                    m_tail = nullptr;
+
+                return node;
+            }
+        };
+
+
+        template<class T>
+        static T* TakeOldest(RunQueue<T>& local, RunQueue<T>& generic, RunQueue<T>& pool)
+        {
+            RunQueue<T>* selected = &local;
+            if (generic.m_head && (!selected->m_head || generic.m_head->m_orderHint < selected->m_head->m_orderHint))
+                selected = &generic;
+
+            if (pool.m_head && (!selected->m_head || pool.m_head->m_orderHint < selected->m_head->m_orderHint))
+                selected = &pool;
+
+            return selected->m_head ? selected->Dequeue() : nullptr;
         }
+
 
         struct alignas(Memory::kCacheLineSize) Worker final
         {
@@ -88,6 +118,7 @@ namespace FE::Jobs
             Threading::FiberHandle m_prevFiber;
             Threading::FiberHandle m_currentFiber;
             FiberWaitEntry* m_lastWaitEntry = nullptr;
+            JobNode* m_nextJob = nullptr;
 
             ThreadPoolType m_threadPoolType = ThreadPoolType::kGeneric;
             Priority m_priority = Priority::kNormal;
@@ -95,18 +126,19 @@ namespace FE::Jobs
             Threading::Semaphore m_workSemaphore;
 
             // Jobs in these queues can only be processed by this worker (due to affinity).
-            ConcurrentQueue m_jobQueues[festd::to_underlying(Priority::kCount)] = {};
-            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(Priority::kCount)] = {};
+            RunQueue<JobNode> m_jobQueues[festd::to_underlying(Priority::kCount)] = {};
+            RunQueue<FiberWaitEntry> m_readyFiberQueues[festd::to_underlying(Priority::kCount)] = {};
         };
 
         struct alignas(Memory::kCacheLineSize) GlobalQueueSet final
         {
-            Threading::SpinLock m_consumerLock;
-            ConcurrentQueue m_jobQueues[festd::to_underlying(ThreadPoolType::kCount)] = {};
-            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(ThreadPoolType::kCount)] = {};
+            Threading::SpinLock m_lock;
+            uint64_t m_orderCounter = 0;
+            std::atomic<uint32_t> m_count = 0;
+            RunQueue<JobNode> m_jobQueues[festd::to_underlying(ThreadPoolType::kCount)] = {};
+            RunQueue<FiberWaitEntry> m_readyFiberQueues[festd::to_underlying(ThreadPoolType::kCount)] = {};
         };
 
-        std::atomic<uint64_t> m_jobCounter = 0;
         GlobalQueueSet m_globalQueues[festd::to_underlying(Priority::kCount)];
 
         static constexpr uint32_t kMaxWorkerCount = 64;
@@ -119,24 +151,11 @@ namespace FE::Jobs
         Threading::Semaphore m_semaphore;
         std::atomic<bool> m_shouldExit = false;
         std::atomic<bool> m_started = false;
-        std::atomic<uint32_t> m_wakeIndexAll = 0;
-        std::atomic<uint32_t> m_wakeIndexForeground = 0;
-        std::atomic<uint32_t> m_wakeIndexBackground = 0;
+        std::atomic<uint64_t> m_sleepingWorkers = 0;
 
-        uint32_t GetWorkerIndex() const
-        {
-            const uint64_t threadID = Threading::GetCurrentThreadID();
-            for (uint32_t threadIndex = 0; threadIndex < m_workers.size(); ++threadIndex)
-            {
-                if (m_workers[threadIndex].m_threadId == threadID)
-                    return threadIndex;
-            }
+        // A noinline TLS lookup must be repeated after a fiber migrates to another thread.
+        FE_FORCE_NOINLINE uint32_t GetWorkerIndex() const;
 
-            FE_Assert(0, "Thread not found");
-            return kInvalidIndex;
-        }
-
-        uint32_t SelectWorkerIndex(ThreadPoolType poolType);
         void SignalWorkForAffinity(FiberAffinityMask affinityMask);
 
         void ThreadProc(uint32_t workerIndex);

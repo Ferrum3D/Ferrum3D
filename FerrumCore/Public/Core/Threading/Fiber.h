@@ -45,7 +45,7 @@ namespace FE::Threading
         void Return(FiberHandle fiberHandle);
 
         void Update(FiberHandle fiberHandle, Context::Handle context);
-        Context::TransferParams Switch(FiberHandle to, uintptr_t userData, const char* message);
+        Context::TransferParams Switch(FiberHandle to, uintptr_t userData);
 
     private:
         struct alignas(Memory::kCacheLineSize) FiberInfo final

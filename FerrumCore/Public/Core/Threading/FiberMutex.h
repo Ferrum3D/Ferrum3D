@@ -11,17 +11,15 @@ namespace FE::Threading
         ~FiberMutex();
         FiberMutex(const FiberMutex&) = delete;
         FiberMutex& operator=(const FiberMutex&) = delete;
+
         void lock();
         bool try_lock();
         void unlock();
         [[nodiscard]] uint32_t GetWaiterCount();
 
     private:
-        struct Waiter
-        {
-            Rc<WaitGroup> m_ready;
-            Waiter* m_next = nullptr;
-        };
+        struct Waiter;
+
         SpinLock m_lock;
         Waiter* m_first = nullptr;
         Waiter* m_last = nullptr;

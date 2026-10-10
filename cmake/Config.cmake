@@ -35,7 +35,7 @@ function(fe_configure_target TARGET)
     endif()
 
     set_target_properties(${TARGET} PROPERTIES UNITY_BUILD ON)
-    set_target_properties(${TARGET} PROPERTIES UNITY_BUILD_BATCH_SIZE 32)
+    set_target_properties(${TARGET} PROPERTIES UNITY_BUILD_BATCH_SIZE 16)
 
     get_target_property(TARGET_SOURCES ${TARGET} SOURCES)
     foreach(SOURCE IN LISTS TARGET_SOURCES)

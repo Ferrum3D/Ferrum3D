@@ -10,6 +10,7 @@ namespace FE::Threading
         inline constexpr size_t kExtendedStackSize = 512 * 1024;
         inline constexpr uint32_t kNormalFiberCount = 128;
         inline constexpr uint32_t kExtendedFiberCount = 32;
+        static_assert(Math::IsPowerOfTwo(kNormalFiberCount) && Math::IsPowerOfTwo(kExtendedFiberCount));
         inline constexpr uint32_t kTotalFiberCount = kNormalFiberCount + kExtendedFiberCount;
         inline constexpr size_t kTotalStackSize = (kExtendedFiberCount + kNormalFiberCount) * kExtendedStackSize;
 
@@ -118,20 +119,19 @@ namespace FE::Threading
     {
         const uint32_t fiberCount = extended ? kExtendedFiberCount : kNormalFiberCount;
         const uint32_t baseFiberIndex = extended ? kNormalFiberCount : 0;
-        const uint32_t indexSeed = m_indexSeed.fetch_add(1, std::memory_order_release);
-        const uint64_t indexOffset = DefaultHash(&indexSeed, sizeof(indexSeed));
+        const uint32_t indexSeed = m_indexSeed.fetch_add(1, std::memory_order_relaxed);
 
         while (true)
         {
             for (uint32_t fiberIndex = 0; fiberIndex < fiberCount; ++fiberIndex)
             {
-                const uint32_t realIndex = static_cast<uint32_t>((fiberIndex + indexOffset) % fiberCount);
+                const uint32_t realIndex = (fiberIndex + indexSeed) & (fiberCount - 1);
                 FiberInfo& info = m_fibers[realIndex + baseFiberIndex];
                 if (!info.m_isFree.load(std::memory_order_relaxed))
                     continue;
 
                 bool expected = true;
-                if (info.m_isFree.compare_exchange_weak(expected, false, std::memory_order_release))
+                if (info.m_isFree.compare_exchange_weak(expected, false, std::memory_order_acquire, std::memory_order_relaxed))
                     return FiberHandle{ realIndex + baseFiberIndex };
             }
 
@@ -155,11 +155,9 @@ namespace FE::Threading
     }
 
 
-    Context::TransferParams FiberPool::Switch(const FiberHandle to, const uintptr_t userData, const char* message)
+    Context::TransferParams FiberPool::Switch(const FiberHandle to, const uintptr_t userData)
     {
-        TracyMessageL(message);
         TracyFiberEnter(m_fibers[to.m_value].m_name.data());
-        TracyMessageL(message);
         return Context::Switch(m_fibers[to.m_value].m_context, userData);
     }
 } // namespace FE::Threading
