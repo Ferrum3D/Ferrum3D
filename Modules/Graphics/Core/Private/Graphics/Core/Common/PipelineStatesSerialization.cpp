@@ -4,33 +4,6 @@
 
 namespace FE::Graphics::Core
 {
-    namespace
-    {
-        template<class T>
-        struct NamedField final
-        {
-            festd::ascii_view m_name;
-            T& m_value;
-        };
-
-
-        template<class T>
-        NamedField<T> MakeField(const festd::ascii_view name, T& value)
-        {
-            return { name, value };
-        }
-
-
-        template<class TContext, class... TFields>
-        Serialization::ResultCode TransferObject(TContext& context, TFields... fields)
-        {
-            if (auto object = context.BeginObject())
-                (object.Field(fields.m_name, fields.m_value), ...);
-            return context.GetResultCode();
-        }
-    } // namespace
-
-
     Serialization::ResultCode RasterizationState::Serialize(Serialization::SerializationContext& context,
                                                             const RasterizationState& value)
     {
@@ -40,7 +13,14 @@ namespace FE::Graphics::Core
 
         CullingModeFlags cullMode = value.m_cullMode;
         PolygonMode polyMode = value.m_polyMode;
-        return TransferObject(context, MakeField("m_cullMode", cullMode), MakeField("m_polyMode", polyMode));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_cullMode", cullMode);
+            object.Field("m_polyMode", polyMode);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -52,8 +32,14 @@ namespace FE::Graphics::Core
 
         CullingModeFlags cullMode = value.m_cullMode;
         PolygonMode polyMode = value.m_polyMode;
-        const Serialization::ResultCode result =
-            TransferObject(context, MakeField("m_cullMode", cullMode), MakeField("m_polyMode", polyMode));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_cullMode", cullMode);
+            object.Field("m_polyMode", polyMode);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result == Serialization::ResultCode::kSuccess)
         {
             value.m_cullMode = cullMode;
@@ -74,11 +60,16 @@ namespace FE::Graphics::Core
         bool depthTest = value.m_depthTestEnabled;
         bool depthWrite = value.m_depthWriteEnabled;
         bool stencilTest = value.m_stencilTestEnabled;
-        return TransferObject(context,
-                              MakeField("m_depthCompareOp", compareOp),
-                              MakeField("m_depthTestEnabled", depthTest),
-                              MakeField("m_depthWriteEnabled", depthWrite),
-                              MakeField("m_stencilTestEnabled", stencilTest));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_depthCompareOp", compareOp);
+            object.Field("m_depthTestEnabled", depthTest);
+            object.Field("m_depthWriteEnabled", depthWrite);
+            object.Field("m_stencilTestEnabled", stencilTest);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -92,11 +83,16 @@ namespace FE::Graphics::Core
         bool depthTest = value.m_depthTestEnabled;
         bool depthWrite = value.m_depthWriteEnabled;
         bool stencilTest = value.m_stencilTestEnabled;
-        const Serialization::ResultCode result = TransferObject(context,
-                                                                MakeField("m_depthCompareOp", compareOp),
-                                                                MakeField("m_depthTestEnabled", depthTest),
-                                                                MakeField("m_depthWriteEnabled", depthWrite),
-                                                                MakeField("m_stencilTestEnabled", stencilTest));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_depthCompareOp", compareOp);
+            object.Field("m_depthTestEnabled", depthTest);
+            object.Field("m_depthWriteEnabled", depthWrite);
+            object.Field("m_stencilTestEnabled", stencilTest);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result == Serialization::ResultCode::kSuccess)
         {
             value.m_depthCompareOp = compareOp;
@@ -123,15 +119,20 @@ namespace FE::Graphics::Core
         BlendFactor destinationAlpha = value.m_destinationAlphaFactor;
         BlendOperation alphaBlendOp = value.m_alphaBlendOp;
         bool enabled = value.m_blendEnabled;
-        return TransferObject(context,
-                              MakeField("m_colorWriteFlags", colorWrite),
-                              MakeField("m_sourceFactor", source),
-                              MakeField("m_destinationFactor", destination),
-                              MakeField("m_blendOp", blendOp),
-                              MakeField("m_sourceAlphaFactor", sourceAlpha),
-                              MakeField("m_destinationAlphaFactor", destinationAlpha),
-                              MakeField("m_alphaBlendOp", alphaBlendOp),
-                              MakeField("m_blendEnabled", enabled));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_colorWriteFlags", colorWrite);
+            object.Field("m_sourceFactor", source);
+            object.Field("m_destinationFactor", destination);
+            object.Field("m_blendOp", blendOp);
+            object.Field("m_sourceAlphaFactor", sourceAlpha);
+            object.Field("m_destinationAlphaFactor", destinationAlpha);
+            object.Field("m_alphaBlendOp", alphaBlendOp);
+            object.Field("m_blendEnabled", enabled);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -149,15 +150,20 @@ namespace FE::Graphics::Core
         BlendFactor destinationAlpha = value.m_destinationAlphaFactor;
         BlendOperation alphaBlendOp = value.m_alphaBlendOp;
         bool enabled = value.m_blendEnabled;
-        const Serialization::ResultCode result = TransferObject(context,
-                                                                MakeField("m_colorWriteFlags", colorWrite),
-                                                                MakeField("m_sourceFactor", source),
-                                                                MakeField("m_destinationFactor", destination),
-                                                                MakeField("m_blendOp", blendOp),
-                                                                MakeField("m_sourceAlphaFactor", sourceAlpha),
-                                                                MakeField("m_destinationAlphaFactor", destinationAlpha),
-                                                                MakeField("m_alphaBlendOp", alphaBlendOp),
-                                                                MakeField("m_blendEnabled", enabled));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_colorWriteFlags", colorWrite);
+            object.Field("m_sourceFactor", source);
+            object.Field("m_destinationFactor", destination);
+            object.Field("m_blendOp", blendOp);
+            object.Field("m_sourceAlphaFactor", sourceAlpha);
+            object.Field("m_destinationAlphaFactor", destinationAlpha);
+            object.Field("m_alphaBlendOp", alphaBlendOp);
+            object.Field("m_blendEnabled", enabled);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result == Serialization::ResultCode::kSuccess)
         {
             value.m_colorWriteFlags = colorWrite;
@@ -180,9 +186,13 @@ namespace FE::Graphics::Core
         if (context.IsBinary())
             return context.RawBytes(value);
 
-        return TransferObject(context,
-                              MakeField("m_targetBlendStates", value.m_targetBlendStates),
-                              MakeField("m_enableIndependentBlend", value.m_enableIndependentBlend));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_targetBlendStates", value.m_targetBlendStates);
+            object.Field("m_enableIndependentBlend", value.m_enableIndependentBlend);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -191,8 +201,12 @@ namespace FE::Graphics::Core
         if (context.IsBinary())
             return context.RawBytes(value);
 
-        return TransferObject(context,
-                              MakeField("m_targetBlendStates", value.m_targetBlendStates),
-                              MakeField("m_enableIndependentBlend", value.m_enableIndependentBlend));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_targetBlendStates", value.m_targetBlendStates);
+            object.Field("m_enableIndependentBlend", value.m_enableIndependentBlend);
+        }
+
+        return context.GetResultCode();
     }
 } // namespace FE::Graphics::Core

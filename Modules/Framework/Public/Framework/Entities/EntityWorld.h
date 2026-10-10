@@ -273,6 +273,7 @@ namespace FE::Framework
         void RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type);
 
     private:
+        friend struct EntityCommandList;
         friend struct EntityScheduler;
         struct Impl;
         Impl* m_impl;

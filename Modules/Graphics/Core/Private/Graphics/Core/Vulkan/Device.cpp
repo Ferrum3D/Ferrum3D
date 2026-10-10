@@ -126,9 +126,15 @@ namespace FE::Graphics::Vulkan
             queueCI.pQueuePriorities = &queuePriority;
         }
 
+        VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR computeShaderDerivativesFeatures{};
+        computeShaderDerivativesFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR;
+        computeShaderDerivativesFeatures.pNext = nullptr;
+        computeShaderDerivativesFeatures.computeDerivativeGroupLinear = true;
+        computeShaderDerivativesFeatures.computeDerivativeGroupQuads = true;
+
         VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR barycentricFeatures{};
         barycentricFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
-        barycentricFeatures.pNext = nullptr;
+        barycentricFeatures.pNext = &computeShaderDerivativesFeatures;
         barycentricFeatures.fragmentShaderBarycentric = true;
 
         VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{};

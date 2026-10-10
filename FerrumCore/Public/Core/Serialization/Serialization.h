@@ -421,7 +421,7 @@ namespace FE::Serialization
         }
 
 
-        [[nodiscard]] Uuid RemapObjectReference(Uuid uuid) const
+        [[nodiscard]] Uuid RemapObjectReference(const Uuid uuid) const
         {
             return m_objectReferenceRemapper ? m_objectReferenceRemapper(m_objectReferenceData, uuid) : uuid;
         }

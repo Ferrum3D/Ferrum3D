@@ -33,6 +33,16 @@ function(fe_configure_target TARGET)
         target_compile_options(${TARGET} PRIVATE -fno-exceptions -Wall -Werror -mavx -ffast-math
 			-Wno-deprecated-builtins -Wno-language-extension-token)
     endif()
+
+    set_target_properties(${TARGET} PROPERTIES UNITY_BUILD ON)
+    set_target_properties(${TARGET} PROPERTIES UNITY_BUILD_BATCH_SIZE 32)
+
+    get_target_property(TARGET_SOURCES ${TARGET} SOURCES)
+    foreach(SOURCE IN LISTS TARGET_SOURCES)
+        if(SOURCE MATCHES "(^|[/\\\\])Reflection\\.gen\\.cpp$")
+            set_source_files_properties(${SOURCE} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+        endif()
+    endforeach()
 endfunction()
 
 set(CMAKE_CXX_STANDARD 17)

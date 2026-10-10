@@ -11,7 +11,7 @@ using namespace FE::Framework::Tests;
 namespace
 {
     const Uuid kSource("B9DBE80D-6AB0-486A-AB00-000000001001");
-    const Uuid kChild("B9DBE80D-6AB0-486A-AB00-000000001002");
+    const Uuid kCollectionChild("B9DBE80D-6AB0-486A-AB00-000000001002");
     const Uuid kExternal("B9DBE80D-6AB0-486A-AB00-000000001003");
     const IO::AssetID kPlacement("B9DBE80D-6AB0-486A-AB00-000000001004");
     const IO::AssetID kCollection("B9DBE80D-6AB0-486A-AB00-000000001005");
@@ -31,7 +31,7 @@ namespace
             ASSERT_TRUE(parent.AddComponent(Number{ 42 }));
             m_collection.m_entities.push_back(std::move(parent));
             EntityRecord child;
-            child.m_uuid = kChild;
+            child.m_uuid = kCollectionChild;
             child.m_parentUuid = kSource;
             ASSERT_TRUE(child.AddComponent(ReferenceComponent{ { kSource }, { kExternal, kPlacement } }));
             m_collection.m_entities.push_back(std::move(child));
@@ -264,7 +264,7 @@ TEST_F(CollectionFixture, ConflictingPlacementRootsAndInvalidHierarchyRejectWith
     auto first = m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection);
     auto conflicting = m_world.LoadPlacement(m_registry, Uuid::Random(), placement, m_collection);
     auto invalid = m_collection;
-    invalid.m_entities.front().m_parentUuid = kChild;
+    invalid.m_entities.front().m_parentUuid = kCollectionChild;
 
     auto cycle = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;

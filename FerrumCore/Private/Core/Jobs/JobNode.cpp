@@ -11,7 +11,7 @@ namespace FE::Jobs
         FE_AssertDebug(waitGroup != nullptr, "Job prerequisite cannot be null");
         FE_AssertDebug(!m_dispatchRequested.load(std::memory_order_acquire), "Prerequisites must be added before dispatching");
 
-        const uint32_t previousValue = m_dependencyCounter.fetch_add(1, std::memory_order_relaxed);
+        [[maybe_unused]] const uint32_t previousValue = m_dependencyCounter.fetch_add(1, std::memory_order_relaxed);
         FE_AssertDebug(previousValue < Constants::kMaxU32, "Too many job prerequisites");
         waitGroup->AddJobPrerequisite(this);
     }

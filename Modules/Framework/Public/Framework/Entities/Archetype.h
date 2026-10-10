@@ -18,6 +18,7 @@ namespace FE::Framework
         uint32_t m_byteSize = 0;
         //! @brief Required alignment for the backing allocation.
         uint32_t m_alignment = 16;
+
         //! @brief Compute a canonical column layout and dependency order; invalid dependencies yield an incomplete order.
         explicit Archetype(festd::span<const EntityComponentInfo* const> columns);
         //! @brief Return the column index for a reflected type, or kInvalidIndex.

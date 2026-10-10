@@ -14,9 +14,9 @@ namespace FE::Framework
         festd::string m_error;
         IO::AssetRequest m_request;
         EntityRegistry* m_registry = nullptr;
-        uint64_t m_registryId = 0;
         uint64_t m_eligibleEpoch = 0;
         EntityID m_root;
+        uint32_t m_registryId = 0;
         MaterializationState m_state = MaterializationState::kPending;
         bool m_concrete = false;
         bool m_placement = false;

@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/Memory/PoolAllocator.h>
+#include <Framework/Entities/EntityRegistryInternal.h>
 #include <Framework/Entities/EntityWorld.h>
 #include <festd/unordered_map.h>
 
@@ -22,6 +23,7 @@ namespace FE::Framework
         festd::vector<uint32_t> m_freeSlots;
         festd::unordered_dense_map<Uuid, Entity*> m_uuidLookup;
         festd::vector<EntityRegistry*> m_registries;
+        Internal::RegistryIDPool m_registryIds;
         festd::vector<Archetype*> m_archetypes;
         festd::vector<ArchetypeChunk*> m_chunks;
         uint64_t m_hierarchyRevision = 0;

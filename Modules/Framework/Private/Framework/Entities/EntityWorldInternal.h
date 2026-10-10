@@ -43,7 +43,6 @@ namespace FE::Framework
         festd::vector<WorldService*> m_services;
         ReparentHandler m_reparentHandler = nullptr;
         festd::ascii_view m_error;
-        uint64_t m_nextRegistryId = 1;
         uint16_t m_token;
         bool m_started = false;
 
@@ -67,7 +66,7 @@ namespace FE::Framework
         bool CommitImpl(bool bootstrap);
         void AdvanceMaterializations(bool bootstrap);
 
-        bool Materialize(uint32_t operation);
+        bool Materialize(uint32_t operationIndex);
         bool LoadDefinition(const EntityWorldAsset& definition, festd::vector<MaterializationToken>* operations);
         bool CaptureSnapshot(EntityWorldSnapshotAsset& snapshot);
         bool RestoreSnapshot(const EntityWorldSnapshotAsset& snapshot, festd::vector<MaterializationToken>* operations);

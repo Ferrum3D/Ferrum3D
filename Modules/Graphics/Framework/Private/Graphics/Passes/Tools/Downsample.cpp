@@ -9,13 +9,13 @@ namespace FE::Graphics::Tools
 {
     namespace
     {
-        struct Pipeline final : public Core::ComputePipelineVariantSet
+        struct DownsamplePipeline final : public Core::ComputePipelineVariantSet
         {
             FE_SHADER_SPEC_DEFINE_BOOL(AllowFloat16, "FFX_HALF");
             FE_SHADER_SPEC_DEFINE_ENUM(DownsampleFilter, "FFX_SPD_OPTION_DOWNSAMPLE_FILTER", Downsample::Filter);
             using Specializer = Core::ShaderSpecializer<AllowFloat16, DownsampleFilter>;
 
-            FE_DECLARE_PIPELINE_SET(Pipeline, Specializer);
+            FE_DECLARE_PIPELINE_SET(DownsamplePipeline, Specializer);
 
         private:
             void SetupRequest([[maybe_unused]] const uint32_t variantIndex, Core::ComputePipelineRequest& request) override
@@ -23,7 +23,7 @@ namespace FE::Graphics::Tools
                 request.m_desc.SetComputeShader("Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl");
             }
         };
-        FE_IMPLEMENT_PIPELINE_SET(Pipeline);
+        FE_IMPLEMENT_PIPELINE_SET(DownsamplePipeline);
 
 
         void SpdSetup(Vector2UInt& dispatchThreadGroupCount, Vector2UInt& workGroupOffset, uint32_t& numWorkGroups,
@@ -86,12 +86,12 @@ namespace FE::Graphics::Tools
 
         const auto globalAtomic = Core::Buffer::CreateStructured<SpdGlobalAtomicBuffer>(device, "SpdGlobalAtomic", 1);
 
-        Pipeline::Specializer specializer;
-        specializer.Set<Pipeline::AllowFloat16>(settings.m_allowFloat16);
-        specializer.Set<Pipeline::DownsampleFilter>(settings.m_filter);
+        DownsamplePipeline::Specializer specializer;
+        specializer.Set<DownsamplePipeline::AllowFloat16>(settings.m_allowFloat16);
+        specializer.Set<DownsamplePipeline::DownsampleFilter>(settings.m_filter);
 
         PassDesc* passDesc = graph.AllocatePassData<PassDesc>();
-        passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
+        passDesc->m_pipeline = DownsamplePipeline::GetPipeline(specializer);
 
         Constants& constants = passDesc->m_constants;
         constants.m_mips = numMips;

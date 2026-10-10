@@ -37,7 +37,7 @@ namespace FE::Framework::Windows
 {
     namespace
     {
-        RectInt ConvertRect(const RECT rect)
+        RectInt ConvertMonitorRect(const RECT rect)
         {
             return std::bit_cast<RectInt>(rect);
         }
@@ -680,8 +680,8 @@ namespace FE::Framework::Windows
                 return TRUE;
 
             Core::PlatformMonitorInfo info;
-            info.m_rect = ConvertRect(nativeInfo.rcMonitor);
-            info.m_workRect = ConvertRect(nativeInfo.rcWork);
+            info.m_rect = ConvertMonitorRect(nativeInfo.rcMonitor);
+            info.m_workRect = ConvertMonitorRect(nativeInfo.rcWork);
             info.m_dpiScale = GetMonitorDPI(monitor);
             info.m_nativeHandle = Core::NativeMonitorHandle{ reinterpret_cast<uint64_t>(monitor) };
 

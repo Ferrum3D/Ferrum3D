@@ -13,72 +13,68 @@
 
 namespace FE
 {
-    namespace
-    {
-        template<class T>
-        struct NamedField final
-        {
-            festd::ascii_view m_name;
-            T& m_value;
-        };
-
-
-        template<class T>
-        NamedField<T> MakeField(const festd::ascii_view name, T& value)
-        {
-            return { name, value };
-        }
-
-
-        template<class TContext, class... TFields>
-        Serialization::ResultCode TransferObject(TContext& context, TFields... fields)
-        {
-            if (auto object = context.BeginObject())
-            {
-                (object.Field(fields.m_name, fields.m_value), ...);
-            }
-            else
-            {
-                return context.GetResultCode();
-            }
-
-            return context.GetResultCode();
-        }
-
-    } // namespace
-
-
     template<class T>
     Serialization::ResultCode Vector2Base<T>::Serialize(Serialization::SerializationContext& context, const Vector2Base<T>& value)
     {
-        return TransferObject(context, MakeField("x", value.x), MakeField("y", value.y));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", value.x);
+            object.Field("y", value.y);
+        }
+
+        return context.GetResultCode();
     }
 
 
     template<class T>
     Serialization::ResultCode Vector2Base<T>::Deserialize(Serialization::DeserializationContext& context, Vector2Base<T>& value)
     {
-        return TransferObject(context, MakeField("x", value.x), MakeField("y", value.y));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", value.x);
+            object.Field("y", value.y);
+        }
+
+        return context.GetResultCode();
     }
 
 
     template<class T>
     Serialization::ResultCode RectBase<T>::Serialize(Serialization::SerializationContext& context, const RectBase<T>& value)
     {
-        return TransferObject(context, MakeField("min", value.min), MakeField("max", value.max));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("min", value.min);
+            object.Field("max", value.max);
+        }
+
+        return context.GetResultCode();
     }
 
 
     template<class T>
     Serialization::ResultCode RectBase<T>::Deserialize(Serialization::DeserializationContext& context, RectBase<T>& value)
     {
-        return TransferObject(context, MakeField("min", value.min), MakeField("max", value.max));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("min", value.min);
+            object.Field("max", value.max);
+        }
+
+        return context.GetResultCode();
     }
 
 
     Serialization::ResultCode Vector3::Serialize(Serialization::SerializationContext& context, const Vector3& value)
     {
-        return TransferObject(context, MakeField("x", value.x), MakeField("y", value.y), MakeField("z", value.z));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", value.x);
+            object.Field("y", value.y);
+            object.Field("z", value.z);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -87,17 +83,32 @@ namespace FE
         float newX = value.x;
         float newY = value.y;
         float newZ = value.z;
-        const Serialization::ResultCode result =
-            TransferObject(context, MakeField("x", newX), MakeField("y", newY), MakeField("z", newZ));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", newX);
+            object.Field("y", newY);
+            object.Field("z", newZ);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result == Serialization::ResultCode::kSuccess)
             value.m_simdVector = _mm_setr_ps(newX, newY, newZ, 0.0f);
+
         return result;
     }
 
 
     Serialization::ResultCode Vector3Int::Serialize(Serialization::SerializationContext& context, const Vector3Int& value)
     {
-        return TransferObject(context, MakeField("x", value.x), MakeField("y", value.y), MakeField("z", value.z));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", value.x);
+            object.Field("y", value.y);
+            object.Field("z", value.z);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -106,17 +117,32 @@ namespace FE
         int32_t newX = value.x;
         int32_t newY = value.y;
         int32_t newZ = value.z;
-        const Serialization::ResultCode result =
-            TransferObject(context, MakeField("x", newX), MakeField("y", newY), MakeField("z", newZ));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", newX);
+            object.Field("y", newY);
+            object.Field("z", newZ);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result == Serialization::ResultCode::kSuccess)
             value.m_simdVector = _mm_setr_epi32(newX, newY, newZ, 0);
+
         return result;
     }
 
 
     Serialization::ResultCode Vector3UInt::Serialize(Serialization::SerializationContext& context, const Vector3UInt& value)
     {
-        return TransferObject(context, MakeField("x", value.x), MakeField("y", value.y), MakeField("z", value.z));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", value.x);
+            object.Field("y", value.y);
+            object.Field("z", value.z);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -125,8 +151,15 @@ namespace FE
         uint32_t newX = value.x;
         uint32_t newY = value.y;
         uint32_t newZ = value.z;
-        const Serialization::ResultCode result =
-            TransferObject(context, MakeField("x", newX), MakeField("y", newY), MakeField("z", newZ));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("x", newX);
+            object.Field("y", newY);
+            object.Field("z", newZ);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result == Serialization::ResultCode::kSuccess)
         {
             value.m_simdVector =
@@ -139,12 +172,26 @@ namespace FE
 #define FE_DEFINE_VECTOR3_SERIALIZATION(type)                                                                                    \
     Serialization::ResultCode type::Serialize(Serialization::SerializationContext& context, const type& value)                   \
     {                                                                                                                            \
-        return TransferObject(context, MakeField("x", value.x), MakeField("y", value.y), MakeField("z", value.z));               \
+        if (auto object = context.BeginObject())                                                                                 \
+        {                                                                                                                        \
+            object.Field("x", value.x);                                                                                          \
+            object.Field("y", value.y);                                                                                          \
+            object.Field("z", value.z);                                                                                          \
+        }                                                                                                                        \
+                                                                                                                                 \
+        return context.GetResultCode();                                                                                          \
     }                                                                                                                            \
                                                                                                                                  \
     Serialization::ResultCode type::Deserialize(Serialization::DeserializationContext& context, type& value)                     \
     {                                                                                                                            \
-        return TransferObject(context, MakeField("x", value.x), MakeField("y", value.y), MakeField("z", value.z));               \
+        if (auto object = context.BeginObject())                                                                                 \
+        {                                                                                                                        \
+            object.Field("x", value.x);                                                                                          \
+            object.Field("y", value.y);                                                                                          \
+            object.Field("z", value.z);                                                                                          \
+        }                                                                                                                        \
+                                                                                                                                 \
+        return context.GetResultCode();                                                                                          \
     }
 
     FE_DEFINE_VECTOR3_SERIALIZATION(PackedVector3F)
@@ -157,20 +204,28 @@ namespace FE
 #define FE_DEFINE_VECTOR4_SERIALIZATION(type, field0, field1, field2, field3)                                                    \
     Serialization::ResultCode type::Serialize(Serialization::SerializationContext& context, const type& value)                   \
     {                                                                                                                            \
-        return TransferObject(context,                                                                                           \
-                              MakeField(#field0, value.field0),                                                                  \
-                              MakeField(#field1, value.field1),                                                                  \
-                              MakeField(#field2, value.field2),                                                                  \
-                              MakeField(#field3, value.field3));                                                                 \
+        if (auto object = context.BeginObject())                                                                                 \
+        {                                                                                                                        \
+            object.Field(#field0, value.field0);                                                                                 \
+            object.Field(#field1, value.field1);                                                                                 \
+            object.Field(#field2, value.field2);                                                                                 \
+            object.Field(#field3, value.field3);                                                                                 \
+        }                                                                                                                        \
+                                                                                                                                 \
+        return context.GetResultCode();                                                                                          \
     }                                                                                                                            \
                                                                                                                                  \
     Serialization::ResultCode type::Deserialize(Serialization::DeserializationContext& context, type& value)                     \
     {                                                                                                                            \
-        return TransferObject(context,                                                                                           \
-                              MakeField(#field0, value.field0),                                                                  \
-                              MakeField(#field1, value.field1),                                                                  \
-                              MakeField(#field2, value.field2),                                                                  \
-                              MakeField(#field3, value.field3));                                                                 \
+        if (auto object = context.BeginObject())                                                                                 \
+        {                                                                                                                        \
+            object.Field(#field0, value.field0);                                                                                 \
+            object.Field(#field1, value.field1);                                                                                 \
+            object.Field(#field2, value.field2);                                                                                 \
+            object.Field(#field3, value.field3);                                                                                 \
+        }                                                                                                                        \
+                                                                                                                                 \
+        return context.GetResultCode();                                                                                          \
     }
 
     FE_DEFINE_VECTOR4_SERIALIZATION(Vector4, x, y, z, w)
@@ -183,37 +238,67 @@ namespace FE
 
     Serialization::ResultCode Matrix4x4::Serialize(Serialization::SerializationContext& context, const Matrix4x4& value)
     {
-        return TransferObject(context, MakeField("m_rows", value.m_rows));
+        if (auto object = context.BeginObject())
+            object.Field("m_rows", value.m_rows);
+
+        return context.GetResultCode();
     }
 
 
     Serialization::ResultCode Matrix4x4::Deserialize(Serialization::DeserializationContext& context, Matrix4x4& value)
     {
-        return TransferObject(context, MakeField("m_rows", value.m_rows));
+        if (auto object = context.BeginObject())
+            object.Field("m_rows", value.m_rows);
+
+        return context.GetResultCode();
     }
 
 
     Serialization::ResultCode Aabb::Serialize(Serialization::SerializationContext& context, const Aabb& value)
     {
-        return TransferObject(context, MakeField("min", value.min), MakeField("max", value.max));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("min", value.min);
+            object.Field("max", value.max);
+        }
+
+        return context.GetResultCode();
     }
 
 
     Serialization::ResultCode Aabb::Deserialize(Serialization::DeserializationContext& context, Aabb& value)
     {
-        return TransferObject(context, MakeField("min", value.min), MakeField("max", value.max));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("min", value.min);
+            object.Field("max", value.max);
+        }
+
+        return context.GetResultCode();
     }
 
 
     Serialization::ResultCode PackedAabb::Serialize(Serialization::SerializationContext& context, const PackedAabb& value)
     {
-        return TransferObject(context, MakeField("min", value.min), MakeField("max", value.max));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("min", value.min);
+            object.Field("max", value.max);
+        }
+
+        return context.GetResultCode();
     }
 
 
     Serialization::ResultCode PackedAabb::Deserialize(Serialization::DeserializationContext& context, PackedAabb& value)
     {
-        return TransferObject(context, MakeField("min", value.min), MakeField("max", value.max));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("min", value.min);
+            object.Field("max", value.max);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -221,7 +306,14 @@ namespace FE
     {
         const Vector3 center = value.Center();
         const float radius = value.Radius();
-        return TransferObject(context, MakeField("center", center), MakeField("radius", radius));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("center", center);
+            object.Field("radius", radius);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -229,10 +321,17 @@ namespace FE
     {
         Vector3 center = value.Center();
         float radius = value.Radius();
-        const Serialization::ResultCode result =
-            TransferObject(context, MakeField("center", center), MakeField("radius", radius));
+
+        if (auto object = context.BeginObject())
+        {
+            object.Field("center", center);
+            object.Field("radius", radius);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result == Serialization::ResultCode::kSuccess)
             value.m_centerRadius = Vector4{ center, radius };
+
         return result;
     }
 

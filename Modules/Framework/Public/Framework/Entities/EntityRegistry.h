@@ -12,8 +12,8 @@ namespace FE::Framework
             return *m_world;
         }
 
-        //! @brief Return the world-local incarnation used to reject commands for removed registries.
-        [[nodiscard]] uint64_t GetID() const
+        //! @brief Return the reserved world-local runtime ID used to reject commands for removed registries.
+        [[nodiscard]] uint32_t GetID() const
         {
             return m_id;
         }
@@ -33,12 +33,12 @@ namespace FE::Framework
     private:
         friend EntityWorld;
         EntityWorld* m_world;
-        const uint64_t m_id;
+        const uint32_t m_id;
+        bool m_unloading = false;
         const Uuid m_key;
         EntityResidencySet m_residency;
-        bool m_unloading = false;
 
-        EntityRegistry(EntityWorld& world, EntityAssetServices& services, uint64_t id, Uuid key)
+        EntityRegistry(EntityWorld& world, EntityAssetServices& services, uint32_t id, Uuid key)
             : m_world(&world)
             , m_id(id)
             , m_key(key)

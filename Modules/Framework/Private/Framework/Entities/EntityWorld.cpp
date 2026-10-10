@@ -98,7 +98,7 @@ namespace FE::Framework
 
         FE_Assert(!m_owner.FindRegistry(key), "Registry key is already owned");
         void* storage = Memory::DefaultAllocate(sizeof(EntityRegistry), alignof(EntityRegistry));
-        auto* registry = ::new (storage) EntityRegistry(m_owner, *m_assets, m_nextRegistryId++, key);
+        auto* registry = ::new (storage) EntityRegistry(m_owner, *m_assets, m_storage.m_registryIds.Allocate(), key);
         m_storage.m_registries.push_back(registry);
         return *registry;
     }
@@ -135,7 +135,7 @@ namespace FE::Framework
                 bool references = false;
                 for (const auto& command : (*it)->m_commands)
                 {
-                    if (command.m_registry == &registry)
+                    if (command.GetRegistry() == &registry)
                         references = true;
                 }
 
@@ -152,7 +152,9 @@ namespace FE::Framework
         }
 
         m_storage.m_registries.erase(registryIt);
+        const uint32_t registryID = registry.GetID();
         Memory::DefaultDelete(&registry);
+        m_storage.m_registryIds.Release(registryID);
     }
 
 
@@ -500,10 +502,12 @@ namespace FE::Framework
     }
 
 
-    void EntityWorld::RequireAsset(Entity& entity, IO::AssetID id, Rtti::TypeID type)
+    void EntityWorld::RequireAsset(Entity& entity, const IO::AssetID id, const Rtti::TypeID type)
     {
         m_impl->RequireAsset(entity, id, type);
     }
+
+
     void EntityWorld::AddSystem(WorldSystem& system)
     {
         m_impl->m_schedule.AddSystem(system);
@@ -561,7 +565,7 @@ namespace FE::Framework
     }
 
 
-    void* EntityWorld::AllocateTraversal(size_t size, size_t alignment)
+    void* EntityWorld::AllocateTraversal(const size_t size, const size_t alignment)
     {
         return m_impl->m_schedule.AllocateTraversal(size, alignment);
     }
@@ -585,7 +589,7 @@ namespace FE::Framework
     }
 
 
-    bool EntityWorld::SchedulePhase(Phase phase, festd::span<const Rc<WaitGroup>> prerequisites)
+    bool EntityWorld::SchedulePhase(const Phase phase, const festd::span<const Rc<WaitGroup>> prerequisites)
     {
         return m_impl->m_schedule.SchedulePhase(phase, prerequisites);
     }
@@ -615,7 +619,7 @@ namespace FE::Framework
     }
 
 
-    EntityRegistry& EntityWorld::CreateRegistry(Uuid key)
+    EntityRegistry& EntityWorld::CreateRegistry(const Uuid key)
     {
         return m_impl->CreateRegistry(key);
     }
@@ -634,7 +638,7 @@ namespace FE::Framework
     }
 
 
-    void* EntityWorld::LookupComponent(const Entity& entity, Rtti::TypeID type, bool write) const
+    void* EntityWorld::LookupComponent(const Entity& entity, const Rtti::TypeID type, const bool write) const
     {
         return m_impl->LookupComponent(entity, type, write);
     }
@@ -652,19 +656,19 @@ namespace FE::Framework
     }
 
 
-    MaterializationToken EntityWorld::SpawnCollection(EntityRegistry& registry, IO::AssetID collection)
+    MaterializationToken EntityWorld::SpawnCollection(EntityRegistry& registry, const IO::AssetID collection)
     {
         return m_impl->SpawnCollection(registry, collection);
     }
 
 
-    MaterializationToken EntityWorld::LoadPlacement(EntityRegistry& registry, IO::AssetID placement)
+    MaterializationToken EntityWorld::LoadPlacement(EntityRegistry& registry, const IO::AssetID placement)
     {
         return m_impl->LoadPlacement(registry, placement);
     }
 
 
-    MaterializationToken EntityWorld::LoadPlacement(EntityRegistry& registry, IO::AssetID placement,
+    MaterializationToken EntityWorld::LoadPlacement(EntityRegistry& registry, const IO::AssetID placement,
                                                     const EntityCollectionInstanceAsset& definition,
                                                     const EntityCollection& collection)
     {
@@ -672,7 +676,7 @@ namespace FE::Framework
     }
 
 
-    void EntityWorld::CancelMaterialization(MaterializationToken token)
+    void EntityWorld::CancelMaterialization(const MaterializationToken token)
     {
         m_impl->CancelMaterialization(token);
     }
@@ -739,6 +743,7 @@ namespace FE::Framework
             operation.m_state = MaterializationState::kFailed;
             operation.m_error = "Invalid entity asset";
         }
+
         operation.m_hasDefinition = true;
 
         const MaterializationToken token{ m_token, (m_materializations.size()) };
@@ -802,6 +807,7 @@ namespace FE::Framework
         operation.m_placement = true;
         m_placements[placement] = token.m_index;
         operation.m_asset = placement;
+
         if (definition.Validate())
         {
             operation.m_definition = definition;
@@ -811,6 +817,7 @@ namespace FE::Framework
             operation.m_state = MaterializationState::kFailed;
             operation.m_error = "Invalid entity asset";
         }
+
         if (operation.m_state > MaterializationState::kReady)
             m_placements.erase(placement);
 
@@ -822,6 +829,7 @@ namespace FE::Framework
     {
         FE_Assert(Threading::IsMainThread());
         FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
+
         if (token.m_world != m_token || token.m_index >= m_materializations.size())
             return;
 
@@ -836,6 +844,7 @@ namespace FE::Framework
             if (placement != m_placements.end() && placement->second == token.m_index)
                 m_placements.erase(placement);
         }
+
         operation.m_request.Reset();
         for (const auto id : operation.m_entities)
         {
@@ -850,11 +859,11 @@ namespace FE::Framework
     }
 
 
-    bool EntityWorld::Impl::Materialize(uint32_t index)
+    bool EntityWorld::Impl::Materialize(const uint32_t operationIndex)
     {
         FE_PROFILER_ZONE();
 
-        auto& operation = *m_materializations[index];
+        auto& operation = *m_materializations[operationIndex];
         const auto& collection = operation.m_collection;
 
         // Validate the complete authored definition before allocating any runtime membership.
@@ -895,6 +904,7 @@ namespace FE::Framework
         festd::vector<const EntityRecord*> records;
         EntityRecord emptyRoot;
         emptyRoot.m_uuid = rootUuid;
+
         if (!operation.m_concrete)
             records.push_back(operation.m_placement ? &operation.m_definition.m_root.m_entities.front() : &emptyRoot);
 
@@ -944,6 +954,7 @@ namespace FE::Framework
                 if (binding.m_sourceUuid == uuid)
                     return binding.m_entityUuid;
             }
+
             return uuid;
         };
 
@@ -989,7 +1000,7 @@ namespace FE::Framework
                                    destination,
                                    operation.m_bindings,
                                    &dependencies,
-                                   [](void* user, Uuid asset, Rtti::TypeID type, uint32_t kind) {
+                                   [](void* user, Uuid asset, Rtti::TypeID type, const uint32_t kind) {
                                        if (kind == festd::to_underlying(IO::DependencyKind::kHard))
                                            static_cast<festd::inline_vector<Dependency>*>(user)->emplace_back(asset, type);
                                    }))
@@ -1181,7 +1192,7 @@ namespace FE::Framework
         // Preserve token status history, while polling only pending work and live memberships.
         m_activeMaterializations.erase(std::remove_if(m_activeMaterializations.begin(),
                                                       m_activeMaterializations.end(),
-                                                      [&](uint32_t index) {
+                                                      [&](const uint32_t index) {
                                                           const auto& operation = *m_materializations[index];
                                                           return operation.m_state > MaterializationState::kReady
                                                               || (operation.m_state == MaterializationState::kReady
@@ -1195,6 +1206,7 @@ namespace FE::Framework
     {
         if (!entity.m_resources)
             entity.m_resources = Memory::DefaultNew<EntityResources>(*m_assets);
+
         return *entity.m_resources;
     }
 
@@ -1246,12 +1258,14 @@ namespace FE::Framework
     {
         ComponentContext context{ entity, m_owner };
         ComponentLoadingContext loading{ context };
+
         if ((stage & ComponentStage::kActive) != ComponentStage::kNone && info.m_deactivate)
             info.m_deactivate(data, context);
         if ((stage & ComponentStage::kInitialized) != ComponentStage::kNone && info.m_shutdown)
             info.m_shutdown(data, context);
         if ((stage & ComponentStage::kLoading) != ComponentStage::kNone && info.m_unload)
             info.m_unload(data, loading);
+
         ReleaseAssets(entity, info.m_type->m_id, transition);
         stage = ComponentStage::kNone;
     }
@@ -1263,6 +1277,7 @@ namespace FE::Framework
             return;
 
         auto& replacements = entity.m_resources->m_replacements;
+
         bool valuesChanged = false;
         for (auto it = replacements.begin(); it != replacements.end();)
         {
@@ -1298,38 +1313,35 @@ namespace FE::Framework
     }
 
 
-    namespace
+    // Compute the following node before invoking cleanup, so callbacks may destroy the visited entity.
+    template<class Callable>
+    static void VisitSubtreePostOrder(Entity& root, Callable&& callable)
     {
-        // Compute the following node before invoking cleanup, so callbacks may destroy the visited entity.
-        template<class Callable>
-        void VisitSubtreePostOrder(Entity& root, Callable&& callable)
+        Entity* entity = &root;
+        while (entity->GetFirstChild())
+            entity = entity->GetFirstChild();
+
+        while (entity)
         {
-            Entity* entity = &root;
-            while (entity->GetFirstChild())
-                entity = entity->GetFirstChild();
-
-            while (entity)
+            Entity* next = nullptr;
+            if (entity != &root)
             {
-                Entity* next = nullptr;
-                if (entity != &root)
+                next = entity->GetNextSibling();
+                if (next)
                 {
-                    next = entity->GetNextSibling();
-                    if (next)
-                    {
-                        while (next->GetFirstChild())
-                            next = next->GetFirstChild();
-                    }
-                    else
-                    {
-                        next = entity->GetParent();
-                    }
+                    while (next->GetFirstChild())
+                        next = next->GetFirstChild();
                 }
-
-                callable(*entity);
-                entity = next;
+                else
+                {
+                    next = entity->GetParent();
+                }
             }
+
+            callable(*entity);
+            entity = next;
         }
-    } // namespace
+    }
 
 
     void EntityWorld::Impl::DeactivateSubtree(Entity& entity, const bool keepAuthoredValues)
@@ -1409,17 +1421,17 @@ namespace FE::Framework
                     Entity* m_entity;
                 } discovery{ &m_owner, &entity };
 
-                const auto result =
-                    Serialization::VisitAssetReferences(*info.m_type,
-                                                        data,
-                                                        &discovery,
-                                                        [](void* user, Uuid asset, Rtti::TypeID type, uint32_t kind) {
-                                                            if (kind != festd::to_underlying(IO::DependencyKind::kHard))
-                                                                return;
+                const auto result = Serialization::VisitAssetReferences(
+                    *info.m_type,
+                    data,
+                    &discovery,
+                    [](void* user, const Uuid asset, const Rtti::TypeID type, const uint32_t kind) {
+                        if (kind != festd::to_underlying(IO::DependencyKind::kHard))
+                            return;
 
-                                                            auto& d = *static_cast<Discovery*>(user);
-                                                            d.m_world->RequireAsset(*d.m_entity, asset, type);
-                                                        });
+                        auto& d = *static_cast<Discovery*>(user);
+                        d.m_world->RequireAsset(*d.m_entity, asset, type);
+                    });
 
                 if (result != Serialization::ResultCode::kSuccess)
                     return LifecycleResult::kFailed;
@@ -1470,7 +1482,7 @@ namespace FE::Framework
 
         auto& chunk = *entity.m_chunk;
         bool ownLoaded = true;
-        auto failComponent = [&](uint32_t column) {
+        auto failComponent = [&](const uint32_t column) {
             if (entity.m_active)
             {
                 TeardownComponent(entity, column, false);
@@ -1698,6 +1710,7 @@ namespace FE::Framework
             current->m_prepared = false;
             root = current;
         }
+
         if (festd::find(m_lifecycleWork.m_roots, root->m_id) == m_lifecycleWork.m_roots.end())
             m_lifecycleWork.m_roots.push_back(root->m_id);
     }
@@ -1722,6 +1735,7 @@ namespace FE::Framework
     {
         entity.m_active = true;
         MarkChanged(entity);
+
         for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
         {
             if (child->m_prepared && child->m_wantsActive && !child->m_failed)
@@ -1753,9 +1767,10 @@ namespace FE::Framework
             if (Entity* entity = m_owner.Find(id))
                 AdvanceReplacements(*entity);
         }
+
         m_lifecycleWork.m_replacements.erase(std::remove_if(m_lifecycleWork.m_replacements.begin(),
                                                             m_lifecycleWork.m_replacements.end(),
-                                                            [&](EntityID id) {
+                                                            [&](const EntityID id) {
                                                                 const Entity* entity = m_owner.Find(id);
                                                                 return !entity || !entity->m_resources
                                                                     || entity->m_resources->m_replacements.empty();
@@ -1792,7 +1807,7 @@ namespace FE::Framework
 
         m_lifecycleWork.m_roots.erase(std::remove_if(m_lifecycleWork.m_roots.begin(),
                                                      m_lifecycleWork.m_roots.end(),
-                                                     [&](EntityID id) {
+                                                     [&](const EntityID id) {
                                                          const Entity* entity = m_owner.Find(id);
                                                          return !entity || entity->m_parent || !entity->m_wantsActive
                                                              || entity->m_failed || (entity->m_active && entity->m_prepared);
@@ -1801,7 +1816,7 @@ namespace FE::Framework
     }
 
 
-    EntityRegistry* EntityWorld::FindRegistry(Uuid key) const
+    EntityRegistry* EntityWorld::FindRegistry(const Uuid key) const
     {
         for (EntityRegistry* registry : m_impl->m_storage.m_registries)
         {
@@ -1832,6 +1847,7 @@ namespace FE::Framework
         FE_PROFILER_ZONE();
         FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
         FE_Assert(m_storage.m_registries.empty(), "Definitions require an empty world");
+
         if (!definition.Validate())
             return false;
 
@@ -1865,6 +1881,7 @@ namespace FE::Framework
         FE_PROFILER_ZONE();
         FE_Assert(Threading::IsMainThread());
         FE_Assert(!m_schedule.IsUpdating(), "Snapshot capture requires a closed update epoch");
+
         std::lock_guard lock{ m_pendingCommands.m_lock };
         if (!m_pendingCommands.m_lists.empty())
             return Fail("Snapshot blocked by pending entity commands");
@@ -1880,6 +1897,7 @@ namespace FE::Framework
         {
             EntityWorldRegistrySnapshot group;
             group.m_key = registry->GetKey();
+
             festd::vector<const Entity*> pending;
             for (const auto& slot : m_storage.m_slots)
             {
@@ -1970,15 +1988,18 @@ namespace FE::Framework
                                             festd::vector<MaterializationToken>* operations)
     {
         FE_PROFILER_ZONE();
+
         FE_Assert(Threading::IsMainThread());
         FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
         FE_Assert(m_storage.m_registries.empty(), "Snapshots require an empty world");
+
         if (!snapshot.Validate())
             return false;
 
         for (const auto& group : snapshot.m_registries)
         {
             EntityRegistry& registry = CreateRegistry(group.m_key);
+
             const auto token = m_owner.LoadEntities(registry, group.m_entities);
             if (operations)
                 operations->push_back(token);

@@ -31,7 +31,7 @@ namespace FE::AssetBuilder
         }
 
 
-        Uuid MakeUuid(const uint64_t low, const uint64_t high)
+        Uuid MakeBuildKeyUuid(const uint64_t low, const uint64_t high)
         {
             alignas(16) uint64_t words[2] = { low, high };
             Uuid result = Uuid::LoadAligned(words);
@@ -101,7 +101,7 @@ namespace FE::AssetBuilder
                 highHasher.Update(dependencyArtifact);
             }
 
-            return MakeUuid(lowHasher.Finalize(), highHasher.Finalize());
+            return MakeBuildKeyUuid(lowHasher.Finalize(), highHasher.Finalize());
         }
 
 

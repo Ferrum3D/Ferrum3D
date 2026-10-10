@@ -17,7 +17,7 @@ namespace FE::Framework
 
     bool CopyComponent(const Rtti::Type& type, const void* source, void* destination,
                        festd::span<const EntityUuidBinding> bindings, void* referenceUserData,
-                       Serialization::SerializationContext::AssetReferenceCallback referenceCallback)
+                       const Serialization::SerializationContext::AssetReferenceCallback referenceCallback)
     {
         FE_PROFILER_ZONE();
         FE_Assert(type.m_serialize && type.m_deserialize && source && destination);
@@ -30,9 +30,10 @@ namespace FE::Framework
 
         festd::pmr::vector<std::byte> bytes;
         stream.DumpAll(bytes);
+
         IO::ReadOnlyMemoryStream input(bytes);
         Serialization::DeserializationContext reader(&input, format);
-        reader.SetObjectReferenceRemapper(&bindings, [](void* user, Uuid uuid) {
+        reader.SetObjectReferenceRemapper(&bindings, [](void* user, const Uuid uuid) {
             for (const EntityUuidBinding& binding : *static_cast<const festd::span<const EntityUuidBinding>*>(user))
             {
                 if (binding.m_sourceUuid == uuid)

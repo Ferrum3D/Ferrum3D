@@ -50,6 +50,9 @@ add_library(FeGraphicsCore STATIC
 
 fe_configure_target(FeGraphicsCore)
 
+# VMA's implementation define must precede the first include of its configuration header.
+set_source_files_properties(Private/Graphics/Core/Vulkan/VmaImpl.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 target_include_directories(FeGraphicsCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Public")
 target_include_directories(FeGraphicsCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 

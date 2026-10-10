@@ -7,6 +7,7 @@
 #include <Core/Jobs/Jobs.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Serialization/JsonSerialization.h>
+#include <Core/Threading/FiberMutex.h>
 #include <Core/Threading/Mutex.h>
 #include <Core/Threading/Thread.h>
 #include <festd/unordered_map.h>
@@ -123,7 +124,7 @@ namespace FE::IO
 
     struct AssetManager::Impl final
     {
-        FE_PROFILER_LOCK(Threading::Mutex, m_mutex);
+        Threading::FiberMutex m_mutex;
         festd::unordered_dense_map<AssetID, AssetSlot*> m_slots;
         festd::unordered_dense_map<AssetID, Operation*> m_operations;
         festd::unordered_dense_map<Rtti::TypeID, Streamer*> m_streamers;

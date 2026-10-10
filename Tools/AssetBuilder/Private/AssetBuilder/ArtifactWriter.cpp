@@ -22,7 +22,7 @@ namespace FE::AssetBuilder
         }
 
 
-        Uuid MakeUuid(const uint64_t low, const uint64_t high)
+        Uuid MakeArtifactUuid(const uint64_t low, const uint64_t high)
         {
             alignas(16) uint64_t words[2] = { low, high };
             Uuid result = Uuid::LoadAligned(words);
@@ -188,7 +188,7 @@ namespace FE::AssetBuilder
 
         m_dataFile->FlushWrites();
         m_dataFile.Reset();
-        m_record.m_artifactId = MakeUuid(m_lowHasher.Finalize(), m_highHasher.Finalize());
+        m_record.m_artifactId = MakeArtifactUuid(m_lowHasher.Finalize(), m_highHasher.Finalize());
         m_dataPath = GetDataPath(m_outputRoot, m_record.m_artifactId);
 
         const IO::ResultCode createResult = IO::Directory::Create(IO::PathView(m_dataPath).parent_directory());

@@ -13,7 +13,7 @@ namespace FE::Framework
 
             for (const Entity* current = world.Find(target); current; current = current->GetParent())
             {
-                if (current->GetID() == command.m_target.m_id)
+                if (current->GetID() == command.GetTarget().m_id)
                     return true;
             }
 
@@ -23,37 +23,37 @@ namespace FE::Framework
 
         const EntityRegistry* GetCommandRegistry(const EntityWorld& world, const Command& command)
         {
-            if (command.m_registry)
-                return command.m_registry;
+            if (EntityRegistry* registry = command.GetRegistry())
+                return registry;
 
-            const Entity* entity = world.Find(command.m_target.m_id);
+            const Entity* entity = world.Find(command.GetTarget().m_id);
             return entity ? &entity->GetRegistry() : nullptr;
         }
 
 
         bool CommandsConflict(const EntityWorld& world, const Command& first, const Command& second)
         {
-            if (first.m_target.m_id.m_value && first.m_target.m_id == second.m_target.m_id)
+            if (first.GetTarget().m_id.m_value && first.GetTarget().m_id == second.GetTarget().m_id)
                 return true;
 
-            if (DestructionContains(world, first, second.m_target.m_id)
-                || DestructionContains(world, second, first.m_target.m_id))
+            if (DestructionContains(world, first, second.GetTarget().m_id)
+                || DestructionContains(world, second, first.GetTarget().m_id))
             {
                 return true;
             }
 
-            if (DestructionContains(world, first, second.m_parent.m_id)
-                || DestructionContains(world, second, first.m_parent.m_id))
+            if (DestructionContains(world, first, second.GetParent().m_id)
+                || DestructionContains(world, second, first.GetParent().m_id))
             {
                 return true;
             }
 
             if (first.m_kind == CommandKind::kParent && second.m_kind == CommandKind::kParent)
             {
-                if (first.m_parent.m_id.m_value && first.m_parent.m_id == second.m_target.m_id)
+                if (first.GetParent().m_id.m_value && first.GetParent().m_id == second.GetTarget().m_id)
                     return true;
 
-                if (second.m_parent.m_id.m_value && second.m_parent.m_id == first.m_target.m_id)
+                if (second.GetParent().m_id.m_value && second.GetParent().m_id == first.GetTarget().m_id)
                     return true;
             }
 
@@ -114,31 +114,30 @@ namespace FE::Framework
         festd::inline_vector<EntityID> destroyedTargets;
         for (const auto& command : list.m_commands)
         {
-            if (command.m_kind == CommandKind::kComponent && command.m_target.m_id.m_value)
-                deferredTargets.push_back(command.m_target.m_id);
-            if (command.m_kind == CommandKind::kDestroy && command.m_target.m_id.m_value)
-                destroyedTargets.push_back(command.m_target.m_id);
+            if (command.m_kind == CommandKind::kComponent && command.GetTarget().m_id.m_value)
+                deferredTargets.push_back(command.GetTarget().m_id);
+            if (command.m_kind == CommandKind::kDestroy && command.GetTarget().m_id.m_value)
+                destroyedTargets.push_back(command.GetTarget().m_id);
         }
 
         // Independent existing targets can commit without waiting for creations.
-        auto* immediate = Memory::DefaultNew<EntityCommandList::Impl>(m_owner);
-        immediate->m_id = list.m_id;
+        auto* immediate = Memory::DefaultNew<EntityCommandList::Impl>(m_owner, list.m_id);
         immediate->m_eligibleEpoch = m_schedule.m_epoch;
 
-        festd::vector<Command> deferred;
+        festd::inline_vector<Command> deferred;
         for (const auto& command : list.m_commands)
         {
-            const bool destroyed = festd::find(destroyedTargets, command.m_target.m_id) != destroyedTargets.end();
+            const bool destroyed = festd::find(destroyedTargets, command.GetTarget().m_id) != destroyedTargets.end();
 
             const bool needsPublication =
-                !destroyed && festd::find(deferredTargets, command.m_target.m_id) != deferredTargets.end();
+                !destroyed && festd::find(deferredTargets, command.GetTarget().m_id) != deferredTargets.end();
 
-            const bool tokenCommand = command.m_target.m_token.m_list || command.m_parent.m_token.m_list;
-            const bool isImmediate = command.m_target.m_id.m_value && !tokenCommand && !needsPublication;
+            const bool tokenCommand = command.GetTarget().m_token.m_list || command.GetParent().m_token.m_list;
+            const bool isImmediate = command.GetTarget().m_id.m_value && !tokenCommand && !needsPublication;
 
             if (destroyed && command.m_kind == CommandKind::kComponent)
             {
-                command.m_component->m_type->m_destructor(command.m_payload);
+                command.m_payload.m_component.m_info->m_type->m_destructor(command.m_payload.m_component.m_value);
                 continue;
             }
 
@@ -148,6 +147,7 @@ namespace FE::Framework
                 deferred.push_back(command);
         }
 
+        // Registry ID reservations follow their records; splitting transfers ownership without retaining again.
         list.m_commands = std::move(deferred);
         list.m_eligibleEpoch = m_schedule.m_epoch + 1;
         if (immediate->m_commands.empty())
@@ -283,12 +283,12 @@ namespace FE::Framework
                 });
             for (const auto& command : list.m_commands)
             {
-                Entity* target = m_world.m_owner.Find(command.m_target.m_id);
+                Entity* target = m_world.m_owner.Find(command.GetTarget().m_id);
                 include(target);
                 if (topology)
                 {
                     includeAncestors(target);
-                    includeAncestors(m_world.m_owner.Find(command.m_parent.m_id));
+                    includeAncestors(m_world.m_owner.Find(command.GetParent().m_id));
                     if (command.m_kind == CommandKind::kDestroy || (destroys && command.m_kind == CommandKind::kParent))
                         includeSubtree(target);
                 }
@@ -369,34 +369,35 @@ namespace FE::Framework
             {
                 if (command.m_kind == CommandKind::kCreate)
                 {
-                    if (festd::find(m_world.m_storage.m_registries, command.m_registry) == m_world.m_storage.m_registries.end())
+                    const auto& creation = command.m_payload.m_create;
+                    if (festd::find(m_world.m_storage.m_registries, creation.m_registry) == m_world.m_storage.m_registries.end())
                     {
                         valid = m_world.Fail("Invalid registry");
                         break;
                     }
 
-                    if (command.m_registry->GetID() != command.m_registryId)
+                    if (creation.m_registry->GetID() != creation.m_registryId)
                     {
                         valid = m_world.Fail("Invalid registry");
                         break;
                     }
 
-                    if (m_world.m_owner.Find(command.m_uuid, false))
+                    if (m_world.m_owner.Find(creation.m_uuid, false))
                         valid = m_world.Fail("Duplicate entity UUID");
 
                     for (const auto& edit : m_edits)
                     {
-                        if (edit.m_created && edit.m_uuid == command.m_uuid)
+                        if (edit.m_created && edit.m_uuid == creation.m_uuid)
                             valid = m_world.Fail("Duplicate entity UUID");
                     }
 
                     Edit edit;
-                    edit.m_registry = command.m_registry;
-                    edit.m_uuid = command.m_uuid;
-                    edit.m_name = command.m_name;
-                    edit.m_residency = command.m_residency;
+                    edit.m_registry = creation.m_registry;
+                    edit.m_uuid = creation.m_uuid;
+                    edit.m_name = creation.m_name;
+                    edit.m_residency = creation.m_residency;
                     edit.m_created = edit.m_touched = true;
-                    m_tokens[command.m_target.m_token.m_index] = m_edits.size();
+                    m_tokens[command.GetTarget().m_token.m_index] = m_edits.size();
 
                     m_edits.push_back(std::move(edit));
                     continue;
@@ -404,17 +405,18 @@ namespace FE::Framework
 
                 if (command.m_kind == CommandKind::kUnloadRegistry)
                 {
-                    if (festd::find(m_world.m_storage.m_registries, command.m_registry) == m_world.m_storage.m_registries.end())
+                    const auto& unload = command.m_payload.m_registry;
+                    if (festd::find(m_world.m_storage.m_registries, unload.m_registry) == m_world.m_storage.m_registries.end())
                         valid = m_world.Fail("Invalid registry");
-                    else if (command.m_registry->GetID() != command.m_registryId)
+                    else if (unload.m_registry->GetID() != unload.m_id)
                         valid = m_world.Fail("Invalid registry");
                     else
-                        m_unloadRegistries.push_back(command.m_registry);
+                        m_unloadRegistries.push_back(unload.m_registry);
 
                     continue;
                 }
 
-                const uint32_t index = resolve(command.m_target);
+                const uint32_t index = resolve(command.GetTarget());
                 if (index == kInvalidIndex)
                 {
                     valid = m_world.Fail("Stale entity ID or invalid list-local token");
@@ -458,11 +460,11 @@ namespace FE::Framework
                     }
 
                 case CommandKind::kRename:
-                    edit.m_name = command.m_name;
+                    edit.m_name = command.m_payload.m_name;
                     break;
 
                 case CommandKind::kActive:
-                    edit.m_wantsActive = command.m_active;
+                    edit.m_wantsActive = command.m_payload.m_active;
                     break;
 
                 case CommandKind::kUnload:
@@ -472,8 +474,8 @@ namespace FE::Framework
 
                 case CommandKind::kParent:
                     {
-                        const bool nullParent = !command.m_parent.m_id.m_value && !command.m_parent.m_token.m_list;
-                        const uint32_t parent = nullParent ? kInvalidIndex : resolve(command.m_parent);
+                        const bool nullParent = !command.GetParent().m_id.m_value && !command.GetParent().m_token.m_list;
+                        const uint32_t parent = nullParent ? kInvalidIndex : resolve(command.GetParent());
 
                         if (!nullParent && parent == kInvalidIndex)
                         {
@@ -486,12 +488,12 @@ namespace FE::Framework
                         else
                         {
                             if (edit.m_parent != parent && m_world.m_reparentHandler
-                                && command.m_reparentMode == ReparentMode::kPreserveWorld)
+                                && command.m_payload.m_parent.m_mode == ReparentMode::kPreserveWorld)
                             {
                                 ReparentContext context{ index,
                                                          parent,
                                                          m_edits.size(),
-                                                         command.m_reparentMode,
+                                                         command.m_payload.m_parent.m_mode,
                                                          &editContext,
                                                          [](void* data, uint32_t target) {
                                                              return (*static_cast<EditContext*>(data)->m_edits)[target].m_parent;
@@ -514,9 +516,12 @@ namespace FE::Framework
                 case CommandKind::kRemove:
                     {
                         edit.PrepareValues();
+                        const auto type = command.m_kind == CommandKind::kComponent
+                            ? command.m_payload.m_component.m_info->m_type->m_id
+                            : command.m_payload.m_remove;
 
                         const auto found = festd::find_if(edit.m_values.begin(), edit.m_values.end(), [&](const Value& value) {
-                            return value.m_info->m_type->m_id == command.m_type;
+                            return value.m_info->m_type->m_id == type;
                         });
                         if (found != edit.m_values.end())
                         {
@@ -547,9 +552,10 @@ namespace FE::Framework
 
                         if (command.m_kind == CommandKind::kComponent)
                         {
-                            edit.m_values.push_back({ command.m_component, command.m_payload });
+                            edit.m_values.push_back(
+                                { command.m_payload.m_component.m_info, command.m_payload.m_component.m_value });
                             // Add companions with their authored component, preserving later explicit removals in command order.
-                            for (const auto companion : command.m_component->m_runtimeCompanions)
+                            for (const auto companion : command.m_payload.m_component.m_info->m_runtimeCompanions)
                             {
                                 const auto runtime =
                                     festd::find_if(edit.m_values.begin(), edit.m_values.end(), [companion](const Value& value) {

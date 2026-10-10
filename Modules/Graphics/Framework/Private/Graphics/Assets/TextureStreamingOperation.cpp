@@ -5,7 +5,7 @@ namespace FE::Graphics
 {
     namespace
     {
-        constexpr uint32_t kCommandPageSize = 4096;
+        constexpr uint32_t kTextureStreamingCommandPageSize = 4096;
     }
 
 
@@ -18,7 +18,7 @@ namespace FE::Graphics
         , m_artifact(artifact)
         , m_device(device)
         , m_resourcePool(resourcePool)
-        , m_commandAllocator("TextureStreamingOperationCommands", kCommandPageSize)
+        , m_commandAllocator("TextureStreamingOperationCommands", kTextureStreamingCommandPageSize)
     {
         FE_Assert(device && resourcePool);
     }
@@ -58,7 +58,7 @@ namespace FE::Graphics
                                                            .m_queue = Core::DeviceQueueType::kTransfer };
         m_resourcePool->CommitTextureMemory(m_texture.Get(), commitParams);
 
-        Core::AsyncCopyCommandListBuilder builder(&m_commandAllocator, kCommandPageSize);
+        Core::AsyncCopyCommandListBuilder builder(&m_commandAllocator, kTextureStreamingCommandPageSize);
         for (uint32_t assetMip = 0; assetMip < tailMipCount && assetMip <= m_targetIndex; ++assetMip)
         {
             const uint32_t gpuMip = m_targetIndex - assetMip;

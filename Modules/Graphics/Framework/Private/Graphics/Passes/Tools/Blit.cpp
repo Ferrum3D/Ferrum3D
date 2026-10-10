@@ -11,13 +11,13 @@ namespace FE::Graphics::Tools
 {
     namespace
     {
-        struct Pipeline final : public Core::GraphicsPipelineVariantSet
+        struct BlitPipeline final : public Core::GraphicsPipelineVariantSet
         {
             FE_SHADER_SPEC(ColorTargetFormat, Core::Format::kR8G8B8A8_UNORM, Core::Format::kB8G8R8A8_UNORM,
                            Core::Format::kB10G11R11_UFLOAT);
             using Specializer = Core::ShaderSpecializer<ColorTargetFormat>;
 
-            FE_DECLARE_PIPELINE_SET(Pipeline, Specializer);
+            FE_DECLARE_PIPELINE_SET(BlitPipeline, Specializer);
 
         private:
             void SetupRequest(const uint32_t variantIndex, Core::GraphicsPipelineRequest& request) override
@@ -30,7 +30,7 @@ namespace FE::Graphics::Tools
                     .SetRTVFormat(specializer.Get<ColorTargetFormat>());
             }
         };
-        FE_IMPLEMENT_PIPELINE_SET(Pipeline);
+        FE_IMPLEMENT_PIPELINE_SET(BlitPipeline);
     } // namespace
 
 
@@ -38,12 +38,12 @@ namespace FE::Graphics::Tools
     {
         const Core::Format colorTargetFormat = dst.GetBaseDesc().m_imageFormat;
 
-        Pipeline::Specializer specializer;
-        specializer.Set<Pipeline::ColorTargetFormat>(colorTargetFormat);
+        BlitPipeline::Specializer specializer;
+        specializer.Set<BlitPipeline::ColorTargetFormat>(colorTargetFormat);
 
         auto* passDesc = graph.AllocatePassData<PassDesc>();
         passDesc->m_colorTarget = dst;
-        passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
+        passDesc->m_pipeline = BlitPipeline::GetPipeline(specializer);
         passDesc->m_constants.m_input = graph.GetSRV(src);
         passDesc->m_constants.m_sampler = graph.GetSampler(Core::SamplerState::kLinearWrap);
         passDesc->m_constants.m_uvScale = settings.m_destinationRect.Size();

@@ -1,3 +1,4 @@
+#include <Core/Base/Base.h>
 #include <Core/Threading/FiberMutex.h>
 
 namespace FE::Threading
@@ -13,6 +14,7 @@ namespace FE::Threading
         std::lock_guard guard(m_lock);
         if (m_held)
             return false;
+
         m_held = true;
         return true;
     }
@@ -28,15 +30,21 @@ namespace FE::Threading
                 m_held = true;
                 return;
             }
+
             waiter.m_ready = WaitGroup::Create();
+
             if (m_last)
                 m_last->m_next = &waiter;
             else
                 m_first = &waiter;
+
             m_last = &waiter;
             ++m_waiters;
         }
+
+        TracyMessageL("FiberMutex::lock");
         waiter.m_ready->Wait();
+        TracyMessageL("FiberMutex::lock acquired");
     }
 
 
@@ -57,6 +65,7 @@ namespace FE::Threading
                 m_last = nullptr;
             --m_waiters;
         }
+
         ready->Signal();
     }
 

@@ -27,7 +27,6 @@ namespace FE::Framework
         IO::Link<EntityCollection> m_collection;
         //! @brief Concrete UUID mapping for each collection source.
         festd::vector<EntityUuidBinding> m_bindings;
-        // Generic authored root components; GameFramework supplies placement transforms here.
         //! @brief Authored placement root components or runtime membership root ID.
         EntityCollection m_root;
 

@@ -5,7 +5,7 @@ namespace FE::Graphics
 {
     namespace
     {
-        constexpr uint32_t kCommandPageSize = 4096;
+        constexpr uint32_t kMeshStreamingCommandPageSize = 4096;
     }
 
 
@@ -18,7 +18,7 @@ namespace FE::Graphics
         , m_artifact(artifact)
         , m_device(device)
         , m_resourcePool(resourcePool)
-        , m_commandAllocator("MeshStreamingOperationCommands", kCommandPageSize)
+        , m_commandAllocator("MeshStreamingOperationCommands", kMeshStreamingCommandPageSize)
     {
         FE_Assert(device && resourcePool);
     }
@@ -54,7 +54,7 @@ namespace FE::Graphics
                                                            .m_queue = Core::DeviceQueueType::kTransfer };
         m_resourcePool->CommitBufferMemory(m_buffer.Get(), commitParams);
 
-        Core::AsyncCopyCommandListBuilder builder(&m_commandAllocator, kCommandPageSize);
+        Core::AsyncCopyCommandListBuilder builder(&m_commandAllocator, kMeshStreamingCommandPageSize);
         uint32_t destinationOffset = 0;
         for (const PayloadRead& read : m_reads)
         {

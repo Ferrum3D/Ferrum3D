@@ -102,10 +102,13 @@ namespace FE::Memory
 
         inline void* AllocateFromPage(Page* page) const;
 
-        void FreePages(const bool ignoreLeaks = false)
+        void FreePages([[maybe_unused]] const bool ignoreLeaks = false)
         {
             FE_AssertDebug(m_allocationCount == 0 || ignoreLeaks, "Leak detected");
+
+#if FE_DEBUG
             m_allocationCount = 0;
+#endif
 
             Page* pPage = m_pageList;
             while (pPage)

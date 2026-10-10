@@ -123,13 +123,8 @@ namespace FE::Framework
     {
         //! @brief Stable identity key.
         uint64_t m_id;
-        //! @brief Display name; not an identity key.
-        //festd::ascii_view m_name;
 
-        bool operator==(const Phase& other) const
-        {
-            return m_id == other.m_id;
-        }
+        bool operator==(const Phase&) const = default;
     };
 
 //! @brief Declare an inline phase key from its identifier, with a static diagnostic name.
@@ -138,6 +133,7 @@ namespace FE::Framework
     {                                                                                                                            \
         ::FE::CompileTimeHash(#name, sizeof(#name) - 1)                                                                          \
     }
+
     namespace Phases
     {
         FE_DECLARE_ENTITY_PHASE(PreUpdate);
@@ -147,11 +143,11 @@ namespace FE::Framework
 
 
     //! @brief Read-only query term for the immediate active parent; required terms skip roots.
-    // Parent terms read the active immediate parent; cascade queries additionally enforce topological order.
+    //!
+    //! Parent terms read the active immediate parent; cascade queries additionally enforce topological order.
     template<class T>
     struct Parent
     {
-        //! @brief Component term resolved on the immediate active parent.
         using Type = T;
     };
 
@@ -160,7 +156,6 @@ namespace FE::Framework
     template<class T>
     struct Without
     {
-        //! @brief Component type whose presence excludes an entity.
         using Type = T;
     };
 } // namespace FE::Framework

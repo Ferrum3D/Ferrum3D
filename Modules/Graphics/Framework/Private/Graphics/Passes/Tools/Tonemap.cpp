@@ -11,12 +11,12 @@ namespace FE::Graphics::Tools::Tonemap
 {
     namespace
     {
-        struct Pipeline final : public Core::GraphicsPipelineVariantSet
+        struct TonemapPipeline final : public Core::GraphicsPipelineVariantSet
         {
             FE_SHADER_SPEC(ColorTargetFormat, Core::Format::kR8G8B8A8_UNORM, Core::Format::kB8G8R8A8_UNORM);
             using Specializer = Core::ShaderSpecializer<ColorTargetFormat>;
 
-            FE_DECLARE_PIPELINE_SET(Pipeline, Specializer);
+            FE_DECLARE_PIPELINE_SET(TonemapPipeline, Specializer);
 
         private:
             void SetupRequest(const uint32_t variantIndex, Core::GraphicsPipelineRequest& request) override
@@ -29,7 +29,7 @@ namespace FE::Graphics::Tools::Tonemap
                     .SetRTVFormat(specializer.Get<ColorTargetFormat>());
             }
         };
-        FE_IMPLEMENT_PIPELINE_SET(Pipeline);
+        FE_IMPLEMENT_PIPELINE_SET(TonemapPipeline);
     } // namespace
 
 
@@ -37,12 +37,12 @@ namespace FE::Graphics::Tools::Tonemap
     {
         const Core::Format colorTargetFormat = dst.GetBaseDesc().m_imageFormat;
 
-        Pipeline::Specializer specializer;
-        specializer.Set<Pipeline::ColorTargetFormat>(colorTargetFormat);
+        TonemapPipeline::Specializer specializer;
+        specializer.Set<TonemapPipeline::ColorTargetFormat>(colorTargetFormat);
 
         auto* passDesc = graph.AllocatePassData<Blit::PassDesc>();
         passDesc->m_colorTarget = dst;
-        passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
+        passDesc->m_pipeline = TonemapPipeline::GetPipeline(specializer);
         passDesc->m_constants.m_input = graph.GetSRV(src);
         passDesc->m_constants.m_sampler = graph.GetSampler(Core::SamplerState::kLinearClamp);
         passDesc->m_constants.m_uvScale = Vector2(1.0f, 1.0f);

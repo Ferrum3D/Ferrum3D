@@ -4,34 +4,6 @@
 
 namespace FE::Graphics::Core
 {
-    namespace
-    {
-        template<class T>
-        struct NamedField final
-        {
-            festd::ascii_view m_name;
-            T& m_value;
-        };
-
-
-        template<class T>
-        NamedField<T> MakeField(const festd::ascii_view name, T& value)
-        {
-            return { name, value };
-        }
-
-
-        template<class TContext, class... TFields>
-        Serialization::ResultCode TransferObject(TContext& context, TFields... fields)
-        {
-            if (auto object = context.BeginObject())
-                (object.Field(fields.m_name, fields.m_value), ...);
-
-            return context.GetResultCode();
-        }
-    } // namespace
-
-
     Serialization::ResultCode TextureDesc::Serialize(Serialization::SerializationContext& context, const TextureDesc& value)
     {
         const uint32_t width = value.m_width;
@@ -42,15 +14,19 @@ namespace FE::Graphics::Core
         const uint32_t mipSliceCount = value.m_mipSliceCount;
         const TextureDimension dimension = value.m_dimension;
 
-        return TransferObject(context,
-                              MakeField("m_width", width),
-                              MakeField("m_height", height),
-                              MakeField("m_sampleCount", sampleCount),
-                              MakeField("m_depth", depth),
-                              MakeField("m_arraySize", arraySize),
-                              MakeField("m_mipSliceCount", mipSliceCount),
-                              MakeField("m_dimension", dimension),
-                              MakeField("m_imageFormat", value.m_imageFormat));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_width", width);
+            object.Field("m_height", height);
+            object.Field("m_sampleCount", sampleCount);
+            object.Field("m_depth", depth);
+            object.Field("m_arraySize", arraySize);
+            object.Field("m_mipSliceCount", mipSliceCount);
+            object.Field("m_dimension", dimension);
+            object.Field("m_imageFormat", value.m_imageFormat);
+        }
+
+        return context.GetResultCode();
     }
 
 
@@ -65,15 +41,19 @@ namespace FE::Graphics::Core
         TextureDimension dimension = value.m_dimension;
         Format imageFormat = value.m_imageFormat;
 
-        const Serialization::ResultCode result = TransferObject(context,
-                                                                MakeField("m_width", width),
-                                                                MakeField("m_height", height),
-                                                                MakeField("m_sampleCount", sampleCount),
-                                                                MakeField("m_depth", depth),
-                                                                MakeField("m_arraySize", arraySize),
-                                                                MakeField("m_mipSliceCount", mipSliceCount),
-                                                                MakeField("m_dimension", dimension),
-                                                                MakeField("m_imageFormat", imageFormat));
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_width", width);
+            object.Field("m_height", height);
+            object.Field("m_sampleCount", sampleCount);
+            object.Field("m_depth", depth);
+            object.Field("m_arraySize", arraySize);
+            object.Field("m_mipSliceCount", mipSliceCount);
+            object.Field("m_dimension", dimension);
+            object.Field("m_imageFormat", imageFormat);
+        }
+
+        const Serialization::ResultCode result = context.GetResultCode();
         if (result != Serialization::ResultCode::kSuccess)
             return result;
 

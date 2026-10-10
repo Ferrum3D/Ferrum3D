@@ -7,8 +7,6 @@ namespace FE::Framework
     struct EntityResources;
 
 
-    // Stable until destruction; component addresses are borrowed only until the next structural commit.
-    // Metadata is read-only during traversal. All structural edits go through EntityCommandList.
     //! @brief Stable runtime metadata; component addresses remain valid only until structural commit.
     struct Entity final
     {
