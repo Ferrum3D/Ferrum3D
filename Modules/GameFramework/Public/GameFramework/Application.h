@@ -33,22 +33,18 @@ namespace FE::GameFramework
     };
 
 
-    //! @brief Shared engine startup, world execution and graphics teardown. Own one application at a time.
+    //! @brief Shared engine application; own one at a time and shut down before stopping the job system.
     struct Application : Framework::Application
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae10af");
+        FE_RTTI("2F63D347-123D-4124-A0CB-2AACEE290DC3");
 
-        //! @brief Retain reflection for Core, Framework, Graphics and GameFramework at link time.
         Application();
-        //! @brief Destroy after Shutdown has released fiber-dependent services.
         ~Application() override;
         //! @brief Create the window, graphics services and initial world on the main job fiber after Env::Init.
         bool Initialize(const ApplicationSettings& settings);
+        void Shutdown();
         //! @brief Run until the window closes, or for a bounded frame count; leaves the job system running for Shutdown.
         int32_t Run(uint32_t maxFrames = 0);
-        //! @brief Remove entity membership and release graphics/assets while the job system is still running.
-        void Shutdown();
-        //! @brief Borrow the initialized world for explicit system registration and entity commands.
         [[nodiscard]] Framework::EntityWorld& GetWorld();
 
     protected:

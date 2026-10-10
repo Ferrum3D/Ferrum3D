@@ -21,16 +21,13 @@ namespace FE::Framework
         EntityID m_id;
         //! @brief List-local target identity when no runtime ID is present.
         EntityToken m_token;
-        //! @brief Create an empty target; it is used to detach a parent link.
         EntityTarget() = default;
 
-        //! @brief Target an existing generation-checked entity.
         EntityTarget(EntityID id)
             : m_id(id)
         {
         }
 
-        //! @brief Target an entity created earlier by the same command list.
         EntityTarget(EntityToken token)
             : m_token(token)
         {
@@ -44,13 +41,9 @@ namespace FE::Framework
     //! @brief Single-recorder transactional batch; independent conflicting batches are rejected.
     struct EntityCommandList final
     {
-        //! @brief Create a single-recorder batch for one world; Submit consumes it.
         explicit EntityCommandList(EntityWorld& world);
-        //! @brief Destroy unsubmitted values and release the batch arena.
         ~EntityCommandList();
-        //! @brief Transfer unsubmitted command ownership; the source becomes empty.
         EntityCommandList(EntityCommandList&&) noexcept;
-        //! @brief Release this unsubmitted batch and transfer the source batch ownership.
         EntityCommandList& operator=(EntityCommandList&&) noexcept;
         EntityCommandList(const EntityCommandList&) = delete;
         EntityCommandList& operator=(const EntityCommandList&) = delete;
@@ -59,23 +52,18 @@ namespace FE::Framework
                                  ResidencyScope residency = ResidencyScope::kEntity);
         //! @brief Destroy the target and descendants; later operations on the destroyed target are discarded.
         void Destroy(EntityTarget target);
-        //! @brief Record the final name for the target in this batch.
         void Rename(EntityTarget target, Env::Name name);
         //! @brief Record final hierarchy and local/world preservation; an empty parent detaches the target.
         void SetParent(EntityTarget target, EntityTarget parent = {}, ReparentMode mode = ReparentMode::kPreserveWorld);
-        //! @brief Request activation or deactivation of the target subtree.
         void SetActive(EntityTarget target, bool active);
         //! @brief Keep identity and authored values while releasing runtime state and residency, descendants first.
         void Unload(EntityTarget target);
         //! @brief Remove the residency group and cancel its pending creations.
         void UnloadRegistry(EntityRegistry& registry);
-        //! @brief Remove the component type, if present, at commit.
         void RemoveComponent(EntityTarget target, Rtti::TypeID type);
-        //! @brief Remove the component type, if present, at commit.
         template<class T>
         void RemoveComponent(EntityTarget target)
         {
-            //! @brief Remove the component type, if present, at commit.
             RemoveComponent(target, Rtti::GetTypeID<T>());
         }
 
@@ -94,7 +82,6 @@ namespace FE::Framework
             return true;
         }
 
-        //! @brief Own an authored value until commit; adding an existing type requests an atomic replacement.
         template<class T>
         bool AddComponent(EntityTarget target)
         {

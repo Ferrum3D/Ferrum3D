@@ -7,15 +7,11 @@ namespace FE::GameFramework
     //! @brief Own the world's graphics scene and mesh integration until all entity membership is removed.
     struct WorldGraphicsSceneService : Framework::WorldService
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae10a5");
+        FE_RTTI("09F03B91-8406-485F-A7D1-A2063CA48020");
 
-        //! @brief Create the world scene and its mesh module after renderer and asset streamer initialization.
         void Init(Framework::EntityWorld& world) override;
-        //! @brief Remove the scene from the renderer after entities and their Views have been destroyed.
         void Shutdown(Framework::EntityWorld& world) override;
-        //! @brief Borrow the initialized world scene.
         [[nodiscard]] Graphics::Scene& GetScene() const;
-        //! @brief Borrow the initialized mesh integration bridge.
         [[nodiscard]] MeshSceneBridge& GetMeshes() const;
         //! @brief Create a disabled camera View with the world's depth and opaque passes.
         [[nodiscard]] Graphics::View* CreateCameraView();

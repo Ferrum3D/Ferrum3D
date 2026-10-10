@@ -19,7 +19,6 @@ namespace FE::Framework
     //! @brief World-external asynchronous residency service; implementations outlive every consumer.
     struct EntityAssetServices
     {
-        //! @brief Provide world-external acquisition services; the default implementation uses AssetManager.
         virtual ~EntityAssetServices() = default;
         //! @brief Acquire one logical residency reference; the returned request may still be pending.
         virtual EntityAssetRequest Acquire(IO::AssetID id, Rtti::TypeID expectedType);
@@ -33,13 +32,11 @@ namespace FE::Framework
     //! @brief Deduplicate logical acquisitions by asset ID and count their contributors.
     struct EntityResidencySet final
     {
-        //! @brief Create a deduplicated residency owner; services must outlive the set.
         explicit EntityResidencySet(EntityAssetServices& services)
             : m_services(&services)
         {
         }
 
-        //! @brief Release all outstanding logical acquisitions.
         ~EntityResidencySet();
         EntityResidencySet(const EntityResidencySet&) = delete;
         EntityResidencySet& operator=(const EntityResidencySet&) = delete;
@@ -49,7 +46,6 @@ namespace FE::Framework
         //! @brief Remove one contributor; release acquisition when the last contributor disappears.
         void Remove(IO::AssetID id, Rtti::TypeID expectedType);
 
-        //! @brief Check discovery/loading and expected type without waiting; failures are content errors.
         [[nodiscard]] LifecycleResult Poll(IO::AssetID id, Rtti::TypeID expectedType) const;
 
         //! @brief Return distinct acquired asset count, not contributor count.

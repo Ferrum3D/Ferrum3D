@@ -9,7 +9,7 @@ Scope: this file applies to the whole repository.
 - `Modules/Framework/` contains the generic entity runtime, command processing, lifecycle, queries, scheduling, and world/collection/snapshot assets. Keep engine-independent runtime tests in `Modules/Framework/Tests` (`FeFrameworkTests` and `FeFrameworkAssetTests`).
 - `Modules/GameFramework/` contains engine-specific components and systems, including transforms, graphics extraction and world streaming services. `GameFramework::Application` owns shared engine startup, execution and teardown. Keep these systems out of Framework; their tests live in `Modules/GameFramework/Tests` (`FeGameFrameworkTests` and the standalone `FeGameFrameworkReflectionLinkTests`).
 - `Modules/Graphics/Core/` is the low-level graphics module. Backend-independent public interfaces live in `Public/Graphics/Core`, shared private implementation lives in `Private/Graphics/Core/Common`, and Vulkan-specific implementation lives in `Private/Graphics/Core/Vulkan`.
-- `Samples/` contains sample applications such as `FrameGraph`, `Renderer`, and `GameSample`. `GameSample` loads a cooked two-entity Helmet world and exercises GameFramework camera/mesh extraction. Its asset build target reuses Renderer's cooked model/material dependencies.
+- `Samples/` contains sample applications such as `FrameGraph`, `Renderer`, and `GameSample`. `GameSample` loads a cooked two-entity Helmet world and exercises GameFramework camera/mesh extraction. Its Assets directory contains its own source depot, authored definitions, and cooked artifacts. Build them manually with FerrumCli.
 - `Tools/` contains standalone tools such as `AssetBuilder` and `TextureCompressor`.
 - `ThirdParty/` contains vendored dependencies. Avoid style-only churn or broad edits there unless the task is explicitly about that dependency.
 - `cmake/` contains project CMake helpers. `cmake-build/` contains generated build trees and should not be edited as source.
@@ -18,6 +18,10 @@ Scope: this file applies to the whole repository.
 When adding C++ files, add them to the nearest `CMakeLists.txt` source list, usually `PUBLIC_HEADERS`, `COMMON_SOURCES`, backend-specific source groups such as `VULKAN_SOURCES`, or platform-specific groups such as `WINDOWS_SOURCES`.
 
 After adding or removing files, run `configure.bat` from the repository root to regenerate the project files.
+
+Build assets manually with FerrumCli and the existing AssetBuilder pipeline. Do not add asset-building commands or targets to CMake. Entity collections, placements, worlds and snapshots use the normal source-less serialized asset path.
+
+Use random uppercase UUID strings for new reflected types; `python scripts/generate_uuid.py [count]` generates them.
 
 When changing classes that use `FE_RTTI`, run `scripts/codegen.py` to regenerate the RTTI output. The generator also emits module linker anchors in `Reflection.gen.cpp` and public `Reflection.gen.h` headers; call those at application/tool entry points instead of discarding `Rtti::GetType<T>()` results to force linkage.
 

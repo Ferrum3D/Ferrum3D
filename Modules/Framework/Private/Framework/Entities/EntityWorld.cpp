@@ -1,6 +1,7 @@
 #include <Core/IO/MemoryStream.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Threading/Thread.h>
+#include <Framework/Entities/EntitySerialization.h>
 #include <Framework/Entities/EntityWorldAsset.h>
 #include <Framework/Entities/EntityWorldInternal.h>
 #include <algorithm>
@@ -1396,7 +1397,15 @@ namespace FE::Framework
             operation.m_state = MaterializationState::kCanceled;
         }
 
-        operation.m_collection = collection;
+        if (collection.Validate())
+        {
+            operation.m_collection = collection;
+        }
+        else
+        {
+            operation.m_state = MaterializationState::kFailed;
+            operation.m_error = "Invalid entity asset";
+        }
         operation.m_hasDefinition = true;
 
         const MaterializationToken token{ m_token, (m_materializations.size()) };
@@ -1458,7 +1467,15 @@ namespace FE::Framework
         auto& operation = *m_materializations[token.m_index];
         operation.m_placement = true;
         operation.m_asset = placement;
-        operation.m_definition = definition;
+        if (definition.Validate())
+        {
+            operation.m_definition = definition;
+        }
+        else
+        {
+            operation.m_state = MaterializationState::kFailed;
+            operation.m_error = "Invalid entity asset";
+        }
         return token;
     }
 
@@ -1497,7 +1514,7 @@ namespace FE::Framework
         auto& operation = *m_materializations[index];
         const auto& collection = operation.m_collection;
 
-        // Validate the complete authored envelope before allocating any runtime membership.
+        // Validate the complete authored definition before allocating any runtime membership.
 
         auto reject = [&](const festd::ascii_view error = "Invalid entity asset") {
             operation.m_error = error;
@@ -1532,39 +1549,24 @@ namespace FE::Framework
                 return reject("Concrete entity UUID is already owned");
         }
 
-        struct SourceRecord
-        {
-            const EntityRecord* m_record;
-            const EntityCollection* m_definition;
-        };
-        festd::vector<SourceRecord> records;
-
+        festd::vector<const EntityRecord*> records;
         EntityRecord emptyRoot;
         emptyRoot.m_uuid = rootUuid;
         if (!operation.m_concrete)
-        {
-            records.push_back({ operation.m_placement ? &operation.m_definition.m_root.m_entities.front() : &emptyRoot,
-                                operation.m_placement ? &operation.m_definition.m_root : &collection });
-        }
+            records.push_back(operation.m_placement ? &operation.m_definition.m_root.m_entities.front() : &emptyRoot);
 
         for (const auto& entity : collection.m_entities)
-            records.push_back({ &entity, &collection });
+            records.push_back(&entity);
 
         festd::vector<Archetype*> schemas;
         for (const auto& source : records)
         {
             festd::vector<const EntityComponentInfo*> columns;
-            for (const auto& component : source.m_record->m_components)
+            for (const auto& component : source->m_components)
             {
-                const auto* info = m_components.Find(component.m_type);
+                const auto* info = m_components.Find(component.GetType()->m_id);
                 if (!info || info->m_policy.m_transient || !info->m_type->m_deserialize || !info->m_type->m_defaultConstructor)
                     return reject();
-
-                if (component.m_version != info->m_type->m_serializationVersion
-                    || component.m_schemaHash != info->m_type->m_serializationSchemaHash)
-                {
-                    return reject();
-                }
 
                 columns.push_back(info);
             }
@@ -1619,7 +1621,7 @@ namespace FE::Framework
 
         for (uint32_t row = 0; row < records.size(); ++row)
         {
-            const auto& record = *records[row].m_record;
+            const auto& record = *records[row];
             Entity* entity =
                 AllocateEntity(*operation.m_registry,
                                Env::Name(record.m_name),
@@ -1632,48 +1634,27 @@ namespace FE::Framework
             Migrate(*entity, columns, values);
             operation.m_entities.push_back(entity->m_id);
 
+            // Copy only authored fields; deserialization hooks remap internal references to this membership.
             for (const auto& component : record.m_components)
             {
-                const auto* info = m_components.Find(component.m_type);
-                const auto& definition = *records[row].m_definition;
-
-                IO::ReadOnlyMemoryStream stream(definition.m_payload.data() + component.m_payloadOffset, component.m_payloadSize);
-                Serialization::PackedBinaryFormat format;
-                Serialization::DeserializationContext context(&stream, format);
-                context.SetObjectReferenceRemapper(&operation.m_bindings, remap);
-
-                void* destination = entity->FindComponent(component.m_type);
-                if (context.Load(*info->m_type, destination) != Serialization::ResultCode::kSuccess
-                    || stream.Tell() != stream.Length())
-                {
+                const auto* info = m_components.Find(component.GetType()->m_id);
+                void* destination = entity->FindComponent(info->m_type->m_id);
+                if (!CopyComponent(*info->m_type, component.GetValue(), destination, operation.m_bindings))
                     return reject();
-                }
-
-                // Envelope ownership remains independent of the definition's acquisition and generation pin.
-                m_loading.m_component = component.m_type;
-                for (const auto& dependency : component.m_dependencies)
-                {
-                    if (dependency.m_kind == IO::DependencyKind::kHard)
-                        RequireAsset(*entity, dependency.m_asset, dependency.m_expectedType);
-                }
-
-                m_loading.m_component = Rtti::TypeID::kNull;
-                const uint32_t column = entity->m_chunk->m_archetype.Find(component.m_type);
-                entity->m_chunk->Stage(entity->m_row, column) |= ComponentStage::kDiscovered;
             }
         }
 
         operation.m_root = operation.m_entities.empty() ? EntityID{} : operation.m_entities.front();
         for (uint32_t row = operation.m_concrete ? 0 : 1; row < records.size(); ++row)
         {
-            const Uuid parent = records[row].m_record->m_parentUuid;
+            const Uuid parent = records[row]->m_parentUuid;
             Entity* parentEntity = parent.IsValid() ? m_owner.Find(remap(&operation.m_bindings, parent), false)
                                                     : (operation.m_concrete ? nullptr : m_owner.Find(operation.m_root));
             Reparent(*m_owner.Find(operation.m_entities[row]), parentEntity);
         }
 
         for (uint32_t row = 0; row < operation.m_entities.size(); ++row)
-            m_owner.Find(operation.m_entities[row])->m_wantsActive = records[row].m_record->m_active;
+            m_owner.Find(operation.m_entities[row])->m_wantsActive = records[row]->m_active;
 
         for (const auto id : operation.m_entities)
         {
@@ -1745,7 +1726,7 @@ namespace FE::Framework
                     if (!operation.m_collectionRequest.IsValid())
                     {
                         auto read = IO::AssetHandle<EntityCollectionInstanceAsset>(operation.m_request.GetAssetSlot()).Read();
-                        if (!read.Get())
+                        if (!read.Get() || !read->Validate())
                         {
                             fail();
                             continue;
@@ -1765,7 +1746,7 @@ namespace FE::Framework
                     }
 
                     auto read = IO::AssetHandle<EntityCollection>(operation.m_collectionRequest.GetAssetSlot()).Read();
-                    if (!read.Get())
+                    if (!read.Get() || !read->Validate())
                     {
                         fail();
                         continue;
@@ -1776,7 +1757,7 @@ namespace FE::Framework
                 else
                 {
                     auto read = IO::AssetHandle<EntityCollection>(operation.m_request.GetAssetSlot()).Read();
-                    if (!read.Get())
+                    if (!read.Get() || !read->Validate())
                     {
                         fail();
                         continue;
@@ -2703,8 +2684,13 @@ namespace FE::Framework
                     if (info.m_policy.m_transient)
                         continue;
 
-                    if (!group.m_entities.CookComponent(record, *info.m_type, entity->m_chunk->Get(entity->m_row, column)))
+                    Rtti::Any& component = record.m_components.emplace_back();
+                    if (!info.m_type->m_serialize || !info.m_type->m_deserialize || !info.m_type->m_copyConstructor
+                        || !component.Emplace(*info.m_type)
+                        || !CopyComponent(*info.m_type, entity->m_chunk->Get(entity->m_row, column), component.GetValue()))
+                    {
                         return Fail("Invalid serializable entity component");
+                    }
                 }
 
                 group.m_entities.m_entities.push_back(std::move(record));

@@ -1,5 +1,6 @@
 #include <Core/IO/Artifact.h>
 #include <Core/Jobs/Jobs.h>
+#include <Core/Threading/Thread.h>
 #include <EntityTestTypes.h>
 #include <Framework/Entities/Query.h>
 #include <gtest/gtest.h>
@@ -766,7 +767,7 @@ TEST_F(WorldFixture, ApplicationStagesAndSamePhaseForwardDependenciesExecuteInDe
         n.m_value *= 3;
     });
     ASSERT_TRUE(m_world.AddPrerequisite(*later, earlier));
-    constexpr Phase ApplicationStage{ CompileTimeHash("ApplicationStage", 16), "ApplicationStage" };
+    constexpr Phase ApplicationStage{ CompileTimeHash("ApplicationStage", 16) };
     m_world.ScheduleStage(ApplicationStage, [&] {
         EXPECT_EQ(entity.FindComponent<Number>()->m_value, 7);
     });
@@ -1096,6 +1097,67 @@ TEST_F(WorldFixture, SequentialAndParallelQueriesExecute)
 }
 
 
+TEST_F(WorldFixture, MainThreadChangedTraversalVisitsChunksWithoutSubdivision)
+{
+    EntityCommandList commands(m_world);
+    for (Uuid uuid : { kRoot, kOther })
+    {
+        auto token = commands.CreateEntity(m_registry, {}, uuid);
+        commands.AddComponent<Huge>(token);
+        commands.AddComponent(token, Number{ 3 });
+    }
+    m_world.Submit(std::move(commands));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    ASSERT_EQ(m_world.GetChunkCount(), 2);
+
+    ChangeCursor cursor;
+    for (uint32_t epoch = 0; epoch < 2; ++epoch)
+    {
+        m_world.BeginUpdate();
+        EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+        uint32_t callbacks = 0;
+        auto completion = Query<const Huge, Number>::TraverseChanged(
+            context,
+            Phases::Update,
+            cursor,
+            [&](Entity& entity, const Huge&, Number& number) {
+                EXPECT_TRUE(Threading::IsMainThread());
+                EXPECT_EQ(entity.FindComponent<Number>(), &number);
+                ++number.m_value;
+                ++callbacks;
+            },
+            ExecutionPolicy::kMainThread);
+        EXPECT_FALSE(completion->IsSignaled());
+        ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
+        ASSERT_TRUE(m_world.ExecuteSchedule());
+        EXPECT_TRUE(completion->IsSignaled());
+        EXPECT_EQ(callbacks, epoch == 0 ? 2 : 0);
+        EXPECT_EQ(m_world.GetScheduleDiagnostics().m_jobs, 1);
+        ASSERT_TRUE(m_world.EndUpdate());
+    }
+}
+
+
+TEST_F(WorldFixture, MainThreadTraversalHonorsReverseWorkerPrerequisite)
+{
+    Spawn();
+    m_world.BeginUpdate();
+    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+    auto read = Query<const Number>::Traverse(context, Phases::Update, ExecutionPolicy::kMainThread, [](const Number& number) {
+        EXPECT_TRUE(Threading::IsMainThread());
+        EXPECT_EQ(number.m_value, 42);
+    });
+    auto write = Query<Number>::Traverse(context, Phases::Update, ExecutionPolicy::kParallel, [](Number& number) {
+        number.m_value = 42;
+    });
+    ASSERT_TRUE(m_world.AddPrerequisite(*read, write));
+    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
+    ASSERT_TRUE(m_world.ExecuteSchedule());
+    EXPECT_TRUE(read->IsSignaled());
+    ASSERT_TRUE(m_world.EndUpdate());
+}
+
+
 TEST_F(WorldFixture, ReadOnlyTraversalsOverlapThroughFiberBarriers)
 {
     Spawn();
@@ -1207,7 +1269,7 @@ TEST_F(WorldFixture, CascadeTraversesFilteredAncestorsAndUsesImmediateParents)
 }
 
 
-TEST_F(WorldFixture, CascadeParentCompletesBeforeChildForSerialAndParallelTrees)
+TEST_F(WorldFixture, CascadeParentCompletesBeforeChildForAllPolicies)
 {
     EntityCommandList commands(m_world);
     auto root = commands.CreateEntity(m_registry, {}, kRoot);
@@ -1219,14 +1281,17 @@ TEST_F(WorldFixture, CascadeParentCompletesBeforeChildForSerialAndParallelTrees)
     commands.SetParent(leaf, child);
     m_world.Submit(std::move(commands));
     ASSERT_TRUE(m_world.CommitBootstrap());
-    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallel })
+    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallel, ExecutionPolicy::kMainThread })
     {
         m_world.BeginUpdate();
         EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
         CascadeQuery<Number, Parent<const Number*>>::Traverse(context,
                                                               Phases::Update,
                                                               policy,
-                                                              [](Number& number, const Number* parent) {
+                                                              [policy](Number& number, const Number* parent) {
+                                                                  if (policy == ExecutionPolicy::kMainThread)
+                                                                      EXPECT_TRUE(Threading::IsMainThread());
+
                                                                   number.m_value = parent ? parent->m_value + 1 : 1;
                                                               });
         ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
@@ -1281,7 +1346,7 @@ TEST_F(WorldFixture, SameSystemSequentialWorkGetsExclusionAndParallelWorkCanOver
         {
             auto callback = [&] {
                 const uint32_t previous = m_inside.fetch_add(1);
-                if (m_policy == ExecutionPolicy::kSequential)
+                if (m_policy != ExecutionPolicy::kParallel)
                     EXPECT_EQ(previous, 0);
                 else
                 {
@@ -1299,14 +1364,14 @@ TEST_F(WorldFixture, SameSystemSequentialWorkGetsExclusionAndParallelWorkCanOver
         }
     } system;
     m_world.AddSystem(system);
-    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallel })
+    for (auto policy : { ExecutionPolicy::kSequential, ExecutionPolicy::kParallel, ExecutionPolicy::kMainThread })
     {
         system.m_policy = policy;
         system.m_entered = WaitGroup::Create(2);
         m_world.BeginUpdate();
         ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
         ASSERT_TRUE(m_world.ExecuteSchedule());
-        EXPECT_EQ(m_world.GetScheduleDiagnostics().m_systemEdges, policy == ExecutionPolicy::kSequential ? 1 : 0);
+        EXPECT_EQ(m_world.GetScheduleDiagnostics().m_systemEdges, policy != ExecutionPolicy::kParallel ? 1 : 0);
         ASSERT_TRUE(m_world.EndUpdate());
     }
     m_world.RemoveSystem(system);

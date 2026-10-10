@@ -1,23 +1,16 @@
 #pragma once
 #include <Framework/Entities/Query.h>
+#include <GameFramework/Phases.h>
 #include <GameFramework/TransformComponents.h>
 
 namespace FE::GameFramework
 {
-    namespace Phases
-    {
-        FE_DECLARE_ENTITY_PHASE(Transformation);
-    } // namespace Phases
-
-
     //! @brief Register transform layouts and publish parent-before-child world matrices through a cascade query.
     struct TransformationSystem final : Framework::WorldSystem
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae10a1");
+        FE_RTTI("49C7EDBB-D164-4C26-BA2A-AB53F1397406");
 
-        //! @brief Register authored/runtime companions and install transactional transform reparenting.
         void Init(Framework::EntityWorld& world) override;
-        //! @brief Detach the reparent handler before the system is removed.
         void Shutdown(Framework::EntityWorld& world) override;
         //! @brief Record changed transforms for this epoch; world matrices publish when its completion signals.
         void Update(Framework::EntityUpdateContext& context) override;

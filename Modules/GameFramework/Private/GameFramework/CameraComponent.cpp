@@ -1,9 +1,19 @@
 #include <Framework/Entities/EntityWorld.h>
+#include <GameFramework/CameraComponent.h>
 #include <GameFramework/WorldGraphicsSceneService.h>
 #include <cmath>
 
 namespace FE::GameFramework
 {
+    CameraComponent::CameraComponent(const CameraComponent& other)
+        : m_fovY(other.m_fovY)
+        , m_aspectRatio(other.m_aspectRatio)
+        , m_nearPlane(other.m_nearPlane)
+        , m_farPlane(other.m_farPlane)
+    {
+    }
+
+
     bool CameraComponent::Validate() const
     {
         if (!std::isfinite(m_fovY) || m_fovY <= 0 || m_fovY >= Constants::kPI)
@@ -19,33 +29,10 @@ namespace FE::GameFramework
     }
 
 
-    Framework::LifecycleResult MeshRuntimeComponent::Activate(Framework::ComponentContext& context)
+    Framework::LifecycleResult CameraComponent::Init(Framework::ComponentContext& context)
     {
         m_scene = context.m_world.FindService<WorldGraphicsSceneService>();
-        if (!m_scene)
-            return Framework::LifecycleResult::kFailed;
-
-        const auto* mesh = context.m_entity.FindComponent<const MeshComponent>();
-        FE_Assert(mesh);
-        return m_scene->GetMeshes().Create(*mesh, *this);
-    }
-
-
-    void MeshRuntimeComponent::Deactivate(Framework::ComponentContext&)
-    {
-        if (m_scene)
-            m_scene->GetMeshes().Destroy(*this);
-
-        m_scene = nullptr;
-    }
-
-
-    Framework::LifecycleResult CameraRuntimeComponent::Init(Framework::ComponentContext& context)
-    {
-        m_scene = context.m_world.FindService<WorldGraphicsSceneService>();
-        const auto* camera = context.m_entity.FindComponent<const CameraComponent>();
-        FE_Assert(camera);
-        if (!m_scene || !camera->Validate())
+        if (!m_scene || !Validate())
             return Framework::LifecycleResult::kFailed;
 
         m_view = m_scene->CreateCameraView();
@@ -53,7 +40,7 @@ namespace FE::GameFramework
     }
 
 
-    void CameraRuntimeComponent::Shutdown(Framework::ComponentContext&)
+    void CameraComponent::Shutdown(Framework::ComponentContext&)
     {
         if (m_view)
         {
@@ -65,7 +52,7 @@ namespace FE::GameFramework
     }
 
 
-    Framework::LifecycleResult CameraRuntimeComponent::Activate(Framework::ComponentContext&)
+    Framework::LifecycleResult CameraComponent::Activate(Framework::ComponentContext&)
     {
         FE_Assert(m_view);
         m_view->SetEnabled(true);
@@ -73,7 +60,7 @@ namespace FE::GameFramework
     }
 
 
-    void CameraRuntimeComponent::Deactivate(Framework::ComponentContext&)
+    void CameraComponent::Deactivate(Framework::ComponentContext&)
     {
         if (m_view)
             m_view->SetEnabled(false);

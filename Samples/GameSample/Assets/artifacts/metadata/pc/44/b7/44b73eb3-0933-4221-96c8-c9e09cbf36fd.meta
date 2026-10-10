@@ -1,0 +1,58 @@
+{
+    "$type": "BFCD80E4-DB85-41F2-B43D-F08EA62AA6EC",
+    "$typename": "FE::IO::ArtifactRecord",
+    "$version": 0,
+    "$schema": "0x4d3ae890a4a739c5",
+    "$value": {
+        "m_artifactId": "89A96541-505B-4DED-91F3-1BD70F110042",
+        "m_assetId": "44B73EB3-0933-4221-96C8-C9E09CBF36FD",
+        "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+        "m_payloads": [
+            {
+                "m_resolvedDataSource": {
+                    "m_filePath": "",
+                    "m_byteOffset": 0,
+                    "m_byteSize": 379
+                },
+                "m_chunks": [
+                    {
+                        "m_offsetInPayload": 0,
+                        "m_compressedSize": 379,
+                        "m_uncompressedSize": 951,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 2324894550
+                        }
+                    }
+                ]
+            }
+        ],
+        "m_dependencies": [
+            {
+                "m_assetId": "0307F5B8-7183-4FD5-9865-96C032020F66",
+                "m_expectedTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "90E25038-92DE-4161-8DE5-6DDB33D9BCDD",
+                "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "736C6052-B4BE-4470-95E8-9353F0623825",
+                "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "482DAF9D-6402-4521-9C88-46B914D5E7BB",
+                "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "2937B09B-B159-462C-8656-30401F8BE3CA",
+                "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                "m_kind": 0
+            }
+        ]
+    }
+}

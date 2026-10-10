@@ -4,27 +4,17 @@
 
 namespace FE::Framework
 {
-    //! @brief Cooked engine-independent entity hierarchy with shared serialized component bytes.
+    //! @brief Engine-independent entity hierarchy with reflected component values.
     struct EntityCollection final
     {
-        //! @brief Authored entity records or occupied runtime row owners.
+        //! @brief Authored entity identities, hierarchy, and reflected component values.
         festd::vector<EntityRecord> m_entities;
-        //! @brief Shared cooked component byte storage.
-        festd::vector<uint8_t> m_payload;
-        FE_RTTI_Reflect("b9dbe80d-6ab0-486a-ab00-000000000015");
+
+        FE_RTTI_Reflect("8837564E-1522-403E-9A73-E5B8C4BE1EF6");
         FE_RTTI_Serialize();
-        //! @brief Serialize one authored value into the collection payload and record its asset references; failure leaves the entity unchanged.
-        bool CookComponent(EntityRecord& entity, const Rtti::Type& type, const void* value);
-        //! @brief Serialize one authored value into the collection payload and record its asset references; failure leaves the entity unchanged.
-        template<class T>
-        bool CookComponent(EntityRecord& entity, const T& value)
-        {
-            return CookComponent(entity, Rtti::GetType<T>(), &value);
-        }
-        //! @brief Check authored IDs, hierarchy, envelopes, and placement bindings without asserting on content.
+
+        //! @brief Check identities, hierarchy, and component types without asserting on invalid content.
         [[nodiscard]] bool Validate() const;
-        //! @brief Deserialize cooked payloads and verify their dependency envelopes; intended for import/build validation.
-        [[nodiscard]] bool ValidatePayloads() const;
     };
 
 
@@ -40,15 +30,17 @@ namespace FE::Framework
         // Generic authored root components; GameFramework supplies placement transforms here.
         //! @brief Authored placement root components or runtime membership root ID.
         EntityCollection m_root;
-        FE_RTTI_Reflect("b9dbe80d-6ab0-486a-ab00-000000000016");
+
+        FE_RTTI_Reflect("DEE5027D-8FFF-433B-B9AF-E220068F94D5");
         FE_RTTI_Serialize();
+
         //! @brief Preserve existing source bindings and generate identities for newly added sources; reject invalid content.
         bool UpdateBindings(const EntityCollection& collection);
         //! @brief Generate fresh root and bound identities and remap internal root references; commit only on success.
         bool MakeIndependentCopy();
-        //! @brief Check authored IDs, hierarchy, envelopes, and placement bindings without asserting on content.
+
+        //! @brief Check authored IDs, hierarchy, component values, and placement bindings without asserting on content.
         [[nodiscard]] bool Validate() const;
-        //! @brief Check authored IDs, hierarchy, envelopes, and placement bindings without asserting on content.
         [[nodiscard]] bool Validate(const EntityCollection& collection) const;
     };
 
@@ -74,7 +66,7 @@ namespace FE::Framework
         uint16_t m_world = 0;
         //! @brief World operation or list-local creation index.
         uint32_t m_index = UINT32_MAX;
-        //! @brief Compare operation identity, including its owning world incarnation.
+
         bool operator==(const MaterializationToken&) const = default;
     };
 

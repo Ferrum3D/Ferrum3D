@@ -12,7 +12,8 @@ namespace FE::Framework
         EntityCollection m_entities;
         //! @brief Soft placement definitions loaded explicitly by world materialization or streaming.
         festd::vector<IO::Link<EntityCollectionInstanceAsset, IO::DependencyKind::kSoft>> m_placements;
-        FE_RTTI_Reflect("aaa69126-4427-4055-b1c4-04013aae0901");
+
+        FE_RTTI_Reflect("4408E59A-BDC3-452E-ABC1-ADEED2433BC3");
         FE_RTTI_Serialize();
     };
 
@@ -26,9 +27,11 @@ namespace FE::Framework
         festd::vector<Rtti::TypeID> m_services;
         //! @brief Ownership groups; empty groups are preserved.
         festd::vector<EntityWorldRegistryDefinition> m_registries;
-        FE_RTTI_Reflect("aaa69126-4427-4055-b1c4-04013aae0902");
+
+        FE_RTTI_Reflect("AB1B29E1-D167-43AA-8718-B3F8693FE184");
         FE_RTTI_Serialize();
-        //! @brief Validate keys, concrete identities, hierarchy and cooked component envelopes.
+
+        //! @brief Validate keys, concrete identities, hierarchy and reflected component values.
         [[nodiscard]] bool Validate() const;
     };
 
@@ -44,7 +47,8 @@ namespace FE::Framework
         festd::vector<EntityUuidBinding> m_bindings;
         //! @brief Surviving concrete membership; restored without expanding source collections.
         festd::vector<Uuid> m_members;
-        FE_RTTI_Reflect("aaa69126-4427-4055-b1c4-04013aae0903");
+
+        FE_RTTI_Reflect("CD51F0E4-B36B-414E-B72C-130861971326");
         FE_RTTI_Serialize();
     };
 
@@ -58,7 +62,8 @@ namespace FE::Framework
         EntityCollection m_entities;
         //! @brief Original placement identities/bindings and their surviving concrete membership.
         festd::vector<EntityPlacementSnapshot> m_placements;
-        FE_RTTI_Reflect("aaa69126-4427-4055-b1c4-04013aae0904");
+
+        FE_RTTI_Reflect("3A2C373C-B590-4BAD-8C96-BAEEFA48312B");
         FE_RTTI_Serialize();
     };
 
@@ -72,8 +77,10 @@ namespace FE::Framework
         festd::vector<Rtti::TypeID> m_services;
         //! @brief Ownership groups; empty groups are preserved.
         festd::vector<EntityWorldRegistrySnapshot> m_registries;
-        FE_RTTI_Reflect("aaa69126-4427-4055-b1c4-04013aae0905");
+
+        FE_RTTI_Reflect("4CE0831F-38AC-47EC-83D3-FF7016E45981");
         FE_RTTI_Serialize();
+
         //! @brief Validate concrete records and saved membership before restoration changes a world.
         [[nodiscard]] bool Validate() const;
     };

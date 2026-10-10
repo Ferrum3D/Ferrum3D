@@ -2,15 +2,10 @@
 #include <Core/Serialization/BinarySerialization.h>
 #include <Framework/Entities/EntityCollection.h>
 #include <Framework/Entities/EntityReference.h>
+#include <Framework/Entities/EntitySerialization.h>
 
 namespace FE::Framework
 {
-    void EntityDependencyRecord::BeforeSerialize(Serialization::SerializationContext& context) const
-    {
-        context.VisitAssetReference(m_asset, m_expectedType, festd::to_underlying(m_kind));
-    }
-
-
     void EntityReference::AfterDeserialize(Serialization::DeserializationContext& context)
     {
         const Uuid remapped = context.RemapObjectReference(m_uuid);
@@ -20,58 +15,33 @@ namespace FE::Framework
     }
 
 
-    bool EntityCollection::CookComponent(EntityRecord& entity, const Rtti::Type& type, const void* value)
+    bool CopyComponent(const Rtti::Type& type, const void* source, void* destination,
+                       festd::span<const EntityUuidBinding> bindings)
     {
         FE_PROFILER_ZONE();
-
-        if (!value || !type.m_serialize || !type.m_deserialize || !type.m_defaultConstructor)
-            return false;
-
-        for (const auto& component : entity.m_components)
-        {
-            if (component.m_type == type.m_id)
-                return false;
-        }
-
-        EntityComponentRecord record;
-        record.m_type = type.m_id;
-        record.m_version = type.m_serializationVersion;
-        record.m_schemaHash = type.m_serializationSchemaHash;
+        FE_Assert(type.m_serialize && type.m_deserialize && source && destination);
 
         IO::WriteOnlyMemoryStream stream;
         Serialization::PackedBinaryFormat format;
-        Serialization::SerializationContext context(
-            &stream,
-            format,
-            &record,
-            [](void* data, Uuid asset, Rtti::TypeID expected, uint32_t kind) {
-                auto& dependencies = static_cast<EntityComponentRecord*>(data)->m_dependencies;
-                for (const auto& dependency : dependencies)
-                {
-                    if (dependency.m_asset == asset && dependency.m_expectedType == expected
-                        && festd::to_underlying(dependency.m_kind) == kind)
-                    {
-                        return;
-                    }
-                }
-                dependencies.push_back({ asset, expected, static_cast<IO::DependencyKind>(kind) });
-            });
-
-        if (context.Store(type, value) != Serialization::ResultCode::kSuccess)
+        Serialization::SerializationContext writer(&stream, format);
+        if (writer.Store(type, source) != Serialization::ResultCode::kSuccess)
             return false;
 
         festd::pmr::vector<std::byte> bytes;
         stream.DumpAll(bytes);
-        if (bytes.size() > UINT32_MAX || m_payload.size() > UINT32_MAX - bytes.size())
-            return false;
+        IO::ReadOnlyMemoryStream input(bytes);
+        Serialization::DeserializationContext reader(&input, format);
+        reader.SetObjectReferenceRemapper(&bindings, [](void* user, Uuid uuid) {
+            for (const EntityUuidBinding& binding : *static_cast<const festd::span<const EntityUuidBinding>*>(user))
+            {
+                if (binding.m_sourceUuid == uuid)
+                    return binding.m_entityUuid;
+            }
 
-        record.m_payloadOffset = m_payload.size();
-        record.m_payloadSize = bytes.size();
-        for (const auto byte : bytes)
-            m_payload.push_back(static_cast<uint8_t>(byte));
+            return uuid;
+        });
 
-        entity.m_components.push_back(std::move(record));
-        return true;
+        return reader.Load(type, destination) == Serialization::ResultCode::kSuccess;
     }
 
 
@@ -110,91 +80,18 @@ namespace FE::Framework
             for (uint32_t column = 0; column < entity.m_components.size(); ++column)
             {
                 const auto& component = entity.m_components[column];
-                if (!component.m_type.IsValid() || component.m_payloadSize == 0 || component.m_payloadOffset > m_payload.size())
-                    return false;
-
-                if (component.m_payloadSize > m_payload.size() - component.m_payloadOffset)
+                const Rtti::Type* type = component.GetType();
+                if (!type || !type->m_serialize || !type->m_deserialize || !type->m_defaultConstructor
+                    || !type->m_copyConstructor)
                     return false;
 
                 for (uint32_t other = 0; other < column; ++other)
                 {
-                    if (entity.m_components[other].m_type == component.m_type)
-                        return false;
-                }
-
-                for (const auto& dependency : component.m_dependencies)
-                {
-                    if (!dependency.m_asset.IsValid() || !dependency.m_expectedType.IsValid()
-                        || dependency.m_kind > IO::DependencyKind::kOptional)
-                    {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-
-    bool EntityCollection::ValidatePayloads() const
-    {
-        FE_PROFILER_ZONE();
-
-        if (!Validate())
-            return false;
-
-        for (const auto& entity : m_entities)
-        {
-            for (const auto& component : entity.m_components)
-            {
-                const auto* type = Rtti::TypeRegistry::FindType(component.m_type);
-                if (!type || !type->m_defaultConstructor || !type->m_destructor || !type->m_deserialize)
-                    return false;
-
-                if (type->m_serializationVersion != component.m_version
-                    || type->m_serializationSchemaHash != component.m_schemaHash)
-                {
-                    return false;
-                }
-
-                void* data = Memory::DefaultAllocate(type->m_size, type->m_alignment);
-                type->m_defaultConstructor(data);
-                auto cleanup = festd::defer([&] {
-                    type->m_destructor(data);
-                    Memory::DefaultFree(data);
-                });
-
-                IO::ReadOnlyMemoryStream stream(m_payload.data() + component.m_payloadOffset, component.m_payloadSize);
-                Serialization::PackedBinaryFormat format;
-                Serialization::DeserializationContext context(&stream, format);
-                if (context.Load(*type, data) != Serialization::ResultCode::kSuccess || stream.Tell() != stream.Length())
-                    return false;
-
-                EntityCollection verified;
-                EntityRecord record;
-                if (!verified.CookComponent(record, *type, data))
-                    return false;
-
-                const auto& dependencies = record.m_components.front().m_dependencies;
-                if (dependencies.size() != component.m_dependencies.size())
-                    return false;
-
-                for (const auto& expected : dependencies)
-                {
-                    const auto found = festd::find_if(component.m_dependencies.begin(),
-                                                      component.m_dependencies.end(),
-                                                      [&](const EntityDependencyRecord& actual) {
-                                                          return actual.m_asset == expected.m_asset
-                                                              && actual.m_expectedType == expected.m_expectedType
-                                                              && actual.m_kind == expected.m_kind;
-                                                      });
-
-                    if (found == component.m_dependencies.end())
+                    if (entity.m_components[other].GetType() == type)
                         return false;
                 }
             }
         }
-
         return true;
     }
 
@@ -242,47 +139,14 @@ namespace FE::Framework
             remapping.push_back({ m_bindings[index].m_entityUuid, copy.m_bindings[index].m_entityUuid });
         }
 
-        EntityCollection root;
-        EntityRecord record;
-        record.m_uuid = copy.m_rootUuid;
-        record.m_name = m_root.m_entities.front().m_name;
-        for (const auto& component : m_root.m_entities.front().m_components)
+        EntityRecord& root = copy.m_root.m_entities.front();
+        root.m_uuid = copy.m_rootUuid;
+        for (Rtti::Any& component : root.m_components)
         {
-            const auto* type = Rtti::TypeRegistry::FindType(component.m_type);
-            if (!type || !type->m_defaultConstructor || !type->m_destructor || !type->m_deserialize)
-                return false;
-
-            if (type->m_serializationVersion != component.m_version || type->m_serializationSchemaHash != component.m_schemaHash)
-                return false;
-
-            void* data = Memory::DefaultAllocate(type->m_size, type->m_alignment);
-            type->m_defaultConstructor(data);
-            auto cleanup = festd::defer([&] {
-                type->m_destructor(data);
-                Memory::DefaultFree(data);
-            });
-
-            IO::ReadOnlyMemoryStream stream(m_root.m_payload.data() + component.m_payloadOffset, component.m_payloadSize);
-            Serialization::PackedBinaryFormat format;
-            Serialization::DeserializationContext context(&stream, format);
-            context.SetObjectReferenceRemapper(&remapping, [](void* user, Uuid uuid) {
-                for (const auto& binding : *static_cast<festd::vector<EntityUuidBinding>*>(user))
-                {
-                    if (binding.m_sourceUuid == uuid)
-                        return binding.m_entityUuid;
-                }
-                return uuid;
-            });
-
-            if (context.Load(*type, data) != Serialization::ResultCode::kSuccess || stream.Tell() != stream.Length())
-                return false;
-
-            if (!root.CookComponent(record, *type, data))
+            if (!CopyComponent(*component.GetType(), component.GetValue(), component.GetValue(), remapping))
                 return false;
         }
 
-        root.m_entities.push_back(std::move(record));
-        copy.m_root = std::move(root);
         *this = std::move(copy);
         return true;
     }

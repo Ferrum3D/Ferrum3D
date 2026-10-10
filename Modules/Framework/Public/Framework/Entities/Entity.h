@@ -15,47 +15,37 @@ namespace FE::Framework
         //! @brief Return the generation-checked runtime identity; never serialize this ID.
         [[nodiscard]] EntityID GetID() const
         {
-            //! @brief Stable identity key.
             return m_id;
         }
 
         //! @brief Return the stable authored or generated identity used by serialized references.
         [[nodiscard]] Uuid GetUuid() const
         {
-            //! @brief Authored or referenced UUID; never a runtime entity handle.
             return m_uuid;
         }
 
-        //! @brief Return the interned runtime display name.
         [[nodiscard]] Env::Name GetName() const
         {
-            //! @brief Display name; not an identity key.
             return m_name;
         }
 
-        //! @brief Return the owning world.
         [[nodiscard]] EntityWorld& GetWorld() const;
 
-        //! @brief Return the owning residency group.
         [[nodiscard]] EntityRegistry& GetRegistry() const
         {
-            //! @brief Borrowed residency owner shared by rows in this chunk.
             return *m_registry;
         }
 
-        //! @brief Return the immediate parent or null for a root.
         [[nodiscard]] Entity* GetParent() const
         {
             return const_cast<Entity*>(m_parent.Get());
         }
 
-        //! @brief Return the first child in sibling order, or null.
         [[nodiscard]] Entity* GetFirstChild() const
         {
             return const_cast<Entity*>(m_firstChild.Get());
         }
 
-        //! @brief Return the next sibling, or null.
         [[nodiscard]] Entity* GetNextSibling() const
         {
             return const_cast<Entity*>(m_nextSibling.Get());
@@ -76,7 +66,6 @@ namespace FE::Framework
         //! @brief Borrow the component until the next structural commit, or return null; mutable lookups require write access.
         [[nodiscard]] void* FindComponent(Rtti::TypeID type, bool write = false) const;
 
-        //! @brief Borrow the component until the next structural commit, or return null; mutable lookups require write access.
         template<class T>
         [[nodiscard]] T* FindComponent() const
         {

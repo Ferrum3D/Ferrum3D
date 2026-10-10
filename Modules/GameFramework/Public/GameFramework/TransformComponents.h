@@ -9,7 +9,7 @@ namespace FE::GameFramework
     {
         //! @brief Local transform; changes flow through entity command replacement.
         Transform m_local = Transform::Identity();
-        FE_RTTI_Reflect("a8cdb00d-20ce-4780-b08d-211d0f600001");
+        FE_RTTI_Reflect("BA1B0286-D3BC-4AB2-8005-97F124771735");
         FE_RTTI_Serialize();
     };
 
@@ -19,7 +19,7 @@ namespace FE::GameFramework
     {
         //! @brief Per-axis local scale, defaulting to one.
         Vector3 m_scale{ 1.0f, 1.0f, 1.0f };
-        FE_RTTI_Reflect("a8cdb00d-20ce-4780-b08d-211d0f600002");
+        FE_RTTI_Reflect("EDB03ECB-1E64-46E3-BD40-9AA748775984");
         FE_RTTI_Serialize();
     };
 
@@ -29,6 +29,6 @@ namespace FE::GameFramework
     {
         //! @brief Latest published local-to-world matrix; never serialized as authored content.
         Matrix4x4 m_world = Matrix4x4::kIdentity;
-        FE_RTTI_Reflect("a8cdb00d-20ce-4780-b08d-211d0f600003");
+        FE_RTTI_Reflect("03A80AAE-E890-4259-A1F7-D1B8FC923E45");
     };
 } // namespace FE::GameFramework

@@ -11,7 +11,7 @@ namespace FE::Framework
             for (uint32_t i = 0; i < groups.size(); ++i)
             {
                 const auto& group = groups[i];
-                if (!group.m_key.IsValid() || !group.m_entities.ValidatePayloads())
+                if (!group.m_key.IsValid() || !group.m_entities.Validate())
                     return false;
 
                 for (uint32_t j = 0; j < i; ++j)

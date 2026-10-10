@@ -17,14 +17,14 @@ namespace
         auto& root = group.m_entities.m_entities.emplace_back();
         root.m_uuid = Uuid::Random();
         root.m_name = "Root";
-        FE_Assert(group.m_entities.CookComponent(root, Number{ 3 }));
+        FE_Assert(root.AddComponent(Number{ 3 }));
         EntityRecord child;
         child.m_uuid = Uuid::Random();
         child.m_parentUuid = root.m_uuid;
         child.m_name = "Child";
         ReferenceComponent reference;
         reference.m_internal.m_uuid = root.m_uuid;
-        FE_Assert(group.m_entities.CookComponent(child, reference));
+        FE_Assert(child.AddComponent(reference));
         group.m_entities.m_entities.push_back(std::move(child));
         return asset;
     }
@@ -96,7 +96,7 @@ TEST(EntityWorldAssets, RestoredPlacementDoesNotRespawnDeletedSourceRows)
     {
         EntityRecord record;
         record.m_uuid = Uuid::Random();
-        ASSERT_TRUE(collection.CookComponent(record, Number{ static_cast<int32_t>(i) }));
+        ASSERT_TRUE(record.AddComponent(Number{ static_cast<int32_t>(i) }));
         collection.m_entities.push_back(std::move(record));
     }
     EntityCollectionInstanceAsset placement;
@@ -202,7 +202,7 @@ TEST(EntityWorldAssets, SnapshotPreservesInactiveSubtreeAndSiblingOrder)
 TEST(EntityWorldAssets, RecordedStagesShareAnExplicitApplicationPhase)
 {
     EntityWorld world;
-    constexpr Phase phase{ 100, "SharedStage" };
+    constexpr Phase phase{ 100 };
     uint32_t visited = 0;
     world.BeginUpdate();
     const auto first = world.RecordStage(phase, [&] {

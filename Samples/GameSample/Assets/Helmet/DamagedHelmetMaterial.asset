@@ -1,0 +1,107 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "MaterialInstanceAsset",
+                "m_assetId": "44B73EB3-0933-4221-96C8-C9E09CBF36FD",
+                "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                "m_buildSettings": {
+                    "m_typeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                    "m_value": {
+                        "m_material": "0307F5B8-7183-4FD5-9865-96C032020F66",
+                        "m_permutationKey": "TwoSided=0",
+                        "m_parameters": [
+                            {
+                                "m_name": "BaseColor",
+                                "m_value": {
+                                    "x": "00000000",
+                                    "y": "00000000",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "90E25038-92DE-4161-8DE5-6DDB33D9BCDD"
+                            },
+                            {
+                                "m_name": "AORoughnessMetallic",
+                                "m_value": {
+                                    "x": "00000000",
+                                    "y": "00000000",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "736C6052-B4BE-4470-95E8-9353F0623825"
+                            },
+                            {
+                                "m_name": "Normal",
+                                "m_value": {
+                                    "x": "00000000",
+                                    "y": "00000000",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "482DAF9D-6402-4521-9C88-46B914D5E7BB"
+                            },
+                            {
+                                "m_name": "Emissive",
+                                "m_value": {
+                                    "x": "00000000",
+                                    "y": "00000000",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "2937B09B-B159-462C-8656-30401F8BE3CA"
+                            },
+                            {
+                                "m_name": "UvScale",
+                                "m_value": {
+                                    "x": "0000803f",
+                                    "y": "0000803f",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "00000000-0000-0000-0000-000000000000"
+                            }
+                        ]
+                    }
+                },
+                "m_dependencies": [
+                    {
+                        "m_assetId": "0307F5B8-7183-4FD5-9865-96C032020F66",
+                        "m_expectedTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "90E25038-92DE-4161-8DE5-6DDB33D9BCDD",
+                        "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "736C6052-B4BE-4470-95E8-9353F0623825",
+                        "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "482DAF9D-6402-4521-9C88-46B914D5E7BB",
+                        "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "2937B09B-B159-462C-8656-30401F8BE3CA",
+                        "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                        "m_kind": 0
+                    }
+                ],
+                "m_lastBuildKey": "9C85F43D-F677-4E3C-98E9-6CD34D706C2A",
+                "m_builtArtifactId": "89A96541-505B-4DED-91F3-1BD70F110042",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

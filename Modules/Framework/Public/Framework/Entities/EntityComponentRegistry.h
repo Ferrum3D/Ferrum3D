@@ -57,9 +57,7 @@ namespace FE::Framework
     //! @brief Synchronized world-local registry; relocation is reflected and must not throw.
     struct EntityComponentRegistry final
     {
-        //! @brief Release registered metadata after all component storage is destroyed.
         ~EntityComponentRegistry();
-        //! @brief Create an empty world-local component registry.
         EntityComponentRegistry() = default;
         EntityComponentRegistry(const EntityComponentRegistry&) = delete;
         EntityComponentRegistry& operator=(const EntityComponentRegistry&) = delete;

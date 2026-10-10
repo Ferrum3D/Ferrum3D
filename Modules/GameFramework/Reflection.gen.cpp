@@ -6,8 +6,10 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <GameFramework/Application.h>
-#include <GameFramework/GraphicsComponents.h>
-#include <GameFramework/GraphicsSystems.h>
+#include <GameFramework/CameraComponent.h>
+#include <GameFramework/CameraSystem.h>
+#include <GameFramework/MeshComponent.h>
+#include <GameFramework/MeshSystem.h>
 #include <GameFramework/TransformComponents.h>
 #include <GameFramework/TransformationSystem.h>
 #include <GameFramework/WorldGraphicsSceneService.h>
@@ -22,214 +24,13 @@ namespace FE
 
 namespace FE::GameFramework
 {
-    const Rtti::TypeID TransformComponent::TypeID = Rtti::TypeID{
-        0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80, 0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x01,
-    };
-
-    namespace
-    {
-        Rtti::Type& RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600001()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& TransformComponent::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600001();
-    }
-
-    void TransformComponent::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600001();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80,
-            0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x01, // FE::GameFramework::TransformComponent
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x27, 0xc5, 0x20, 0xa6, 0x96, 0x08, 0x45, 0x3d,
-            0xbe, 0x4e, 0xdc, 0xa5, 0x51, 0x25, 0x13, 0x25, // FE::Transform m_local
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_local = {};
-
-        static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_local",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TransformComponent::m_local,
-                                                        kAttributes_m_local,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-        };
-
-        context.ReflectClass<TransformComponent>(typeInstance,
-                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                 "FE::GameFramework::TransformComponent",
-                                                 kBaseClassTypeIDs,
-                                                 kAttributes,
-                                                 kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600001(&TransformComponent::Reflect);
-
-    FE::Serialization::ResultCode TransformComponent::Serialize(FE::Serialization::SerializationContext& context) const
-    {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_local", m_local);
-        }
-
-        return context.GetResultCode();
-    }
-
-    FE::Serialization::ResultCode TransformComponent::Deserialize(FE::Serialization::DeserializationContext& context)
-    {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_local", m_local);
-        }
-
-        return context.GetResultCode();
-    }
-
-    uint64_t TransformComponent::RTTI_GetSerializationSchemaHash()
-    {
-        static const uint64_t kHash = [] {
-            static constexpr uint8_t kTypeIDBytes[] = {
-                0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80, 0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x01,
-            };
-            FE::Hasher hasher;
-            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("m_local", 7);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_local)>());
-            hasher.Update(0);
-            return hasher.Finalize();
-        }();
-
-        return kHash;
-    }
-
-    uint32_t TransformComponent::RTTI_GetSerializationVersion()
-    {
-        return 0;
-    }
-
-} // namespace FE::GameFramework
-
-
-namespace FE::GameFramework
-{
-    const Rtti::TypeID NonUniformScaleComponent::TypeID = Rtti::TypeID{
-        0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80, 0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x02,
-    };
-
-    namespace
-    {
-        Rtti::Type& RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600002()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& NonUniformScaleComponent::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600002();
-    }
-
-    void NonUniformScaleComponent::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600002();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80,
-            0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x02, // FE::GameFramework::NonUniformScaleComponent
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1, 0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 m_scale
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scale = {};
-
-        static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scale",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &NonUniformScaleComponent::m_scale,
-                                                        kAttributes_m_scale,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-        };
-
-        context.ReflectClass<NonUniformScaleComponent>(typeInstance,
-                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                       "FE::GameFramework::NonUniformScaleComponent",
-                                                       kBaseClassTypeIDs,
-                                                       kAttributes,
-                                                       kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600002(&NonUniformScaleComponent::Reflect);
-
-    FE::Serialization::ResultCode NonUniformScaleComponent::Serialize(FE::Serialization::SerializationContext& context) const
-    {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_scale", m_scale);
-        }
-
-        return context.GetResultCode();
-    }
-
-    FE::Serialization::ResultCode NonUniformScaleComponent::Deserialize(FE::Serialization::DeserializationContext& context)
-    {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_scale", m_scale);
-        }
-
-        return context.GetResultCode();
-    }
-
-    uint64_t NonUniformScaleComponent::RTTI_GetSerializationSchemaHash()
-    {
-        static const uint64_t kHash = [] {
-            static constexpr uint8_t kTypeIDBytes[] = {
-                0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80, 0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x02,
-            };
-            FE::Hasher hasher;
-            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("m_scale", 7);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_scale)>());
-            hasher.Update(0);
-            return hasher.Finalize();
-        }();
-
-        return kHash;
-    }
-
-    uint32_t NonUniformScaleComponent::RTTI_GetSerializationVersion()
-    {
-        return 0;
-    }
-
-} // namespace FE::GameFramework
-
-
-namespace FE::GameFramework
-{
     const Rtti::TypeID WorldTransformComponent::TypeID = Rtti::TypeID{
-        0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80, 0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x03,
+        0x03, 0xa8, 0x0a, 0xae, 0xe8, 0x90, 0x42, 0x59, 0xa1, 0xf7, 0xd1, 0xb8, 0xfc, 0x92, 0x3e, 0x45,
     };
 
     namespace
     {
-        Rtti::Type& RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600003()
+        Rtti::Type& RTTI_GetMutableType_03a80aaee8904259a1f7d1b8fc923e45()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
@@ -238,16 +39,16 @@ namespace FE::GameFramework
 
     const Rtti::Type& WorldTransformComponent::RTTI_GetType()
     {
-        return RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600003();
+        return RTTI_GetMutableType_03a80aaee8904259a1f7d1b8fc923e45();
     }
 
     void WorldTransformComponent::Reflect(Rtti::ReflectionContext& context)
     {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_a8cdb00d20ce4780b08d211d0f600003();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_03a80aaee8904259a1f7d1b8fc923e45();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xa8, 0xcd, 0xb0, 0x0d, 0x20, 0xce, 0x47, 0x80,
-            0xb0, 0x8d, 0x21, 0x1d, 0x0f, 0x60, 0x00, 0x03, // FE::GameFramework::WorldTransformComponent
+            0x03, 0xa8, 0x0a, 0xae, 0xe8, 0x90, 0x42, 0x59,
+            0xa1, 0xf7, 0xd1, 0xb8, 0xfc, 0x92, 0x3e, 0x45, // FE::GameFramework::WorldTransformComponent
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
@@ -275,133 +76,191 @@ namespace FE::GameFramework
                                                       kFields);
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_a8cdb00d20ce4780b08d211d0f600003(&WorldTransformComponent::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_03a80aaee8904259a1f7d1b8fc923e45(&WorldTransformComponent::Reflect);
 } // namespace FE::GameFramework
 
 
 namespace FE::GameFramework
 {
-    const Rtti::TypeID MeshComponent::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x01,
+    const Rtti::TypeID WorldGraphicsSceneService::TypeID = Rtti::TypeID{
+        0x09, 0xf0, 0x3b, 0x91, 0x84, 0x06, 0x48, 0x5f, 0xa7, 0xd1, 0xa2, 0x06, 0x3c, 0xa4, 0x80, 0x20,
     };
 
     namespace
     {
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae1001()
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_09f03b918406485fa7d1a2063ca48020(WorldGraphicsSceneService* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0x09, 0xf0, 0x3b, 0x91, 0x84, 0x06, 0x48, 0x5f,
+                0xa7, 0xd1, 0xa2, 0x06, 0x3c, 0xa4, 0x80, 0x20, // FE::GameFramework::WorldGraphicsSceneService (this type)
+                0xbb, 0x0b, 0xdf, 0xfe, 0xf2, 0x6a, 0x4e, 0x94,
+                0x8a, 0x9c, 0xb8, 0x58, 0x84, 0x75, 0xd1, 0x96, // FE::Framework::WorldService
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldService*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_09f03b918406485fa7d1a2063ca48020()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
         }
     } // namespace
 
-    const Rtti::Type& MeshComponent::RTTI_GetType()
+    const Rtti::Type& WorldGraphicsSceneService::RTTI_GetType()
     {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae1001();
+        return RTTI_GetMutableType_09f03b918406485fa7d1a2063ca48020();
     }
 
-    void MeshComponent::Reflect(Rtti::ReflectionContext& context)
+    void* FE_VECTORCALL WorldGraphicsSceneService::RTTI_TryCast(const Rtti::TypeID typeID)
     {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae1001();
+        return RTTI_TryCastImpl_09f03b918406485fa7d1a2063ca48020(this, typeID);
+    }
+
+    const void* FE_VECTORCALL WorldGraphicsSceneService::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_09f03b918406485fa7d1a2063ca48020(const_cast<WorldGraphicsSceneService*>(this), typeID);
+    }
+    void WorldGraphicsSceneService::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_09f03b918406485fa7d1a2063ca48020();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x01, // FE::GameFramework::MeshComponent
+            0x09, 0xf0, 0x3b, 0x91, 0x84, 0x06, 0x48, 0x5f,
+            0xa7, 0xd1, 0xa2, 0x06, 0x3c, 0xa4, 0x80, 0x20, // FE::GameFramework::WorldGraphicsSceneService
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_model
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_material
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xbb, 0x0b, 0xdf, 0xfe, 0xf2, 0x6a, 0x4e, 0x94,
+            0x8a, 0x9c, 0xb8, 0x58, 0x84, 0x75, 0xd1, 0x96, // FE::Framework::WorldService
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_model = {};
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_material = {};
+        context.ReflectClass<WorldGraphicsSceneService>(typeInstance,
+                                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                        "FE::GameFramework::WorldGraphicsSceneService",
+                                                        kBaseClassTypeIDs,
+                                                        kAttributes,
+                                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<WorldGraphicsSceneService*>(instance)->RTTI_TryCast(target);
+        };
+    }
 
-        static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_model",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MeshComponent::m_model,
-                                                        kAttributes_m_model,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_material",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MeshComponent::m_material,
-                                                        kAttributes_m_material,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+    static Rtti::TypeRegistrar GTypeRegistrar_09f03b918406485fa7d1a2063ca48020(&WorldGraphicsSceneService::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID Application::TypeID = Rtti::TypeID{
+        0x2f, 0x63, 0xd3, 0x47, 0x12, 0x3d, 0x41, 0x24, 0xa0, 0xcb, 0x2a, 0xac, 0xee, 0x29, 0x0d, 0xc3,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_2f63d347123d4124a0cb2aacee290dc3(Application* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0x2f, 0x63, 0xd3, 0x47, 0x12, 0x3d, 0x41, 0x24,
+                0xa0, 0xcb, 0x2a, 0xac, 0xee, 0x29, 0x0d, 0xc3, // FE::GameFramework::Application (this type)
+                0xaf, 0x07, 0xed, 0xca, 0x2d, 0x55, 0x4e, 0x2d,
+                0xa5, 0xef, 0x85, 0xed, 0x53, 0xb4, 0xcd, 0xab, // FE::Framework::Application
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::Application*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_2f63d347123d4124a0cb2aacee290dc3()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Application::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_2f63d347123d4124a0cb2aacee290dc3();
+    }
+
+    void* FE_VECTORCALL Application::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_2f63d347123d4124a0cb2aacee290dc3(this, typeID);
+    }
+
+    const void* FE_VECTORCALL Application::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_2f63d347123d4124a0cb2aacee290dc3(const_cast<Application*>(this), typeID);
+    }
+    void Application::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_2f63d347123d4124a0cb2aacee290dc3();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x2f, 0x63, 0xd3, 0x47, 0x12, 0x3d, 0x41, 0x24,
+            0xa0, 0xcb, 0x2a, 0xac, 0xee, 0x29, 0x0d, 0xc3, // FE::GameFramework::Application
         };
 
-        context.ReflectClass<MeshComponent>(typeInstance,
-                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                            "FE::GameFramework::MeshComponent",
-                                            kBaseClassTypeIDs,
-                                            kAttributes,
-                                            kFields);
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xaf, 0x07, 0xed, 0xca, 0x2d, 0x55, 0x4e, 0x2d,
+            0xa5, 0xef, 0x85, 0xed, 0x53, 0xb4, 0xcd, 0xab, // FE::Framework::Application
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<Application>(typeInstance,
+                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                          "FE::GameFramework::Application",
+                                          kBaseClassTypeIDs,
+                                          kAttributes,
+                                          kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Application*>(instance)->RTTI_TryCast(target);
+        };
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae1001(&MeshComponent::Reflect);
-
-    FE::Serialization::ResultCode MeshComponent::Serialize(FE::Serialization::SerializationContext& context) const
-    {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_model", m_model);
-            object.Field("m_material", m_material);
-        }
-
-        return context.GetResultCode();
-    }
-
-    FE::Serialization::ResultCode MeshComponent::Deserialize(FE::Serialization::DeserializationContext& context)
-    {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_model", m_model);
-            object.Field("m_material", m_material);
-        }
-
-        return context.GetResultCode();
-    }
-
-    uint64_t MeshComponent::RTTI_GetSerializationSchemaHash()
-    {
-        static const uint64_t kHash = [] {
-            static constexpr uint8_t kTypeIDBytes[] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x01,
-            };
-            FE::Hasher hasher;
-            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("m_model", 7);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_model)>());
-            hasher.Update("m_material", 10);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_material)>());
-            hasher.Update(0);
-            return hasher.Finalize();
-        }();
-
-        return kHash;
-    }
-
-    uint32_t MeshComponent::RTTI_GetSerializationVersion()
-    {
-        return 0;
-    }
-
+    static Rtti::TypeRegistrar GTypeRegistrar_2f63d347123d4124a0cb2aacee290dc3(&Application::Reflect);
 } // namespace FE::GameFramework
 
 
 namespace FE::GameFramework
 {
     const Rtti::TypeID CameraComponent::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x02,
+        0x46, 0x96, 0xc0, 0xb3, 0xff, 0xe4, 0x4e, 0x66, 0x9d, 0x41, 0xbe, 0xd9, 0xe7, 0xfe, 0xda, 0xd6,
     };
 
     namespace
     {
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae1002()
+        Rtti::Type& RTTI_GetMutableType_4696c0b3ffe44e669d41bed9e7fedad6()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
@@ -410,26 +269,32 @@ namespace FE::GameFramework
 
     const Rtti::Type& CameraComponent::RTTI_GetType()
     {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae1002();
+        return RTTI_GetMutableType_4696c0b3ffe44e669d41bed9e7fedad6();
     }
 
     void CameraComponent::Reflect(Rtti::ReflectionContext& context)
     {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae1002();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_4696c0b3ffe44e669d41bed9e7fedad6();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x02, // FE::GameFramework::CameraComponent
+            0x46, 0x96, 0xc0, 0xb3, 0xff, 0xe4, 0x4e, 0x66,
+            0x9d, 0x41, 0xbe, 0xd9, 0xe7, 0xfe, 0xda, 0xd6, // FE::GameFramework::CameraComponent
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_view
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_scene
             0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47, 0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_fovY
             0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47, 0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_aspectRatio
             0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47, 0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_nearPlane
             0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47, 0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_farPlane
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scene = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_fovY = {};
 
@@ -439,24 +304,34 @@ namespace FE::GameFramework
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_farPlane = {};
 
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_fovY",
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &CameraComponent::m_view,
+                                                        kAttributes_m_view,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scene",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &CameraComponent::m_scene,
+                                                        kAttributes_m_scene,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_fovY",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &CameraComponent::m_fovY,
                                                         kAttributes_m_fovY,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_aspectRatio",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &CameraComponent::m_aspectRatio,
                                                         kAttributes_m_aspectRatio,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_nearPlane",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &CameraComponent::m_nearPlane,
                                                         kAttributes_m_nearPlane,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_farPlane",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &CameraComponent::m_farPlane,
                                                         kAttributes_m_farPlane,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
@@ -470,7 +345,7 @@ namespace FE::GameFramework
                                               kFields);
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae1002(&CameraComponent::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_4696c0b3ffe44e669d41bed9e7fedad6(&CameraComponent::Reflect);
 
     FE::Serialization::ResultCode CameraComponent::Serialize(FE::Serialization::SerializationContext& context) const
     {
@@ -502,7 +377,7 @@ namespace FE::GameFramework
     {
         static const uint64_t kHash = [] {
             static constexpr uint8_t kTypeIDBytes[] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x02,
+                0x46, 0x96, 0xc0, 0xb3, 0xff, 0xe4, 0x4e, 0x66, 0x9d, 0x41, 0xbe, 0xd9, 0xe7, 0xfe, 0xda, 0xd6,
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
@@ -531,179 +406,20 @@ namespace FE::GameFramework
 
 namespace FE::GameFramework
 {
-    const Rtti::TypeID MeshRuntimeComponent::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x03,
-    };
-
-    namespace
-    {
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae1003()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& MeshRuntimeComponent::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae1003();
-    }
-
-    void MeshRuntimeComponent::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae1003();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x03, // FE::GameFramework::MeshRuntimeComponent
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_scene
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_batch
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_handles
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_model
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_material
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scene = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_batch = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_handles = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_model = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_material = {};
-
-        static const festd::array<Rtti::FieldInfo, 5> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scene",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MeshRuntimeComponent::m_scene,
-                                                        kAttributes_m_scene,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_batch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MeshRuntimeComponent::m_batch,
-                                                        kAttributes_m_batch,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_handles",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MeshRuntimeComponent::m_handles,
-                                                        kAttributes_m_handles,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_model",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &MeshRuntimeComponent::m_model,
-                                                        kAttributes_m_model,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_material",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &MeshRuntimeComponent::m_material,
-                                                        kAttributes_m_material,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-        };
-
-        context.ReflectClass<MeshRuntimeComponent>(typeInstance,
-                                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                   "FE::GameFramework::MeshRuntimeComponent",
-                                                   kBaseClassTypeIDs,
-                                                   kAttributes,
-                                                   kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae1003(&MeshRuntimeComponent::Reflect);
-} // namespace FE::GameFramework
-
-
-namespace FE::GameFramework
-{
-    const Rtti::TypeID CameraRuntimeComponent::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x04,
-    };
-
-    namespace
-    {
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae1004()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& CameraRuntimeComponent::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae1004();
-    }
-
-    void CameraRuntimeComponent::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae1004();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0x04, // FE::GameFramework::CameraRuntimeComponent
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_view
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_scene
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scene = {};
-
-        static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &CameraRuntimeComponent::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scene",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &CameraRuntimeComponent::m_scene,
-                                                        kAttributes_m_scene,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-        };
-
-        context.ReflectClass<CameraRuntimeComponent>(typeInstance,
-                                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                     "FE::GameFramework::CameraRuntimeComponent",
-                                                     kBaseClassTypeIDs,
-                                                     kAttributes,
-                                                     kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae1004(&CameraRuntimeComponent::Reflect);
-} // namespace FE::GameFramework
-
-
-namespace FE::GameFramework
-{
     const Rtti::TypeID TransformationSystem::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa1,
+        0x49, 0xc7, 0xed, 0xbb, 0xd1, 0x64, 0x4c, 0x26, 0xba, 0x2a, 0xab, 0x53, 0xf1, 0x39, 0x74, 0x06,
     };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a1(TransformationSystem* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_49c7edbbd1644c26ba2aab53f1397406(TransformationSystem* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa1, // FE::GameFramework::TransformationSystem (this type)
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+                0x49, 0xc7, 0xed, 0xbb, 0xd1, 0x64, 0x4c, 0x26,
+                0xba, 0x2a, 0xab, 0x53, 0xf1, 0x39, 0x74, 0x06, // FE::GameFramework::TransformationSystem (this type)
+                0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+                0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
             };
 
             __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
@@ -717,7 +433,7 @@ namespace FE::GameFramework
 
             return nullptr;
         }
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae10a1()
+        Rtti::Type& RTTI_GetMutableType_49c7edbbd1644c26ba2aab53f1397406()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
@@ -726,30 +442,30 @@ namespace FE::GameFramework
 
     const Rtti::Type& TransformationSystem::RTTI_GetType()
     {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae10a1();
+        return RTTI_GetMutableType_49c7edbbd1644c26ba2aab53f1397406();
     }
 
     void* FE_VECTORCALL TransformationSystem::RTTI_TryCast(const Rtti::TypeID typeID)
     {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a1(this, typeID);
+        return RTTI_TryCastImpl_49c7edbbd1644c26ba2aab53f1397406(this, typeID);
     }
 
     const void* FE_VECTORCALL TransformationSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
     {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a1(const_cast<TransformationSystem*>(this), typeID);
+        return RTTI_TryCastImpl_49c7edbbd1644c26ba2aab53f1397406(const_cast<TransformationSystem*>(this), typeID);
     }
     void TransformationSystem::Reflect(Rtti::ReflectionContext& context)
     {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae10a1();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_49c7edbbd1644c26ba2aab53f1397406();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa1, // FE::GameFramework::TransformationSystem
+            0x49, 0xc7, 0xed, 0xbb, 0xd1, 0x64, 0x4c, 0x26,
+            0xba, 0x2a, 0xab, 0x53, 0xf1, 0x39, 0x74, 0x06, // FE::GameFramework::TransformationSystem
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+            0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+            0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -766,108 +482,185 @@ namespace FE::GameFramework
         };
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae10a1(&TransformationSystem::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_49c7edbbd1644c26ba2aab53f1397406(&TransformationSystem::Reflect);
 } // namespace FE::GameFramework
 
 
 namespace FE::GameFramework
 {
-    const Rtti::TypeID CameraSystem::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa2,
+    const Rtti::TypeID MeshComponent::TypeID = Rtti::TypeID{
+        0x73, 0x07, 0x7b, 0xd1, 0x71, 0x03, 0x43, 0xf9, 0xb9, 0x4a, 0xff, 0xcc, 0x1d, 0xce, 0x71, 0xf5,
     };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a2(CameraSystem* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa2, // FE::GameFramework::CameraSystem (this type)
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae10a2()
+        Rtti::Type& RTTI_GetMutableType_73077bd1710343f9b94affcc1dce71f5()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
         }
     } // namespace
 
-    const Rtti::Type& CameraSystem::RTTI_GetType()
+    const Rtti::Type& MeshComponent::RTTI_GetType()
     {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae10a2();
+        return RTTI_GetMutableType_73077bd1710343f9b94affcc1dce71f5();
     }
 
-    void* FE_VECTORCALL CameraSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    void MeshComponent::Reflect(Rtti::ReflectionContext& context)
     {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a2(this, typeID);
-    }
-
-    const void* FE_VECTORCALL CameraSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a2(const_cast<CameraSystem*>(this), typeID);
-    }
-    void CameraSystem::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae10a2();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_73077bd1710343f9b94affcc1dce71f5();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa2, // FE::GameFramework::CameraSystem
+            0x73, 0x07, 0x7b, 0xd1, 0x71, 0x03, 0x43, 0xf9,
+            0xb9, 0x4a, 0xff, 0xcc, 0x1d, 0xce, 0x71, 0xf5, // FE::GameFramework::MeshComponent
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[7 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_model
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_material
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_scene
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_batch
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_handles
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_loadedModel
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_loadedMaterial
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_model = {};
 
-        context.ReflectClass<CameraSystem>(typeInstance,
-                                           Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                           "FE::GameFramework::CameraSystem",
-                                           kBaseClassTypeIDs,
-                                           kAttributes,
-                                           kFields);
-        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
-            return static_cast<CameraSystem*>(instance)->RTTI_TryCast(target);
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_material = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scene = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_batch = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_handles = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_loadedModel = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_loadedMaterial = {};
+
+        static const festd::array<Rtti::FieldInfo, 7> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_model",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MeshComponent::m_model,
+                                                        kAttributes_m_model,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_material",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MeshComponent::m_material,
+                                                        kAttributes_m_material,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scene",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MeshComponent::m_scene,
+                                                        kAttributes_m_scene,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_batch",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &MeshComponent::m_batch,
+                                                        kAttributes_m_batch,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_handles",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &MeshComponent::m_handles,
+                                                        kAttributes_m_handles,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_loadedModel",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &MeshComponent::m_loadedModel,
+                                                        kAttributes_m_loadedModel,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_loadedMaterial",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        &MeshComponent::m_loadedMaterial,
+                                                        kAttributes_m_loadedMaterial,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
+
+        context.ReflectClass<MeshComponent>(typeInstance,
+                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                            "FE::GameFramework::MeshComponent",
+                                            kBaseClassTypeIDs,
+                                            kAttributes,
+                                            kFields);
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae10a2(&CameraSystem::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_73077bd1710343f9b94affcc1dce71f5(&MeshComponent::Reflect);
+
+    FE::Serialization::ResultCode MeshComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_model", m_model);
+            object.Field("m_material", m_material);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MeshComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_model", m_model);
+            object.Field("m_material", m_material);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MeshComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x73, 0x07, 0x7b, 0xd1, 0x71, 0x03, 0x43, 0xf9, 0xb9, 0x4a, 0xff, 0xcc, 0x1d, 0xce, 0x71, 0xf5,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_model", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_model)>());
+            hasher.Update("m_material", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_material)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MeshComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::GameFramework
 
 
 namespace FE::GameFramework
 {
     const Rtti::TypeID MeshSystem::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa3,
+        0xaa, 0x87, 0x5e, 0xa6, 0xb1, 0x01, 0x43, 0x2b, 0x9d, 0x55, 0xbc, 0x6a, 0x84, 0xcd, 0xef, 0xe8,
     };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a3(MeshSystem* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aa875ea6b101432b9d55bc6a84cdefe8(MeshSystem* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa3, // FE::GameFramework::MeshSystem (this type)
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+                0xaa, 0x87, 0x5e, 0xa6, 0xb1, 0x01, 0x43, 0x2b,
+                0x9d, 0x55, 0xbc, 0x6a, 0x84, 0xcd, 0xef, 0xe8, // FE::GameFramework::MeshSystem (this type)
+                0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+                0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
             };
 
             __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
@@ -881,7 +674,7 @@ namespace FE::GameFramework
 
             return nullptr;
         }
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae10a3()
+        Rtti::Type& RTTI_GetMutableType_aa875ea6b101432b9d55bc6a84cdefe8()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
@@ -890,30 +683,30 @@ namespace FE::GameFramework
 
     const Rtti::Type& MeshSystem::RTTI_GetType()
     {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae10a3();
+        return RTTI_GetMutableType_aa875ea6b101432b9d55bc6a84cdefe8();
     }
 
     void* FE_VECTORCALL MeshSystem::RTTI_TryCast(const Rtti::TypeID typeID)
     {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a3(this, typeID);
+        return RTTI_TryCastImpl_aa875ea6b101432b9d55bc6a84cdefe8(this, typeID);
     }
 
     const void* FE_VECTORCALL MeshSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
     {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a3(const_cast<MeshSystem*>(this), typeID);
+        return RTTI_TryCastImpl_aa875ea6b101432b9d55bc6a84cdefe8(const_cast<MeshSystem*>(this), typeID);
     }
     void MeshSystem::Reflect(Rtti::ReflectionContext& context)
     {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae10a3();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_aa875ea6b101432b9d55bc6a84cdefe8();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa3, // FE::GameFramework::MeshSystem
+            0xaa, 0x87, 0x5e, 0xa6, 0xb1, 0x01, 0x43, 0x2b,
+            0x9d, 0x55, 0xbc, 0x6a, 0x84, 0xcd, 0xef, 0xe8, // FE::GameFramework::MeshSystem
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfe, // FE::Framework::WorldSystem
+            0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+            0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -930,26 +723,309 @@ namespace FE::GameFramework
         };
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae10a3(&MeshSystem::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_aa875ea6b101432b9d55bc6a84cdefe8(&MeshSystem::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID TransformComponent::TypeID = Rtti::TypeID{
+        0xba, 0x1b, 0x02, 0x86, 0xd3, 0xbc, 0x4a, 0xb2, 0x80, 0x05, 0x97, 0xf1, 0x24, 0x77, 0x17, 0x35,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_ba1b0286d3bc4ab2800597f124771735()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TransformComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_ba1b0286d3bc4ab2800597f124771735();
+    }
+
+    void TransformComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_ba1b0286d3bc4ab2800597f124771735();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xba, 0x1b, 0x02, 0x86, 0xd3, 0xbc, 0x4a, 0xb2,
+            0x80, 0x05, 0x97, 0xf1, 0x24, 0x77, 0x17, 0x35, // FE::GameFramework::TransformComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0x27, 0xc5, 0x20, 0xa6, 0x96, 0x08, 0x45, 0x3d,
+            0xbe, 0x4e, 0xdc, 0xa5, 0x51, 0x25, 0x13, 0x25, // FE::Transform m_local
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_local = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_local",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &TransformComponent::m_local,
+                                                        kAttributes_m_local,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TransformComponent>(typeInstance,
+                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                 "FE::GameFramework::TransformComponent",
+                                                 kBaseClassTypeIDs,
+                                                 kAttributes,
+                                                 kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_ba1b0286d3bc4ab2800597f124771735(&TransformComponent::Reflect);
+
+    FE::Serialization::ResultCode TransformComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_local", m_local);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode TransformComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_local", m_local);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t TransformComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xba, 0x1b, 0x02, 0x86, 0xd3, 0xbc, 0x4a, 0xb2, 0x80, 0x05, 0x97, 0xf1, 0x24, 0x77, 0x17, 0x35,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_local", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_local)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t TransformComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID CameraSystem::TypeID = Rtti::TypeID{
+        0xe2, 0xe5, 0x8c, 0xe8, 0x72, 0x02, 0x4b, 0x65, 0x91, 0xc7, 0xb1, 0x31, 0x45, 0xb9, 0x38, 0xa2,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_e2e58ce872024b6591c7b13145b938a2(CameraSystem* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xe2, 0xe5, 0x8c, 0xe8, 0x72, 0x02, 0x4b, 0x65,
+                0x91, 0xc7, 0xb1, 0x31, 0x45, 0xb9, 0x38, 0xa2, // FE::GameFramework::CameraSystem (this type)
+                0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+                0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_e2e58ce872024b6591c7b13145b938a2()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& CameraSystem::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_e2e58ce872024b6591c7b13145b938a2();
+    }
+
+    void* FE_VECTORCALL CameraSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_e2e58ce872024b6591c7b13145b938a2(this, typeID);
+    }
+
+    const void* FE_VECTORCALL CameraSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_e2e58ce872024b6591c7b13145b938a2(const_cast<CameraSystem*>(this), typeID);
+    }
+    void CameraSystem::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_e2e58ce872024b6591c7b13145b938a2();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xe2, 0xe5, 0x8c, 0xe8, 0x72, 0x02, 0x4b, 0x65,
+            0x91, 0xc7, 0xb1, 0x31, 0x45, 0xb9, 0x38, 0xa2, // FE::GameFramework::CameraSystem
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+            0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<CameraSystem>(typeInstance,
+                                           Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                           "FE::GameFramework::CameraSystem",
+                                           kBaseClassTypeIDs,
+                                           kAttributes,
+                                           kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<CameraSystem*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_e2e58ce872024b6591c7b13145b938a2(&CameraSystem::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID NonUniformScaleComponent::TypeID = Rtti::TypeID{
+        0xed, 0xb0, 0x3e, 0xcb, 0x1e, 0x64, 0x46, 0xe3, 0xbd, 0x40, 0x9a, 0xa7, 0x48, 0x77, 0x59, 0x84,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_edb03ecb1e6446e3bd409aa748775984()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& NonUniformScaleComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_edb03ecb1e6446e3bd409aa748775984();
+    }
+
+    void NonUniformScaleComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_edb03ecb1e6446e3bd409aa748775984();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xed, 0xb0, 0x3e, 0xcb, 0x1e, 0x64, 0x46, 0xe3,
+            0xbd, 0x40, 0x9a, 0xa7, 0x48, 0x77, 0x59, 0x84, // FE::GameFramework::NonUniformScaleComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1, 0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 m_scale
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scale = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scale",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &NonUniformScaleComponent::m_scale,
+                                                        kAttributes_m_scale,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<NonUniformScaleComponent>(typeInstance,
+                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                       "FE::GameFramework::NonUniformScaleComponent",
+                                                       kBaseClassTypeIDs,
+                                                       kAttributes,
+                                                       kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_edb03ecb1e6446e3bd409aa748775984(&NonUniformScaleComponent::Reflect);
+
+    FE::Serialization::ResultCode NonUniformScaleComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_scale", m_scale);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode NonUniformScaleComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_scale", m_scale);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t NonUniformScaleComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xed, 0xb0, 0x3e, 0xcb, 0x1e, 0x64, 0x46, 0xe3, 0xbd, 0x40, 0x9a, 0xa7, 0x48, 0x77, 0x59, 0x84,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_scale", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_scale)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t NonUniformScaleComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::GameFramework
 
 
 namespace FE::GameFramework
 {
     const Rtti::TypeID WorldStreamingService::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa4,
+        0xf3, 0x8c, 0x1d, 0xbe, 0x58, 0xdf, 0x4c, 0x53, 0x83, 0x35, 0x3f, 0xfa, 0xdb, 0x6d, 0xde, 0x2d,
     };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a4(WorldStreamingService* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f38c1dbe58df4c5383353ffadb6dde2d(WorldStreamingService* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa4, // FE::GameFramework::WorldStreamingService (this type)
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
+                0xf3, 0x8c, 0x1d, 0xbe, 0x58, 0xdf, 0x4c, 0x53,
+                0x83, 0x35, 0x3f, 0xfa, 0xdb, 0x6d, 0xde, 0x2d, // FE::GameFramework::WorldStreamingService (this type)
+                0xbb, 0x0b, 0xdf, 0xfe, 0xf2, 0x6a, 0x4e, 0x94,
+                0x8a, 0x9c, 0xb8, 0x58, 0x84, 0x75, 0xd1, 0x96, // FE::Framework::WorldService
             };
 
             __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
@@ -963,7 +1039,7 @@ namespace FE::GameFramework
 
             return nullptr;
         }
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae10a4()
+        Rtti::Type& RTTI_GetMutableType_f38c1dbe58df4c5383353ffadb6dde2d()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
@@ -972,30 +1048,30 @@ namespace FE::GameFramework
 
     const Rtti::Type& WorldStreamingService::RTTI_GetType()
     {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae10a4();
+        return RTTI_GetMutableType_f38c1dbe58df4c5383353ffadb6dde2d();
     }
 
     void* FE_VECTORCALL WorldStreamingService::RTTI_TryCast(const Rtti::TypeID typeID)
     {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a4(this, typeID);
+        return RTTI_TryCastImpl_f38c1dbe58df4c5383353ffadb6dde2d(this, typeID);
     }
 
     const void* FE_VECTORCALL WorldStreamingService::RTTI_TryCast(const Rtti::TypeID typeID) const
     {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a4(const_cast<WorldStreamingService*>(this), typeID);
+        return RTTI_TryCastImpl_f38c1dbe58df4c5383353ffadb6dde2d(const_cast<WorldStreamingService*>(this), typeID);
     }
     void WorldStreamingService::Reflect(Rtti::ReflectionContext& context)
     {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae10a4();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_f38c1dbe58df4c5383353ffadb6dde2d();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa4, // FE::GameFramework::WorldStreamingService
+            0xf3, 0x8c, 0x1d, 0xbe, 0x58, 0xdf, 0x4c, 0x53,
+            0x83, 0x35, 0x3f, 0xfa, 0xdb, 0x6d, 0xde, 0x2d, // FE::GameFramework::WorldStreamingService
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
+            0xbb, 0x0b, 0xdf, 0xfe, 0xf2, 0x6a, 0x4e, 0x94,
+            0x8a, 0x9c, 0xb8, 0x58, 0x84, 0x75, 0xd1, 0x96, // FE::Framework::WorldService
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -1012,177 +1088,5 @@ namespace FE::GameFramework
         };
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae10a4(&WorldStreamingService::Reflect);
-} // namespace FE::GameFramework
-
-
-namespace FE::GameFramework
-{
-    const Rtti::TypeID WorldGraphicsSceneService::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa5,
-    };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a5(WorldGraphicsSceneService* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa5, // FE::GameFramework::WorldGraphicsSceneService (this type)
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Framework::WorldService*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae10a5()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& WorldGraphicsSceneService::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae10a5();
-    }
-
-    void* FE_VECTORCALL WorldGraphicsSceneService::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a5(this, typeID);
-    }
-
-    const void* FE_VECTORCALL WorldGraphicsSceneService::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10a5(const_cast<WorldGraphicsSceneService*>(this), typeID);
-    }
-    void WorldGraphicsSceneService::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae10a5();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xa5, // FE::GameFramework::WorldGraphicsSceneService
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x09, 0xfd, // FE::Framework::WorldService
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<WorldGraphicsSceneService>(typeInstance,
-                                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                        "FE::GameFramework::WorldGraphicsSceneService",
-                                                        kBaseClassTypeIDs,
-                                                        kAttributes,
-                                                        kFields);
-        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
-            return static_cast<WorldGraphicsSceneService*>(instance)->RTTI_TryCast(target);
-        };
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae10a5(&WorldGraphicsSceneService::Reflect);
-} // namespace FE::GameFramework
-
-
-namespace FE::GameFramework
-{
-    const Rtti::TypeID Application::TypeID = Rtti::TypeID{
-        0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55, 0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xaf,
-    };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aaa6912644274055b1c404013aae10af(Application* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-                0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-                0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xaf, // FE::GameFramework::Application (this type)
-                0xaf, 0x07, 0xed, 0xca, 0x2d, 0x55, 0x4e, 0x2d,
-                0xa5, 0xef, 0x85, 0xed, 0x53, 0xb4, 0xcd, 0xab, // FE::Framework::Application
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Framework::Application*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_aaa6912644274055b1c404013aae10af()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& Application::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_aaa6912644274055b1c404013aae10af();
-    }
-
-    void* FE_VECTORCALL Application::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10af(this, typeID);
-    }
-
-    const void* FE_VECTORCALL Application::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_aaa6912644274055b1c404013aae10af(const_cast<Application*>(this), typeID);
-    }
-    void Application::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_aaa6912644274055b1c404013aae10af();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xaa, 0xa6, 0x91, 0x26, 0x44, 0x27, 0x40, 0x55,
-            0xb1, 0xc4, 0x04, 0x01, 0x3a, 0xae, 0x10, 0xaf, // FE::GameFramework::Application
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xaf, 0x07, 0xed, 0xca, 0x2d, 0x55, 0x4e, 0x2d,
-            0xa5, 0xef, 0x85, 0xed, 0x53, 0xb4, 0xcd, 0xab, // FE::Framework::Application
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<Application>(typeInstance,
-                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                          "FE::GameFramework::Application",
-                                          kBaseClassTypeIDs,
-                                          kAttributes,
-                                          kFields);
-        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
-            return static_cast<Application*>(instance)->RTTI_TryCast(target);
-        };
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_aaa6912644274055b1c404013aae10af(&Application::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_f38c1dbe58df4c5383353ffadb6dde2d(&WorldStreamingService::Reflect);
 } // namespace FE::GameFramework

@@ -94,12 +94,13 @@ namespace FE::Framework
     } // namespace Internal
 
 
-    template<bool Cascade, class... Terms>
     //! @brief Typed query using required references, optional pointers, read-only parent terms, and exclusion filters.
+    template<bool Cascade, class... Terms>
     struct BasicQuery
     {
         static_assert(sizeof...(Terms) > 0, "Query needs at least one component term");
         static_assert(Internal::UniqueTerms<Terms...>::kValue, "Duplicate component terms in the same source");
+
         //! @brief Record typed component access and an epoch-owned callback; optional pointer terms may receive null.
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, Callable&& callable)
@@ -107,14 +108,12 @@ namespace FE::Framework
             return Traverse(context, phase, std::initializer_list<Rc<WaitGroup>>{}, std::forward<Callable>(callable));
         }
 
-        //! @brief Record typed component access and an epoch-owned callback; optional pointer terms may receive null.
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, ExecutionPolicy policy, Callable&& callable)
         {
             return Traverse(context, phase, std::initializer_list<Rc<WaitGroup>>{}, std::forward<Callable>(callable), policy);
         }
 
-        //! @brief Record typed component access and an epoch-owned callback; optional pointer terms may receive null.
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase,
                                       std::initializer_list<Rc<WaitGroup>> prerequisites, Callable&& callable,
@@ -161,6 +160,7 @@ namespace FE::Framework
 
     private:
         using ValueIndices = typename Internal::QueryValueIndices<0, Terms...>::Type;
+
         template<size_t Index>
         using ValueTerm = Internal::QueryTerm<std::tuple_element_t<Index, std::tuple<Terms...>>>;
 

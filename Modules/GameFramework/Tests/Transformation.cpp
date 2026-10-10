@@ -264,12 +264,12 @@ TEST_F(TransformationFixture, PlacementRootAndCookedChildrenReceiveRuntimeOutput
     EntityCollection collection;
     EntityRecord child;
     child.m_uuid = kChild;
-    ASSERT_TRUE(collection.CookComponent(child, TransformComponent{ childLocal }));
+    ASSERT_TRUE(child.AddComponent(TransformComponent{ childLocal }));
     collection.m_entities.push_back(std::move(child));
     EntityCollectionInstanceAsset placement;
     placement.m_collection = IO::Link<EntityCollection>(kParent);
     ASSERT_TRUE(placement.UpdateBindings(collection));
-    ASSERT_TRUE(placement.m_root.CookComponent(placement.m_root.m_entities.front(), TransformComponent{ rootLocal }));
+    ASSERT_TRUE(placement.m_root.m_entities.front().AddComponent(TransformComponent{ rootLocal }));
     const auto operation = m_world.LoadPlacement(m_registry, kParent, placement, collection);
     Tick();
     ASSERT_EQ(m_world.GetMaterializationStatus(operation).m_state, MaterializationState::kReady);

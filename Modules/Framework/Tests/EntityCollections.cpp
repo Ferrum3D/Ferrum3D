@@ -10,11 +10,11 @@ using namespace FE::Framework::Tests;
 
 namespace
 {
-    const Uuid kSource("b9dbe80d-6ab0-486a-ab00-000000001001");
-    const Uuid kChild("b9dbe80d-6ab0-486a-ab00-000000001002");
-    const Uuid kExternal("b9dbe80d-6ab0-486a-ab00-000000001003");
-    const IO::AssetID kPlacement("b9dbe80d-6ab0-486a-ab00-000000001004");
-    const IO::AssetID kCollection("b9dbe80d-6ab0-486a-ab00-000000001005");
+    const Uuid kSource("B9DBE80D-6AB0-486A-AB00-000000001001");
+    const Uuid kChild("B9DBE80D-6AB0-486A-AB00-000000001002");
+    const Uuid kExternal("B9DBE80D-6AB0-486A-AB00-000000001003");
+    const IO::AssetID kPlacement("B9DBE80D-6AB0-486A-AB00-000000001004");
+    const IO::AssetID kCollection("B9DBE80D-6AB0-486A-AB00-000000001005");
 
     struct CollectionFixture : testing::Test
     {
@@ -28,12 +28,12 @@ namespace
             EntityRecord parent;
             parent.m_uuid = kSource;
             parent.m_name = "Parent";
-            ASSERT_TRUE(m_collection.CookComponent(parent, Number{ 42 }));
+            ASSERT_TRUE(parent.AddComponent(Number{ 42 }));
             m_collection.m_entities.push_back(std::move(parent));
             EntityRecord child;
             child.m_uuid = kChild;
             child.m_parentUuid = kSource;
-            ASSERT_TRUE(m_collection.CookComponent(child, ReferenceComponent{ { kSource }, { kExternal, kPlacement } }));
+            ASSERT_TRUE(child.AddComponent(ReferenceComponent{ { kSource }, { kExternal, kPlacement } }));
             m_collection.m_entities.push_back(std::move(child));
         }
 
@@ -111,26 +111,26 @@ TEST_F(CollectionFixture, PersistentMembershipDeduplicatesAndReloadsStableBindin
 }
 
 
-TEST_F(CollectionFixture, InvalidSchemaBindingsAndPayloadRollbackAllAllocatedRows)
+TEST_F(CollectionFixture, InvalidComponentsAndBindingsRejectWithoutAllocatingRows)
 {
     auto invalid = m_collection;
-    ++invalid.m_entities[1].m_components[0].m_schemaHash;
+    invalid.m_entities[1].m_components[0].Reset();
 
-    auto schema = m_world.SpawnCollection(m_registry, invalid);
+    auto empty = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;
-    invalid.m_entities[0].m_components[0].m_type = Rtti::GetTypeID<Extra>();
+    invalid.m_entities[0].m_components[0].Emplace<AssetComponent>();
 
     auto unknown = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;
-    --invalid.m_entities[1].m_components[0].m_payloadSize;
+    invalid.m_entities[1].m_components.push_back(invalid.m_entities[1].m_components[0]);
 
-    auto corrupt = m_world.SpawnCollection(m_registry, invalid);
+    auto duplicate = m_world.SpawnCollection(m_registry, invalid);
     auto placement = Placement();
     placement.m_bindings[0].m_entityUuid = placement.m_rootUuid;
 
     auto bindings = m_world.LoadPlacement(m_registry, kPlacement, placement, m_collection);
     Tick();
-    for (auto token : { schema, unknown, corrupt, bindings })
+    for (auto token : { empty, unknown, duplicate, bindings })
     {
         EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kFailed);
         EXPECT_EQ(m_world.GetMaterializationStatus(token).m_error, "Invalid entity asset");
@@ -179,14 +179,13 @@ TEST_F(CollectionFixture, BindingMaintenanceAndCopiesKeepSourceIdentity)
 }
 
 
-TEST_F(CollectionFixture, CollectionSerializationReplaysOpaqueDependencyMetadata)
+TEST_F(CollectionFixture, CollectionSerializationDiscoversNestedAssetLinks)
 {
     const auto asset = Uuid::Random();
     EntityRecord record;
     record.m_uuid = Uuid::Random();
-    ASSERT_TRUE(m_collection.CookComponent(
-        record,
-        AssetComponent{ IO::Link<Number>(asset), IO::Link<Number, IO::DependencyKind::kSoft>(kExternal) }));
+    ASSERT_TRUE(
+        record.AddComponent(AssetComponent{ IO::Link<Number>(asset), IO::Link<Number, IO::DependencyKind::kSoft>(kExternal) }));
     m_collection.m_entities.push_back(std::move(record));
 
     uint32_t hard = 0;
@@ -206,16 +205,21 @@ TEST_F(CollectionFixture, CollectionSerializationReplaysOpaqueDependencyMetadata
     EntityCollection restored;
     ASSERT_EQ(load.Load(restored), Serialization::ResultCode::kSuccess);
     EXPECT_TRUE(restored.Validate());
-    EXPECT_EQ(restored.m_payload, m_collection.m_payload);
+    ASSERT_EQ(restored.m_entities.size(), m_collection.m_entities.size());
+    EXPECT_EQ(restored.m_entities.front().m_components.front().TryGet<Number>()->m_value, 42);
+    const auto* restoredAssets = restored.m_entities.back().m_components.front().TryGet<AssetComponent>();
+    ASSERT_NE(restoredAssets, nullptr);
+    EXPECT_EQ(restoredAssets->m_hard.GetAssetID(), asset);
+    EXPECT_EQ(restoredAssets->m_soft.GetAssetID(), kExternal);
 }
 
 
-TEST_F(CollectionFixture, PlacementCopyRemapsCookedRootReferences)
+TEST_F(CollectionFixture, PlacementCopyRemapsRootReferences)
 {
     auto placement = Placement();
     const auto boundUuid = placement.m_bindings.front().m_entityUuid;
-    ASSERT_TRUE(placement.m_root.CookComponent(placement.m_root.m_entities.front(),
-                                               ReferenceComponent{ { boundUuid, kPlacement }, { kExternal, kPlacement } }));
+    ASSERT_TRUE(placement.m_root.m_entities.front().AddComponent(
+        ReferenceComponent{ { boundUuid, kPlacement }, { kExternal, kPlacement } }));
 
     auto copy = placement;
     ASSERT_TRUE(copy.MakeIndependentCopy());
@@ -250,12 +254,12 @@ TEST_F(CollectionFixture, ConflictingPlacementRootsAndInvalidHierarchyRejectWith
 
     auto externalParent = m_world.SpawnCollection(m_registry, invalid);
     invalid = m_collection;
-    invalid.m_entities.front().m_components.front().m_payloadOffset = UINT32_MAX;
+    invalid.m_entities.front().m_components.front().Reset();
 
-    auto offset = m_world.SpawnCollection(m_registry, invalid);
+    auto empty = m_world.SpawnCollection(m_registry, invalid);
     Tick();
     ASSERT_EQ(m_world.GetMaterializationStatus(first).m_state, MaterializationState::kReady);
-    for (auto token : { conflicting, cycle, externalParent, offset })
+    for (auto token : { conflicting, cycle, externalParent, empty })
         EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kFailed);
     EXPECT_EQ(m_world.GetEntityCount(), 3);
 }
@@ -294,7 +298,7 @@ TEST(CollectionMaterialization, PendingDependenciesPreventPublicationAndCancelWi
     EntityCollection collection;
     EntityRecord record;
     record.m_uuid = Uuid::Random();
-    ASSERT_TRUE(collection.CookComponent(record, AssetComponent{ IO::Link<Number>(Uuid::Random()), {} }));
+    ASSERT_TRUE(record.AddComponent(AssetComponent{ IO::Link<Number>(Uuid::Random()), {} }));
     collection.m_entities.push_back(std::move(record));
 
     const auto token = world.SpawnCollection(registry, collection);
@@ -321,7 +325,7 @@ TEST_F(CollectionFixture, LifecycleCanQueueMoreSpawnsWithoutInvalidatingCurrentO
     EntityCollection triggered;
     EntityRecord record;
     record.m_uuid = Uuid::Random();
-    ASSERT_TRUE(triggered.CookComponent(record, SpawnFromLoad{}));
+    ASSERT_TRUE(record.AddComponent(SpawnFromLoad{}));
     triggered.m_entities.push_back(std::move(record));
     SpawnFromLoad::s_collection = &m_collection;
     SpawnFromLoad::s_operations.clear();

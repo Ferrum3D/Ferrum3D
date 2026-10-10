@@ -44,9 +44,7 @@ namespace FE::Framework
         //! @brief Number of occupied rows.
         uint32_t m_count = 0;
 
-        //! @brief Allocate aligned storage for one archetype and registry.
         ArchetypeChunk(Archetype& archetype, EntityRegistry& registry);
-        //! @brief Release empty storage after every occupied value has been destroyed.
         ~ArchetypeChunk();
 
         //! @brief Borrow storage for a valid occupied row and column.

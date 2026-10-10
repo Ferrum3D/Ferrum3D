@@ -1,0 +1,29 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "Helmet/DamagedHelmet_n.dds",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Texture/Primary",
+                "m_name": "Texture",
+                "m_assetId": "482DAF9D-6402-4521-9C88-46B914D5E7BB",
+                "m_assetTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                "m_buildSettings": {
+                    "m_typeId": "38A7F222-C636-4947-B700-9E6FA582BC4A",
+                    "m_value": {
+                        "m_sourceObjectIndex": 4294967295,
+                        "m_sourcePath": ""
+                    }
+                },
+                "m_dependencies": [],
+                "m_lastBuildKey": "F51427FB-3824-4245-982D-1A0D394664C3",
+                "m_builtArtifactId": "6E5D618C-178E-45F4-A447-9244458550CA",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

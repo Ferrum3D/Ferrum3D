@@ -8,9 +8,7 @@ namespace FE::Framework
     //! @brief Own a world and its reflected systems and services. Services are initialized before systems and survive entity teardown.
     struct EntityWorldInstance final
     {
-        //! @brief Create an empty instance with borrowed asset services.
         explicit EntityWorldInstance(EntityAssetServices* assets = nullptr);
-        //! @brief Remove all membership, then shut down and destroy the selected systems and services.
         ~EntityWorldInstance();
         EntityWorldInstance(const EntityWorldInstance&) = delete;
         EntityWorldInstance& operator=(const EntityWorldInstance&) = delete;
@@ -22,7 +20,6 @@ namespace FE::Framework
         [[nodiscard]] MaterializationStatus GetStatus() const;
         //! @brief Save concrete state and the selected system/service IDs at a settled main-thread boundary.
         bool Capture(EntityWorldSnapshotAsset& snapshot) const;
-        //! @brief Borrow the independently owned runtime world.
         [[nodiscard]] EntityWorld& GetWorld()
         {
             return m_world;

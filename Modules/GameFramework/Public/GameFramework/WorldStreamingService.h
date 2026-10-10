@@ -6,7 +6,7 @@ namespace FE::GameFramework
     //! @brief Main-thread placement streaming controller; registries remain part of one shared world schedule.
     struct WorldStreamingService final : Framework::WorldService
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae10a4");
+        FE_RTTI("F38C1DBE-58DF-4C53-8335-3FFADB6DDE2D");
 
         //! @brief Queue a persistent placement load into a registry identified by its saved key.
         void Load(Uuid registry, IO::AssetID placement);
@@ -14,9 +14,7 @@ namespace FE::GameFramework
         void Unload(Uuid registry);
         //! @brief Inspect the latest load for a placement; unavailable assets remain recoverable failures.
         [[nodiscard]] Framework::MaterializationStatus GetStatus(IO::AssetID placement) const;
-        //! @brief Attach to one world; the service must outlive its registration.
         void Init(Framework::EntityWorld& world) override;
-        //! @brief Discard queued requests and detach from the world.
         void Shutdown(Framework::EntityWorld& world) override;
         //! @brief Apply queued requests before structural commit at the main-thread boundary.
         void Update(Framework::EntityWorld& world) override;

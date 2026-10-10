@@ -27,7 +27,6 @@ namespace FE::Framework
         //! @brief Borrow or copy a component through m_userData; the boolean requests write access.
         ComponentLookup m_component;
 
-        //! @brief Read the transaction-local parent index; kInvalidIndex identifies a root.
         uint32_t GetParent(uint32_t entity) const
         {
             return m_parent(m_userData, entity);

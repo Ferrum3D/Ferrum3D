@@ -325,7 +325,7 @@ namespace FE::Framework
                 }
 
                 const bool systemExclusion = before.m_system && before.m_system == after.m_system
-                    && (before.m_policy == ExecutionPolicy::kSequential || after.m_policy == ExecutionPolicy::kSequential);
+                    && (before.m_policy != ExecutionPolicy::kParallel || after.m_policy != ExecutionPolicy::kParallel);
 
                 if (conflict || systemExclusion || stageExclusion)
                 {
@@ -375,8 +375,8 @@ namespace FE::Framework
                 for (const uint32_t dependency : traversal.m_dependencies)
                     prerequisites.push_back(m_traversals[dependency].m_completion.Get());
 
-                const auto affinity =
-                    traversal.m_stageInvoke ? Jobs::FiberAffinityMask::kMainThread : Jobs::FiberAffinityMask::kAllForeground;
+                const bool mainThread = traversal.m_stageInvoke || traversal.m_policy == ExecutionPolicy::kMainThread;
+                const auto affinity = mainThread ? Jobs::FiberAffinityMask::kMainThread : Jobs::FiberAffinityMask::kAllForeground;
 
                 Jobs::Dispatch(affinity, prerequisites, Jobs::Priority::kNormal, [this, i] {
                     ExecuteTraversal(i);
@@ -595,7 +595,7 @@ namespace FE::Framework
             for (uint32_t begin = 0; begin < roots.size(); begin += kTreesPerBatch)
             {
                 const uint32_t end = Math::Min(begin + kTreesPerBatch, roots.size());
-                if (traversal.m_policy == ExecutionPolicy::kSequential)
+                if (traversal.m_policy != ExecutionPolicy::kParallel)
                 {
                     for (uint32_t i = begin; i < end; ++i)
                         visitTree(roots[i]);
@@ -623,7 +623,7 @@ namespace FE::Framework
                         invoke(*chunk->m_entities[row]);
                 };
 
-                if (traversal.m_policy == ExecutionPolicy::kSequential)
+                if (traversal.m_policy != ExecutionPolicy::kParallel)
                 {
                     visitChunk();
                 }

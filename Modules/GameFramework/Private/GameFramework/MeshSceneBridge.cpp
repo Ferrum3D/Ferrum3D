@@ -13,10 +13,10 @@ namespace FE::GameFramework
     }
 
 
-    Framework::LifecycleResult MeshSceneBridge::Create(const MeshComponent& component, MeshRuntimeComponent& runtime)
+    Framework::LifecycleResult MeshSceneBridge::Create(MeshComponent& component)
     {
         FE_PROFILER_ZONE();
-        FE_Assert(m_module && runtime.m_handles.empty());
+        FE_Assert(m_module && component.m_handles.empty());
         const auto model = component.m_model.GetAssetHandle().Read();
         const auto material = component.m_material.GetAssetHandle().Read();
         if (!model || !material || !material->m_runtime || model->m_meshes.empty()
@@ -56,7 +56,7 @@ namespace FE::GameFramework
         batch.m_bounds = bounds;
         batch.m_drawTagMask =
             Graphics::DrawTagMask(Graphics::DrawTags::DepthPrepass) | Graphics::DrawTagMask(Graphics::DrawTags::Opaque);
-        runtime.m_batch = m_module->CreateBatch(batch);
+        component.m_batch = m_module->CreateBatch(batch);
         for (const auto& link : model->m_meshes)
         {
             const auto handle = link.GetAssetHandle();
@@ -67,47 +67,47 @@ namespace FE::GameFramework
             desc.m_asset = IO::AssetLease<Graphics::MeshAsset>(handle.GetAssetSlot());
             desc.m_material =
                 IO::AssetLease<Graphics::MaterialInstanceAsset>(component.m_material.GetAssetHandle().GetAssetSlot());
-            desc.m_batch = runtime.m_batch;
+            desc.m_batch = component.m_batch;
             desc.m_transform = Matrix4x4::kIdentity;
-            runtime.m_handles.push_back(m_module->CreateInstance(desc));
+            component.m_handles.push_back(m_module->CreateInstance(desc));
         }
 
-        runtime.m_model = component.m_model.GetAssetID();
-        runtime.m_material = component.m_material.GetAssetID();
+        component.m_loadedModel = component.m_model.GetAssetID();
+        component.m_loadedMaterial = component.m_material.GetAssetID();
         return Framework::LifecycleResult::kSucceeded;
     }
 
 
-    void MeshSceneBridge::Destroy(MeshRuntimeComponent& runtime)
+    void MeshSceneBridge::Destroy(MeshComponent& component)
     {
         FE_PROFILER_ZONE();
         FE_Assert(m_module);
-        if (runtime.m_batch)
-            m_module->DestroyBatch(runtime.m_batch);
+        if (component.m_batch)
+            m_module->DestroyBatch(component.m_batch);
 
-        runtime.m_handles.clear();
-        runtime.m_batch = nullptr;
-        runtime.m_model = runtime.m_material = IO::AssetID::kNull;
+        component.m_handles.clear();
+        component.m_batch = nullptr;
+        component.m_loadedModel = component.m_loadedMaterial = IO::AssetID::kNull;
     }
 
 
-    void MeshSceneBridge::Update(const MeshComponent& component, const Matrix4x4& world, MeshRuntimeComponent& runtime)
+    void MeshSceneBridge::Update(MeshComponent& component, const Matrix4x4& world)
     {
-        if (runtime.m_model != component.m_model.GetAssetID())
+        if (component.m_loadedModel != component.m_model.GetAssetID())
         {
             // Build replacement membership first; an invalid model leaves the previous scene state intact.
-            MeshRuntimeComponent replacement;
-            if (Create(component, replacement) != Framework::LifecycleResult::kSucceeded)
+            MeshComponent replacement(component);
+            if (Create(replacement) != Framework::LifecycleResult::kSucceeded)
                 return;
 
-            Destroy(runtime);
-            runtime.m_batch = replacement.m_batch;
-            runtime.m_handles = std::move(replacement.m_handles);
-            runtime.m_model = replacement.m_model;
-            runtime.m_material = replacement.m_material;
+            Destroy(component);
+            component.m_batch = replacement.m_batch;
+            component.m_handles = std::move(replacement.m_handles);
+            component.m_loadedModel = replacement.m_loadedModel;
+            component.m_loadedMaterial = replacement.m_loadedMaterial;
         }
 
-        if (runtime.m_material != component.m_material.GetAssetID())
+        if (component.m_loadedMaterial != component.m_material.GetAssetID())
         {
             const auto handle = component.m_material.GetAssetHandle();
             const auto material = handle.Read();
@@ -115,13 +115,13 @@ namespace FE::GameFramework
                 return;
 
             const IO::AssetLease<Graphics::MaterialInstanceAsset> lease(handle.GetAssetSlot());
-            for (const auto instance : runtime.m_handles)
+            for (const auto instance : component.m_handles)
                 m_module->UpdateMaterial(instance, lease);
 
-            runtime.m_material = component.m_material.GetAssetID();
+            component.m_loadedMaterial = component.m_material.GetAssetID();
         }
 
-        for (const auto instance : runtime.m_handles)
+        for (const auto instance : component.m_handles)
             m_module->UpdateTransform(instance, world);
     }
 } // namespace FE::GameFramework

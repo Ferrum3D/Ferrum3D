@@ -9,7 +9,7 @@ namespace FE::Framework::Tests
     {
         static inline const EntityCollection* s_collection = nullptr;
         static inline festd::fixed_vector<MaterializationToken, 16> s_operations;
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6017");
+        FE_RTTI_Reflect("BDB95E44-26C7-4523-9107-DD8BB6EDEDB1");
         FE_RTTI_Serialize();
 
         LifecycleResult Load(ComponentLoadingContext& context)
@@ -32,7 +32,7 @@ namespace FE::Framework::Tests
         EntityReference m_internal;
         EntityReference m_external;
 
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6015");
+        FE_RTTI_Reflect("6FCC0FE8-057A-4C57-A415-6B03421C2588");
         FE_RTTI_Serialize();
     };
 
@@ -41,7 +41,7 @@ namespace FE::Framework::Tests
     {
         int32_t m_value = 0;
 
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6001");
+        FE_RTTI_Reflect("1C86B496-EDD6-4611-B6A9-F521923DF111");
         FE_RTTI_Serialize();
     };
 
@@ -50,7 +50,7 @@ namespace FE::Framework::Tests
     {
         int32_t m_value = 0;
 
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6002");
+        FE_RTTI_Reflect("1572734F-D76F-4718-ADB4-85E270CCC7B3");
     };
 
 
@@ -85,21 +85,21 @@ namespace FE::Framework::Tests
             --s_live;
         }
 
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6003");
+        FE_RTTI_Reflect("025CFBC0-301B-40E6-98B0-34AF15C15725");
     };
 
 
     struct alignas(256) Aligned final
     {
         uint64_t m_value = 73;
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6004");
+        FE_RTTI_Reflect("24034252-6B50-43E2-8279-9DD7683CB451");
     };
 
 
     struct Huge final
     {
         uint8_t m_data[70000]{};
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6005");
+        FE_RTTI_Reflect("6E4583CA-A7EF-4936-BCCB-EE93539D12F4");
     };
 
 
@@ -110,7 +110,7 @@ namespace FE::Framework::Tests
         static inline int32_t s_failStage = 0;
         int32_t m_label = 0;
 
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6007");
+        FE_RTTI_Reflect("3BE4D796-1602-4658-B205-94B15F190036");
 
         LifecycleResult Load(ComponentLoadingContext&)
         {
@@ -153,7 +153,7 @@ namespace FE::Framework::Tests
     {
         IO::Link<Number> m_hard;
         IO::Link<Number, IO::DependencyKind::kSoft> m_soft;
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6008");
+        FE_RTTI_Reflect("710FAE8D-B519-4A61-BA50-BC5E9CBC4386");
         FE_RTTI_Serialize();
     };
 
@@ -162,7 +162,7 @@ namespace FE::Framework::Tests
     {
         IO::Link<AssetComponent> m_hard;
         IO::Link<Number, IO::DependencyKind::kSoft> m_soft;
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6016");
+        FE_RTTI_Reflect("356E316C-AB56-4BC4-AF86-BDEE64923EC8");
         FE_RTTI_Serialize();
     };
 
@@ -171,7 +171,7 @@ namespace FE::Framework::Tests
     {
         IO::AssetID m_asset = IO::AssetID::kNull;
         static inline uint32_t s_unloads = 0;
-        FE_RTTI_Reflect("1c7ec0da-7e5b-4ef2-97ef-8a0b846c6009");
+        FE_RTTI_Reflect("75315CD9-C745-4BF2-B622-0EE5DB84CA10");
 
         LifecycleResult Load(ComponentLoadingContext& context)
         {
@@ -188,7 +188,7 @@ namespace FE::Framework::Tests
 
     struct SnapshotSystem : WorldSystem
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f0");
+        FE_RTTI("99CE9EB1-35B8-4CC5-8586-66EECF15FE12");
         static inline int32_t s_live = 0;
 
         SnapshotSystem()
@@ -218,7 +218,7 @@ namespace FE::Framework::Tests
 
     struct SystemPrefix
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f1");
+        FE_RTTI("A4D961B7-D93F-4397-AD84-FCEEF5FB6B70");
         virtual ~SystemPrefix() = default;
         uint64_t m_padding = 0;
     };
@@ -228,13 +228,13 @@ namespace FE::Framework::Tests
         : SystemPrefix
         , SnapshotSystem
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f2");
+        FE_RTTI("2FE311B5-3C69-4284-A1B8-91916200907B");
     };
 
 
     struct SnapshotService : WorldService
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f4");
+        FE_RTTI("DDB82620-0C08-49E6-9AC7-434A1611187B");
         static inline int32_t s_live = 0;
         static inline bool s_shutdownSawEmptyWorld = false;
         uint32_t m_updates = 0;
@@ -268,13 +268,13 @@ namespace FE::Framework::Tests
         : SystemPrefix
         , SnapshotService
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f5");
+        FE_RTTI("5CD205A4-CCD2-478E-89D0-7192339A8DC8");
     };
 
 
     struct NonDefaultSystem final : WorldSystem
     {
-        FE_RTTI("aaa69126-4427-4055-b1c4-04013aae09f3");
+        FE_RTTI("F1D91905-8D2B-4632-855E-ACBE821FD00A");
         explicit NonDefaultSystem(uint32_t) {}
         void Update(EntityUpdateContext&) override {}
     };

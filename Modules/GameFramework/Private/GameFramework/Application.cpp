@@ -4,8 +4,11 @@
 #include <Core/Threading/Thread.h>
 #include <Framework/Reflection.gen.h>
 #include <GameFramework/Application.h>
-#include <GameFramework/GraphicsSystems.h>
+#include <GameFramework/CameraSystem.h>
+#include <GameFramework/MeshSystem.h>
 #include <GameFramework/Reflection.gen.h>
+#include <GameFramework/TransformationSystem.h>
+#include <GameFramework/WorldGraphicsSceneService.h>
 #include <GameFramework/WorldStreamingService.h>
 #include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Assets/Streamers.h>
@@ -26,6 +29,7 @@ namespace FE::GameFramework
 
     Application::Application()
     {
+        // Retain the generated reflection needed to construct asset-selected systems and services.
         CallLinkerAnchor_Core();
         CallLinkerAnchor_Framework();
         CallLinkerAnchor_GraphicsCore();
@@ -210,14 +214,19 @@ namespace FE::GameFramework
     Rc<WaitGroup> Application::ScheduleUpdate()
     {
         FE_PROFILER_ZONE();
+
         IO::AssetManager::Tick();
+
         auto& world = GetWorld();
         world.BeginUpdate();
         ScheduleWorldUpdate(world);
+
         const bool executed = world.ExecuteSchedule();
         FE_Assert(executed);
+
         const bool ended = world.EndUpdate();
         FE_Assert(ended);
+
         return nullptr;
     }
 

@@ -1,5 +1,5 @@
 #include <AssetBuilder/AssetFile.h>
-#include <AssetBuilder/EntityImport.h>
+#include <AssetBuilder/AssetPipeline.h>
 #include <Core/IO/Artifact.h>
 #include <Core/Strings/Format.h>
 #include <Core/Threading/Thread.h>
@@ -26,15 +26,15 @@ namespace
         IO::AssetID BuildDefinition(const char* name, const T& value)
         {
             const IO::Path path = m_directory / name;
+            EXPECT_TRUE(AssetBuilder::ImportAsset({ {}, path, Rtti::GetTypeID<T>() }));
             AssetBuilder::AssetFile file;
-            auto& artifact = file.m_artifacts.emplace_back();
-            artifact.m_productKey = "Serialized/Primary";
-            artifact.m_name = name;
-            artifact.m_assetId = Uuid::Random();
-            artifact.m_assetTypeId = Rtti::GetTypeID<T>();
+            EXPECT_TRUE(AssetBuilder::LoadAssetFile(path, file));
+            auto& artifact = file.m_artifacts.front();
             artifact.m_buildSettings.Emplace<T>(value);
             const auto id = artifact.m_assetId;
             EXPECT_TRUE(AssetBuilder::SaveAssetFile(path, file));
+            // Reimport preserves the authored value and discovers nested links through its generated serializer.
+            EXPECT_TRUE(AssetBuilder::ImportAsset({ {}, path, Rtti::GetTypeID<T>() }));
             EXPECT_TRUE(AssetBuilder::BuildAsset({ path, {}, m_directory }));
             return id;
         }
@@ -64,22 +64,19 @@ TEST_F(CollectionAssetsIntegration, ImportedDefinitionsReleaseWhileNestedRuntime
     EntityCollection collection;
     EntityRecord record;
     record.m_uuid = Uuid::Random();
-    ASSERT_TRUE(collection.CookComponent(
-        record,
+    ASSERT_TRUE(record.AddComponent(
         CollectionAssets{ IO::Link<AssetComponent>(nested), IO::Link<Number, IO::DependencyKind::kSoft>(soft) }));
     collection.m_entities.push_back(std::move(record));
-    auto unsupported = collection;
-    ++unsupported.m_entities.front().m_components.front().m_version;
-    EXPECT_FALSE(AssetBuilder::ImportEntityCollection(m_directory / "unsupported.asset", unsupported));
-    auto missingMetadata = collection;
-    missingMetadata.m_entities.front().m_components.front().m_dependencies.clear();
-    EXPECT_FALSE(AssetBuilder::ImportEntityCollection(m_directory / "missing-dependencies.asset", missingMetadata));
-    const auto path = m_directory / "collection.asset";
-    ASSERT_TRUE(AssetBuilder::ImportEntityCollection(path, collection));
+    const auto definitionId = BuildDefinition("collection.asset", collection);
     AssetBuilder::AssetFile file;
-    ASSERT_TRUE(AssetBuilder::LoadAssetFile(path, file));
-    const auto definitionId = file.m_artifacts.front().m_assetId;
-    ASSERT_TRUE(AssetBuilder::BuildAsset({ path, {}, m_directory }));
+    ASSERT_TRUE(AssetBuilder::LoadAssetFile(m_directory / "collection.asset", file));
+    const auto& dependencies = file.m_artifacts.front().m_dependencies;
+    ASSERT_EQ(dependencies.size(), 2);
+    EXPECT_EQ(dependencies[0].m_assetId, nested);
+    EXPECT_EQ(dependencies[0].m_expectedTypeId, Rtti::GetTypeID<AssetComponent>());
+    EXPECT_EQ(dependencies[0].m_kind, IO::DependencyKind::kHard);
+    EXPECT_EQ(dependencies[1].m_assetId, soft);
+    EXPECT_EQ(dependencies[1].m_kind, IO::DependencyKind::kSoft);
     IO::ArtifactStore::SetCatalogSource(m_directory);
     IO::AssetManager::Init();
     auto shutdown = festd::defer([] {
@@ -124,22 +121,13 @@ TEST_F(CollectionAssetsIntegration, PersistentAssetDuplicateCancellationAndReloa
     EntityCollection collection;
     EntityRecord record;
     record.m_uuid = Uuid::Random();
-    ASSERT_TRUE(collection.CookComponent(record, Number{ 91 }));
+    ASSERT_TRUE(record.AddComponent(Number{ 91 }));
     collection.m_entities.push_back(std::move(record));
-    const auto collectionPath = m_directory / "collection.asset";
-    ASSERT_TRUE(AssetBuilder::ImportEntityCollection(collectionPath, collection));
-    AssetBuilder::AssetFile file;
-    ASSERT_TRUE(AssetBuilder::LoadAssetFile(collectionPath, file));
-    const auto collectionId = file.m_artifacts.front().m_assetId;
-    ASSERT_TRUE(AssetBuilder::BuildAsset({ collectionPath, {}, m_directory }));
+    const auto collectionId = BuildDefinition("collection.asset", collection);
     EntityCollectionInstanceAsset placement;
     placement.m_collection = IO::Link<EntityCollection>(collectionId);
     ASSERT_TRUE(placement.UpdateBindings(collection));
-    const auto path = m_directory / "placement.asset";
-    ASSERT_TRUE(AssetBuilder::ImportEntityPlacement(path, placement, collection));
-    ASSERT_TRUE(AssetBuilder::LoadAssetFile(path, file));
-    const auto placementId = file.m_artifacts.front().m_assetId;
-    ASSERT_TRUE(AssetBuilder::BuildAsset({ path, {}, m_directory }));
+    const auto placementId = BuildDefinition("placement.asset", placement);
     IO::ArtifactStore::SetCatalogSource(m_directory);
     IO::AssetManager::Init();
     auto shutdown = festd::defer([] {
@@ -176,7 +164,7 @@ TEST_F(CollectionAssetsIntegration, WorldAndConcreteSnapshotRoundTripThroughDefa
     EntityRecord record;
     record.m_uuid = Uuid::Random();
     const Uuid uuid = record.m_uuid;
-    ASSERT_TRUE(group.m_entities.CookComponent(record, Number{ 31 }));
+    ASSERT_TRUE(record.AddComponent(Number{ 31 }));
     group.m_entities.m_entities.push_back(std::move(record));
     const auto worldId = BuildDefinition("world.asset", definition);
     IO::ArtifactStore::SetCatalogSource(m_directory);

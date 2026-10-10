@@ -120,14 +120,15 @@ namespace FE::Framework
     };
 
 
-    // World mutation, lifecycle hooks and collection occur at main-thread safe points. Query callbacks execute on job fibers.
-    // Application stages may pass external completion groups. Validate the full phase plan before executing any callbacks.
     //! @brief Own entities, storage, and a shared schedule across all registries; safe points require the main thread.
+    //
+    //! Borrowed asset services must outlive the world.
+    //! World mutation, lifecycle hooks and collection occur at main-thread safe points. Queries use job fibers;
+    //! kMainThread keeps query callbacks on main-thread fibers.
+    //! Application stages may pass external completion groups. Validate the full phase plan before executing any callbacks.
     struct EntityWorld final
     {
-        //! @brief Create an empty world; borrowed asset services must outlive it.
         explicit EntityWorld(EntityAssetServices* assets = nullptr);
-        //! @brief Release world-owned entities and residency, then shut down systems and services.
         ~EntityWorld();
 
         EntityWorld(const EntityWorld&) = delete;
@@ -135,7 +136,6 @@ namespace FE::Framework
 
         //! @brief Resolve a runtime ID or UUID; return null for stale, foreign, absent, or filtered inactive entities.
         [[nodiscard]] Entity* Find(EntityID id) const;
-        //! @brief Resolve a runtime ID or UUID; return null for stale, foreign, absent, or filtered inactive entities.
         [[nodiscard]] Entity* Find(Uuid uuid, bool activeOnly = true) const;
 
         //! @brief Create a world-owned residency group at a main-thread safe point.
@@ -162,11 +162,9 @@ namespace FE::Framework
 
         //! @brief Queue a collection with fresh UUIDs beneath a generated root; content failures are reported by its token.
         MaterializationToken SpawnCollection(EntityRegistry& registry, const EntityCollection& collection);
-        //! @brief Queue a collection with fresh UUIDs beneath a generated root; content failures are reported by its token.
         MaterializationToken SpawnCollection(EntityRegistry& registry, IO::AssetID collection);
         //! @brief Queue an authored placement, preserving bindings; repeated pending or ready asset requests share a token.
         MaterializationToken LoadPlacement(EntityRegistry& registry, IO::AssetID placement);
-        //! @brief Queue an authored placement, preserving bindings; repeated pending or ready asset requests share a token.
         MaterializationToken LoadPlacement(EntityRegistry& registry, IO::AssetID placement,
                                            const EntityCollectionInstanceAsset& definition, const EntityCollection& collection);
 
@@ -197,6 +195,7 @@ namespace FE::Framework
         void AddService(WorldService& service);
         //! @brief Shut down and detach a service after clearing entities, outside an update epoch.
         void RemoveService(WorldService& service);
+
         //! @brief Find a registered service by reflected type or base; the pointer is borrowed until removal.
         template<class T>
             requires std::derived_from<T, WorldService>
@@ -248,7 +247,6 @@ namespace FE::Framework
         //! @brief Release callback captures and close the epoch; unfinished recorded work is a programmer error.
         bool EndUpdate();
 
-        //! @brief Return the current epoch used to validate update contexts.
         [[nodiscard]] uint64_t GetEpoch() const;
         //! @brief Return a synchronized copy of counters for the most recent update plan.
         [[nodiscard]] ScheduleDiagnostics GetScheduleDiagnostics() const;
@@ -260,7 +258,6 @@ namespace FE::Framework
         [[nodiscard]] festd::ascii_view GetLastError() const;
         //! @brief Return allocated entity count, including inactive and loading entities.
         [[nodiscard]] uint32_t GetEntityCount() const;
-        //! @brief Return the number of occupied component chunks.
         [[nodiscard]] uint32_t GetChunkCount() const;
 
         // Query callbacks are arena-owned until EndUpdate. Captured references must outlive the epoch.

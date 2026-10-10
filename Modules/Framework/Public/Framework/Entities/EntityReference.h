@@ -11,7 +11,7 @@ namespace FE::Framework
         Uuid m_uuid = Uuid::kNull;
         //! @brief Optional placement identity for diagnostics; does not acquire residency.
         IO::AssetID m_placementAsset = IO::AssetID::kNull;
-        FE_RTTI_Reflect("b9dbe80d-6ab0-486a-ab00-000000000014");
+        FE_RTTI_Reflect("84EE0DEE-3FE2-4BA6-A39D-3C24BB2E6C7B");
 
         //! @brief Resolve the current target generation without acquiring residency; inactive or unloaded targets may return null.
         [[nodiscard]] Entity* Resolve(const EntityWorld& world, bool activeOnly = true) const

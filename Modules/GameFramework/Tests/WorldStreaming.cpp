@@ -1,6 +1,5 @@
 #include <AssetBuilder/AssetFile.h>
 #include <AssetBuilder/AssetPipeline.h>
-#include <AssetBuilder/EntityImport.h>
 #include <Core/IO/Artifact.h>
 #include <Core/Strings/Format.h>
 #include <Core/Threading/Thread.h>
@@ -21,21 +20,25 @@ TEST(WorldStreaming, DiskPlacementReloadPreservesUuidAndCancelPreventsLateEntiti
     EntityCollection collection;
     EntityRecord record;
     record.m_uuid = Uuid::Random();
-    ASSERT_TRUE(collection.CookComponent(record, TransformComponent{}));
+    ASSERT_TRUE(record.AddComponent(TransformComponent{}));
     collection.m_entities.push_back(record);
     const IO::Path collectionPath = directory / "collection.asset";
-    ASSERT_TRUE(AssetBuilder::ImportEntityCollection(collectionPath, collection));
+    ASSERT_TRUE(AssetBuilder::ImportAsset({ {}, collectionPath, Rtti::GetTypeID<EntityCollection>() }));
     AssetBuilder::AssetFile file;
     ASSERT_TRUE(AssetBuilder::LoadAssetFile(collectionPath, file));
     const auto collectionId = file.m_artifacts[0].m_assetId;
+    file.m_artifacts[0].m_buildSettings.Emplace<EntityCollection>(collection);
+    ASSERT_TRUE(AssetBuilder::SaveAssetFile(collectionPath, file));
     ASSERT_TRUE(AssetBuilder::BuildAsset({ collectionPath, {}, directory }));
     EntityCollectionInstanceAsset placement;
     placement.m_collection = IO::Link<EntityCollection>(collectionId);
     ASSERT_TRUE(placement.UpdateBindings(collection));
     const IO::Path placementPath = directory / "placement.asset";
-    ASSERT_TRUE(AssetBuilder::ImportEntityPlacement(placementPath, placement, collection));
+    ASSERT_TRUE(AssetBuilder::ImportAsset({ {}, placementPath, Rtti::GetTypeID<EntityCollectionInstanceAsset>() }));
     ASSERT_TRUE(AssetBuilder::LoadAssetFile(placementPath, file));
     const auto placementId = file.m_artifacts[0].m_assetId;
+    file.m_artifacts[0].m_buildSettings.Emplace<EntityCollectionInstanceAsset>(placement);
+    ASSERT_TRUE(AssetBuilder::SaveAssetFile(placementPath, file));
     ASSERT_TRUE(AssetBuilder::BuildAsset({ placementPath, {}, directory }));
     IO::ArtifactStore::SetCatalogSource(directory);
     IO::AssetManager::Init();

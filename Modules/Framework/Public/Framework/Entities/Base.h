@@ -43,7 +43,6 @@ namespace FE::Framework
             return static_cast<uint32_t>(m_value & 0xffffff);
         }
 
-        //! @brief Compare all packed world, slot, and generation bits.
         bool operator==(const EntityID&) const = default;
 
         //! @brief Combine a world incarnation, slot, and generation; inputs must fit their reserved bit widths.
@@ -107,13 +106,15 @@ namespace FE::Framework
     };
 
 
-    //! @brief Select sequential callbacks or query-appropriate parallel work.
+    //! @brief Select sequential callbacks, main-thread callbacks or query-appropriate parallel work.
     enum class ExecutionPolicy : uint8_t
     {
         //! @brief Process one traversal sequentially; exclude other work from the same system.
         kSequential,
         //! @brief Process chunks, or parent-before-child hierarchy-tree batches for cascades, concurrently.
-        kParallel
+        kParallel,
+        //! @brief Process one traversal sequentially on the main thread; exclude other work from the same system.
+        kMainThread
     };
 
 
@@ -123,12 +124,10 @@ namespace FE::Framework
         //! @brief Stable identity key.
         uint64_t m_id;
         //! @brief Display name; not an identity key.
-        festd::ascii_view m_name;
+        //festd::ascii_view m_name;
 
-        //! @brief Compare identity; phase names are diagnostic and do not participate in equality.
         bool operator==(const Phase& other) const
         {
-            //! @brief Stable identity key.
             return m_id == other.m_id;
         }
     };
@@ -137,7 +136,7 @@ namespace FE::Framework
 #define FE_DECLARE_ENTITY_PHASE(name)                                                                                            \
     inline constexpr ::FE::Framework::Phase name                                                                                 \
     {                                                                                                                            \
-        ::FE::CompileTimeHash(#name, sizeof(#name) - 1), #name                                                                   \
+        ::FE::CompileTimeHash(#name, sizeof(#name) - 1)                                                                          \
     }
     namespace Phases
     {
