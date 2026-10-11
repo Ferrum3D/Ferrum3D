@@ -1,0 +1,35 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "Look",
+                "m_assetId": "40C30B4A-A66C-4658-8A6D-5A326AFA4293",
+                "m_assetTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_buildSettings": {
+                    "m_typeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                    "m_value": {
+                        "m_type": 2,
+                        "m_flags": 0,
+                        "m_processor": {
+                            "m_typeId": "D93D50DB-32B9-42B4-A49B-3C0AD6E7985A",
+                            "m_value": {
+                                "$base:FE::Input::ActionProcessor": {}
+                            }
+                        }
+                    }
+                },
+                "m_dependencies": [],
+                "m_lastBuildKey": "32F9CCC0-5485-47CA-8D34-DAFA0578B945",
+                "m_builtArtifactId": "647605CB-B414-47CA-BB70-34950C85EEE2",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

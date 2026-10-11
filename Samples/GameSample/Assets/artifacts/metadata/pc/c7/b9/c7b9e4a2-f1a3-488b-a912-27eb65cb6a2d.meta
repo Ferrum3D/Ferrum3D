@@ -1,0 +1,48 @@
+{
+    "$type": "BFCD80E4-DB85-41F2-B43D-F08EA62AA6EC",
+    "$typename": "FE::IO::ArtifactRecord",
+    "$version": 0,
+    "$schema": "0x4d3ae890a4a739c5",
+    "$value": {
+        "m_artifactId": "C93FA632-AC05-4531-A957-C831B11322B4",
+        "m_assetId": "C7B9E4A2-F1A3-488B-A912-27EB65CB6A2D",
+        "m_assetTypeId": "C27E593F-6199-41FB-AFFD-8E73F51ECCFE",
+        "m_payloads": [
+            {
+                "m_resolvedDataSource": {
+                    "m_filePath": "",
+                    "m_byteOffset": 0,
+                    "m_byteSize": 373
+                },
+                "m_chunks": [
+                    {
+                        "m_offsetInPayload": 0,
+                        "m_compressedSize": 373,
+                        "m_uncompressedSize": 1528,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 45548833
+                        }
+                    }
+                ]
+            }
+        ],
+        "m_dependencies": [
+            {
+                "m_assetId": "63238EA0-B29B-4ED2-A7CE-7D38C4C6F6DE",
+                "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "29A62CFF-7780-4028-9E47-0F22E0A58926",
+                "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "40C30B4A-A66C-4658-8A6D-5A326AFA4293",
+                "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_kind": 0
+            }
+        ]
+    }
+}

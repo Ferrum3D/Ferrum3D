@@ -19,6 +19,21 @@ namespace
 } // namespace
 
 
+TEST(Quaternion, MultiplicationPreservesIdentityAndComposesRotations)
+{
+    const Quaternion rotation = Math::Normalize(Quaternion{ 1, 2, 3, 4 });
+    const Quaternion identity{ 0, 0, 0, 1 };
+    ExpectSameRotation(identity * rotation, rotation);
+    ExpectSameRotation(rotation * identity, rotation);
+    ExpectSameRotation(rotation * Math::Conjugate(rotation), identity);
+
+    const Quaternion yaw = Quaternion::RotationY(0.7f);
+    const Quaternion pitch = Quaternion::RotationX(-0.3f);
+    const Vector3 vector{ 1, 2, 3 };
+    EXPECT_TRUE(Math::CmpEqual(Math::Rotate(vector, yaw * pitch), Math::Rotate(Math::Rotate(vector, pitch), yaw), 1e-5f));
+}
+
+
 TEST(Transform, ToMatrix)
 {
     const Vector3 translation{ 1.5f, -2.0f, 3.25f };

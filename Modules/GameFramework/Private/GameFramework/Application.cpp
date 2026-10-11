@@ -2,6 +2,8 @@
 #include <Core/IO/AssetManager.h>
 #include <Core/Reflection.gen.h>
 #include <Core/Threading/Thread.h>
+#include <Framework/Entities/WorldTimeService.h>
+#include <Framework/Input/WorldInputService.h>
 #include <Framework/Reflection.gen.h>
 #include <GameFramework/Application.h>
 #include <GameFramework/CameraSystem.h>
@@ -89,7 +91,10 @@ namespace FE::GameFramework
         {
             // An empty application world still has its engine services for explicit system/entity registration.
             Framework::EntityWorldAsset definition;
-            definition.m_services = { Rtti::GetTypeID<WorldGraphicsSceneService>(), Rtti::GetTypeID<WorldStreamingService>() };
+            definition.m_services = { Rtti::GetTypeID<Framework::WorldTimeService>(),
+                                      Rtti::GetTypeID<Input::WorldInputService>(),
+                                      Rtti::GetTypeID<WorldGraphicsSceneService>(),
+                                      Rtti::GetTypeID<WorldStreamingService>() };
             return m_world->Load(definition);
         }
 
@@ -216,6 +221,7 @@ namespace FE::GameFramework
 
     void Application::ScheduleWorldUpdate(Framework::EntityWorld& world)
     {
+        world.SchedulePhase(Phases::Input);
         world.SchedulePhase(Phases::Transformation);
         world.SchedulePhase(Phases::GraphicsExtraction);
     }

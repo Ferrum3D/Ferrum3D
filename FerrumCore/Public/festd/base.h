@@ -3,6 +3,7 @@
 #include <Core/Base/wyhash.h>
 
 #include <EASTL/array.h>
+#include <EASTL/bitset.h>
 #include <EASTL/bonus/adaptors.h>
 #include <EASTL/finally.h>
 #include <EASTL/numeric.h>
@@ -55,6 +56,7 @@ namespace FE::festd
     using ascii_view = std::string_view;
 
     using eastl::array;
+    using eastl::bitset;
 
     using tl::expected;
     using tl::unexpected;

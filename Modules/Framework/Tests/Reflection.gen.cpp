@@ -6,6 +6,7 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <EntityTestTypes.h>
+#include <InputTestTypes.h>
 
 
 namespace FE
@@ -550,6 +551,154 @@ namespace FE::Framework::Tests
 
     static Rtti::TypeRegistrar GTypeRegistrar_3be4d79616024658b20594b15f190036(&Hook::Reflect);
 } // namespace FE::Framework::Tests
+
+
+namespace FE::Input::Tests
+{
+    const Rtti::TypeID OffsetProcessor::TypeID = Rtti::TypeID{
+        0x3d, 0x16, 0x60, 0xfd, 0x97, 0x72, 0x44, 0xd7, 0x88, 0x75, 0xd0, 0xb7, 0xec, 0xfc, 0x4f, 0x78,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_3d1660fd977244d78875d0b7ecfc4f78(OffsetProcessor* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0x3d, 0x16, 0x60, 0xfd, 0x97, 0x72, 0x44, 0xd7,
+                0x88, 0x75, 0xd0, 0xb7, 0xec, 0xfc, 0x4f, 0x78, // FE::Input::Tests::OffsetProcessor (this type)
+                0x88, 0x25, 0x96, 0xaa, 0x9b, 0xd0, 0x47, 0x5d,
+                0x9c, 0xb2, 0x36, 0x36, 0xff, 0x35, 0xd8, 0x43, // FE::Input::ActionProcessor
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Input::ActionProcessor*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_3d1660fd977244d78875d0b7ecfc4f78()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& OffsetProcessor::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_3d1660fd977244d78875d0b7ecfc4f78();
+    }
+
+    void* FE_VECTORCALL OffsetProcessor::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_3d1660fd977244d78875d0b7ecfc4f78(this, typeID);
+    }
+
+    const void* FE_VECTORCALL OffsetProcessor::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_3d1660fd977244d78875d0b7ecfc4f78(const_cast<OffsetProcessor*>(this), typeID);
+    }
+    void OffsetProcessor::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_3d1660fd977244d78875d0b7ecfc4f78();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x3d, 0x16, 0x60, 0xfd, 0x97, 0x72, 0x44, 0xd7,
+            0x88, 0x75, 0xd0, 0xb7, 0xec, 0xfc, 0x4f, 0x78, // FE::Input::Tests::OffsetProcessor
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x88, 0x25, 0x96, 0xaa, 0x9b, 0xd0, 0x47, 0x5d,
+            0x9c, 0xb2, 0x36, 0x36, 0xff, 0x35, 0xd8, 0x43, // FE::Input::ActionProcessor
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_value
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_value = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_value",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &OffsetProcessor::m_value,
+                                                        kAttributes_m_value,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<OffsetProcessor>(typeInstance,
+                                              Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                              "FE::Input::Tests::OffsetProcessor",
+                                              kBaseClassTypeIDs,
+                                              kAttributes,
+                                              kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<OffsetProcessor*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_3d1660fd977244d78875d0b7ecfc4f78(&OffsetProcessor::Reflect);
+
+    FE::Serialization::ResultCode OffsetProcessor::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("$base:FE::Input::ActionProcessor", static_cast<const FE::Input::ActionProcessor&>(*this));
+            object.Field("m_value", m_value);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode OffsetProcessor::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("$base:FE::Input::ActionProcessor", static_cast<FE::Input::ActionProcessor&>(*this));
+            object.Field("m_value", m_value);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t OffsetProcessor::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x3d, 0x16, 0x60, 0xfd, 0x97, 0x72, 0x44, 0xd7, 0x88, 0x75, 0xd0, 0xb7, 0xec, 0xfc, 0x4f, 0x78,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("$base:FE::Input::ActionProcessor", 32);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<FE::Input::ActionProcessor>());
+            hasher.Update("m_value", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_value)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t OffsetProcessor::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Input::Tests
 
 
 namespace FE::Framework::Tests

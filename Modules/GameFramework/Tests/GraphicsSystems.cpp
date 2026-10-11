@@ -1,8 +1,14 @@
+#include <AssetBuilder/AssetFile.h>
+#include <AssetBuilder/AssetPipeline.h>
+#include <Core/IO/Artifact.h>
+#include <Core/IO/AssetManager.h>
 #include <Core/IO/MemoryStream.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Threading/Thread.h>
 #include <Framework/Entities/EntityWorldAsset.h>
+#include <Framework/Entities/WorldTimeService.h>
 #include <GameFramework/CameraComponent.h>
+#include <GameFramework/CameraMovementSystem.h>
 #include <GameFramework/CameraSystem.h>
 #include <GameFramework/MeshComponent.h>
 #include <GameFramework/MeshSystem.h>
@@ -16,6 +22,46 @@ using namespace FE::GameFramework;
 
 namespace
 {
+    template<class T>
+    IO::Link<T> BuildCameraInputAsset(const IO::Path& directory, const char* name, const T& value)
+    {
+        const IO::Path path = directory / name;
+        EXPECT_TRUE(AssetBuilder::ImportAsset({ {}, path, Rtti::GetTypeID<T>() }));
+        AssetBuilder::AssetFile file;
+        EXPECT_TRUE(AssetBuilder::LoadAssetFile(path, file));
+        file.m_artifacts.front().m_buildSettings.Emplace<T>(value);
+        const auto id = file.m_artifacts.front().m_assetId;
+        EXPECT_TRUE(AssetBuilder::SaveAssetFile(path, file));
+        EXPECT_TRUE(AssetBuilder::ImportAsset({ {}, path, Rtti::GetTypeID<T>() }));
+        EXPECT_TRUE(AssetBuilder::BuildAsset({ path, {}, directory }));
+        return IO::Link<T>(id);
+    }
+
+
+    struct CameraInputBackend final : Input::Core::Backend
+    {
+        Input::Core::KeyboardState m_keyboard;
+        Input::Core::MouseState m_mouse;
+        uint32_t m_updates = 0;
+        festd::span<const Input::Core::DeviceKind> EnumerateDevices() const override
+        {
+            return {};
+        }
+        void Update() override
+        {
+            ++m_updates;
+        }
+        const Input::Core::KeyboardState& GetKeyboardState() const override
+        {
+            return m_keyboard;
+        }
+        const Input::Core::MouseState& GetMouseState() const override
+        {
+            return m_mouse;
+        }
+    };
+
+
     struct TestView final : Graphics::View
     {
         TestView()
@@ -209,6 +255,99 @@ TEST_F(GraphicsFixture, ExtractsChangedMatricesAndSkipsUnchangedChunks)
     EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_32, 12);
     const auto projection = Matrix4x4::Projection(0.5f, 16.0f / 9.0f, 0.01f, 1000);
     EXPECT_FLOAT_EQ(CameraView().GetProjectionMatrix().m_11, projection.m_11);
+}
+
+
+TEST_F(GraphicsFixture, AuthoredInputMovesEveryCameraBeforeTransformAndGraphicsExtraction)
+{
+    const IO::Path directory = IO::Path(FE_GAME_ASSET_TEST_OUTPUT) / Fmt::Format("CameraInput-{}", Uuid::Random());
+    Input::Action move;
+    move.m_type = Input::ActionType::kVector2;
+    move.m_processor = Memory::DefaultNew<Input::ContinuousActionProcessor>();
+    const auto moveLink = BuildCameraInputAsset(directory, "move.asset", move);
+    Input::Action elevate;
+    elevate.m_type = Input::ActionType::kScalar;
+    elevate.m_processor = Memory::DefaultNew<Input::ContinuousActionProcessor>();
+    const auto elevateLink = BuildCameraInputAsset(directory, "elevate.asset", elevate);
+    Input::MappingTable table;
+    Input::ActionMapping mapping;
+    mapping.m_action = moveLink;
+    mapping.m_keyboard = { { Input::Core::Key::kW, { 0, 1 } } };
+    table.m_mappings.push_back(mapping);
+    mapping.m_action = elevateLink;
+    mapping.m_keyboard = { { Input::Core::Key::kE, { 1, 0 } } };
+    table.m_mappings.push_back(mapping);
+    const auto tableLink = BuildCameraInputAsset(directory, "table.asset", table);
+    IO::ArtifactStore::SetCatalogSource(directory);
+    IO::AssetManager::Init();
+    Framework::WorldTimeService time;
+    Input::WorldInputService input;
+    CameraMovementSystem movementSystem;
+    auto* backend = Memory::DefaultNew<CameraInputBackend>();
+    backend->m_keyboard.m_keyDownMap.set(87).set(69);
+    input.SetBackend(festd::unique_ptr<Input::Core::Backend>(backend));
+    m_world.AddService(time);
+    m_world.AddService(input);
+    m_world.AddSystem(movementSystem);
+    auto cleanup = festd::defer([&] {
+        m_world.Clear();
+        m_world.RemoveSystem(movementSystem);
+        m_world.RemoveService(input);
+        m_world.RemoveService(time);
+        IO::AssetManager::Shutdown();
+    });
+
+    auto request = IO::AssetManager::LoadAsset(tableLink);
+    for (uint32_t iteration = 0; iteration < 5000 && !request.IsCompleted(); ++iteration)
+    {
+        IO::AssetManager::Tick();
+        Threading::Sleep(1);
+    }
+
+    ASSERT_EQ(request.GetResult(), IO::AssetLoadResult::kSucceeded);
+    CameraMovementComponent movement;
+    movement.m_mappingTable = tableLink;
+    movement.m_moveAction = moveLink;
+    movement.m_elevateAction = elevateLink;
+    EntityCommandList commands(m_world);
+    commands.AddComponent(m_world.Find(m_cameraUuid)->GetID(), movement);
+    const Uuid secondUuid = Uuid::Random();
+    const auto second = commands.CreateEntity(m_world.Find(m_cameraUuid)->GetRegistry(), {}, secondUuid);
+    commands.AddComponent<TransformComponent>(second);
+    commands.AddComponent<CameraComponent>(second);
+    commands.AddComponent(second, movement);
+    m_world.Submit(std::move(commands));
+    for (uint32_t iteration = 0; iteration < 5000; ++iteration)
+    {
+        IO::AssetManager::Tick();
+        ASSERT_TRUE(m_world.CommitBootstrap());
+        const auto* firstEntity = m_world.Find(m_cameraUuid);
+        if (firstEntity && firstEntity->FindComponent<const CameraMovementComponent>() && m_world.Find(secondUuid))
+            break;
+
+        Threading::Sleep(1);
+    }
+
+    ASSERT_NE(m_world.Find(m_cameraUuid), nullptr);
+    ASSERT_NE(m_world.Find(secondUuid), nullptr);
+    m_world.BeginUpdate();
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::Input));
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::Transformation));
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::GraphicsExtraction));
+    ASSERT_TRUE(m_world.ExecuteSchedule());
+    ASSERT_TRUE(m_world.EndUpdate());
+    EXPECT_EQ(backend->m_updates, 1);
+    const float distance = movement.m_moveSpeed * time.GetDeltaSeconds();
+    const auto* firstTransform = m_world.Find(m_cameraUuid)->FindComponent<const TransformComponent>();
+    const auto* secondTransform = m_world.Find(secondUuid)->FindComponent<const TransformComponent>();
+    ASSERT_NE(firstTransform, nullptr);
+    ASSERT_NE(secondTransform, nullptr);
+    EXPECT_FLOAT_EQ(firstTransform->m_local.Translation().z, -8 + distance);
+    EXPECT_FLOAT_EQ(firstTransform->m_local.Translation().y, 3 + distance);
+    EXPECT_FLOAT_EQ(secondTransform->m_local.Translation().z, distance);
+    EXPECT_FLOAT_EQ(secondTransform->m_local.Translation().y, distance);
+    EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_32, 8 - distance);
+    EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_31, -3 - distance);
 }
 
 

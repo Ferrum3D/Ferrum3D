@@ -7,6 +7,8 @@
 
 #include <GameFramework/Application.h>
 #include <GameFramework/CameraComponent.h>
+#include <GameFramework/CameraMovementComponent.h>
+#include <GameFramework/CameraMovementSystem.h>
 #include <GameFramework/CameraSystem.h>
 #include <GameFramework/MeshComponent.h>
 #include <GameFramework/MeshSystem.h>
@@ -249,6 +251,172 @@ namespace FE::GameFramework
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2f63d347123d4124a0cb2aacee290dc3(&Application::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID CameraMovementComponent::TypeID = Rtti::TypeID{
+        0x43, 0xe3, 0xdf, 0xbf, 0xf1, 0x55, 0x4a, 0xcb, 0xbe, 0x25, 0x23, 0x85, 0x74, 0x25, 0x06, 0x2f,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_43e3dfbff1554acbbe2523857425062f()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& CameraMovementComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_43e3dfbff1554acbbe2523857425062f();
+    }
+
+    void CameraMovementComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_43e3dfbff1554acbbe2523857425062f();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x43, 0xe3, 0xdf, 0xbf, 0xf1, 0x55, 0x4a, 0xcb,
+            0xbe, 0x25, 0x23, 0x85, 0x74, 0x25, 0x06, 0x2f, // FE::GameFramework::CameraMovementComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_mappingTable
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_moveAction
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_elevateAction
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lookAction
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_moveSpeed
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mouseSensitivity
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mappingTable = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_moveAction = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_elevateAction = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lookAction = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_moveSpeed = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mouseSensitivity = {};
+
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mappingTable",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &CameraMovementComponent::m_mappingTable,
+                                                        kAttributes_m_mappingTable,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_moveAction",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &CameraMovementComponent::m_moveAction,
+                                                        kAttributes_m_moveAction,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_elevateAction",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &CameraMovementComponent::m_elevateAction,
+                                                        kAttributes_m_elevateAction,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lookAction",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &CameraMovementComponent::m_lookAction,
+                                                        kAttributes_m_lookAction,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_moveSpeed",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &CameraMovementComponent::m_moveSpeed,
+                                                        kAttributes_m_moveSpeed,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mouseSensitivity",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &CameraMovementComponent::m_mouseSensitivity,
+                                                        kAttributes_m_mouseSensitivity,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<CameraMovementComponent>(typeInstance,
+                                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                      "FE::GameFramework::CameraMovementComponent",
+                                                      kBaseClassTypeIDs,
+                                                      kAttributes,
+                                                      kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_43e3dfbff1554acbbe2523857425062f(&CameraMovementComponent::Reflect);
+
+    FE::Serialization::ResultCode CameraMovementComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_mappingTable", m_mappingTable);
+            object.Field("m_moveAction", m_moveAction);
+            object.Field("m_elevateAction", m_elevateAction);
+            object.Field("m_lookAction", m_lookAction);
+            object.Field("m_moveSpeed", m_moveSpeed);
+            object.Field("m_mouseSensitivity", m_mouseSensitivity);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode CameraMovementComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_mappingTable", m_mappingTable);
+            object.Field("m_moveAction", m_moveAction);
+            object.Field("m_elevateAction", m_elevateAction);
+            object.Field("m_lookAction", m_lookAction);
+            object.Field("m_moveSpeed", m_moveSpeed);
+            object.Field("m_mouseSensitivity", m_mouseSensitivity);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t CameraMovementComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x43, 0xe3, 0xdf, 0xbf, 0xf1, 0x55, 0x4a, 0xcb, 0xbe, 0x25, 0x23, 0x85, 0x74, 0x25, 0x06, 0x2f,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_mappingTable", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mappingTable)>());
+            hasher.Update("m_moveAction", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_moveAction)>());
+            hasher.Update("m_elevateAction", 15);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_elevateAction)>());
+            hasher.Update("m_lookAction", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_lookAction)>());
+            hasher.Update("m_moveSpeed", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_moveSpeed)>());
+            hasher.Update("m_mouseSensitivity", 18);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mouseSensitivity)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t CameraMovementComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::GameFramework
 
 
@@ -642,6 +810,88 @@ namespace FE::GameFramework
         return 0;
     }
 
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID CameraMovementSystem::TypeID = Rtti::TypeID{
+        0x9a, 0x54, 0x8b, 0xd5, 0x67, 0x68, 0x49, 0xbc, 0x9f, 0xe6, 0x77, 0xf4, 0x18, 0xf8, 0xc9, 0xc5,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_9a548bd5676849bc9fe677f418f8c9c5(CameraMovementSystem* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0x9a, 0x54, 0x8b, 0xd5, 0x67, 0x68, 0x49, 0xbc,
+                0x9f, 0xe6, 0x77, 0xf4, 0x18, 0xf8, 0xc9, 0xc5, // FE::GameFramework::CameraMovementSystem (this type)
+                0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+                0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_9a548bd5676849bc9fe677f418f8c9c5()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& CameraMovementSystem::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_9a548bd5676849bc9fe677f418f8c9c5();
+    }
+
+    void* FE_VECTORCALL CameraMovementSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_9a548bd5676849bc9fe677f418f8c9c5(this, typeID);
+    }
+
+    const void* FE_VECTORCALL CameraMovementSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_9a548bd5676849bc9fe677f418f8c9c5(const_cast<CameraMovementSystem*>(this), typeID);
+    }
+    void CameraMovementSystem::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_9a548bd5676849bc9fe677f418f8c9c5();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x9a, 0x54, 0x8b, 0xd5, 0x67, 0x68, 0x49, 0xbc,
+            0x9f, 0xe6, 0x77, 0xf4, 0x18, 0xf8, 0xc9, 0xc5, // FE::GameFramework::CameraMovementSystem
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+            0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<CameraMovementSystem>(typeInstance,
+                                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                   "FE::GameFramework::CameraMovementSystem",
+                                                   kBaseClassTypeIDs,
+                                                   kAttributes,
+                                                   kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<CameraMovementSystem*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_9a548bd5676849bc9fe677f418f8c9c5(&CameraMovementSystem::Reflect);
 } // namespace FE::GameFramework
 
 

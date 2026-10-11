@@ -34,7 +34,9 @@ function(fe_configure_target TARGET)
 			-Wno-deprecated-builtins -Wno-language-extension-token)
     endif()
 
-    set_target_properties(${TARGET} PROPERTIES UNITY_BUILD ON)
+    if(NOT FE_CODEGEN)
+        set_target_properties(${TARGET} PROPERTIES UNITY_BUILD ON)
+    endif()
     set_target_properties(${TARGET} PROPERTIES UNITY_BUILD_BATCH_SIZE 16)
 
     get_target_property(TARGET_SOURCES ${TARGET} SOURCES)

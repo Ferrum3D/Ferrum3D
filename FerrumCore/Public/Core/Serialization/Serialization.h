@@ -2,6 +2,7 @@
 #include <Core/Base/Base.h>
 #include <Core/Env/Environment.h>
 #include <Core/IO/IStream.h>
+#include <Core/Memory/Memory.h>
 #include <Core/RTTI/Reflection.h>
 #include <concepts>
 #include <festd/string.h>
@@ -836,6 +837,73 @@ namespace FE::Serialization
                 return static_cast<uint32_t>(T::kVersion);
             else
                 return 0;
+        }
+    };
+
+
+    //! Inline polymorphic values; shared identity and cycles are not persisted.
+    template<class T>
+    struct Serializer<Rc<T>>
+    {
+        static ResultCode Serialize(SerializationContext& context, const Rc<T>& value)
+        {
+            const Rtti::Type* type = value ? &value->RTTI_GetDynamicType() : nullptr;
+            if (type != nullptr)
+            {
+                FE_Assert(Rtti::TypeRegistry::FindType(type->m_id) == type, "Rc object is not registered");
+                FE_Assert(type->m_defaultConstructor != nullptr, "Rc object is not default constructible");
+            }
+
+            if (auto object = context.BeginObject())
+            {
+                object.Field("m_typeId", type ? type->m_id : Rtti::TypeID::kNull);
+                if (type != nullptr)
+                    object.Field("m_value", *type, dynamic_cast<const void*>(value.Get()));
+            }
+
+            return context.GetResultCode();
+        }
+
+
+        static ResultCode Deserialize(DeserializationContext& context, Rc<T>& value)
+        {
+            Rc<T> candidate;
+            if (auto object = context.BeginObject())
+            {
+                Rtti::TypeID typeId = Rtti::TypeID::kNull;
+                object.Field("m_typeId", typeId);
+                if (context.IsValid() && typeId.IsValid())
+                {
+                    const Rtti::Type* type = Rtti::TypeRegistry::FindType(typeId);
+                    if (type == nullptr || type->m_cast == nullptr || type->m_deserialize == nullptr)
+                        return context.ReportError(ResultCode::kTypeMismatch);
+
+                    FE_Assert(type->m_defaultConstructor != nullptr, "Rc object is not default constructible");
+                    void* storage = Memory::DefaultAllocate(type->m_size, type->m_alignment);
+                    type->m_defaultConstructor(storage);
+                    T* pointer = static_cast<T*>(type->m_cast(storage, Rtti::GetTypeID<T>()));
+                    if (pointer == nullptr)
+                    {
+                        type->m_destructor(storage);
+                        Memory::DefaultFree(storage);
+                        return context.ReportError(ResultCode::kTypeMismatch);
+                    }
+
+                    candidate = Rc<T>(pointer);
+                    object.Field("m_value", *type, storage);
+                }
+            }
+
+            if (context.IsValid())
+                value = std::move(candidate);
+
+            return context.GetResultCode();
+        }
+
+
+        static uint64_t GetSchemaHash()
+        {
+            return HashCombine(CompileTimeHash("Rc"), TypeNameHash<T>);
         }
     };
 

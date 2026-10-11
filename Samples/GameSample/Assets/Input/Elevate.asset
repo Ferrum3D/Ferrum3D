@@ -1,0 +1,35 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "Elevate",
+                "m_assetId": "29A62CFF-7780-4028-9E47-0F22E0A58926",
+                "m_assetTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_buildSettings": {
+                    "m_typeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                    "m_value": {
+                        "m_type": 1,
+                        "m_flags": 0,
+                        "m_processor": {
+                            "m_typeId": "D93D50DB-32B9-42B4-A49B-3C0AD6E7985A",
+                            "m_value": {
+                                "$base:FE::Input::ActionProcessor": {}
+                            }
+                        }
+                    }
+                },
+                "m_dependencies": [],
+                "m_lastBuildKey": "D3CF0C1C-EFF4-4DBE-93BA-DAD3FB5ABA2E",
+                "m_builtArtifactId": "5B24010C-3C7B-4A33-809A-38C948C90BC3",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

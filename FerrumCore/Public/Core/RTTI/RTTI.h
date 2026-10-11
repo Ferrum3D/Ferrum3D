@@ -4,6 +4,7 @@
 #include <concepts>
 #include <festd/base.h>
 #include <type_traits>
+#include <typeinfo>
 
 
 #if FE_CODEGEN
@@ -152,6 +153,11 @@ private:                                                                        
     FE_POP_CLANG_WARNING()                                                                                                       \
                                                                                                                                  \
 public:                                                                                                                          \
+    virtual const FE::Rtti::Type& RTTI_GetDynamicType() const                                                                    \
+    {                                                                                                                            \
+        FE_Assert(typeid(*this) == typeid(std::remove_cvref_t<decltype(*this)>), "Object has no dynamic RTTI registration");     \
+        return RTTI_GetType();                                                                                                   \
+    }                                                                                                                            \
     static const FE::Rtti::TypeID TypeID;                                                                                        \
     static FE_CODEGEN_ATTRIBUTE("ReflectBasic=" uuid) void Reflect(FE::Rtti::ReflectionContext& context)
 

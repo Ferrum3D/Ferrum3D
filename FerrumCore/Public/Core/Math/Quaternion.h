@@ -138,25 +138,10 @@ namespace FE
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator*(const Quaternion lhs, const Quaternion rhs)
     {
-        const __m128 a1123 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(3, 2, 1, 1));
-        const __m128 a2231 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(1, 3, 2, 2));
-        const __m128 b1000 = _mm_shuffle_ps(rhs.m_simdVector, rhs.m_simdVector, _MM_SHUFFLE(0, 0, 0, 1));
-        const __m128 b2312 = _mm_shuffle_ps(rhs.m_simdVector, rhs.m_simdVector, _MM_SHUFFLE(2, 1, 3, 2));
-
-        const __m128 t1 = _mm_mul_ps(a1123, b1000);
-        const __m128 t2 = _mm_mul_ps(a2231, b2312);
-
-        const __m128 kNegateWMask = _mm_castsi128_ps(_mm_setr_epi32(0, 0, 0, static_cast<int32_t>(0x80000000)));
-        const __m128 t12 = _mm_xor_ps(_mm_mul_ps(t1, t2), kNegateWMask);
-
-        const __m128 a3312 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(2, 1, 3, 3));
-        const __m128 b3231 = _mm_shuffle_ps(rhs.m_simdVector, rhs.m_simdVector, _MM_SHUFFLE(1, 3, 2, 3));
-        const __m128 a0000 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(0, 0, 0, 0));
-
-        const __m128 t3 = _mm_mul_ps(a3312, b3231);
-        const __m128 t0 = _mm_mul_ps(a0000, rhs.m_simdVector);
-        const __m128 t03 = _mm_sub_ps(t0, t3);
-        return Quaternion{ _mm_add_ps(t03, t12) };
+        return Quaternion{ lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
+                           lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x,
+                           lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w,
+                           lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z };
     }
 
 

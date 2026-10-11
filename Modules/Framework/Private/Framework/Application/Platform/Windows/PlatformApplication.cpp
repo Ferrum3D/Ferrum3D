@@ -609,6 +609,8 @@ namespace FE::Framework::Windows
     {
         FE_PROFILER_ZONE();
 
+        m_events.clear();
+
         MSG msg;
         while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
         {
