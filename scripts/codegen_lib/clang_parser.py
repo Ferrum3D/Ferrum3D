@@ -336,9 +336,9 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
     has_rtti = False
     member_reflection_id = None
     is_serializable = False
+    has_serialize = False
+    has_deserialize = False
     serialization_version = None
-    before_serialize = False
-    after_deserialize = False
     type_kind = TypeKind.NORMAL
     for child in node.get_children():
         if child.is_static_method() and child.spelling == "Reflect":
@@ -358,8 +358,8 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             marker_attributes = parse_attributes(child)
             is_serializable = "SerializeGenerated" in marker_attributes
         elif child.kind == cindex.CursorKind.CXX_METHOD and not child.is_static_method():
-            before_serialize |= child.spelling == "BeforeSerialize"
-            after_deserialize |= child.spelling == "AfterDeserialize"
+            has_serialize |= child.spelling == "Serialize"
+            has_deserialize |= child.spelling == "Deserialize"
         elif child.kind == cindex.CursorKind.VAR_DECL and child.spelling == "kVersion":
             serialization_version = child.spelling
 
@@ -395,9 +395,8 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             project_dir,
             direct_bases=direct_bases,
             is_serializable=is_serializable,
+            has_manual_serializer=has_serialize and has_deserialize,
             serialization_version=serialization_version,
-            before_serialize=before_serialize,
-            after_deserialize=after_deserialize,
         )
         types[ref_type.internal_id] = ref_type
 

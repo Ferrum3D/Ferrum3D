@@ -8,11 +8,9 @@ namespace FE::GameFramework
         FE_RTTI_Reflect("43E3DFBF-F155-4ACB-BE25-23857425062F");
         FE_RTTI_Serialize();
 
-        IO::Link<Input::MappingTable> m_mappingTable;
         IO::Link<Input::Action> m_moveAction;
         IO::Link<Input::Action> m_elevateAction;
         IO::Link<Input::Action> m_lookAction;
         float m_moveSpeed = 4;
-        float m_mouseSensitivity = 0.003f;
     };
 } // namespace FE::GameFramework

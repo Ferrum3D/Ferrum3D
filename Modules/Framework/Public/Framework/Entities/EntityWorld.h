@@ -74,6 +74,7 @@ namespace FE::Framework
 
     //! @brief Invoke one typed callback with a matched entity and its component addresses.
     using TraversalInvoke = void (*)(void*, Entity&, void**);
+    using TraversalChangedInvoke = bool (*)(void*, Entity&, void**);
     //! @brief Invoke a no-argument main-thread application stage.
     using StageInvoke = void (*)(void*);
     //! @brief Destroy a callback object without freeing its epoch-owned storage.
@@ -101,6 +102,8 @@ namespace FE::Framework
         ExecutionPolicy m_policy = ExecutionPolicy::kSequential;
         //! @brief Visit active parents before descendants.
         bool m_cascade = false;
+        //! Optional callback reports whether writable columns actually changed.
+        TraversalChangedInvoke m_changedInvoke = nullptr;
     };
 
 

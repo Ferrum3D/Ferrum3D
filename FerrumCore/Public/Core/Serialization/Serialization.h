@@ -858,7 +858,7 @@ namespace FE::Serialization
             {
                 object.Field("m_typeId", type ? type->m_id : Rtti::TypeID::kNull);
                 if (type != nullptr)
-                    object.Field("m_value", *type, dynamic_cast<const void*>(value.Get()));
+                    object.Field("m_value", *type, value->RTTI_GetDynamicObject());
             }
 
             return context.GetResultCode();

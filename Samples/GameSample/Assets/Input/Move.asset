@@ -9,25 +9,22 @@
         "m_artifacts": [
             {
                 "m_productKey": "Serialized/Primary",
-                "m_name": "Move",
+                "m_name": "Action",
                 "m_assetId": "63238EA0-B29B-4ED2-A7CE-7D38C4C6F6DE",
                 "m_assetTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
                 "m_buildSettings": {
                     "m_typeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
                     "m_value": {
                         "m_type": 2,
-                        "m_flags": 0,
                         "m_processor": {
                             "m_typeId": "D93D50DB-32B9-42B4-A49B-3C0AD6E7985A",
-                            "m_value": {
-                                "$base:FE::Input::ActionProcessor": {}
-                            }
+                            "m_value": {}
                         }
                     }
                 },
                 "m_dependencies": [],
-                "m_lastBuildKey": "9214D066-4BF2-4E12-8465-EAC168F25DBA",
-                "m_builtArtifactId": "29471366-15DA-4313-BB6C-5477BEBBA84E",
+                "m_lastBuildKey": "2BF11661-BD4D-428D-AD6E-5BD5A7C4501D",
+                "m_builtArtifactId": "ED8FF848-5090-4BD3-81A3-A786CB385CB1",
                 "m_isRemoved": false
             }
         ]

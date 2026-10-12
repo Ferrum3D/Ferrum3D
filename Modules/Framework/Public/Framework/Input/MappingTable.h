@@ -4,50 +4,70 @@
 
 namespace FE::Input
 {
-    struct KeyboardMapping final
+    enum class ControlKind : uint32_t
     {
-        FE_RTTI_Reflect("720B53E8-835A-4274-976D-7A132E85FF32");
-        FE_RTTI_Serialize();
-
-        Core::Key m_key = Core::Key::kInvalid;
-        Vector2 m_value{ 1, 0 };
+        kKey,
+        kMouseButton,
     };
 
 
-    enum class MouseSource : uint32_t
+    struct Control final
+    {
+        FE_RTTI_Reflect("26C1E4CC-F60E-4474-83EB-C892B0301E4D");
+        FE_RTTI_Serialize();
+
+        ControlKind m_kind = ControlKind::kKey;
+        Core::Key m_key = Core::Key::kInvalid;
+        uint32_t m_button = 0;
+
+        static Control Key(const Core::Key key)
+        {
+            return { ControlKind::kKey, key, 0 };
+        }
+
+        static Control MouseButton(const uint32_t button)
+        {
+            return { ControlKind::kMouseButton, Core::Key::kInvalid, button };
+        }
+
+        [[nodiscard]] bool Validate() const;
+    };
+
+
+    enum class BindingKind : uint32_t
     {
         kButton,
-        kDeltaX,
-        kDeltaY,
-        kWheel,
+        kAxis1D,
+        kAxis2D,
+        kMouseDelta,
+        kMouseWheel,
+        kChord,
     };
 
 
-    struct MouseMapping final
+    //! Axis1D controls are negative/positive; Axis2D controls are left/right/back/forward.
+    struct Binding final
     {
-        FE_RTTI_Reflect("42F20FE1-974A-4A10-B914-186B5FFDD6B3");
+        FE_RTTI_Reflect("AF710BC7-D755-4116-A5DC-F44202849DFC");
         FE_RTTI_Serialize();
 
-        MouseSource m_source = MouseSource::kButton;
-        uint32_t m_button = 0;
-        Vector2 m_value{ 1, 0 };
+        BindingKind m_kind = BindingKind::kButton;
+        festd::vector<Control> m_controls;
+        festd::vector<Control> m_conditions;
+        Vector2 m_scale{ 1, 1 };
+        float m_sensitivity = 1;
+        //! Integrate a held axis rate into displacement; mouse delta is already displacement.
+        bool m_integrate = false;
+        static Binding WASD();
+        static Binding ArrowKeys();
+        [[nodiscard]] bool Validate(ActionType type) const;
     };
-
-
-    enum class MappingFlags : uint32_t
-    {
-        kNone = 0,
-        kNormalizeDirection = 1 << 0,
-    };
-
-    FE_ENUM_OPERATORS(MappingFlags);
 
 
     enum class MappingOperation : uint32_t
     {
         kSum,
-        kAny,
-        kAll,
+        kStrongest,
     };
 
 
@@ -57,12 +77,12 @@ namespace FE::Input
         FE_RTTI_Serialize();
 
         IO::Link<Action> m_action;
-        festd::vector<KeyboardMapping> m_keyboard;
-        festd::vector<MouseMapping> m_mouse;
-        MappingFlags m_flags = MappingFlags::kNone;
+        //! Explicit expected type permits validation before asset dependencies are loaded.
+        ActionType m_type = ActionType::kBoolean;
+        festd::vector<Binding> m_bindings;
         MappingOperation m_operation = MappingOperation::kSum;
-        //! Optional mouse button gate, e.g. 1 for RMB. -1 means no gate.
-        int32_t m_mouseButtonGate = -1;
+        bool m_clampMagnitude = false;
+        bool m_consume = false;
     };
 
 
@@ -72,5 +92,17 @@ namespace FE::Input
         FE_RTTI_Serialize();
 
         festd::vector<ActionMapping> m_mappings;
+        [[nodiscard]] bool Validate() const;
+    };
+
+
+    struct ContextDefinition final
+    {
+        FE_RTTI_Reflect("F30B08EC-0FC4-40FD-A8FA-2947319CBAF8");
+        FE_RTTI_Serialize();
+
+        IO::Link<MappingTable> m_table;
+        int32_t m_priority = 0;
+        bool m_modal = false;
     };
 } // namespace FE::Input

@@ -1,4 +1,5 @@
 #include <Core/Memory/FiberTempAllocator.h>
+#include <Core/Time/BaseTime.h>
 #include <Framework/Application/Core/PlatformEvent.h>
 #include <Framework/Application/Core/PlatformMonitor.h>
 #include <Framework/Application/Platform/Windows/PlatformApplication.h>
@@ -329,15 +330,15 @@ namespace FE::Framework::Windows
             if (window == app->GetMainWindow())
                 app->m_closeRequested = true;
             else
-                app->m_events.push_back(Core::PlatformEvent::WindowClose(window));
+                app->RecordEvent(Core::PlatformEvent::WindowClose(window));
             break;
 
         case WM_MOVE:
-            app->m_events.push_back(Core::PlatformEvent::WindowMove(window));
+            app->RecordEvent(Core::PlatformEvent::WindowMove(window));
             break;
 
         case WM_SIZE:
-            app->m_events.push_back(Core::PlatformEvent::WindowResize(window));
+            app->RecordEvent(Core::PlatformEvent::WindowResize(window));
             break;
 
         case WM_INPUTLANGCHANGE:
@@ -380,7 +381,7 @@ namespace FE::Framework::Windows
                 if (message == WM_MOUSEMOVE)
                     ClientToScreen(hWnd, &mousePosition);
 
-                app->m_events.push_back(Core::PlatformEvent::MouseMove(mousePosition.x, mousePosition.y));
+                app->RecordEvent(Core::PlatformEvent::MouseMove(mousePosition.x, mousePosition.y));
             }
             break;
 
@@ -394,14 +395,13 @@ namespace FE::Framework::Windows
                     if (app->m_mouseTrackWindow == hWnd)
                         app->m_mouseTrackWindow = nullptr;
                     app->m_mouseTrackArea = MouseTrackArea::kNone;
-                    app->m_events.push_back(Core::PlatformEvent::MouseLeave());
+                    app->RecordEvent(Core::PlatformEvent::MouseLeave());
                 }
             }
             break;
 
         case WM_MOUSEWHEEL:
-            app->m_events.push_back(
-                Core::PlatformEvent::MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam) / static_cast<float>(WHEEL_DELTA)));
+            app->RecordEvent(Core::PlatformEvent::MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam) / static_cast<float>(WHEEL_DELTA)));
             break;
 
         case WM_DESTROY:
@@ -416,7 +416,7 @@ namespace FE::Framework::Windows
 
                 app->m_mouseTrackWindow = nullptr;
                 app->m_mouseTrackArea = MouseTrackArea::kNone;
-                app->m_events.push_back(Core::PlatformEvent::MouseLeave());
+                app->RecordEvent(Core::PlatformEvent::MouseLeave());
             }
             break;
 
@@ -442,7 +442,7 @@ namespace FE::Framework::Windows
                 if (app->m_mouseButtonsDown == 0 && ::GetCapture() == nullptr)
                     ::SetCapture(hWnd);
                 app->m_mouseButtonsDown |= 1 << button;
-                app->m_events.push_back(Core::PlatformEvent::MouseDown(button));
+                app->RecordEvent(Core::PlatformEvent::MouseDown(button));
             }
             break;
 
@@ -465,7 +465,7 @@ namespace FE::Framework::Windows
                 if (app->m_mouseButtonsDown == 0 && ::GetCapture() == hWnd)
                     ::ReleaseCapture();
 
-                app->m_events.push_back(Core::PlatformEvent::MouseUp(button));
+                app->RecordEvent(Core::PlatformEvent::MouseUp(button));
             }
             break;
 
@@ -477,7 +477,7 @@ namespace FE::Framework::Windows
                 const bool isDown = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
                 const Input::Core::Key key = static_cast<Input::Core::Key>(wParam);
 
-                app->m_events.push_back(Core::PlatformEvent::KeyboardKey(key, isDown));
+                app->RecordEvent(Core::PlatformEvent::KeyboardKey(key, isDown));
 
                 const auto isVkDown = [](const int32_t vk) {
                     return (::GetKeyState(vk) & 0x8000) != 0;
@@ -485,50 +485,50 @@ namespace FE::Framework::Windows
 
                 // AFAIR Windows does not send key down events for the print screen key...
                 if (key == Input::Core::Key::kPrintScreen && !isDown)
-                    app->m_events.push_back(Core::PlatformEvent::KeyboardKeyDown(key));
+                    app->RecordEvent(Core::PlatformEvent::KeyboardKeyDown(key));
 
                 if (wParam == VK_SHIFT)
                 {
                     if (isVkDown(VK_LSHIFT) == isDown)
-                        app->m_events.push_back(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kLeftShift, isDown));
+                        app->RecordEvent(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kLeftShift, isDown));
                     if (isVkDown(VK_RSHIFT) == isDown)
-                        app->m_events.push_back(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kRightShift, isDown));
+                        app->RecordEvent(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kRightShift, isDown));
                 }
                 else if (wParam == VK_CONTROL)
                 {
                     if (isVkDown(VK_LCONTROL) == isDown)
-                        app->m_events.push_back(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kLeftCtrl, isDown));
+                        app->RecordEvent(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kLeftCtrl, isDown));
                     if (isVkDown(VK_RCONTROL) == isDown)
-                        app->m_events.push_back(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kRightCtrl, isDown));
+                        app->RecordEvent(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kRightCtrl, isDown));
                 }
                 else if (wParam == VK_MENU)
                 {
                     if (isVkDown(VK_LMENU) == isDown)
-                        app->m_events.push_back(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kLeftAlt, isDown));
+                        app->RecordEvent(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kLeftAlt, isDown));
                     if (isVkDown(VK_RMENU) == isDown)
-                        app->m_events.push_back(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kRightAlt, isDown));
+                        app->RecordEvent(Core::PlatformEvent::KeyboardKey(Input::Core::Key::kRightAlt, isDown));
                 }
             }
             break;
 
         case WM_SETFOCUS:
-            app->m_events.push_back(Core::PlatformEvent::WindowFocusChanged(window, true));
+            app->RecordEvent(Core::PlatformEvent::WindowFocusChanged(window, true));
             break;
 
         case WM_KILLFOCUS:
-            app->m_events.push_back(Core::PlatformEvent::WindowFocusChanged(window, false));
+            app->RecordEvent(Core::PlatformEvent::WindowFocusChanged(window, false));
             break;
 
         case WM_CHAR:
             if (::IsWindowUnicode(hWnd))
             {
-                app->m_events.push_back(Core::PlatformEvent::KeyboardCharInput(static_cast<wchar_t>(wParam)));
+                app->RecordEvent(Core::PlatformEvent::KeyboardCharInput(static_cast<wchar_t>(wParam)));
             }
             else
             {
                 wchar_t wideChar = 0;
                 ::MultiByteToWideChar(app->m_keyboardCodePage, MB_PRECOMPOSED, reinterpret_cast<char*>(&wParam), 1, &wideChar, 1);
-                app->m_events.push_back(Core::PlatformEvent::KeyboardCharInput(wideChar));
+                app->RecordEvent(Core::PlatformEvent::KeyboardCharInput(wideChar));
             }
             break;
         default:
@@ -605,6 +605,13 @@ namespace FE::Framework::Windows
     }
 
 
+    void PlatformApplication::RecordEvent(Core::PlatformEvent event)
+    {
+        event.m_timestampSeconds = Platform::GetTicks() * Platform::GetSecondsPerTick();
+        m_events.push_back(event);
+    }
+
+
     void PlatformApplication::PollEvents()
     {
         FE_PROFILER_ZONE();
@@ -617,6 +624,11 @@ namespace FE::Framework::Windows
             TranslateMessage(&msg);
             DispatchMessageW(&msg);
         }
+
+        const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
+        const float elapsed = m_previousPollSeconds == 0 ? 0 : static_cast<float>(now - m_previousPollSeconds);
+        m_inputBackend.Update(m_events, elapsed, now);
+        m_previousPollSeconds = now;
     }
 
 
@@ -700,6 +712,6 @@ namespace FE::Framework::Windows
         };
 
         EnumDisplayMonitors(nullptr, nullptr, monitorEnumCallback, reinterpret_cast<LPARAM>(this));
-        m_events.push_back(Core::PlatformEvent::MonitorsChanged());
+        RecordEvent(Core::PlatformEvent::MonitorsChanged());
     }
 } // namespace FE::Framework::Windows

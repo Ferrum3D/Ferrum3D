@@ -101,7 +101,7 @@ namespace FE::Framework
         static_assert(sizeof...(Terms) > 0, "Query needs at least one component term");
         static_assert(Internal::UniqueTerms<Terms...>::kValue, "Duplicate component terms in the same source");
 
-        //! @brief Record typed component access and an epoch-owned callback; optional pointer terms may receive null.
+        //! @brief Record typed access. A bool callback reports actual writes; false leaves column versions unchanged.
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, Callable&& callable)
         {
@@ -147,7 +147,10 @@ namespace FE::Framework
                   festd::span<const Rc<WaitGroup>>(prerequisites.begin(), static_cast<uint32_t>(prerequisites.size())),
                   cursor,
                   policy,
-                  Cascade });
+                  Cascade,
+                  [](void* function, Entity& entity, void** values) {
+                      return InvokeChanged(*static_cast<Function*>(function), entity, values, ValueIndices{});
+                  } });
         }
 
         //! @brief Record work using a persistent cursor; one cursor may be consumed only once per epoch.
@@ -169,6 +172,33 @@ namespace FE::Framework
         {
             return std::is_invocable_v<Function&, Entity&, typename ValueTerm<Indices>::Argument...>
                 || std::is_invocable_v<Function&, typename ValueTerm<Indices>::Argument...>;
+        }
+
+
+        template<class Function, size_t... Indices>
+        static bool InvokeChanged(Function& function, Entity& entity, void** values, std::index_sequence<Indices...>)
+        {
+            if constexpr (std::is_invocable_v<Function&, Entity&, typename ValueTerm<Indices>::Argument...>)
+            {
+                if constexpr (std::same_as<std::invoke_result_t<Function&, Entity&, typename ValueTerm<Indices>::Argument...>,
+                                           bool>)
+                    return function(entity, ValueTerm<Indices>::Get(values[Indices])...);
+                else
+                {
+                    function(entity, ValueTerm<Indices>::Get(values[Indices])...);
+                    return true;
+                }
+            }
+            else
+            {
+                if constexpr (std::same_as<std::invoke_result_t<Function&, typename ValueTerm<Indices>::Argument...>, bool>)
+                    return function(ValueTerm<Indices>::Get(values[Indices])...);
+                else
+                {
+                    function(ValueTerm<Indices>::Get(values[Indices])...);
+                    return true;
+                }
+            }
         }
 
 

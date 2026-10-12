@@ -2,6 +2,11 @@
 #include <Core/Memory/Memory.h>
 #include <festd/string.h>
 
+namespace FE::Input::Core
+{
+    struct Backend;
+}
+
 namespace FE::Framework::Core
 {
     enum class AlertKind : uint32_t
@@ -46,6 +51,7 @@ namespace FE::Framework::Core
         virtual PlatformWindow* CreateWindow(const PlatformWindowDesc& desc) = 0;
 
         virtual void PollEvents() = 0;
+        [[nodiscard]] virtual const Input::Core::Backend& GetInputBackend() const = 0;
         virtual bool IsCloseRequested() const = 0;
         virtual festd::span<const PlatformEvent> GetEvents() const = 0;
         virtual festd::span<const PlatformMonitorInfo> GetMonitors() const = 0;

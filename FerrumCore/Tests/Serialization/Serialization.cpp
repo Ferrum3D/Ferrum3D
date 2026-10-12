@@ -17,6 +17,24 @@
 
 namespace FE::Serialization::Tests
 {
+    ResultCode ManualSerializedBase::Serialize(SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+            object.Field("m_manualValue", m_manualValue);
+
+        return context.GetResultCode();
+    }
+
+
+    ResultCode ManualSerializedBase::Deserialize(DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+            object.Field("m_manualValue", m_manualValue);
+
+        return context.GetResultCode();
+    }
+
+
     namespace
     {
         struct MemoryStream final : public IO::BufferedStream
@@ -579,6 +597,46 @@ namespace FE::Serialization::Tests
         Rtti::Any scalarCopy = scalar;
         ASSERT_NE(scalarCopy.TryGet<uint32_t>(), nullptr);
         EXPECT_EQ(*scalarCopy.TryGet<uint32_t>(), 42);
+    }
+
+
+    TEST(Serialization, GeneratedSerializationIncludesOnlyOptedInBases)
+    {
+        for (uint32_t index = 0; index < 3; ++index)
+        {
+            PackedBinaryFormat packed;
+            TaggedBinaryFormat tagged;
+            JsonFormat json;
+            SerializationFormat* format = index == 0 ? static_cast<SerializationFormat*>(&packed)
+                : index == 1                         ? static_cast<SerializationFormat*>(&tagged)
+                                                     : &json;
+            DerivedObject source;
+            source.m_runtimeValue = 99;
+            source.m_baseValue = 42;
+            source.m_manualValue = 123;
+            source.m_derivedValue = 456;
+            MemoryStream stream;
+            SerializationContext writer(&stream, *format);
+            ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
+            if (index == 2)
+            {
+                const auto bytes = stream.GetData();
+                const festd::string_view text{ reinterpret_cast<const char*>(bytes.data()), bytes.size() };
+                EXPECT_EQ(text.find("$base:FE::Serialization::Tests::RuntimeBase"), text.end());
+                EXPECT_NE(text.find("$base:FE::Serialization::Tests::SerializedBase"), text.end());
+                EXPECT_NE(text.find("$base:FE::Serialization::Tests::ManualSerializedBase"), text.end());
+            }
+
+            stream.Rewind();
+            DerivedObject destination;
+            destination.m_runtimeValue = 88;
+            DeserializationContext reader(&stream, *format);
+            ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
+            EXPECT_EQ(destination.m_runtimeValue, 88);
+            EXPECT_EQ(destination.m_baseValue, 42);
+            EXPECT_EQ(destination.m_manualValue, 123);
+            EXPECT_EQ(destination.m_derivedValue, 456);
+        }
     }
 
 

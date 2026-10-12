@@ -19,8 +19,9 @@ namespace FE::Framework
             return world.Find(m_uuid, activeOnly);
         }
 
-        FE_RTTI_Serialize();
-        //! @brief Apply the deserialization UUID remap and clear placement metadata when ownership changes.
-        void AfterDeserialize(Serialization::DeserializationContext& context);
+        Serialization::ResultCode Serialize(Serialization::SerializationContext& context) const;
+        Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context);
+        static uint64_t RTTI_GetSerializationSchemaHash();
+        static uint32_t RTTI_GetSerializationVersion();
     };
 } // namespace FE::Framework

@@ -4,12 +4,18 @@ namespace FE::Framework
 {
     namespace
     {
-        template<class T>
-        bool CreateObjects(EntityWorld& world, festd::span<const Rtti::TypeID> types, festd::vector<Rtti::Any>& objects)
+        template<class T, class Definition>
+        bool CreateObjects(EntityWorld& world, const festd::vector<Definition>& types, festd::vector<Rtti::Any>& objects)
         {
             FE_Assert(objects.empty());
-            for (const auto id : types)
+            for (const auto& definition : types)
             {
+                const Rtti::TypeID id = [&] {
+                    if constexpr (std::same_as<T, WorldService>)
+                        return definition.m_type;
+                    else
+                        return definition;
+                }();
                 const Rtti::Type* type = Rtti::TypeRegistry::FindType(id);
                 if (!type || !type->m_defaultConstructor || !type->m_destructor || !type->m_cast)
                     return false;
@@ -31,7 +37,15 @@ namespace FE::Framework
                 if constexpr (std::same_as<T, WorldSystem>)
                     world.AddSystem(*object);
                 else
+                {
+                    if (!object->Configure(definition.m_configuration))
+                    {
+                        objects.pop_back();
+                        return false;
+                    }
+
                     world.AddService(*object);
+                }
             }
 
             return true;
@@ -135,7 +149,13 @@ namespace FE::Framework
         for (const auto& value : m_systems)
             result.m_systems.push_back(value.GetType()->m_id);
         for (const auto& value : m_services)
-            result.m_services.push_back(value.GetType()->m_id);
+        {
+            WorldServiceDescriptor descriptor(value.GetType()->m_id);
+            const auto* service = static_cast<const WorldService*>(
+                value.GetType()->m_cast(const_cast<void*>(value.GetValue()), WorldService::TypeID));
+            descriptor.m_configuration = service->CaptureConfiguration();
+            result.m_services.push_back(std::move(descriptor));
+        }
 
         snapshot = std::move(result);
         return true;

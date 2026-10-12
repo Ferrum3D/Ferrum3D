@@ -186,7 +186,7 @@ namespace
 
         Graphics::View& CameraView()
         {
-            return *m_world.Find(m_cameraUuid)->FindComponent<CameraComponent>()->m_view;
+            return *m_world.Find(m_cameraUuid)->FindComponent<const CameraComponent>()->m_view;
         }
 
 
@@ -272,10 +272,15 @@ TEST_F(GraphicsFixture, AuthoredInputMovesEveryCameraBeforeTransformAndGraphicsE
     Input::MappingTable table;
     Input::ActionMapping mapping;
     mapping.m_action = moveLink;
-    mapping.m_keyboard = { { Input::Core::Key::kW, { 0, 1 } } };
+    mapping.m_type = Input::ActionType::kVector2;
+    mapping.m_bindings = { Input::Binding::WASD() };
     table.m_mappings.push_back(mapping);
     mapping.m_action = elevateLink;
-    mapping.m_keyboard = { { Input::Core::Key::kE, { 1, 0 } } };
+    mapping.m_type = Input::ActionType::kScalar;
+    Input::Binding elevateBinding;
+    elevateBinding.m_kind = Input::BindingKind::kAxis1D;
+    elevateBinding.m_controls = { Input::Control::Key(Input::Core::Key::kQ), Input::Control::Key(Input::Core::Key::kE) };
+    mapping.m_bindings = { elevateBinding };
     table.m_mappings.push_back(mapping);
     const auto tableLink = BuildCameraInputAsset(directory, "table.asset", table);
     IO::ArtifactStore::SetCatalogSource(directory);
@@ -306,7 +311,7 @@ TEST_F(GraphicsFixture, AuthoredInputMovesEveryCameraBeforeTransformAndGraphicsE
 
     ASSERT_EQ(request.GetResult(), IO::AssetLoadResult::kSucceeded);
     CameraMovementComponent movement;
-    movement.m_mappingTable = tableLink;
+    (void)input.Activate(tableLink);
     movement.m_moveAction = moveLink;
     movement.m_elevateAction = elevateLink;
     EntityCommandList commands(m_world);
@@ -348,6 +353,17 @@ TEST_F(GraphicsFixture, AuthoredInputMovesEveryCameraBeforeTransformAndGraphicsE
     EXPECT_FLOAT_EQ(secondTransform->m_local.Translation().y, distance);
     EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_32, 8 - distance);
     EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_31, -3 - distance);
+    backend->m_keyboard.m_keyDownMap.reset();
+    const Matrix4x4 view = CameraView().GetViewMatrix();
+    m_world.BeginUpdate();
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::Input));
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::Transformation));
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::GraphicsExtraction));
+    ASSERT_TRUE(m_world.ExecuteSchedule());
+    ASSERT_TRUE(m_world.EndUpdate());
+    EXPECT_EQ(backend->m_updates, 2);
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 2);
+    EXPECT_TRUE(Math::CmpEqual(CameraView().GetViewMatrix(), view));
 }
 
 

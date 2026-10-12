@@ -2,6 +2,7 @@
 #include <Core/Memory/PoolAllocator.h>
 #include <Framework/Application/Core/PlatformApplication.h>
 #include <Framework/Application/Platform/Windows/PlatformWindow.h>
+#include <Framework/Input/Desktop/Backend.h>
 
 namespace FE::Framework::Windows
 {
@@ -21,6 +22,10 @@ namespace FE::Framework::Windows
         Core::PlatformWindow* CreateWindow(const Core::PlatformWindowDesc& desc) override;
 
         void PollEvents() override;
+        [[nodiscard]] const Input::Core::Backend& GetInputBackend() const override
+        {
+            return m_inputBackend;
+        }
         bool IsCloseRequested() const override;
         festd::span<const Core::PlatformEvent> GetEvents() const override;
         festd::span<const Core::PlatformMonitorInfo> GetMonitors() const override;
@@ -41,6 +46,7 @@ namespace FE::Framework::Windows
         }
 
         static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+        void RecordEvent(Core::PlatformEvent event);
         void UpdateKeyboardCodePage();
         void UpdateMonitors();
 
@@ -51,6 +57,8 @@ namespace FE::Framework::Windows
             kNonClient = 2,
         };
 
+        Input::Desktop::Backend m_inputBackend;
+        double m_previousPollSeconds = 0;
         HWND m_mouseTrackWindow = nullptr;
         MouseTrackArea m_mouseTrackArea = MouseTrackArea::kNone;
         uint32_t m_mouseButtonsDown = Constants::kMaxU32;

@@ -86,6 +86,7 @@ namespace FE::Framework
         traversal.m_accesses.assign(desc.m_accesses.begin(), desc.m_accesses.end());
         traversal.m_callable = desc.m_callable;
         traversal.m_invoke = desc.m_invoke;
+        traversal.m_changedInvoke = desc.m_changedInvoke;
         traversal.m_destroy = desc.m_destroy;
         traversal.m_system = context.m_system;
         traversal.m_completion = Rc<WaitGroup>(WaitGroup::Create(1));
@@ -540,7 +541,14 @@ namespace FE::Framework
         auto restore = festd::defer([&] {
             fiber.m_executionContext = previous;
         });
-        traversal.m_invoke(traversal.m_callable, entity, values.data());
+        bool changed = true;
+        if (traversal.m_changedInvoke)
+            changed = traversal.m_changedInvoke(traversal.m_callable, entity, values.data());
+        else
+            traversal.m_invoke(traversal.m_callable, entity, values.data());
+
+        if (changed)
+            std::atomic_ref(chunk.m_changed).store(1, std::memory_order_relaxed);
         return true;
     }
 
@@ -678,11 +686,17 @@ namespace FE::Framework
                 std::any_of(traversal.m_accesses.begin(), traversal.m_accesses.end(), [](const QueryAccess& access) {
                     return access.m_write && !access.m_parent && !access.m_excluded;
                 });
-            const uint64_t publishedVersion = writes ? m_world.NextChangeVersion() : m_world.m_storage.m_changeVersion;
-            if (writes)
+            const bool changedWrites = writes && std::any_of(chunks.begin(), chunks.end(), [](const PreparedChunk& entry) {
+                                           return entry.m_changed != 0;
+                                       });
+            const uint64_t publishedVersion = changedWrites ? m_world.NextChangeVersion() : m_world.m_storage.m_changeVersion;
+            if (changedWrites)
             {
                 for (const auto& entry : chunks)
                 {
+                    if (entry.m_changed == 0)
+                        continue;
+
                     for (uint32_t i = 0; i < traversal.m_accesses.size(); ++i)
                     {
                         const auto& access = traversal.m_accesses[i];

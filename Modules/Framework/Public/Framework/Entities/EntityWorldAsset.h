@@ -1,5 +1,6 @@
 #pragma once
 #include <Framework/Entities/EntityCollection.h>
+#include <Framework/Entities/WorldService.h>
 
 namespace FE::Framework
 {
@@ -23,8 +24,8 @@ namespace FE::Framework
     {
         //! @brief Reflected, default-constructible WorldSystem types in initialization order.
         festd::vector<Rtti::TypeID> m_systems;
-        //! @brief Reflected, default-constructible WorldService types initialized before systems.
-        festd::vector<Rtti::TypeID> m_services;
+        //! @brief Reflected services and their optional configuration, initialized before systems.
+        festd::vector<WorldServiceDescriptor> m_services;
         //! @brief Ownership groups; empty groups are preserved.
         festd::vector<EntityWorldRegistryDefinition> m_registries;
 
@@ -73,8 +74,8 @@ namespace FE::Framework
     {
         //! @brief Reflected, default-constructible WorldSystem types in initialization order.
         festd::vector<Rtti::TypeID> m_systems;
-        //! @brief Reflected, default-constructible WorldService types initialized before systems.
-        festd::vector<Rtti::TypeID> m_services;
+        //! @brief Reflected services and their optional configuration, initialized before systems.
+        festd::vector<WorldServiceDescriptor> m_services;
         //! @brief Ownership groups; empty groups are preserved.
         festd::vector<EntityWorldRegistrySnapshot> m_registries;
 

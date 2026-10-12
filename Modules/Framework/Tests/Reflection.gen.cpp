@@ -656,7 +656,6 @@ namespace FE::Input::Tests
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("$base:FE::Input::ActionProcessor", static_cast<const FE::Input::ActionProcessor&>(*this));
             object.Field("m_value", m_value);
         }
 
@@ -667,7 +666,6 @@ namespace FE::Input::Tests
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("$base:FE::Input::ActionProcessor", static_cast<FE::Input::ActionProcessor&>(*this));
             object.Field("m_value", m_value);
         }
 
@@ -682,8 +680,6 @@ namespace FE::Input::Tests
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("$base:FE::Input::ActionProcessor", 32);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<FE::Input::ActionProcessor>());
             hasher.Update("m_value", 7);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_value)>());
             hasher.Update(0);

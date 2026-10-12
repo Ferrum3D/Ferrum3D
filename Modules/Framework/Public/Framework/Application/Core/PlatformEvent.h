@@ -80,6 +80,8 @@ namespace FE::Framework::Core
             MouseMovePayload m_mouseMovePayload;
         };
 
+        double m_timestampSeconds = 0;
+
         static PlatformEvent MonitorsChanged()
         {
             return { PlatformEventType::kMonitorsChanged, {} };

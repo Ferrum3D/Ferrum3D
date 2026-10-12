@@ -23,6 +23,16 @@ namespace FE::Input::Core
     };
 
 
+    //! Ordered device snapshot. Time is the interval spent in the preceding held state.
+    //! Motion and wheel values apply only to this sample.
+    struct Sample final
+    {
+        KeyboardState m_keyboard;
+        MouseState m_mouse;
+        float m_deltaSeconds = 0;
+    };
+
+
     enum class DeviceKind : uint32_t
     {
         kKeyboard,
@@ -35,6 +45,15 @@ namespace FE::Input::Core
         virtual ~Backend() = default;
         [[nodiscard]] virtual festd::span<const DeviceKind> EnumerateDevices() const = 0;
         virtual void Update() = 0;
+        //! Nonzero sequence identifies an ordered snapshot; zero means an unsampled state backend.
+        [[nodiscard]] virtual uint64_t GetSampleSequence() const
+        {
+            return 0;
+        }
+        [[nodiscard]] virtual festd::span<const Sample> GetSamples() const
+        {
+            return {};
+        }
         [[nodiscard]] virtual const KeyboardState& GetKeyboardState() const = 0;
         [[nodiscard]] virtual const MouseState& GetMouseState() const = 0;
     };

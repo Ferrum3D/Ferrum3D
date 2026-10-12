@@ -9,7 +9,7 @@
         "m_artifacts": [
             {
                 "m_productKey": "Serialized/Primary",
-                "m_name": "CameraMappings",
+                "m_name": "MappingTable",
                 "m_assetId": "C7B9E4A2-F1A3-488B-A912-27EB65CB6A2D",
                 "m_assetTypeId": "C27E593F-6199-41FB-AFFD-8E73F51ECCFE",
                 "m_buildSettings": {
@@ -18,116 +18,133 @@
                         "m_mappings": [
                             {
                                 "m_action": "63238EA0-B29B-4ED2-A7CE-7D38C4C6F6DE",
-                                "m_keyboard": [
+                                "m_type": 2,
+                                "m_bindings": [
                                     {
-                                        "m_key": 87,
-                                        "m_value": {
-                                            "x": "00000000",
-                                            "y": "0000803f"
-                                        }
-                                    },
-                                    {
-                                        "m_key": 83,
-                                        "m_value": {
-                                            "x": "00000000",
-                                            "y": "000080bf"
-                                        }
-                                    },
-                                    {
-                                        "m_key": 65,
-                                        "m_value": {
-                                            "x": "000080bf",
-                                            "y": "00000000"
-                                        }
-                                    },
-                                    {
-                                        "m_key": 68,
-                                        "m_value": {
+                                        "m_kind": 2,
+                                        "m_controls": [
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 65,
+                                                "m_button": 0
+                                            },
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 68,
+                                                "m_button": 0
+                                            },
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 83,
+                                                "m_button": 0
+                                            },
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 87,
+                                                "m_button": 0
+                                            }
+                                        ],
+                                        "m_conditions": [],
+                                        "m_scale": {
                                             "x": "0000803f",
-                                            "y": "00000000"
-                                        }
-                                    },
-                                    {
-                                        "m_key": 38,
-                                        "m_value": {
-                                            "x": "00000000",
                                             "y": "0000803f"
-                                        }
+                                        },
+                                        "m_sensitivity": "0000803f",
+                                        "m_integrate": false
                                     },
                                     {
-                                        "m_key": 40,
-                                        "m_value": {
-                                            "x": "00000000",
-                                            "y": "000080bf"
-                                        }
-                                    },
-                                    {
-                                        "m_key": 37,
-                                        "m_value": {
-                                            "x": "000080bf",
-                                            "y": "00000000"
-                                        }
-                                    },
-                                    {
-                                        "m_key": 39,
-                                        "m_value": {
+                                        "m_kind": 2,
+                                        "m_controls": [
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 37,
+                                                "m_button": 0
+                                            },
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 39,
+                                                "m_button": 0
+                                            },
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 40,
+                                                "m_button": 0
+                                            },
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 38,
+                                                "m_button": 0
+                                            }
+                                        ],
+                                        "m_conditions": [],
+                                        "m_scale": {
                                             "x": "0000803f",
-                                            "y": "00000000"
-                                        }
+                                            "y": "0000803f"
+                                        },
+                                        "m_sensitivity": "0000803f",
+                                        "m_integrate": false
                                     }
                                 ],
-                                "m_mouse": [],
-                                "m_flags": 1,
                                 "m_operation": 0,
-                                "m_mouseButtonGate": -1
+                                "m_clampMagnitude": true,
+                                "m_consume": false
                             },
                             {
                                 "m_action": "29A62CFF-7780-4028-9E47-0F22E0A58926",
-                                "m_keyboard": [
+                                "m_type": 1,
+                                "m_bindings": [
                                     {
-                                        "m_key": 69,
-                                        "m_value": {
+                                        "m_kind": 1,
+                                        "m_controls": [
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 81,
+                                                "m_button": 0
+                                            },
+                                            {
+                                                "m_kind": 0,
+                                                "m_key": 69,
+                                                "m_button": 0
+                                            }
+                                        ],
+                                        "m_conditions": [],
+                                        "m_scale": {
                                             "x": "0000803f",
-                                            "y": "00000000"
-                                        }
-                                    },
-                                    {
-                                        "m_key": 81,
-                                        "m_value": {
-                                            "x": "000080bf",
-                                            "y": "00000000"
-                                        }
+                                            "y": "0000803f"
+                                        },
+                                        "m_sensitivity": "0000803f",
+                                        "m_integrate": false
                                     }
                                 ],
-                                "m_mouse": [],
-                                "m_flags": 0,
                                 "m_operation": 0,
-                                "m_mouseButtonGate": -1
+                                "m_clampMagnitude": false,
+                                "m_consume": false
                             },
                             {
                                 "m_action": "40C30B4A-A66C-4658-8A6D-5A326AFA4293",
-                                "m_keyboard": [],
-                                "m_mouse": [
+                                "m_type": 2,
+                                "m_bindings": [
                                     {
-                                        "m_source": 1,
-                                        "m_button": 0,
-                                        "m_value": {
+                                        "m_kind": 3,
+                                        "m_controls": [],
+                                        "m_conditions": [
+                                            {
+                                                "m_kind": 1,
+                                                "m_key": 0,
+                                                "m_button": 1
+                                            }
+                                        ],
+                                        "m_scale": {
                                             "x": "0000803f",
-                                            "y": "00000000"
-                                        }
-                                    },
-                                    {
-                                        "m_source": 2,
-                                        "m_button": 0,
-                                        "m_value": {
-                                            "x": "00000000",
                                             "y": "0000803f"
-                                        }
+                                        },
+                                        "m_sensitivity": "a69b443b",
+                                        "m_integrate": false
                                     }
                                 ],
-                                "m_flags": 0,
                                 "m_operation": 0,
-                                "m_mouseButtonGate": 1
+                                "m_clampMagnitude": false,
+                                "m_consume": false
                             }
                         ]
                     }
@@ -149,8 +166,8 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "696D8434-FE69-40FD-92F7-925BC1FE84D1",
-                "m_builtArtifactId": "C93FA632-AC05-4531-A957-C831B11322B4",
+                "m_lastBuildKey": "6CCAD178-902D-4485-AAAB-D623AA03320C",
+                "m_builtArtifactId": "2ACD8581-29AB-42F7-8F38-AAD787D4AC5C",
                 "m_isRemoved": false
             }
         ]

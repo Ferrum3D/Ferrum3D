@@ -6,6 +6,49 @@
 
 namespace FE::Serialization::Tests
 {
+    struct RuntimeBase
+    {
+        FE_RTTI("2339A6D0-0ECA-4898-A5B7-85BB8B841320");
+        FE_RTTI_Reflect();
+
+        uint32_t m_runtimeValue = 7;
+    };
+
+
+    struct SerializedBase
+    {
+        FE_RTTI("DC648E8E-6544-4637-95FB-8720C5E0F8A3");
+        FE_RTTI_Reflect();
+        FE_RTTI_Serialize();
+
+        uint32_t m_baseValue = 0;
+    };
+
+
+    struct ManualSerializedBase
+    {
+        FE_RTTI("113937CB-7D40-4F5D-823D-7B535B4312B1");
+
+        ResultCode Serialize(SerializationContext& context) const;
+        ResultCode Deserialize(DeserializationContext& context);
+
+        uint32_t m_manualValue = 0;
+    };
+
+
+    struct DerivedObject final
+        : RuntimeBase
+        , SerializedBase
+        , ManualSerializedBase
+    {
+        FE_RTTI("D50860C5-2188-486F-8D18-A79D8C633C0C");
+        FE_RTTI_Reflect();
+        FE_RTTI_Serialize();
+
+        uint32_t m_derivedValue = 0;
+    };
+
+
     struct PackedDesc final
     {
         uint32_t m_width : 10 = 0;

@@ -261,7 +261,9 @@ TEST(EntityWorldAssets, ReflectedServicesSurviveEntityTeardownAndSnapshotRestore
         ASSERT_TRUE(world.EndUpdate());
         EXPECT_EQ(service->m_updates, 1);
         ASSERT_TRUE(instance.Capture(snapshot));
-        EXPECT_EQ(snapshot.m_services, asset.m_services);
+        ASSERT_EQ(snapshot.m_services.size(), asset.m_services.size());
+        EXPECT_EQ(snapshot.m_services[0].m_type, asset.m_services[0].m_type);
+        EXPECT_FALSE(snapshot.m_services[0].m_configuration.HasValue());
     }
 
     EXPECT_TRUE(SnapshotService::s_shutdownSawEmptyWorld);

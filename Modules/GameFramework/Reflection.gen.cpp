@@ -284,9 +284,7 @@ namespace FE::GameFramework
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_mappingTable
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_moveAction
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -295,12 +293,8 @@ namespace FE::GameFramework
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lookAction
             0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
             0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_moveSpeed
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mouseSensitivity
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mappingTable = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_moveAction = {};
 
@@ -310,38 +304,26 @@ namespace FE::GameFramework
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_moveSpeed = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mouseSensitivity = {};
-
-        static const festd::array<Rtti::FieldInfo, 6> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mappingTable",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &CameraMovementComponent::m_mappingTable,
-                                                        kAttributes_m_mappingTable,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_moveAction",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &CameraMovementComponent::m_moveAction,
                                                         kAttributes_m_moveAction,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_elevateAction",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
                                                         &CameraMovementComponent::m_elevateAction,
                                                         kAttributes_m_elevateAction,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_lookAction",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &CameraMovementComponent::m_lookAction,
                                                         kAttributes_m_lookAction,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_moveSpeed",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &CameraMovementComponent::m_moveSpeed,
                                                         kAttributes_m_moveSpeed,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mouseSensitivity",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &CameraMovementComponent::m_mouseSensitivity,
-                                                        kAttributes_m_mouseSensitivity,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -359,12 +341,10 @@ namespace FE::GameFramework
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("m_mappingTable", m_mappingTable);
             object.Field("m_moveAction", m_moveAction);
             object.Field("m_elevateAction", m_elevateAction);
             object.Field("m_lookAction", m_lookAction);
             object.Field("m_moveSpeed", m_moveSpeed);
-            object.Field("m_mouseSensitivity", m_mouseSensitivity);
         }
 
         return context.GetResultCode();
@@ -374,12 +354,10 @@ namespace FE::GameFramework
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("m_mappingTable", m_mappingTable);
             object.Field("m_moveAction", m_moveAction);
             object.Field("m_elevateAction", m_elevateAction);
             object.Field("m_lookAction", m_lookAction);
             object.Field("m_moveSpeed", m_moveSpeed);
-            object.Field("m_mouseSensitivity", m_mouseSensitivity);
         }
 
         return context.GetResultCode();
@@ -393,8 +371,6 @@ namespace FE::GameFramework
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("m_mappingTable", 14);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mappingTable)>());
             hasher.Update("m_moveAction", 12);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_moveAction)>());
             hasher.Update("m_elevateAction", 15);
@@ -403,8 +379,6 @@ namespace FE::GameFramework
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_lookAction)>());
             hasher.Update("m_moveSpeed", 11);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_moveSpeed)>());
-            hasher.Update("m_mouseSensitivity", 18);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mouseSensitivity)>());
             hasher.Update(0);
             return hasher.Finalize();
         }();

@@ -2,7 +2,6 @@
 #include <GameFramework/CameraComponent.h>
 #include <GameFramework/CameraMovementSystem.h>
 #include <GameFramework/Phases.h>
-#include <cmath>
 
 namespace FE::GameFramework
 {
@@ -16,91 +15,88 @@ namespace FE::GameFramework
 
     void CameraMovementSystem::Shutdown(Framework::EntityWorld&)
     {
-        m_tables.clear();
+        m_bindings.clear();
         m_input = nullptr;
     }
 
 
-    Input::MappingStack& CameraMovementSystem::GetStack(const IO::Link<Input::MappingTable>& table)
+    CameraInput CameraMovementSystem::ReadInput(const Framework::Entity& entity, const CameraMovementComponent& movement)
     {
-        for (TableRuntime& entry : m_tables)
+        auto [it, inserted] = m_bindings.try_emplace(entity.GetUuid());
+        
+        Bindings& bindings = it->second;
+        if (inserted || bindings.m_moveID != movement.m_moveAction.GetAssetID()
+            || bindings.m_elevateID != movement.m_elevateAction.GetAssetID()
+            || bindings.m_lookID != movement.m_lookAction.GetAssetID())
         {
-            if (entry.m_id == table.GetAssetID())
-            {
-                entry.m_used = true;
-                return entry.m_stack;
-            }
+            bindings.m_moveID = movement.m_moveAction.GetAssetID();
+            bindings.m_elevateID = movement.m_elevateAction.GetAssetID();
+            bindings.m_lookID = movement.m_lookAction.GetAssetID();
+            bindings.m_move = m_input->Bind<Vector2>(movement.m_moveAction);
+            bindings.m_elevate = m_input->Bind<float>(movement.m_elevateAction);
+            bindings.m_look = m_input->Bind<Vector2>(movement.m_lookAction);
         }
 
-        m_tables.push_back({});
-        auto& entry = m_tables.back();
-        entry.m_id = table.GetAssetID();
-        entry.m_used = true;
-        entry.m_stack.PushTable(table.GetAssetHandle(), Input::MappingStackFlags::kEnabled);
-        return entry.m_stack;
+        const Input::InputFrame& frame = m_input->GetFrame();
+        bindings.m_frame = frame.GetNumber();
+        return { frame.Read(bindings.m_move), frame.Read(bindings.m_elevate), frame.Read(bindings.m_look) };
     }
 
 
     void CameraMovementSystem::Update(Framework::EntityUpdateContext& context)
     {
-        for (auto it = m_tables.begin(); it != m_tables.end();)
+        const uint64_t number = m_input->GetFrame().GetNumber();
+        for (auto it = m_bindings.begin(); it != m_bindings.end();)
         {
-            if (!it->m_used)
-                it = m_tables.erase(it);
+            if (it->second.m_frame + 1 < number)
+                it = m_bindings.erase(it);
             else
-            {
-                it->m_used = false;
                 ++it;
-            }
         }
 
         using Cameras = Framework::Query<const CameraMovementComponent, const CameraComponent, TransformComponent>;
         Cameras::Traverse(context,
                           Phases::Input,
                           Framework::ExecutionPolicy::kMainThread,
-                          [this](const CameraMovementComponent& movement, const CameraComponent&, TransformComponent& transform) {
-                              auto& stack = GetStack(movement.m_mappingTable);
-                              const auto actions = m_input->Resolve(stack);
-                              ApplyMovement(movement, transform, actions, m_input->GetDeltaSeconds());
+                          [this](Framework::Entity& entity,
+                                 const CameraMovementComponent& movement,
+                                 const CameraComponent&,
+                                 TransformComponent& transform) {
+                              return ApplyMovement(movement, transform, ReadInput(entity, movement), m_input->GetDeltaSeconds());
                           });
     }
 
 
-    void CameraMovementSystem::ApplyMovement(const CameraMovementComponent& movement, TransformComponent& transform,
-                                             const festd::span<const Input::ResolvedAction> actions, const float deltaSeconds)
+    bool CameraMovementSystem::ApplyMovement(const CameraMovementComponent& movement, TransformComponent& transform,
+                                             const CameraInput& input, const float deltaSeconds)
     {
-        Vector2 planar{ 0, 0 }, look{ 0, 0 };
-        float elevation = 0;
-        for (const Input::ResolvedAction& action : actions)
-        {
-            if (!action.m_active)
-                continue;
+        if (!std::isfinite(deltaSeconds) || deltaSeconds < 0 || !std::isfinite(movement.m_moveSpeed))
+            return false;
 
-            if (action.m_action == movement.m_moveAction.GetAssetID() && action.m_type == Input::ActionType::kVector2)
-                planar = action.m_value;
-            else if (action.m_action == movement.m_elevateAction.GetAssetID() && action.m_type == Input::ActionType::kScalar)
-                elevation = action.m_value.x;
-            else if (action.m_action == movement.m_lookAction.GetAssetID() && action.m_type == Input::ActionType::kVector2)
-                look = action.m_value;
+        if (!std::isfinite(input.m_move.x) || !std::isfinite(input.m_move.y) || !std::isfinite(input.m_elevate)
+            || !std::isfinite(input.m_look.x) || !std::isfinite(input.m_look.y))
+        {
+            return false;
         }
 
-        if (!std::isfinite(deltaSeconds) || deltaSeconds < 0 || !std::isfinite(movement.m_moveSpeed)
-            || !std::isfinite(movement.m_mouseSensitivity))
-        {
-            return;
-        }
+        const bool translate =
+            deltaSeconds > 0 && movement.m_moveSpeed != 0 && (input.m_move != Vector2::kZero || input.m_elevate != 0);
+        const bool rotate = input.m_look != Vector2::kZero;
+        if (!translate && !rotate)
+            return false;
 
         Quaternion rotation = transform.m_local.Rotation();
-        if (look.x != 0 || look.y != 0)
+        if (rotate)
         {
-            const Quaternion yaw = Quaternion::AxisAngle(Vector3{ 0, 1, 0 }, look.x * movement.m_mouseSensitivity);
-            const Quaternion pitch = Quaternion::AxisAngle(Vector3{ 1, 0, 0 }, look.y * movement.m_mouseSensitivity);
+            const Quaternion yaw = Quaternion::RotationY(input.m_look.x);
+            const Quaternion pitch = Quaternion::RotationX(input.m_look.y);
             rotation = Math::Normalize(yaw * rotation * pitch);
         }
 
-        const Vector3 localMotion{ planar.x, 0, planar.y };
-        const Vector3 motion = Math::Rotate(localMotion, rotation) + Vector3{ 0, elevation, 0 };
+        const Vector3 localMotion{ input.m_move.x, 0, input.m_move.y };
+        const Vector3 motion = Math::Rotate(localMotion, rotation) + Vector3{ 0, input.m_elevate, 0 };
         const Vector3 position = transform.m_local.Translation() + motion * (movement.m_moveSpeed * deltaSeconds);
         transform.m_local = Transform::Create(position, rotation, transform.m_local.Scale());
+        return true;
     }
 } // namespace FE::GameFramework

@@ -385,7 +385,7 @@ TEST_F(CollectionFixture, DestroyingPlacementRootRetiresMembershipAndPermitsExpl
 }
 
 
-TEST_F(CollectionFixture, GeneratedReferenceSerializerUsesReflectedFieldNames)
+TEST_F(CollectionFixture, ReferenceSerializerUsesReflectedFieldNames)
 {
     const EntityReference source{ kSource, kPlacement };
     IO::WriteOnlyMemoryStream stream;

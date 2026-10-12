@@ -4,7 +4,6 @@
 #include <concepts>
 #include <festd/base.h>
 #include <type_traits>
-#include <typeinfo>
 
 
 #if FE_CODEGEN
@@ -155,8 +154,15 @@ private:                                                                        
 public:                                                                                                                          \
     virtual const FE::Rtti::Type& RTTI_GetDynamicType() const                                                                    \
     {                                                                                                                            \
-        FE_Assert(typeid(*this) == typeid(std::remove_cvref_t<decltype(*this)>), "Object has no dynamic RTTI registration");     \
         return RTTI_GetType();                                                                                                   \
+    }                                                                                                                            \
+    virtual void* RTTI_GetDynamicObject()                                                                                        \
+    {                                                                                                                            \
+        return this;                                                                                                             \
+    }                                                                                                                            \
+    virtual const void* RTTI_GetDynamicObject() const                                                                            \
+    {                                                                                                                            \
+        return this;                                                                                                             \
     }                                                                                                                            \
     static const FE::Rtti::TypeID TypeID;                                                                                        \
     static FE_CODEGEN_ATTRIBUTE("ReflectBasic=" uuid) void Reflect(FE::Rtti::ReflectionContext& context)
@@ -284,7 +290,6 @@ namespace FE::Serialization
 } // namespace FE::Serialization
 
 
-// Generated serializers call optional BeforeSerialize(context) const and AfterDeserialize(context) hooks only on valid contexts.
 #define FE_RTTI_Serialize()                                                                                                      \
 public:                                                                                                                          \
     FE::Serialization::ResultCode Serialize(FE::Serialization::SerializationContext& context) const;                             \

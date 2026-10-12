@@ -8,7 +8,8 @@ namespace FE::Input
     {
         kStarted,
         kInProgress,
-        kFinished,
+        kTriggered,
+        kCompleted,
         kCanceled,
     };
 
@@ -19,15 +20,6 @@ namespace FE::Input
         kScalar,
         kVector2,
     };
-
-
-    enum class ActionFlags : uint32_t
-    {
-        kNone = 0,
-        kConsume = 1 << 0,
-    };
-
-    FE_ENUM_OPERATORS(ActionFlags);
 
 
     //! State belongs to one stack/action pair, never to the shared processor asset.
@@ -42,21 +34,15 @@ namespace FE::Input
     };
 
 
-    struct ActionProcessor : Memory::RefCountedObjectBase
+    struct ActionProcessor : public Memory::RefCountedObjectBase
     {
         FE_RTTI("882596AA-9BD0-475D-9CB2-3636FF35D843");
 
-        Serialization::ResultCode Serialize(Serialization::SerializationContext& context) const;
-        Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context);
-
         virtual ActionState Process(ActionProcessorContext& context) const = 0;
-
-    protected:
-        void DoRelease() override;
     };
 
 
-    struct HoldDurationActionProcessor final : ActionProcessor
+    struct HoldDurationActionProcessor final : public ActionProcessor
     {
         FE_RTTI("CEA014F9-2835-4A7B-B15F-EAF0D0CE97CE");
         FE_RTTI_Reflect();
@@ -64,15 +50,27 @@ namespace FE::Input
 
         float m_holdTime = 1;
         ActionState Process(ActionProcessorContext& context) const override;
+
+    protected:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
     };
 
 
-    struct ContinuousActionProcessor final : ActionProcessor
+    struct ContinuousActionProcessor final : public ActionProcessor
     {
         FE_RTTI("D93D50DB-32B9-42B4-A49B-3C0AD6E7985A");
         FE_RTTI_Serialize();
 
         ActionState Process(ActionProcessorContext& context) const override;
+
+    protected:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
     };
 
 
@@ -82,8 +80,17 @@ namespace FE::Input
         FE_RTTI_Serialize();
 
         ActionType m_type = ActionType::kBoolean;
-        ActionFlags m_flags = ActionFlags::kNone;
         Rc<ActionProcessor> m_processor;
+
+        [[nodiscard]] bool Validate() const;
+    };
+
+
+    struct ActionEvent final
+    {
+        IO::AssetID m_action;
+        ActionState m_state;
+        Vector2 m_value;
     };
 
 

@@ -22,10 +22,39 @@
                             "AA875EA6-B101-432B-9D55-BC6A84CDEFE8"
                         ],
                         "m_services": [
-                            "5275A073-5DCD-400F-A0A4-9753AFD8A171",
-                            "752DB03C-995A-4524-B593-72639A788807",
-                            "09F03B91-8406-485F-A7D1-A2063CA48020",
-                            "F38C1DBE-58DF-4C53-8335-3FFADB6DDE2D"
+                            {
+                                "m_type": "5275A073-5DCD-400F-A0A4-9753AFD8A171",
+                                "m_configuration": {
+                                    "m_typeId": "00000000-0000-0000-0000-000000000000"
+                                }
+                            },
+                            {
+                                "m_type": "752DB03C-995A-4524-B593-72639A788807",
+                                "m_configuration": {
+                                    "m_typeId": "AD95366E-4AA3-46C4-BB93-63FAFFFF3142",
+                                    "m_value": {
+                                        "m_contexts": [
+                                            {
+                                                "m_table": "C7B9E4A2-F1A3-488B-A912-27EB65CB6A2D",
+                                                "m_priority": 0,
+                                                "m_modal": false
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "m_type": "09F03B91-8406-485F-A7D1-A2063CA48020",
+                                "m_configuration": {
+                                    "m_typeId": "00000000-0000-0000-0000-000000000000"
+                                }
+                            },
+                            {
+                                "m_type": "F38C1DBE-58DF-4C53-8335-3FFADB6DDE2D",
+                                "m_configuration": {
+                                    "m_typeId": "00000000-0000-0000-0000-000000000000"
+                                }
+                            }
                         ],
                         "m_registries": [
                             {
@@ -103,12 +132,10 @@
                                                 {
                                                     "m_typeId": "43E3DFBF-F155-4ACB-BE25-23857425062F",
                                                     "m_value": {
-                                                        "m_mappingTable": "C7B9E4A2-F1A3-488B-A912-27EB65CB6A2D",
                                                         "m_moveAction": "63238EA0-B29B-4ED2-A7CE-7D38C4C6F6DE",
                                                         "m_elevateAction": "29A62CFF-7780-4028-9E47-0F22E0A58926",
                                                         "m_lookAction": "40C30B4A-A66C-4658-8A6D-5A326AFA4293",
-                                                        "m_moveSpeed": "00008040",
-                                                        "m_mouseSensitivity": "a69b443b"
+                                                        "m_moveSpeed": "00008040"
                                                     }
                                                 }
                                             ],
@@ -124,6 +151,11 @@
                 },
                 "m_dependencies": [
                     {
+                        "m_assetId": "C7B9E4A2-F1A3-488B-A912-27EB65CB6A2D",
+                        "m_expectedTypeId": "C27E593F-6199-41FB-AFFD-8E73F51ECCFE",
+                        "m_kind": 0
+                    },
+                    {
                         "m_assetId": "968E3679-1025-43A2-AB3E-967494F90D35",
                         "m_expectedTypeId": "2D0926A6-8312-4D3C-8675-F67BB9A62B67",
                         "m_kind": 0
@@ -131,11 +163,6 @@
                     {
                         "m_assetId": "44B73EB3-0933-4221-96C8-C9E09CBF36FD",
                         "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
-                        "m_kind": 0
-                    },
-                    {
-                        "m_assetId": "C7B9E4A2-F1A3-488B-A912-27EB65CB6A2D",
-                        "m_expectedTypeId": "C27E593F-6199-41FB-AFFD-8E73F51ECCFE",
                         "m_kind": 0
                     },
                     {
@@ -154,8 +181,8 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "BCB2EB7C-2D1C-4CA3-A35D-A75D01FE9E98",
-                "m_builtArtifactId": "711190EA-F192-4D72-A77F-4CAAD7FE29B5",
+                "m_lastBuildKey": "DBFF3D75-3987-432B-8954-438686A76F07",
+                "m_builtArtifactId": "6B58F772-32F3-4334-8FF2-5AF5E25CDF85",
                 "m_isRemoved": false
             }
         ]

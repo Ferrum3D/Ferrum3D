@@ -3,6 +3,7 @@
 #include <AssetBuilder/ModelProcessor.h>
 #include <AssetBuilder/PipelineInternal.h>
 #include <AssetBuilder/TextureProcessor.h>
+#include <Framework/Input/MappingTable.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
 
@@ -91,6 +92,18 @@ namespace FE::AssetBuilder::Internal
                 Logger::LogError("Product '{}' does not contain serialized build settings for type {}",
                                  request.m_artifact.m_name,
                                  request.m_artifact.m_assetTypeId);
+                return false;
+            }
+
+            if (const auto* action = request.m_artifact.m_buildSettings.TryGet<Input::Action>(); action && !action->Validate())
+            {
+                Logger::LogError("Invalid input action configuration");
+                return false;
+            }
+
+            if (const auto* table = request.m_artifact.m_buildSettings.TryGet<Input::MappingTable>(); table && !table->Validate())
+            {
+                Logger::LogError("Invalid input mapping table: check duplicate actions, controls, types, and parameters");
                 return false;
             }
 

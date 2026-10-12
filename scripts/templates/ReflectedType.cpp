@@ -232,14 +232,9 @@ namespace {{ type.namespace }}
 
     FE::Serialization::ResultCode {{ type.name }}::Serialize(FE::Serialization::SerializationContext& context) const
     {
-        {%- if type.before_serialize %}
-        if (context.IsValid())
-            BeforeSerialize(context);
-
-        {%- endif %}
         if (auto object = context.BeginObject())
         {
-        {%- for base in type.direct_bases %}
+        {%- for base in type.serialization_bases %}
             object.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
@@ -254,7 +249,7 @@ namespace {{ type.namespace }}
     {
         if (auto object = context.BeginObject())
         {
-        {%- for base in type.direct_bases %}
+        {%- for base in type.serialization_bases %}
             object.Field("$base:{{ base.qualified_name }}", static_cast<{{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
@@ -276,11 +271,6 @@ namespace {{ type.namespace }}
         {%- endfor %}
         }
 
-        {%- if type.after_deserialize %}
-        if (context.IsValid())
-            AfterDeserialize(context);
-        {%- endif %}
-
         return context.GetResultCode();
     }
 
@@ -292,7 +282,7 @@ namespace {{ type.namespace }}
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-        {%- for base in type.direct_bases %}
+        {%- for base in type.serialization_bases %}
             hasher.Update("$base:{{ base.qualified_name }}", {{ 6 + (base.qualified_name|length) }});
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<{{ base.qualified_name }}>());
         {%- endfor %}

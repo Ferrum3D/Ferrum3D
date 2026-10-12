@@ -11,6 +11,7 @@ namespace FE::Framework
             festd::vector<QueryAccess> m_accesses;
             void* m_callable = nullptr;
             TraversalInvoke m_invoke = nullptr;
+            TraversalChangedInvoke m_changedInvoke = nullptr;
             CallableDestroy m_destroy = nullptr;
             Rc<WaitGroup> m_completion;
             festd::vector<Rc<WaitGroup>> m_prerequisites;
@@ -104,6 +105,7 @@ namespace FE::Framework
         {
             ArchetypeChunk* m_chunk;
             festd::inline_vector<uint32_t> m_columns;
+            mutable uint32_t m_changed = 0;
         };
 
         void PrepareTraversal(const Traversal& traversal, festd::vector<PreparedChunk>& chunks);

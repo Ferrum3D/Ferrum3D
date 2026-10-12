@@ -5,7 +5,7 @@ Build the `GameSample` and `FerrumCli` executables. GameSample owns its asset ca
 - `Assets/source/Helmet/`: model, textures, and material source files, copied from Renderer.
 - `Assets/Helmet/`: the corresponding authored `.asset` definitions.
 - `Assets/World.asset`: the source-less two-entity world definition.
-- `Assets/Input/`: source-less movement, elevation, look actions and the camera mapping table.
+- `Assets/Input/`: source-less movement, elevation, look actions and the world input mapping context.
 - `Assets/artifacts/`: cooked data and metadata produced by FerrumCli.
 
 Build the assets manually from the repository root, in dependency order:
@@ -37,3 +37,5 @@ Move with WASD or arrows, elevate with E/Q, and hold RMB while moving the mouse 
 The shared application ticks assets, commits entity changes, evaluates transforms, extracts changed camera/mesh state on the main thread, then renders outside entity scheduling after the world update completes. Mesh and camera components own scene membership through non-serialized runtime fields; world teardown removes membership before releasing residency. No effects are included.
 
 GameSample only supplies the world/catalog settings and selects normal or smoke execution. `GameSample.exe --smoke` renders eight frames and exits.
+
+Input contexts are authored in the input service descriptor in `World.asset`. Cameras reference movement, elevation, and look action assets; RMB look sensitivity is authored in the mouse-delta binding.

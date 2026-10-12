@@ -21,7 +21,7 @@ namespace FE::Input::Tests
         uint32_t m_value = 123;
         ActionState Process(ActionProcessorContext&) const override
         {
-            return ActionState::kFinished;
+            return ActionState::kTriggered;
         }
 
     protected:
