@@ -4,63 +4,97 @@
 
 namespace FE::Input
 {
-    enum class ControlKind : uint32_t
-    {
-        kKey,
-        kMouseButton,
-    };
-
-
     struct Control final
     {
         FE_RTTI_Reflect("26C1E4CC-F60E-4474-83EB-C892B0301E4D");
         FE_RTTI_Serialize();
 
-        ControlKind m_kind = ControlKind::kKey;
-        Core::Key m_key = Core::Key::kInvalid;
-        uint32_t m_button = 0;
+        //! Keys use their native code; mouse buttons use 256..260. Zero is invalid.
+        uint16_t m_code = 0;
 
         static Control Key(const Core::Key key)
         {
-            return { ControlKind::kKey, key, 0 };
+            return { static_cast<uint16_t>(key) };
         }
 
         static Control MouseButton(const uint32_t button)
         {
-            return { ControlKind::kMouseButton, Core::Key::kInvalid, button };
+            return { static_cast<uint16_t>(256 + button) };
         }
 
         [[nodiscard]] bool Validate() const;
     };
 
 
-    enum class BindingKind : uint32_t
+    struct ButtonBinding final
     {
-        kButton,
-        kAxis1D,
-        kAxis2D,
-        kMouseDelta,
-        kMouseWheel,
-        kChord,
+        FE_RTTI_Reflect("B539603C-9AC3-4724-B058-838B64070C25");
+        FE_RTTI_Serialize();
+        Control m_control;
     };
 
 
-    //! Axis1D controls are negative/positive; Axis2D controls are left/right/back/forward.
+    struct Axis1DBinding final
+    {
+        FE_RTTI_Reflect("E38772C6-2BFF-40A2-ADF3-CB3AB513B182");
+        FE_RTTI_Serialize();
+        Control m_negative;
+        Control m_positive;
+    };
+
+
+    struct Axis2DBinding final
+    {
+        FE_RTTI_Reflect("156E92A7-71EB-447C-85DB-DA3F6EB41B91");
+        FE_RTTI_Serialize();
+        Control m_left;
+        Control m_right;
+        Control m_back;
+        Control m_forward;
+    };
+
+
+    struct MouseDeltaBinding final
+    {
+        FE_RTTI_Reflect("894F98CF-A08F-4708-A102-A66661243CEE");
+        FE_RTTI_Serialize();
+    };
+
+
+    struct MouseWheelBinding final
+    {
+        FE_RTTI_Reflect("23675BB7-7F41-461F-9010-3310208EC616");
+        FE_RTTI_Serialize();
+    };
+
+
+    struct ChordBinding final
+    {
+        FE_RTTI_Reflect("850C0C4B-A883-4FA1-B40E-1BBA4E113E12");
+        FE_RTTI_Serialize();
+
+        festd::vector<Control> m_controls;
+    };
+
+
     struct Binding final
     {
         FE_RTTI_Reflect("AF710BC7-D755-4116-A5DC-F44202849DFC");
         FE_RTTI_Serialize();
 
-        BindingKind m_kind = BindingKind::kButton;
-        festd::vector<Control> m_controls;
+        std::variant<ButtonBinding, Axis1DBinding, Axis2DBinding, MouseDeltaBinding, MouseWheelBinding, ChordBinding> m_source;
         festd::vector<Control> m_conditions;
         Vector2 m_scale{ 1, 1 };
         float m_sensitivity = 1;
         //! Integrate a held axis rate into displacement; mouse delta is already displacement.
         bool m_integrate = false;
+
         static Binding WASD();
         static Binding ArrowKeys();
-        [[nodiscard]] bool Validate(ActionType type) const;
+
+        [[nodiscard]] bool Validate() const;
+        [[nodiscard]] bool Supports(ActionType type) const;
+        [[nodiscard]] bool IsDisplacement() const;
     };
 
 
@@ -77,8 +111,6 @@ namespace FE::Input
         FE_RTTI_Serialize();
 
         IO::Link<Action> m_action;
-        //! Explicit expected type permits validation before asset dependencies are loaded.
-        ActionType m_type = ActionType::kBoolean;
         festd::vector<Binding> m_bindings;
         MappingOperation m_operation = MappingOperation::kSum;
         bool m_clampMagnitude = false;
@@ -92,6 +124,7 @@ namespace FE::Input
         FE_RTTI_Serialize();
 
         festd::vector<ActionMapping> m_mappings;
+
         [[nodiscard]] bool Validate() const;
     };
 

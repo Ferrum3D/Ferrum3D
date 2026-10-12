@@ -86,7 +86,9 @@ namespace FE::Framework
         traversal.m_accesses.assign(desc.m_accesses.begin(), desc.m_accesses.end());
         traversal.m_callable = desc.m_callable;
         traversal.m_invoke = desc.m_invoke;
-        traversal.m_changedInvoke = desc.m_changedInvoke;
+        traversal.m_hasWrites = std::any_of(desc.m_accesses.begin(), desc.m_accesses.end(), [](const QueryAccess& access) {
+            return access.m_write && !access.m_parent && !access.m_excluded;
+        });
         traversal.m_destroy = desc.m_destroy;
         traversal.m_system = context.m_system;
         traversal.m_completion = Rc<WaitGroup>(WaitGroup::Create(1));
@@ -506,7 +508,7 @@ namespace FE::Framework
 
 
     bool EntityScheduler::InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk,
-                                       festd::span<void*> values)
+                                       festd::span<void*> values, bool& changed)
     {
         if (!entity.m_active)
             return false;
@@ -541,14 +543,8 @@ namespace FE::Framework
         auto restore = festd::defer([&] {
             fiber.m_executionContext = previous;
         });
-        bool changed = true;
-        if (traversal.m_changedInvoke)
-            changed = traversal.m_changedInvoke(traversal.m_callable, entity, values.data());
-        else
-            traversal.m_invoke(traversal.m_callable, entity, values.data());
-
-        if (changed)
-            std::atomic_ref(chunk.m_changed).store(1, std::memory_order_relaxed);
+        const bool wrote = traversal.m_invoke(traversal.m_callable, entity, values.data());
+        changed |= traversal.m_hasWrites && wrote;
         return true;
     }
 
@@ -587,8 +583,12 @@ namespace FE::Framework
             while (entity)
             {
                 const auto found = chunkLookup.find(entity->m_chunk);
-                if (found != chunkLookup.end() && InvokeEntity(traversal, *entity, chunks[found->second], values))
+                bool changed = false;
+                if (found != chunkLookup.end() && InvokeEntity(traversal, *entity, chunks[found->second], values, changed))
                     ++count;
+
+                if (changed)
+                    std::atomic_ref(chunks[found->second].m_changed).store(1, std::memory_order_relaxed);
 
                 if (entity->m_firstChild)
                 {
@@ -653,12 +653,15 @@ namespace FE::Framework
                 auto visitChunk = [&, entry = &chunk] {
                     festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
                     uint32_t count = 0;
+                    bool changed = false;
                     for (uint32_t row = 0; row < entry->m_chunk->m_count; ++row)
                     {
-                        if (InvokeEntity(traversal, *entry->m_chunk->m_entities[row], *entry, values))
+                        if (InvokeEntity(traversal, *entry->m_chunk->m_entities[row], *entry, values, changed))
                             ++count;
                     }
 
+                    if (changed)
+                        entry->m_changed = 1;
                     callbacks.fetch_add(count, std::memory_order_relaxed);
                 };
                 if (!parallel)
@@ -682,10 +685,7 @@ namespace FE::Framework
         {
             std::lock_guard guard(m_world.m_storage.m_versionLock);
 
-            const bool writes =
-                std::any_of(traversal.m_accesses.begin(), traversal.m_accesses.end(), [](const QueryAccess& access) {
-                    return access.m_write && !access.m_parent && !access.m_excluded;
-                });
+            const bool writes = traversal.m_hasWrites;
             const bool changedWrites = writes && std::any_of(chunks.begin(), chunks.end(), [](const PreparedChunk& entry) {
                                            return entry.m_changed != 0;
                                        });

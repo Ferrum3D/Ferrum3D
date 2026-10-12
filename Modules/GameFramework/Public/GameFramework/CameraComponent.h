@@ -14,6 +14,7 @@ namespace FE::GameFramework
         FE_SKIP_SERIALIZING Rc<Graphics::View> m_view;
         //! @brief Borrowed world scene service, which outlives this component.
         FE_SKIP_SERIALIZING WorldGraphicsSceneService* m_scene = nullptr;
+
         //! @brief Vertical field of view in radians.
         float m_fovY = Constants::kPI * 0.3f;
         //! @brief Projection width divided by height.
@@ -26,8 +27,6 @@ namespace FE::GameFramework
         CameraComponent() = default;
         CameraComponent(const CameraComponent& other);
         CameraComponent(CameraComponent&&) noexcept = default;
-
-        [[nodiscard]] bool Validate() const;
 
         Framework::LifecycleResult Init(Framework::ComponentContext& context);
         void Shutdown(Framework::ComponentContext& context);

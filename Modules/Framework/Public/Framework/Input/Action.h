@@ -39,6 +39,11 @@ namespace FE::Input
         FE_RTTI("882596AA-9BD0-475D-9CB2-3636FF35D843");
 
         virtual ActionState Process(ActionProcessorContext& context) const = 0;
+
+        [[nodiscard]] virtual bool Validate() const
+        {
+            return true;
+        }
     };
 
 
@@ -49,7 +54,13 @@ namespace FE::Input
         FE_RTTI_Serialize();
 
         float m_holdTime = 1;
+        
         ActionState Process(ActionProcessorContext& context) const override;
+
+        [[nodiscard]] bool Validate() const override
+        {
+            return m_holdTime >= 0;
+        }
 
     protected:
         void DoRelease() override

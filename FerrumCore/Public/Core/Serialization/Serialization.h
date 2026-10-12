@@ -8,6 +8,7 @@
 #include <festd/string.h>
 #include <festd/vector.h>
 #include <type_traits>
+#include <variant>
 
 namespace FE::Serialization
 {
@@ -841,7 +842,70 @@ namespace FE::Serialization
     };
 
 
-    //! Inline polymorphic values; shared identity and cycles are not persisted.
+    //! Tagged alternatives with transactional payload decoding.
+    template<class... Types>
+    struct Serializer<std::variant<Types...>>
+    {
+        using Variant = std::variant<Types...>;
+
+        static ResultCode Serialize(SerializationContext& context, const Variant& value)
+        {
+            if (auto object = context.BeginObject())
+            {
+                object.Field("m_type", static_cast<uint32_t>(value.index()));
+                std::visit(
+                    [&]<class T>(const T& payload) {
+                        object.Field("m_value", payload);
+                    },
+                    value);
+            }
+
+            return context.GetResultCode();
+        }
+
+        static ResultCode Deserialize(DeserializationContext& context, Variant& value)
+        {
+            if (auto object = context.BeginObject())
+            {
+                uint32_t index = Constants::kMaxU32;
+                object.Field("m_type", index);
+                if (context.IsValid())
+                    ReadPayload<0>(context, object, index, value);
+            }
+
+            return context.GetResultCode();
+        }
+
+        static uint64_t GetSchemaHash()
+        {
+            Hasher hasher;
+            (hasher.UpdateRaw(Serialization::GetSchemaHash<Types>()), ...);
+            return hasher.Finalize();
+        }
+
+    private:
+        template<size_t Index>
+        static void ReadPayload(DeserializationContext& context, DeserializationObject& object, const uint32_t index,
+                                Variant& value)
+        {
+            if constexpr (Index < sizeof...(Types))
+            {
+                if (index == Index)
+                {
+                    std::variant_alternative_t<Index, Variant> payload;
+                    object.Field("m_value", payload);
+                    if (context.IsValid())
+                        value = std::move(payload);
+                }
+                else
+                    ReadPayload<Index + 1>(context, object, index, value);
+            }
+            else
+                context.ReportError(ResultCode::kMalformedData);
+        }
+    };
+
+
     template<class T>
     struct Serializer<Rc<T>>
     {

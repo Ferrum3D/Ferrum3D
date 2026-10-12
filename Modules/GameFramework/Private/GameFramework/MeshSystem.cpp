@@ -15,14 +15,13 @@ namespace FE::GameFramework
 
     void MeshSystem::Update(Framework::EntityUpdateContext& context)
     {
-        using Meshes = Framework::Query<MeshComponent, const WorldTransformComponent>;
-        Meshes::TraverseChanged(
-            context,
-            Phases::GraphicsExtraction,
-            m_changes,
-            [](MeshComponent& mesh, const WorldTransformComponent& transform) {
-                mesh.m_scene->GetMeshes().Update(mesh, transform.m_world);
-            },
-            Framework::ExecutionPolicy::kMainThread);
+        FE_PROFILER_ZONE();
+
+        const auto traverse = [](MeshComponent& mesh, const WorldTransformComponent& transform) {
+            mesh.m_scene->GetMeshes().Update(mesh, transform.m_world);
+        };
+
+        using Query = Framework::Query<MeshComponent, const WorldTransformComponent>;
+        Query::TraverseChanged(context, Phases::GraphicsExtraction, m_changes, traverse, Framework::ExecutionPolicy::kMainThread);
     }
 } // namespace FE::GameFramework

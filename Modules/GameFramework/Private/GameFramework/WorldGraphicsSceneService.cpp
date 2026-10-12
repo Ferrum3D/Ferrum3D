@@ -9,6 +9,7 @@ namespace FE::GameFramework
     void WorldGraphicsSceneService::Init(Framework::EntityWorld&)
     {
         FE_PROFILER_ZONE();
+
         FE_Assert(!m_scene);
         m_scene = CreateScene();
         m_meshes.reset(CreateMeshBridge(*m_scene));
@@ -18,6 +19,7 @@ namespace FE::GameFramework
     void WorldGraphicsSceneService::Shutdown(Framework::EntityWorld&)
     {
         FE_PROFILER_ZONE();
+
         FE_Assert(m_scene && m_scene->GetViewCount() == 0);
         m_meshes.reset();
         if (m_scene->GetModules().Contains<Graphics::MeshSceneModule>())
@@ -46,6 +48,7 @@ namespace FE::GameFramework
     Graphics::View* WorldGraphicsSceneService::CreateCameraView()
     {
         FE_PROFILER_ZONE();
+
         Graphics::View* view = GetScene().CreateView();
         view->GetModules().Add<Graphics::DepthPrepass::ViewModule>();
         view->GetModules().Add<Graphics::OpaquePass::ViewModule>();
@@ -56,6 +59,8 @@ namespace FE::GameFramework
 
     Graphics::Scene* WorldGraphicsSceneService::CreateScene()
     {
+        FE_PROFILER_ZONE();
+
         Graphics::Scene* scene = Graphics::Renderer::Get().CreateScene();
         scene->GetModules().Add<Graphics::MeshSceneModule>();
         return scene;
@@ -64,10 +69,12 @@ namespace FE::GameFramework
 
     MeshSceneBridge* WorldGraphicsSceneService::CreateMeshBridge(Graphics::Scene& scene)
     {
-        auto* meshes =
-            static_cast<Graphics::MeshStreamer*>(IO::AssetManager::FindStreamer(Rtti::GetTypeID<Graphics::MeshAsset>()));
-        auto* textures =
-            static_cast<Graphics::TextureStreamer*>(IO::AssetManager::FindStreamer(Rtti::GetTypeID<Graphics::TextureAsset>()));
-        return Memory::DefaultNew<MeshSceneBridge>(&scene.GetModules().Find<Graphics::MeshSceneModule>(), meshes, textures);
+        FE_PROFILER_ZONE();
+
+        auto* meshes = IO::AssetManager::FindStreamer(Rtti::GetTypeID<Graphics::MeshAsset>());
+        auto* textures = IO::AssetManager::FindStreamer(Rtti::GetTypeID<Graphics::TextureAsset>());
+        return Memory::DefaultNew<MeshSceneBridge>(&scene.GetModules().Find<Graphics::MeshSceneModule>(),
+                                                   static_cast<Graphics::MeshStreamer*>(meshes),
+                                                   static_cast<Graphics::TextureStreamer*>(textures));
     }
 } // namespace FE::GameFramework

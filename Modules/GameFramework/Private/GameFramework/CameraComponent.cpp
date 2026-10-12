@@ -14,26 +14,14 @@ namespace FE::GameFramework
     }
 
 
-    bool CameraComponent::Validate() const
-    {
-        if (!std::isfinite(m_fovY) || m_fovY <= 0 || m_fovY >= Constants::kPI)
-            return false;
-
-        if (!std::isfinite(m_aspectRatio) || m_aspectRatio <= 0)
-            return false;
-
-        if (!std::isfinite(m_nearPlane) || m_nearPlane <= 0)
-            return false;
-
-        return std::isfinite(m_farPlane) && m_farPlane > m_nearPlane;
-    }
-
-
     Framework::LifecycleResult CameraComponent::Init(Framework::ComponentContext& context)
     {
         m_scene = context.m_world.FindService<WorldGraphicsSceneService>();
-        if (!m_scene || !Validate())
+        if (!m_scene)
+        {
+            Logger::LogError("No graphics scene found, CameraComponent cannot be initialized");
             return Framework::LifecycleResult::kFailed;
+        }
 
         m_view = m_scene->CreateCameraView();
         return Framework::LifecycleResult::kSucceeded;

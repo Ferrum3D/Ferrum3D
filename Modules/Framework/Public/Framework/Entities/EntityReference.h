@@ -21,7 +21,6 @@ namespace FE::Framework
 
         Serialization::ResultCode Serialize(Serialization::SerializationContext& context) const;
         Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context);
-        static uint64_t RTTI_GetSerializationSchemaHash();
-        static uint32_t RTTI_GetSerializationVersion();
+        FE_RTTI_SerializeFields();
     };
 } // namespace FE::Framework

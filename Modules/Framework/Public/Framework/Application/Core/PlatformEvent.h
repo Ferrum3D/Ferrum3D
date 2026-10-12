@@ -80,7 +80,8 @@ namespace FE::Framework::Core
             MouseMovePayload m_mouseMovePayload;
         };
 
-        double m_timestampSeconds = 0;
+        //! Negative means synthetic/untimed; the adapter places it at the end of the poll interval. Zero is valid.
+        double m_timestampSeconds = -1;
 
         static PlatformEvent MonitorsChanged()
         {

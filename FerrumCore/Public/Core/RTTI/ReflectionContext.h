@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <Core/RTTI/Any.h>
 #include <Core/RTTI/Reflection.h>
 #include <Core/Serialization/Serialization.h>
 
@@ -7,6 +8,31 @@ namespace FE::Rtti
     template<class T>
     void BindTypeSerialization(Type& type)
     {
+        if constexpr (requires(const T& value) {
+                          { value.Validate() } -> std::same_as<bool>;
+                      })
+            type.m_validate = [](const void* value) {
+                return static_cast<const T*>(value)->Validate();
+            };
+
+        if constexpr (requires(T& value, const typename T::Configuration& configuration) {
+                          { value.Configure(configuration) } -> std::same_as<bool>;
+                          { std::as_const(value).CaptureConfiguration() } -> std::same_as<typename T::Configuration>;
+                      })
+        {
+            type.m_configure = [](void* storage, const Any& configuration) {
+                if (!configuration.HasValue())
+                    return static_cast<T*>(storage)->Configure(typename T::Configuration{});
+                const auto* typed = configuration.TryGet<typename T::Configuration>();
+                return typed != nullptr && static_cast<T*>(storage)->Configure(*typed);
+            };
+            type.m_captureConfiguration = [](const void* storage) {
+                Any configuration;
+                configuration.Emplace<typename T::Configuration>(static_cast<const T*>(storage)->CaptureConfiguration());
+                return configuration;
+            };
+        }
+
         using namespace Serialization;
         if constexpr (Serialization::Internal::HasSerializer<T>)
         {

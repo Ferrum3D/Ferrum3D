@@ -1,5 +1,6 @@
 #pragma once
 #include <Framework/Input/Core/Backend.h>
+#include <Framework/Input/InputFrame.h>
 #include <Framework/Input/MappingTable.h>
 #include <festd/unordered_map.h>
 
@@ -19,21 +20,23 @@ namespace FE::Input
         void Deactivate(ContextHandle context);
         void Clear();
 
-        [[nodiscard]] uint32_t Bind(IO::AssetID action);
-        [[nodiscard]] uint32_t Bind(IO::AssetID action, ActionType expectedType);
-
         void Resolve(const Core::KeyboardState& keyboard, const Core::MouseState& mouse, float deltaSeconds, uint64_t frame,
-                     festd::span<const Core::Sample> samples = {});
+                     festd::span<const Core::Sample> samples = {}, bool publishSampleEvents = true);
         [[nodiscard]] const ResolvedAction* FindAction(IO::AssetID action) const;
 
         [[nodiscard]] festd::span<const ResolvedAction> GetActions() const
         {
-            return m_results;
+            return m_inputFrame.m_actions;
         }
 
         [[nodiscard]] festd::span<const ActionEvent> GetEvents() const
         {
-            return m_events;
+            return m_inputFrame.m_events;
+        }
+
+        [[nodiscard]] const InputFrame& GetFrame() const
+        {
+            return m_inputFrame;
         }
 
     private:
@@ -59,26 +62,25 @@ namespace FE::Input
             uint64_t m_owner = 0;
             uint32_t m_tableGeneration = 0;
             uint32_t m_actionGeneration = 0;
-            uint32_t m_expectedTypes = 0;
-            uint32_t m_reportedTypeGeneration = Constants::kMaxU32;
             ActionProcessorContext m_context;
             Rc<ActionProcessor> m_processor;
             ActionType m_type = ActionType::kBoolean;
             Vector2 m_displacement{ 0, 0 };
             bool m_visited = false;
             bool m_discrete = false;
+            bool m_valid = false;
+            bool m_triggeredThisFrame = false;
             IO::AssetHandle<Action> m_asset;
         };
 
         festd::vector<TableEntry> m_tables;
         festd::vector<RuntimeAction> m_runtime;
-        festd::unordered_dense_map<IO::AssetID, uint32_t> m_indices;
-        festd::vector<ResolvedAction> m_results;
-        festd::vector<ActionEvent> m_events;
+        InputFrame m_inputFrame;
         uint64_t m_frame = Constants::kMaxU64;
 
         void Prepare();
-        void ProcessSample(const Core::Sample& sample);
+        void ProcessSample(const Core::Sample& sample, bool publishEvents);
         void Cancel(uint32_t index);
+        uint32_t Bind(IO::AssetID action);
     };
 } // namespace FE::Input

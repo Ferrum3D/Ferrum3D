@@ -9,19 +9,24 @@ namespace FE::Input::Desktop
     {
         [[nodiscard]] festd::span<const Core::DeviceKind> EnumerateDevices() const override;
         void Update() override;
+
         [[nodiscard]] uint64_t GetSampleSequence() const override
         {
             return m_sampleSequence;
         }
+
         void Update(festd::span<const Framework::Core::PlatformEvent> events, float deltaSeconds = 0, double frameEndSeconds = 0);
+
         [[nodiscard]] festd::span<const Core::Sample> GetSamples() const override
         {
             return m_samples;
         }
+
         [[nodiscard]] const Core::KeyboardState& GetKeyboardState() const override
         {
             return m_keyboard;
         }
+
         [[nodiscard]] const Core::MouseState& GetMouseState() const override
         {
             return m_mouse;

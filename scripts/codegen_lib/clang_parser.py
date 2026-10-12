@@ -110,6 +110,7 @@ def parse_rtti_attribute(annotations: dict[str, str]) -> tuple[uuid.UUID | None,
 def is_codegen_attribute(annotation: str) -> bool:
     return (
         annotation == "SerializeGenerated"
+        or annotation == "SerializeFieldsGenerated"
         or annotation == "SkipSerializing"
         or annotation.startswith("EnumName:")
         or annotation.startswith("ReflectBasic=")
@@ -336,6 +337,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
     has_rtti = False
     member_reflection_id = None
     is_serializable = False
+    serialization_fields_only = False
     has_serialize = False
     has_deserialize = False
     serialization_version = None
@@ -356,7 +358,8 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
                 member_reflection_id = parse_rtti_id(marker_id)
         elif is_class(child.kind) and child.spelling == "RTTI_SerializationMarker":
             marker_attributes = parse_attributes(child)
-            is_serializable = "SerializeGenerated" in marker_attributes
+            serialization_fields_only = "SerializeFieldsGenerated" in marker_attributes
+            is_serializable = "SerializeGenerated" in marker_attributes or serialization_fields_only
         elif child.kind == cindex.CursorKind.CXX_METHOD and not child.is_static_method():
             has_serialize |= child.spelling == "Serialize"
             has_deserialize |= child.spelling == "Deserialize"
@@ -396,6 +399,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             direct_bases=direct_bases,
             is_serializable=is_serializable,
             has_manual_serializer=has_serialize and has_deserialize,
+            serialization_fields_only=serialization_fields_only,
             serialization_version=serialization_version,
         )
         types[ref_type.internal_id] = ref_type

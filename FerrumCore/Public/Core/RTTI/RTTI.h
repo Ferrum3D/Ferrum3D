@@ -302,6 +302,18 @@ public:                                                                         
     }
 
 
+//! Generate field I/O and schema metadata for an explicit manual serialization wrapper.
+#define FE_RTTI_SerializeFields()                                                                                                \
+public:                                                                                                                          \
+    FE::Serialization::ResultCode RTTI_SerializeFields(FE::Serialization::SerializationContext& context) const;                  \
+    FE::Serialization::ResultCode RTTI_DeserializeFields(FE::Serialization::DeserializationContext& context);                    \
+    static uint64_t RTTI_GetSerializationSchemaHash();                                                                           \
+    static uint32_t RTTI_GetSerializationVersion();                                                                              \
+    struct FE_CODEGEN_ATTRIBUTE("SerializeFieldsGenerated") RTTI_SerializationMarker                                             \
+    {                                                                                                                            \
+    };
+
+
 FE_RTTI_Reflect(uint8_t, "80E074D8-C4C0-4190-B716-701DBA47F9F7");
 FE_RTTI_Reflect(uint16_t, "DA7E1828-9EC2-408B-A93B-50F254939992");
 FE_RTTI_Reflect(uint32_t, "334F0750-1B4E-4F4C-AC6F-985382D4BD11");

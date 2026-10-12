@@ -11,7 +11,7 @@ namespace FE::Framework
             festd::vector<QueryAccess> m_accesses;
             void* m_callable = nullptr;
             TraversalInvoke m_invoke = nullptr;
-            TraversalChangedInvoke m_changedInvoke = nullptr;
+            bool m_hasWrites = false;
             CallableDestroy m_destroy = nullptr;
             Rc<WaitGroup> m_completion;
             festd::vector<Rc<WaitGroup>> m_prerequisites;
@@ -109,7 +109,8 @@ namespace FE::Framework
         };
 
         void PrepareTraversal(const Traversal& traversal, festd::vector<PreparedChunk>& chunks);
-        bool InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk, festd::span<void*> values);
+        bool InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk, festd::span<void*> values,
+                          bool& changed);
         void ExecuteTraversal(uint32_t index);
 
         EntityWorld::Impl& m_world;

@@ -294,6 +294,100 @@ namespace FE::Serialization::Tests
 
 namespace FE::Serialization::Tests
 {
+    const Rtti::TypeID IntermediateBase::TypeID = Rtti::TypeID{
+        0xbe, 0xd2, 0xb1, 0xfa, 0x4b, 0xed, 0x4b, 0x44, 0x8e, 0xad, 0x7d, 0x7a, 0x2d, 0x32, 0x56, 0xeb,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_bed2b1fa4bed4b448ead7d7a2d3256eb(IntermediateBase* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xbe, 0xd2, 0xb1, 0xfa, 0x4b, 0xed, 0x4b, 0x44,
+                0x8e, 0xad, 0x7d, 0x7a, 0x2d, 0x32, 0x56, 0xeb, // FE::Serialization::Tests::IntermediateBase (this type)
+                0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
+                0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Serialization::Tests::SerializedBase*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_bed2b1fa4bed4b448ead7d7a2d3256eb()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& IntermediateBase::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_bed2b1fa4bed4b448ead7d7a2d3256eb();
+    }
+
+    void* FE_VECTORCALL IntermediateBase::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_bed2b1fa4bed4b448ead7d7a2d3256eb(this, typeID);
+    }
+
+    const void* FE_VECTORCALL IntermediateBase::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_bed2b1fa4bed4b448ead7d7a2d3256eb(const_cast<IntermediateBase*>(this), typeID);
+    }
+    void IntermediateBase::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_bed2b1fa4bed4b448ead7d7a2d3256eb();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xbe, 0xd2, 0xb1, 0xfa, 0x4b, 0xed, 0x4b, 0x44,
+            0x8e, 0xad, 0x7d, 0x7a, 0x2d, 0x32, 0x56, 0xeb, // FE::Serialization::Tests::IntermediateBase
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
+            0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
+        };
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_intermediateRuntime
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_intermediateRuntime = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_intermediateRuntime",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &IntermediateBase::m_intermediateRuntime,
+                                                        kAttributes_m_intermediateRuntime,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<IntermediateBase>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Serialization::Tests::IntermediateBase",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<IntermediateBase*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_bed2b1fa4bed4b448ead7d7a2d3256eb(&IntermediateBase::Reflect);
+} // namespace FE::Serialization::Tests
+
+
+namespace FE::Serialization::Tests
+{
     const Rtti::TypeID TestObject::TypeID = Rtti::TypeID{
         0xcc, 0x51, 0x82, 0x2c, 0x73, 0x86, 0x45, 0x96, 0xa2, 0x08, 0xf4, 0xa4, 0x95, 0x0d, 0x63, 0xcb,
     };
@@ -492,15 +586,17 @@ namespace FE::Serialization::Tests
         FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_d50860c52188486f8d18a79d8c633c0c(DerivedObject* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[5 * sizeof(Rtti::TypeID)] = {
                 0xd5, 0x08, 0x60, 0xc5, 0x21, 0x88, 0x48, 0x6f,
                 0x8d, 0x18, 0xa7, 0x9d, 0x8c, 0x63, 0x3c, 0x0c, // FE::Serialization::Tests::DerivedObject (this type)
                 0x23, 0x39, 0xa6, 0xd0, 0x0e, 0xca, 0x48, 0x98,
                 0xa5, 0xb7, 0x85, 0xbb, 0x8b, 0x84, 0x13, 0x20, // FE::Serialization::Tests::RuntimeBase
-                0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
-                0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
+                0xbe, 0xd2, 0xb1, 0xfa, 0x4b, 0xed, 0x4b, 0x44,
+                0x8e, 0xad, 0x7d, 0x7a, 0x2d, 0x32, 0x56, 0xeb, // FE::Serialization::Tests::IntermediateBase
                 0x11, 0x39, 0x37, 0xcb, 0x7d, 0x40, 0x4f, 0x5d,
                 0x82, 0x3d, 0x7b, 0x53, 0x5b, 0x43, 0x12, 0xb1, // FE::Serialization::Tests::ManualSerializedBase
+                0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
+                0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
             };
 
             __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
@@ -514,11 +610,15 @@ namespace FE::Serialization::Tests
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Serialization::Tests::SerializedBase*>(thisPtr);
+                return static_cast<FE::Serialization::Tests::IntermediateBase*>(thisPtr);
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 3 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<FE::Serialization::Tests::ManualSerializedBase*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 4 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Serialization::Tests::SerializedBase*>(thisPtr);
 
             return nullptr;
         }
@@ -552,13 +652,15 @@ namespace FE::Serialization::Tests
             0x8d, 0x18, 0xa7, 0x9d, 0x8c, 0x63, 0x3c, 0x0c, // FE::Serialization::Tests::DerivedObject
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, 3 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+        static constexpr alignas(16) festd::array<uint8_t, 4 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
             0x23, 0x39, 0xa6, 0xd0, 0x0e, 0xca, 0x48, 0x98,
             0xa5, 0xb7, 0x85, 0xbb, 0x8b, 0x84, 0x13, 0x20, // FE::Serialization::Tests::RuntimeBase
-            0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
-            0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
+            0xbe, 0xd2, 0xb1, 0xfa, 0x4b, 0xed, 0x4b, 0x44,
+            0x8e, 0xad, 0x7d, 0x7a, 0x2d, 0x32, 0x56, 0xeb, // FE::Serialization::Tests::IntermediateBase
             0x11, 0x39, 0x37, 0xcb, 0x7d, 0x40, 0x4f, 0x5d,
             0x82, 0x3d, 0x7b, 0x53, 0x5b, 0x43, 0x12, 0xb1, // FE::Serialization::Tests::ManualSerializedBase
+            0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
+            0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
         };
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
@@ -593,8 +695,8 @@ namespace FE::Serialization::Tests
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("$base:FE::Serialization::Tests::SerializedBase",
-                         static_cast<const FE::Serialization::Tests::SerializedBase&>(*this));
+            object.Field("$base:FE::Serialization::Tests::IntermediateBase",
+                         static_cast<const FE::Serialization::Tests::IntermediateBase&>(*this));
             object.Field("$base:FE::Serialization::Tests::ManualSerializedBase",
                          static_cast<const FE::Serialization::Tests::ManualSerializedBase&>(*this));
             object.Field("m_derivedValue", m_derivedValue);
@@ -607,8 +709,8 @@ namespace FE::Serialization::Tests
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("$base:FE::Serialization::Tests::SerializedBase",
-                         static_cast<FE::Serialization::Tests::SerializedBase&>(*this));
+            object.Field("$base:FE::Serialization::Tests::IntermediateBase",
+                         static_cast<FE::Serialization::Tests::IntermediateBase&>(*this));
             object.Field("$base:FE::Serialization::Tests::ManualSerializedBase",
                          static_cast<FE::Serialization::Tests::ManualSerializedBase&>(*this));
             object.Field("m_derivedValue", m_derivedValue);
@@ -625,8 +727,8 @@ namespace FE::Serialization::Tests
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("$base:FE::Serialization::Tests::SerializedBase", 46);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<FE::Serialization::Tests::SerializedBase>());
+            hasher.Update("$base:FE::Serialization::Tests::IntermediateBase", 48);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<FE::Serialization::Tests::IntermediateBase>());
             hasher.Update("$base:FE::Serialization::Tests::ManualSerializedBase", 52);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<FE::Serialization::Tests::ManualSerializedBase>());
             hasher.Update("m_derivedValue", 14);

@@ -1574,6 +1574,67 @@ TEST_F(WorldFixture, WritesPublishChangesForTwoIndependentConsumers)
 }
 
 
+TEST_F(WorldFixture, ConditionalWritesPublishMixedChunksForIndependentParallelConsumers)
+{
+    EntityCommandList commands(m_world);
+    for (uint32_t i = 0; i < 1024; ++i)
+    {
+        auto entity = commands.CreateEntity(m_registry);
+        commands.AddComponent(entity, Number{ i < 512 ? 1 : 0 });
+    }
+    m_world.Submit(std::move(commands));
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    ChangeCursor first, second;
+    auto tick = [&](const bool write, const bool cascade) {
+        m_world.BeginUpdate();
+        EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+        if (write)
+        {
+            const auto update = [](Number& number) {
+                if (number.m_value == 0)
+                    return QueryWriteResult::kUnchanged;
+                ++number.m_value;
+                return QueryWriteResult::kChanged;
+            };
+            if (cascade)
+                CascadeQuery<Number>::Traverse(context, Phases::PreUpdate, ExecutionPolicy::kParallel, update);
+            else
+                Query<Number>::Traverse(context, Phases::PreUpdate, ExecutionPolicy::kParallel, update);
+            EXPECT_TRUE(m_world.SchedulePhase(Phases::PreUpdate));
+        }
+        std::atomic<uint32_t> firstCount = 0, secondCount = 0;
+        Query<const Number>::TraverseChanged(
+            context,
+            Phases::Update,
+            first,
+            [&](const Number&) {
+                ++firstCount;
+            },
+            ExecutionPolicy::kParallel);
+        Query<const Number>::TraverseChanged(
+            context,
+            Phases::Update,
+            second,
+            [&](const Number&) {
+                ++secondCount;
+            },
+            ExecutionPolicy::kParallel);
+        EXPECT_TRUE(m_world.SchedulePhase(Phases::Update));
+        EXPECT_TRUE(m_world.ExecuteSchedule());
+        EXPECT_TRUE(m_world.EndUpdate());
+        EXPECT_EQ(firstCount.load(), secondCount.load());
+        return firstCount.load();
+    };
+    EXPECT_EQ(tick(false, false), 1024);
+    EXPECT_EQ(tick(false, false), 0);
+    EXPECT_GE(tick(true, false), 512);
+    EXPECT_GT(m_world.GetScheduleDiagnostics().m_chunks, 1);
+    EXPECT_EQ(tick(false, false), 0);
+    EXPECT_GE(tick(true, true), 512);
+    EXPECT_EQ(tick(false, false), 0);
+}
+
+
 TEST_F(WorldFixture, SharedChangeCursorAndAliasingParallelParentTermsAreRejected)
 {
     Spawn();

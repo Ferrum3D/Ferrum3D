@@ -108,6 +108,7 @@ class ReflectedType:
         direct_bases: list[ReflectedType] | None = None,
         is_serializable: bool = False,
         has_manual_serializer: bool = False,
+        serialization_fields_only: bool = False,
         serialization_version: str | None = None,
     ):
         self.need_reflect = need_reflect
@@ -138,12 +139,18 @@ class ReflectedType:
         self.is_external = self.is_builtin or self.is_enum or kind == TypeKind.EXTERNAL_CLASS
         self.is_member = kind == TypeKind.MEMBER_CLASS
         self.is_serializable = is_serializable
-        self.supports_serialization = is_serializable or has_manual_serializer
+        self.has_manual_serializer = has_manual_serializer
+        self.serialization_fields_only = serialization_fields_only
         self.serialization_version = serialization_version
         self.pointer_level = 0
 
         # if not self.is_external and not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) and self.id != REF_COUNTED_OBJECT_BASE_ID:
         #     print(f'Warning: {self.qualified_name} is not derived from RefCountedObjectBase')
+
+
+    @property
+    def supports_serialization(self) -> bool:
+        return self.is_serializable or self.has_manual_serializer or any(base.supports_serialization for base in self.direct_bases)
 
 
     @property

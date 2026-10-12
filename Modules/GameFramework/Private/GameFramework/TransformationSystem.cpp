@@ -6,18 +6,6 @@ namespace FE::GameFramework
 {
     namespace
     {
-        bool IsFinite(const Matrix4x4& matrix)
-        {
-            for (const float value : matrix.m_values)
-            {
-                if (!std::isfinite(value))
-                    return false;
-            }
-
-            return true;
-        }
-
-
         bool IsAffine(const Matrix4x4& matrix)
         {
             return matrix.m_03 == 0 && matrix.m_13 == 0 && matrix.m_23 == 0 && matrix.m_33 == 1;
@@ -54,9 +42,6 @@ namespace FE::GameFramework
             local = Transform::Create(translation, rotation, hasScaleModifier ? 1.0f : scale.x);
             modifier = hasScaleModifier ? scale : Vector3(1, 1, 1);
             const Matrix4x4 reconstructed = Matrix4x4::Scale(modifier) * Transform::ToMatrix(local);
-            if (!IsFinite(reconstructed))
-                return false;
-
             for (uint32_t i = 0; i < 16; ++i)
             {
                 const float tolerance = kTolerance * std::max(1.0f, std::abs(matrix.m_values[i]));
@@ -86,7 +71,7 @@ namespace FE::GameFramework
                 entity = context.GetParent(entity);
             }
 
-            return IsFinite(result) && IsAffine(result);
+            return IsAffine(result);
         }
 
 
@@ -104,16 +89,12 @@ namespace FE::GameFramework
                 return false;
 
             Matrix4x4 inverseParent = Math::InvertTransform(parentWorld);
-            if (!IsFinite(inverseParent))
-                return false;
-
             inverseParent.m_03 = inverseParent.m_13 = inverseParent.m_23 = 0;
             inverseParent.m_33 = 1;
-            const Matrix4x4 candidate = oldWorld * inverseParent;
-            if (!IsFinite(candidate))
-                return false;
 
+            const Matrix4x4 candidate = oldWorld * inverseParent;
             const bool hasScaleModifier = context.Read<NonUniformScaleComponent>(context.m_target) != nullptr;
+
             Transform candidateLocal;
             Vector3 candidateScale;
             if (!DecomposeLocal(candidate, hasScaleModifier, candidateLocal, candidateScale))
@@ -159,24 +140,23 @@ namespace FE::GameFramework
 
     void TransformationSystem::Update(Framework::EntityUpdateContext& context)
     {
-        using TransformQuery = Framework::CascadeQuery<const TransformComponent,
-                                                       const NonUniformScaleComponent*,
-                                                       Framework::Parent<const WorldTransformComponent*>,
-                                                       WorldTransformComponent>;
+        FE_PROFILER_ZONE();
 
-        const auto updateWorldTransforms = [](const TransformComponent& local,
-                                              const NonUniformScaleComponent* scale,
-                                              const WorldTransformComponent* parent,
-                                              WorldTransformComponent& output) {
+        const auto traverse = [](const TransformComponent& local,
+                                 const NonUniformScaleComponent* scale,
+                                 const WorldTransformComponent* parent,
+                                 WorldTransformComponent& output) {
             // Row-vector convention: apply the scale modifier, then local transform, then parent world.
             const Matrix4x4 effectiveLocal = ComposeLocal(local, scale);
             output.m_world = parent ? effectiveLocal * parent->m_world : effectiveLocal;
         };
 
-        m_completion = TransformQuery::TraverseChanged(context,
-                                                       Phases::Transformation,
-                                                       m_changes,
-                                                       updateWorldTransforms,
-                                                       Framework::ExecutionPolicy::kParallel);
+        using Query = Framework::CascadeQuery<const TransformComponent,
+                                              const NonUniformScaleComponent*,
+                                              Framework::Parent<const WorldTransformComponent*>,
+                                              WorldTransformComponent>;
+
+        m_completion =
+            Query::TraverseChanged(context, Phases::Transformation, m_changes, traverse, Framework::ExecutionPolicy::kParallel);
     }
 } // namespace FE::GameFramework

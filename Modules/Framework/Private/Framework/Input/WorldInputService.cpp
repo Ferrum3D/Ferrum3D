@@ -4,12 +4,13 @@
 #include <Framework/Entities/EntityWorld.h>
 #include <Framework/Entities/WorldTimeService.h>
 #include <Framework/Input/WorldInputService.h>
-#include <atomic>
 
 namespace FE::Input
 {
     bool InputConfiguration::Validate() const
     {
+        FE_PROFILER_ZONE();
+
         for (const ContextDefinition& context : m_contexts)
         {
             if (!context.m_table.GetAssetID().IsValid())
@@ -20,40 +21,46 @@ namespace FE::Input
     }
 
 
-    bool WorldInputService::Configure(const Rtti::Any& settings)
+    bool WorldInputService::Configure(const Configuration& settings)
     {
-        if (!settings.HasValue())
-        {
-            m_configuration = {};
-            return true;
-        }
+        FE_PROFILER_ZONE();
 
-        const auto* configuration = settings.TryGet<InputConfiguration>();
-        if (!configuration || !configuration->Validate())
+        FE_Assert(m_updateNumber == 0 && m_contexts.empty(), "Configure services before Init");
+        if (!settings.Validate())
             return false;
 
-        m_configuration = *configuration;
+        for (const ContextDefinition& definition : settings.m_contexts)
+        {
+            Context context;
+            context.m_definition = definition;
+            m_contexts.push_back(std::move(context));
+        }
+
         return true;
     }
 
 
-    Rtti::Any WorldInputService::CaptureConfiguration() const
+    WorldInputService::Configuration WorldInputService::CaptureConfiguration() const
     {
-        Rtti::Any result;
-        result.Emplace<InputConfiguration>().m_contexts = GetContexts();
-        return result;
+        return { GetContexts() };
     }
 
 
     void WorldInputService::Init(Framework::EntityWorld& world)
     {
+        FE_PROFILER_ZONE();
+
         FE_Assert(world.FindService<Framework::WorldTimeService>() != nullptr, "Input requires WorldTimeService before it");
-        static std::atomic<uint64_t> nextGeneration = 0;
-        m_inputFrame.m_generation = ++nextGeneration;
+
         m_deltaSeconds = 0;
         m_lastSampleSequence = 0;
-        for (const ContextDefinition& context : m_configuration.m_contexts)
-            (void)Activate(context.m_table, context.m_priority, context.m_modal);
+        for (Context& context : m_contexts)
+        {
+            context.m_residency = IO::AssetManager::LoadAsset(context.m_definition.m_table);
+            context.m_handle = m_stack.Activate(context.m_definition.m_table.GetAssetHandle(),
+                                                context.m_definition.m_priority,
+                                                context.m_definition.m_modal);
+        }
     }
 
 
@@ -62,7 +69,7 @@ namespace FE::Input
         m_stack.Clear();
         m_contexts.clear();
         m_backend.reset();
-        m_inputFrame = {};
+        m_updateNumber = 0;
     }
 
 
@@ -74,15 +81,19 @@ namespace FE::Input
 
     void WorldInputService::Update(Framework::EntityWorld& world)
     {
+        FE_PROFILER_ZONE();
+
         if (m_backend)
             m_backend->Update();
 
         m_deltaSeconds = world.FindService<Framework::WorldTimeService>()->GetDeltaSeconds();
-        ++m_inputFrame.m_number;
+        ++m_updateNumber;
+
         const Core::Backend& backend = GetBackend();
         const uint64_t sequence = backend.GetSampleSequence();
         if (sequence != 0 && sequence == m_lastSampleSequence)
         {
+            m_deltaSeconds = 0;
             Core::KeyboardState keyboard = backend.GetKeyboardState();
             Core::MouseState mouse = backend.GetMouseState();
             keyboard.m_keyPressMap.reset();
@@ -91,22 +102,28 @@ namespace FE::Input
             mouse.m_buttonUpMap.reset();
             mouse.m_delta = { 0, 0 };
             mouse.m_wheelDelta = 0;
-            m_stack.Resolve(keyboard, mouse, m_deltaSeconds, m_inputFrame.m_number);
+            m_stack.Resolve(keyboard, mouse, 0, m_updateNumber, {}, false);
         }
         else
         {
+            FE_Assert(sequence == 0 || m_lastSampleSequence == 0 || sequence == m_lastSampleSequence + 1,
+                      "Sampled input requires one world update per platform poll; skipped intervals cannot be replayed");
+
+            if (sequence != 0)
+            {
+                m_deltaSeconds = 0;
+                for (const Core::Sample& sample : backend.GetSamples())
+                    m_deltaSeconds += sample.m_deltaSeconds;
+            }
+
             m_stack.Resolve(backend.GetKeyboardState(),
                             backend.GetMouseState(),
                             m_deltaSeconds,
-                            m_inputFrame.m_number,
+                            m_updateNumber,
                             backend.GetSamples());
         }
 
         m_lastSampleSequence = sequence;
-        const auto actions = m_stack.GetActions();
-        const auto events = m_stack.GetEvents();
-        m_inputFrame.m_actions.assign(actions.begin(), actions.end());
-        m_inputFrame.m_events.assign(events.begin(), events.end());
     }
 
 
@@ -133,6 +150,8 @@ namespace FE::Input
 
     void WorldInputService::Deactivate(const ContextHandle context)
     {
+        FE_PROFILER_ZONE();
+
         m_stack.Deactivate(context);
         m_contexts.erase(std::remove_if(m_contexts.begin(),
                                         m_contexts.end(),
@@ -145,20 +164,12 @@ namespace FE::Input
 
     festd::vector<ContextDefinition> WorldInputService::GetContexts() const
     {
+        FE_PROFILER_ZONE();
+
         festd::vector<ContextDefinition> result;
         for (const Context& context : m_contexts)
             result.push_back(context.m_definition);
 
         return result;
-    }
-
-
-    uint32_t WorldInputService::BindInternal(const IO::Link<Action>& action, const ActionType type)
-    {
-        const auto asset = action.GetAssetHandle().Read();
-        if (asset && asset->m_type != type)
-            Logger::LogError("Input action {} is bound with the wrong value type", action.GetAssetID());
-
-        return m_stack.Bind(action.GetAssetID(), type);
     }
 } // namespace FE::Input

@@ -14,23 +14,19 @@ namespace FE::GameFramework
 
     void CameraSystem::Update(Framework::EntityUpdateContext& context)
     {
-        using Cameras = Framework::Query<const CameraComponent, const WorldTransformComponent>;
-        Cameras::TraverseChanged(
-            context,
-            Phases::GraphicsExtraction,
-            m_changes,
-            [](const CameraComponent& camera, const WorldTransformComponent& transform) {
-                if (!camera.Validate())
-                    return;
+        FE_PROFILER_ZONE();
 
-                Vector3 position, scale, shear;
-                Quaternion rotation;
-                if (!Math::DecomposeTransform(transform.m_world, position, rotation, scale, shear))
-                    return;
+        const auto traverse = [](const CameraComponent& camera, const WorldTransformComponent& transform) {
+            Vector3 position, scale, shear;
+            Quaternion rotation;
+            if (!Math::DecomposeTransform(transform.m_world, position, rotation, scale, shear))
+                return;
 
-                camera.m_view->SetCameraTransform(Transform::Create(position, rotation, 1.0f));
-                camera.m_view->SetProjection(camera.m_fovY, camera.m_aspectRatio, camera.m_nearPlane, camera.m_farPlane);
-            },
-            Framework::ExecutionPolicy::kMainThread);
+            camera.m_view->SetCameraTransform(Transform::Create(position, rotation, 1.0f));
+            camera.m_view->SetProjection(camera.m_fovY, camera.m_aspectRatio, camera.m_nearPlane, camera.m_farPlane);
+        };
+
+        using Query = Framework::Query<const CameraComponent, const WorldTransformComponent>;
+        Query::TraverseChanged(context, Phases::GraphicsExtraction, m_changes, traverse, Framework::ExecutionPolicy::kMainThread);
     }
 } // namespace FE::GameFramework

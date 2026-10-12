@@ -149,6 +149,9 @@ namespace FE::Rtti
     };
 
 
+    struct Any;
+
+
     struct Type final : public festd::intrusive_list_node
     {
         using DefaultConstructor = void (*)(void*);
@@ -171,6 +174,9 @@ namespace FE::Rtti
         Cast m_cast = nullptr;
         Serialize m_serialize = nullptr;
         Deserialize m_deserialize = nullptr;
+        bool (*m_validate)(const void*) = nullptr;
+        bool (*m_configure)(void*, const Any&) = nullptr;
+        Any (*m_captureConfiguration)(const void*) = nullptr;
         festd::span<const TypeID> m_baseTypes;
         festd::span<const Attribute> m_attributes;
         festd::span<const FieldInfo> m_fields;

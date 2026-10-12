@@ -323,6 +323,14 @@ namespace FE::Framework::Windows
             return DefWindowProcW(hWnd, message, wParam, lParam);
 
         auto* app = ImplCast(window->GetApplication());
+        const double queuedSeconds = app->m_queuedEventSeconds;
+        const bool isQueued = app->m_queuedWindow == hWnd && app->m_queuedMessage == message;
+        app->m_queuedMessage = 0;
+        if (!isQueued)
+            app->m_queuedEventSeconds = -1;
+        auto restoreTimestamp = festd::defer([&] {
+            app->m_queuedEventSeconds = queuedSeconds;
+        });
 
         switch (message)
         {
@@ -598,6 +606,8 @@ namespace FE::Framework::Windows
 
     Core::PlatformWindow* PlatformApplication::CreateWindow(const Core::PlatformWindowDesc& desc)
     {
+        FE_PROFILER_ZONE();
+
         auto* window = Memory::DefaultNew<PlatformWindow>(this);
         window->Init(desc);
         m_windows.push_back(window);
@@ -607,7 +617,8 @@ namespace FE::Framework::Windows
 
     void PlatformApplication::RecordEvent(Core::PlatformEvent event)
     {
-        event.m_timestampSeconds = Platform::GetTicks() * Platform::GetSecondsPerTick();
+        event.m_timestampSeconds =
+            m_queuedEventSeconds >= 0 ? m_queuedEventSeconds : Platform::GetTicks() * Platform::GetSecondsPerTick();
         m_events.push_back(event);
     }
 
@@ -621,8 +632,16 @@ namespace FE::Framework::Windows
         MSG msg;
         while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
         {
+            const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
+            const uint64_t tick = GetTickCount64();
+            // MSG.time is the low 32 bits of the uptime clock. Signed subtraction unwraps nearby queued messages.
+            const int32_t offset = static_cast<int32_t>(msg.time - static_cast<uint32_t>(tick));
+            m_queuedEventSeconds = now + static_cast<double>(offset) / 1000.0;
+            m_queuedWindow = msg.hwnd;
+            m_queuedMessage = msg.message;
             TranslateMessage(&msg);
             DispatchMessageW(&msg);
+            m_queuedEventSeconds = -1;
         }
 
         const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();

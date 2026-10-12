@@ -15,6 +15,7 @@ namespace FE::GameFramework
         explicit MeshSceneBridge(Graphics::MeshSceneModule* module = nullptr, Graphics::MeshStreamer* meshes = nullptr,
                                  Graphics::TextureStreamer* textures = nullptr);
         virtual ~MeshSceneBridge() = default;
+
         //! @brief Create membership from ready logical assets; invalid content fails without asserting.
         virtual Framework::LifecycleResult Create(MeshComponent& component);
         //! @brief Remove every instance and its batch before dependency release.

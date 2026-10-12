@@ -7,6 +7,7 @@
 #include <Core/Serialization/JsonSerialization.h>
 #include <Core/Strings/Format.h>
 #include <Core/Threading/Thread.h>
+#include <Core/Time/BaseTime.h>
 #include <Framework/Application/Platform/Windows/PlatformApplication.h>
 #include <Framework/Entities/EntityWorldInstance.h>
 #include <Framework/Entities/WorldTimeService.h>
@@ -20,6 +21,13 @@
 
 namespace FE::Input::Tests
 {
+    template<class Configuration>
+    concept AcceptsInputConfiguration = requires(const Configuration& configuration) {
+        Framework::WorldServiceDescriptor::Create<WorldInputService>(configuration);
+    };
+
+    static_assert(AcceptsInputConfiguration<InputConfiguration>);
+    static_assert(!AcceptsInputConfiguration<Action>);
 
     namespace
     {
@@ -107,6 +115,31 @@ namespace FE::Input::Tests
     }
 
 
+    TEST(InputBackend, QueuedWindowsMessagesPreserveTheirHoldInterval)
+    {
+        Framework::Windows::PlatformApplication app;
+        Rc<Framework::Core::PlatformWindow> window = app.CreateWindow({});
+        const HWND handle = reinterpret_cast<HWND>(window->GetNativeHandle().m_value);
+        app.PollEvents();
+        ASSERT_TRUE(PostMessageW(handle, WM_KEYDOWN, 'W', 0));
+        Threading::Sleep(300);
+        ASSERT_TRUE(PostMessageW(handle, WM_KEYUP, 'W', 0));
+        app.PollEvents();
+        double down = -1, up = -1;
+        for (const auto& event : app.GetEvents())
+        {
+            if (event.m_type == Framework::Core::PlatformEventType::kKeyboardKeyDown)
+                down = event.m_timestampSeconds;
+            if (event.m_type == Framework::Core::PlatformEventType::kKeyboardKeyUp)
+                up = event.m_timestampSeconds;
+        }
+        ASSERT_GE(down, 0);
+        ASSERT_GE(up, 0);
+        EXPECT_GE(up - down, 0.25);
+        EXPECT_LT(up - down, 2.0);
+    }
+
+
     TEST(InputBackend, WindowsPollingDoesNotReplayReleasedKeysOrMouseMotion)
     {
         Framework::Windows::PlatformApplication app;
@@ -149,16 +182,15 @@ namespace FE::Input::Tests
         Binding Button(const Core::Key key)
         {
             Binding binding;
-            binding.m_controls = { Control::Key(key) };
+            binding.m_source = ButtonBinding{ Control::Key(key) };
             return binding;
         }
 
 
-        ActionMapping Map(const IO::Link<Action>& action, const ActionType type, festd::vector<Binding> bindings)
+        ActionMapping Map(const IO::Link<Action>& action, festd::vector<Binding> bindings)
         {
             ActionMapping mapping;
             mapping.m_action = action;
-            mapping.m_type = type;
             mapping.m_bindings = std::move(bindings);
             return mapping;
         }
@@ -193,8 +225,7 @@ namespace FE::Input::Tests
         const auto holdLink = Build("hold.asset", hold);
         const auto pressLink = Build("press.asset", Action{});
         MappingTable table;
-        table.m_mappings = { Map(holdLink, ActionType::kBoolean, { Button(Core::Key::kW) }),
-                             Map(pressLink, ActionType::kBoolean, { Button(Core::Key::kW) }) };
+        table.m_mappings = { Map(holdLink, { Button(Core::Key::kW) }), Map(pressLink, { Button(Core::Key::kW) }) };
         MappingStack stack;
         (void)stack.Activate(Load(Build("table.asset", table)));
         Desktop::Backend backend;
@@ -222,7 +253,7 @@ namespace FE::Input::Tests
         hold.m_processor = processor;
         const auto action = Build("hold.asset", hold);
         MappingTable table;
-        table.m_mappings = { Map(action, ActionType::kBoolean, { Button(Core::Key::kW) }) };
+        table.m_mappings = { Map(action, { Button(Core::Key::kW) }) };
         const auto handle = Load(Build("table.asset", table));
         MappingStack first, second;
         (void)first.Activate(handle);
@@ -251,10 +282,9 @@ namespace FE::Input::Tests
         using Framework::Core::PlatformEvent;
         const auto action = Build("press.asset", Action{});
         Binding chord;
-        chord.m_kind = BindingKind::kChord;
-        chord.m_controls = { Control::Key(Core::Key::kQ), Control::Key(Core::Key::kE) };
+        chord.m_source = ChordBinding{ { Control::Key(Core::Key::kQ), Control::Key(Core::Key::kE) } };
         MappingTable table;
-        table.m_mappings = { Map(action, ActionType::kBoolean, { chord, Button(Core::Key::kF1) }) };
+        table.m_mappings = { Map(action, { chord, Button(Core::Key::kF1) }) };
         MappingStack stack;
         (void)stack.Activate(Load(Build("table.asset", table)));
         Desktop::Backend backend;
@@ -284,11 +314,11 @@ namespace FE::Input::Tests
         look.m_type = ActionType::kVector2;
         const auto action = Build("look.asset", look);
         Binding mouse;
-        mouse.m_kind = BindingKind::kMouseDelta;
+        mouse.m_source = MouseDeltaBinding{};
         mouse.m_conditions = { Control::MouseButton(1) };
         mouse.m_sensitivity = 0.01f;
         MappingTable table;
-        table.m_mappings = { Map(action, ActionType::kVector2, { mouse }) };
+        table.m_mappings = { Map(action, { mouse }) };
         MappingStack stack;
         (void)stack.Activate(Load(Build("table.asset", table)));
         Desktop::Backend backend;
@@ -317,8 +347,8 @@ namespace FE::Input::Tests
         hold.m_processor = Memory::DefaultNew<HoldDurationActionProcessor>();
         const auto action = Build("hold.asset", hold);
         MappingTable low, high;
-        low.m_mappings = { Map(action, ActionType::kBoolean, { Button(Core::Key::kW) }) };
-        high.m_mappings = { Map(action, ActionType::kBoolean, { Button(Core::Key::kQ) }) };
+        low.m_mappings = { Map(action, { Button(Core::Key::kW) }) };
+        high.m_mappings = { Map(action, { Button(Core::Key::kQ) }) };
         MappingStack stack;
         (void)stack.Activate(Load(Build("low.asset", low)), 0);
         Core::KeyboardState keyboard;
@@ -335,7 +365,7 @@ namespace FE::Input::Tests
         const auto modal = stack.Activate(Load(Build("modal.asset", MappingTable{})), 1000, true);
         stack.Resolve(keyboard, mouse, 0.1f, 4);
         EXPECT_TRUE(HasEvent(stack, action, ActionState::kCanceled));
-        EXPECT_FALSE(stack.FindAction(action.GetAssetID())->m_active);
+        EXPECT_EQ(stack.FindAction(action.GetAssetID()), nullptr);
         stack.Deactivate(modal);
         keyboard.m_keyDownMap.set(81);
         (void)stack.Activate(Load(Build("replacement.asset", high)), 100);
@@ -351,9 +381,9 @@ namespace FE::Input::Tests
         const auto action = Build("move.asset", move);
         const auto other = Build("other.asset", Action{});
         MappingTable low, high;
-        low.m_mappings = { Map(action, ActionType::kVector2, { Binding::WASD() }) };
+        low.m_mappings = { Map(action, { Binding::WASD() }) };
         low.m_mappings[0].m_clampMagnitude = true;
-        high.m_mappings = { Map(other, ActionType::kBoolean, { Button(Core::Key::kW) }) };
+        high.m_mappings = { Map(other, { Button(Core::Key::kW) }) };
         high.m_mappings[0].m_consume = true;
         MappingStack stack;
         (void)stack.Activate(Load(Build("low.asset", low)), 0);
@@ -403,13 +433,13 @@ namespace FE::Input::Tests
     } // namespace
 
 
-    TEST_F(InputAssets, WorldOwnsResidencyContextsTypedHandlesAndIndependentFrames)
+    TEST_F(InputAssets, WorldOwnsResidencyContextsTypedReferencesAndIndependentFrames)
     {
         Action move;
         move.m_type = ActionType::kVector2;
         const auto action = Build("move.asset", move);
         MappingTable table;
-        table.m_mappings = { Map(action, ActionType::kVector2, { Binding::WASD() }) };
+        table.m_mappings = { Map(action, { Binding::WASD() }) };
         const auto tableLink = Build("table.asset", table);
         Framework::EntityWorld first, second;
         Framework::WorldTimeService firstTime, secondTime;
@@ -441,14 +471,14 @@ namespace FE::Input::Tests
         }
 
         ASSERT_TRUE(tableLink.GetAssetHandle().Read());
-        const auto firstHandle = firstInput.Bind<Vector2>(action);
-        const auto secondHandle = secondInput.Bind<Vector2>(action);
-        const auto wrongType = firstInput.Bind<float>(action);
+        const ActionReference<Vector2> firstHandle(action);
+        const ActionReference<Vector2> secondHandle(action);
+        const ActionReference<float> wrongType(action);
         firstInput.Update(first);
         secondInput.Update(second);
         EXPECT_EQ(firstInput.GetFrame().Read(firstHandle), (Vector2{ 0, 1 }));
         EXPECT_EQ(secondInput.GetFrame().Read(secondHandle), (Vector2{ 1, 0 }));
-        EXPECT_EQ(secondInput.GetFrame().Read(firstHandle), Vector2::kZero);
+        EXPECT_EQ(secondInput.GetFrame().Read(firstHandle), (Vector2{ 1, 0 }));
         EXPECT_FLOAT_EQ(firstInput.GetFrame().Read(wrongType), 0);
         firstInput.Deactivate(firstContext);
         EXPECT_EQ(firstInput.GetFrame().Read(firstHandle), (Vector2{ 0, 1 }));
@@ -466,11 +496,10 @@ namespace FE::Input::Tests
         look.m_type = ActionType::kVector2;
         const auto lookLink = Build("look.asset", look);
         Binding mouse;
-        mouse.m_kind = BindingKind::kMouseDelta;
+        mouse.m_source = MouseDeltaBinding{};
         mouse.m_conditions = { Control::MouseButton(1) };
         MappingTable table;
-        table.m_mappings = { Map(button, ActionType::kBoolean, { Button(Core::Key::kW) }),
-                             Map(lookLink, ActionType::kVector2, { mouse }) };
+        table.m_mappings = { Map(button, { Button(Core::Key::kW) }), Map(lookLink, { mouse }) };
         const auto link = Build("table.asset", table);
         Framework::EntityWorld world;
         Framework::WorldTimeService time;
@@ -492,7 +521,7 @@ namespace FE::Input::Tests
         }
 
         ASSERT_TRUE(link.GetAssetHandle().Read());
-        const auto lookHandle = input.Bind<Vector2>(lookLink);
+        const ActionReference<Vector2> lookHandle(lookLink);
         Desktop::Backend source;
         const PlatformEvent events[] = { PlatformEvent::KeyboardKeyDown(Core::Key::kW),
                                          PlatformEvent::KeyboardKeyUp(Core::Key::kW),
@@ -514,16 +543,70 @@ namespace FE::Input::Tests
     }
 
 
+    TEST_F(InputAssets, RepeatedWorldUpdatesAccountForHeldTimeOnlyOnce)
+    {
+        Action rate;
+        rate.m_type = ActionType::kVector2;
+        const auto rateLink = Build("rate.asset", rate);
+        Action hold;
+        auto* processor = Memory::DefaultNew<HoldDurationActionProcessor>();
+        processor->m_holdTime = 0.75f;
+        hold.m_processor = processor;
+        const auto holdLink = Build("hold.asset", hold);
+        Binding binding = Binding::WASD();
+        binding.m_integrate = true;
+        MappingTable table;
+        table.m_mappings = { Map(rateLink, { binding }), Map(holdLink, { Button(Core::Key::kW) }) };
+        const auto link = Build("table.asset", table);
+        (void)Load(link);
+        Framework::EntityWorld world;
+        Framework::WorldTimeService time;
+        WorldInputService input;
+        auto* backend = Memory::DefaultNew<FixedBackend>();
+        input.SetBackend(festd::unique_ptr<Core::Backend>(backend));
+        world.AddService(time);
+        world.AddService(input);
+        auto cleanup = festd::defer([&] {
+            world.Clear();
+            world.RemoveService(input);
+            world.RemoveService(time);
+        });
+        (void)input.Activate(link);
+        backend->m_keyboard.m_keyDownMap.set(87);
+        backend->m_samples = { { backend->m_keyboard, {}, 0.5f } };
+        backend->m_sequence = 1;
+        input.Update(world);
+        EXPECT_FLOAT_EQ(input.GetFrame().Read(ActionReference<Vector2>(rateLink)).y, 0.5f);
+        Threading::Sleep(20);
+        time.Update(world);
+        input.Update(world);
+        EXPECT_EQ(input.GetFrame().Read(ActionReference<Vector2>(rateLink)), Vector2::kZero);
+        EXPECT_TRUE(input.GetFrame().GetEvents().empty());
+        backend->m_sequence = 2;
+        backend->m_samples.front().m_deltaSeconds = 0.25f;
+        input.Update(world);
+        EXPECT_FLOAT_EQ(input.GetFrame().Read(ActionReference<Vector2>(rateLink)).y, 0.25f);
+        uint32_t triggered = 0;
+        for (const ActionEvent& event : input.GetFrame().GetEvents())
+        {
+            if (event.m_action == holdLink.GetAssetID() && event.m_state == ActionState::kTriggered)
+                ++triggered;
+        }
+        EXPECT_EQ(triggered, 1);
+    }
+
+
     TEST_F(InputAssets, SerializedServiceConfigurationSurvivesWorldSnapshotRestore)
     {
         const auto action = Build("action.asset", Action{});
         MappingTable table;
-        table.m_mappings = { Map(action, ActionType::kBoolean, { Button(Core::Key::kW) }) };
+        table.m_mappings = { Map(action, { Button(Core::Key::kW) }) };
         const auto link = Build("table.asset", table);
         Framework::EntityWorldAsset definition;
         definition.m_services.push_back(Rtti::GetTypeID<Framework::WorldTimeService>());
-        auto& descriptor = definition.m_services.emplace_back(Rtti::GetTypeID<WorldInputService>());
-        descriptor.m_configuration.Emplace<InputConfiguration>().m_contexts.push_back({ link, 42, true });
+        InputConfiguration configuration;
+        configuration.m_contexts.push_back({ link, 42, true });
+        definition.m_services.push_back(Framework::WorldServiceDescriptor::Create<WorldInputService>(configuration));
         Framework::EntityWorldSnapshotAsset snapshot;
         {
             Framework::EntityWorldInstance instance;
@@ -533,7 +616,7 @@ namespace FE::Input::Tests
             auto* backend = Memory::DefaultNew<FixedBackend>();
             backend->m_keyboard.m_keyDownMap.set(87);
             input->SetBackend(festd::unique_ptr<Core::Backend>(backend));
-            const auto handle = input->Bind<bool>(action);
+            const ActionReference<bool> handle(action);
             for (uint32_t i = 0; i < 5000 && !link.GetAssetHandle().Read(); ++i)
             {
                 IO::AssetManager::Tick();
@@ -544,11 +627,11 @@ namespace FE::Input::Tests
             input->Update(instance.GetWorld());
             EXPECT_TRUE(input->GetFrame().Read(handle));
             ASSERT_TRUE(instance.Capture(snapshot));
-            const auto* configuration = snapshot.m_services[1].m_configuration.TryGet<InputConfiguration>();
-            ASSERT_NE(configuration, nullptr);
-            ASSERT_EQ(configuration->m_contexts.size(), 1);
-            EXPECT_EQ(configuration->m_contexts[0].m_priority, 42);
-            EXPECT_TRUE(configuration->m_contexts[0].m_modal);
+            const auto* capturedConfiguration = snapshot.m_services[1].m_configuration.TryGet<InputConfiguration>();
+            ASSERT_NE(capturedConfiguration, nullptr);
+            ASSERT_EQ(capturedConfiguration->m_contexts.size(), 1);
+            EXPECT_EQ(capturedConfiguration->m_contexts[0].m_priority, 42);
+            EXPECT_TRUE(capturedConfiguration->m_contexts[0].m_modal);
         }
 
         Framework::EntityWorldInstance restored;
@@ -557,6 +640,18 @@ namespace FE::Input::Tests
         ASSERT_NE(input, nullptr);
         ASSERT_EQ(input->GetContexts().size(), 1);
         EXPECT_EQ(input->GetContexts()[0].m_table.GetAssetID(), link.GetAssetID());
+    }
+
+
+    TEST_F(InputAssets, RejectsIncompatibleSerializedServiceConfiguration)
+    {
+        Framework::EntityWorldAsset definition;
+        definition.m_services.push_back(Rtti::GetTypeID<Framework::WorldTimeService>());
+        Framework::WorldServiceDescriptor descriptor(Rtti::GetTypeID<WorldInputService>());
+        descriptor.m_configuration.Emplace<Action>();
+        definition.m_services.push_back(std::move(descriptor));
+        Framework::EntityWorldInstance instance;
+        EXPECT_FALSE(instance.Load(definition));
     }
 
 
@@ -571,7 +666,7 @@ namespace FE::Input::Tests
         rate.m_integrate = true;
         rate.m_sensitivity = 2;
         MappingTable table;
-        table.m_mappings = { Map(action, ActionType::kVector2, { rate }) };
+        table.m_mappings = { Map(action, { rate }) };
         MappingStack stack;
         (void)stack.Activate(Load(Build("table.asset", table)));
         Desktop::Backend backend;
@@ -589,6 +684,105 @@ namespace FE::Input::Tests
     }
 
 
+    TEST_F(InputAssets, NormalizedIntegratedAxesAreInvariantToSampleSubdivision)
+    {
+        using Framework::Core::PlatformEvent;
+        Action action;
+        action.m_type = ActionType::kVector2;
+        const auto link = Build("action.asset", action);
+        Binding binding = Binding::WASD();
+        binding.m_sensitivity = 2;
+        binding.m_integrate = true;
+        MappingTable table;
+        table.m_mappings = { Map(link, { binding }) };
+        table.m_mappings.front().m_clampMagnitude = true;
+        MappingStack first, second;
+        const auto handle = Load(Build("table.asset", table));
+        (void)first.Activate(handle);
+        (void)second.Activate(handle);
+        PlatformEvent down[] = { PlatformEvent::KeyboardKeyDown(Core::Key::kW), PlatformEvent::KeyboardKeyDown(Core::Key::kD) };
+        for (auto& event : down)
+            event.m_timestampSeconds = 99;
+        Desktop::Backend whole, split;
+        whole.Update(down, 1, 100);
+        split.Update(down, 0.5f, 99.5);
+        Resolve(first, whole, 1);
+        Resolve(second, split, 1);
+        const Vector2 partial = second.FindAction(link.GetAssetID())->m_value;
+        const PlatformEvent unrelated[] = { PlatformEvent::KeyboardCharInput('x'), PlatformEvent::MouseMove(10, 10) };
+        split.Update(unrelated, 0.5f, 100);
+        Resolve(second, split, 2);
+        const Vector2 subdivided = partial + second.FindAction(link.GetAssetID())->m_value;
+        EXPECT_NEAR(Math::Length(first.FindAction(link.GetAssetID())->m_value), 2, 1e-5f);
+        EXPECT_TRUE(Math::CmpEqual(subdivided, first.FindAction(link.GetAssetID())->m_value));
+    }
+
+
+    TEST_F(InputAssets, InactiveConditionsAndUnselectedAlternativesDoNotConsume)
+    {
+        using Framework::Core::PlatformEvent;
+        const auto high = Build("high.asset", Action{});
+        const auto low = Build("low.asset", Action{});
+        const auto lowF1 = Build("lowF1.asset", Action{});
+        Binding conditioned = Button(Core::Key::kK);
+        conditioned.m_conditions = { Control::Key(Core::Key::kLeftCtrl) };
+        MappingTable highTable, lowTable;
+        highTable.m_mappings = { Map(high, { conditioned, Button(Core::Key::kF1) }) };
+        highTable.m_mappings.front().m_consume = true;
+        highTable.m_mappings.front().m_operation = MappingOperation::kStrongest;
+        lowTable.m_mappings = { Map(low, { Button(Core::Key::kLeftCtrl) }), Map(lowF1, { Button(Core::Key::kF1) }) };
+        MappingStack stack;
+        (void)stack.Activate(Load(Build("lowTable.asset", lowTable)));
+        (void)stack.Activate(Load(Build("highTable.asset", highTable)), 10);
+        Desktop::Backend backend;
+        const PlatformEvent ctrl[] = { PlatformEvent::KeyboardKeyDown(Core::Key::kLeftCtrl) };
+        backend.Update(ctrl);
+        Resolve(stack, backend, 1);
+        EXPECT_TRUE(stack.FindAction(low.GetAssetID())->m_active);
+        EXPECT_FALSE(stack.FindAction(high.GetAssetID())->m_active);
+        const PlatformEvent f1[] = { PlatformEvent::KeyboardKeyDown(Core::Key::kF1) };
+        backend.Update(f1);
+        Resolve(stack, backend, 2);
+        EXPECT_TRUE(stack.FindAction(low.GetAssetID())->m_active);
+        EXPECT_TRUE(stack.FindAction(high.GetAssetID())->m_active);
+        const PlatformEvent k[] = { PlatformEvent::KeyboardKeyDown(Core::Key::kK) };
+        backend.Update(k);
+        Resolve(stack, backend, 3);
+        EXPECT_FALSE(stack.FindAction(low.GetAssetID())->m_active);
+        EXPECT_TRUE(stack.FindAction(lowF1.GetAssetID())->m_active);
+    }
+
+
+    TEST_F(InputAssets, OpposingAndZeroDurationRateControlsStillConsume)
+    {
+        using Framework::Core::PlatformEvent;
+        Action axis;
+        axis.m_type = ActionType::kVector2;
+        const auto high = Build("axis.asset", axis);
+        const auto low = Build("button.asset", Action{});
+        Binding integrated = Binding::WASD();
+        integrated.m_integrate = true;
+        MappingTable highTable, lowTable;
+        highTable.m_mappings = { Map(high, { integrated }) };
+        highTable.m_mappings.front().m_consume = true;
+        lowTable.m_mappings = { Map(low, { Button(Core::Key::kW) }) };
+        MappingStack stack;
+        (void)stack.Activate(Load(Build("lowTable.asset", lowTable)));
+        (void)stack.Activate(Load(Build("highTable.asset", highTable)), 10);
+        Desktop::Backend backend;
+        const PlatformEvent opposed[] = { PlatformEvent::KeyboardKeyDown(Core::Key::kW),
+                                          PlatformEvent::KeyboardKeyDown(Core::Key::kS) };
+        backend.Update(opposed);
+        Resolve(stack, backend, 1);
+        EXPECT_FALSE(stack.FindAction(low.GetAssetID())->m_active);
+        const PlatformEvent release[] = { PlatformEvent::KeyboardKeyUp(Core::Key::kS) };
+        backend.Update(release);
+        Resolve(stack, backend, 2, 0);
+        EXPECT_FALSE(stack.FindAction(low.GetAssetID())->m_active);
+        EXPECT_EQ(stack.GetFrame().Read(ActionReference<Vector2>(high)), Vector2{});
+    }
+
+
     TEST_F(InputAssets, AssetBuilderRejectsInvalidMappingConfiguration)
     {
         const IO::Path path = m_directory / "invalid.asset";
@@ -597,7 +791,7 @@ namespace FE::Input::Tests
         ASSERT_TRUE(AssetBuilder::LoadAssetFile(path, file));
         const auto action = Build("action.asset", Action{});
         MappingTable table;
-        table.m_mappings = { Map(action, ActionType::kBoolean, { Button(Core::Key::kW) }) };
+        table.m_mappings = { Map(action, { Button(Core::Key::kW) }) };
         table.m_mappings.push_back(table.m_mappings.front());
         file.m_artifacts.front().m_buildSettings.Emplace<MappingTable>(table);
         ASSERT_TRUE(AssetBuilder::SaveAssetFile(path, file));
@@ -606,25 +800,102 @@ namespace FE::Input::Tests
     }
 
 
+    TEST_F(InputAssets, DISABLED_ResolverAndConsumerMeasurement)
+    {
+        using Framework::Core::PlatformEvent;
+        for (const uint32_t actionCount : { 8u, 64u })
+        {
+            MappingTable table;
+            festd::vector<ActionReference<Vector2>> references;
+            for (uint32_t i = 0; i < actionCount; ++i)
+            {
+                Action action;
+                action.m_type = ActionType::kVector2;
+                const auto link = Build(Fmt::Format("action-{}-{}.asset", actionCount, i).c_str(), action);
+                table.m_mappings.push_back(Map(link, { Binding::WASD() }));
+                references.push_back(link);
+            }
+            const auto handle = Load(Build(Fmt::Format("table-{}.asset", actionCount).c_str(), table));
+            for (const uint32_t contextCount : { 1u, 4u })
+            {
+                for (const uint32_t eventMode : { 0u, 1u, 2u })
+                {
+                    MappingStack stack;
+                    for (uint32_t i = 0; i < contextCount; ++i)
+                        (void)stack.Activate(handle, static_cast<int32_t>(i));
+                    Desktop::Backend backend;
+                    const PlatformEvent down[] = { PlatformEvent::KeyboardKeyDown(Core::Key::kW) };
+                    backend.Update(down);
+                    Resolve(stack, backend, 1);
+                    festd::vector<PlatformEvent> events;
+                    for (uint32_t i = 0; i < (eventMode == 0 ? 0u : 32u); ++i)
+                        events.push_back(eventMode == 1 ? PlatformEvent::KeyboardCharInput('x') : PlatformEvent::MouseMove(i, i));
+                    for (uint32_t i = 0; i < 10; ++i)
+                    {
+                        backend.Update(events, 0.016f, i + 1);
+                        Resolve(stack, backend, i + 2);
+                    }
+                    const ResolvedAction* published = stack.GetActions().data();
+                    const uint64_t start = Platform::GetTicks();
+                    const uint64_t allocationStart = Memory::GetThreadAllocationCount();
+                    for (uint32_t i = 0; i < 1000; ++i)
+                    {
+                        backend.Update(events, 0.016f, i + 20);
+                        Resolve(stack, backend, i + 20);
+                    }
+                    const double resolverMicros = (Platform::GetTicks() - start) * Platform::GetSecondsPerTick() * 1000;
+                    const uint64_t resolverAllocations = Memory::GetThreadAllocationCount() - allocationStart;
+                    EXPECT_EQ(stack.GetActions().data(), published);
+                    const uint64_t readStart = Platform::GetTicks();
+                    const uint64_t readAllocationStart = Memory::GetThreadAllocationCount();
+                    volatile float sink = 0;
+                    for (uint32_t i = 0; i < 200000; ++i)
+                        sink = sink + stack.GetFrame().Read(references[i % references.size()]).y;
+                    const double readNanos = (Platform::GetTicks() - readStart) * Platform::GetSecondsPerTick() * 1e9 / 200000;
+                    const uint64_t readAllocations = Memory::GetThreadAllocationCount() - readAllocationStart;
+                    EXPECT_EQ(resolverAllocations, 0);
+                    EXPECT_EQ(readAllocations, 0);
+                    IO::PrintLn(
+                        "Input measurement: actions={} contexts={} eventMode={} samples={} resolverUs={} readNs={} resolverAllocations={} readAllocations={} sink={}",
+                        actionCount,
+                        contextCount,
+                        eventMode,
+                        backend.GetSamples().size(),
+                        resolverMicros,
+                        readNanos,
+                        resolverAllocations,
+                        readAllocations,
+                        static_cast<float>(sink));
+                }
+            }
+        }
+    }
+
+
     TEST(InputValidation, RejectsDuplicateRowsInvalidControlsTypesAndParameters)
     {
-        ActionMapping mapping = Map(IO::Link<Action>(Uuid::Random()), ActionType::kVector2, { Binding::WASD() });
+        ActionMapping mapping = Map(IO::Link<Action>(Uuid::Random()), { Binding::WASD() });
         MappingTable table;
         table.m_mappings = { mapping };
         EXPECT_TRUE(table.Validate());
         table.m_mappings.push_back(mapping);
         EXPECT_FALSE(table.Validate());
         table.m_mappings.pop_back();
-        table.m_mappings[0].m_type = ActionType::kBoolean;
-        EXPECT_FALSE(table.Validate());
-        table.m_mappings[0].m_type = ActionType::kVector2;
-        table.m_mappings[0].m_bindings[0].m_controls[0].m_key = Core::Key::kInvalid;
+        EXPECT_FALSE(table.m_mappings[0].m_bindings[0].Supports(ActionType::kBoolean));
+        std::get<Axis2DBinding>(table.m_mappings[0].m_bindings[0].m_source).m_left = {};
         EXPECT_FALSE(table.Validate());
         Action hold;
         auto processor = Rc<HoldDurationActionProcessor>(Memory::DefaultNew<HoldDurationActionProcessor>());
         processor->m_holdTime = -1;
         hold.m_processor = processor;
         EXPECT_FALSE(hold.Validate());
+        processor->m_holdTime = std::bit_cast<float>(0x7f800000u);
+        EXPECT_FALSE(hold.Validate());
+        processor->m_holdTime = std::bit_cast<float>(0x7fc00001u);
+        EXPECT_FALSE(hold.Validate());
+        Binding finite = Binding::WASD();
+        finite.m_sensitivity = std::bit_cast<float>(0x7f800000u);
+        EXPECT_FALSE(finite.Validate());
     }
 
 

@@ -16,6 +16,15 @@ namespace FE::Framework
             : m_type(type)
         {
         }
+
+        template<class Service, class Configuration>
+            requires std::same_as<Configuration, typename Service::Configuration>
+        static WorldServiceDescriptor Create(const Configuration& configuration)
+        {
+            WorldServiceDescriptor descriptor(Rtti::GetTypeID<Service>());
+            descriptor.m_configuration.Emplace<Configuration>(configuration);
+            return descriptor;
+        }
     };
 
 
@@ -25,16 +34,6 @@ namespace FE::Framework
         FE_RTTI("BB0BDFFE-F26A-4E94-8A9C-B8588475D196");
 
         virtual ~WorldService() = default;
-        //! Apply authored configuration before Init; unknown configuration types are rejected.
-        virtual bool Configure(const Rtti::Any& settings)
-        {
-            return !settings.HasValue();
-        }
-        //! Capture configuration only, excluding runtime resources and transient state.
-        virtual Rtti::Any CaptureConfiguration() const
-        {
-            return {};
-        }
         virtual void Init(EntityWorld&) {}
         virtual void Shutdown(EntityWorld&) {}
         //! @brief Apply queued requests before structural commit, outside the update schedule.

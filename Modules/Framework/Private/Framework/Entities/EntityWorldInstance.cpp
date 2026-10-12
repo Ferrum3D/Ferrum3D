@@ -38,7 +38,9 @@ namespace FE::Framework
                     world.AddSystem(*object);
                 else
                 {
-                    if (!object->Configure(definition.m_configuration))
+                    const bool configured = type->m_configure ? type->m_configure(value.GetValue(), definition.m_configuration)
+                                                              : !definition.m_configuration.HasValue();
+                    if (!configured)
                     {
                         objects.pop_back();
                         return false;
@@ -151,9 +153,8 @@ namespace FE::Framework
         for (const auto& value : m_services)
         {
             WorldServiceDescriptor descriptor(value.GetType()->m_id);
-            const auto* service = static_cast<const WorldService*>(
-                value.GetType()->m_cast(const_cast<void*>(value.GetValue()), WorldService::TypeID));
-            descriptor.m_configuration = service->CaptureConfiguration();
+            if (value.GetType()->m_captureConfiguration)
+                descriptor.m_configuration = value.GetType()->m_captureConfiguration(value.GetValue());
             result.m_services.push_back(std::move(descriptor));
         }
 

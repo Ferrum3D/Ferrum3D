@@ -11,8 +11,10 @@ namespace FE::GameFramework
 
         void Init(Framework::EntityWorld& world) override;
         void Shutdown(Framework::EntityWorld& world) override;
+
         [[nodiscard]] Graphics::Scene& GetScene() const;
         [[nodiscard]] MeshSceneBridge& GetMeshes() const;
+
         //! @brief Create a disabled camera View with the world's depth and opaque passes.
         [[nodiscard]] Graphics::View* CreateCameraView();
 

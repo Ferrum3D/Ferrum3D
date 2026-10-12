@@ -34,6 +34,8 @@ namespace FE::GameFramework
 
     Framework::MaterializationStatus WorldStreamingService::GetStatus(const IO::AssetID placement) const
     {
+        FE_PROFILER_ZONE();
+
         FE_Assert(Threading::IsMainThread() && m_world);
         for (const auto& entry : m_entries)
         {
@@ -48,6 +50,7 @@ namespace FE::GameFramework
     void WorldStreamingService::Update(Framework::EntityWorld& world)
     {
         FE_PROFILER_ZONE();
+
         for (const auto& request : m_requests)
         {
             auto* registry = world.FindRegistry(request.m_registry);

@@ -1,4 +1,4 @@
-﻿#include <Core/IO/MemoryStream.h>
+#include <Core/IO/MemoryStream.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/Math/Aabb.h>
 #include <Core/Math/Color.h>
@@ -612,6 +612,7 @@ namespace FE::Serialization::Tests
                                                      : &json;
             DerivedObject source;
             source.m_runtimeValue = 99;
+            source.m_intermediateRuntime = 101;
             source.m_baseValue = 42;
             source.m_manualValue = 123;
             source.m_derivedValue = 456;
@@ -623,7 +624,7 @@ namespace FE::Serialization::Tests
                 const auto bytes = stream.GetData();
                 const festd::string_view text{ reinterpret_cast<const char*>(bytes.data()), bytes.size() };
                 EXPECT_EQ(text.find("$base:FE::Serialization::Tests::RuntimeBase"), text.end());
-                EXPECT_NE(text.find("$base:FE::Serialization::Tests::SerializedBase"), text.end());
+                EXPECT_NE(text.find("$base:FE::Serialization::Tests::IntermediateBase"), text.end());
                 EXPECT_NE(text.find("$base:FE::Serialization::Tests::ManualSerializedBase"), text.end());
             }
 
@@ -633,6 +634,7 @@ namespace FE::Serialization::Tests
             DeserializationContext reader(&stream, *format);
             ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
             EXPECT_EQ(destination.m_runtimeValue, 88);
+            EXPECT_EQ(destination.m_intermediateRuntime, 7);
             EXPECT_EQ(destination.m_baseValue, 42);
             EXPECT_EQ(destination.m_manualValue, 123);
             EXPECT_EQ(destination.m_derivedValue, 456);

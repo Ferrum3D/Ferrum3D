@@ -8,24 +8,13 @@ namespace FE::Framework
 {
     Serialization::ResultCode EntityReference::Serialize(Serialization::SerializationContext& context) const
     {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_uuid", m_uuid);
-            object.Field("m_placementAsset", m_placementAsset);
-        }
-
-        return context.GetResultCode();
+        return RTTI_SerializeFields(context);
     }
 
 
     Serialization::ResultCode EntityReference::Deserialize(Serialization::DeserializationContext& context)
     {
-        if (auto object = context.BeginObject())
-        {
-            object.Field("m_uuid", m_uuid);
-            object.Field("m_placementAsset", m_placementAsset);
-        }
-
+        RTTI_DeserializeFields(context);
         if (!context.IsValid())
             return context.GetResultCode();
 
@@ -34,32 +23,6 @@ namespace FE::Framework
             m_placementAsset = IO::AssetID::kNull;
         m_uuid = remapped;
         return context.GetResultCode();
-    }
-
-
-    uint64_t EntityReference::RTTI_GetSerializationSchemaHash()
-    {
-        static const uint64_t kHash = [] {
-            static constexpr uint8_t kTypeIDBytes[] = {
-                0x84, 0xee, 0x0d, 0xee, 0x3f, 0xe2, 0x4b, 0xa6, 0xa3, 0x9d, 0x3c, 0x24, 0xbb, 0x2e, 0x6c, 0x7b,
-            };
-            Hasher hasher;
-            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("m_uuid", 6);
-            hasher.UpdateRaw(Serialization::GetSchemaHash<decltype(m_uuid)>());
-            hasher.Update("m_placementAsset", 16);
-            hasher.UpdateRaw(Serialization::GetSchemaHash<decltype(m_placementAsset)>());
-            hasher.Update(0);
-            return hasher.Finalize();
-        }();
-
-        return kHash;
-    }
-
-
-    uint32_t EntityReference::RTTI_GetSerializationVersion()
-    {
-        return 0;
     }
 
 

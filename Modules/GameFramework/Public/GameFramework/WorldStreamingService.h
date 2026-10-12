@@ -12,10 +12,13 @@ namespace FE::GameFramework
         void Load(Uuid registry, IO::AssetID placement);
         //! @brief Queue removal of a registry, including cancellation of pending placements.
         void Unload(Uuid registry);
+
         //! @brief Inspect the latest load for a placement; unavailable assets remain recoverable failures.
         [[nodiscard]] Framework::MaterializationStatus GetStatus(IO::AssetID placement) const;
+
         void Init(Framework::EntityWorld& world) override;
         void Shutdown(Framework::EntityWorld& world) override;
+
         //! @brief Apply queued requests before structural commit at the main-thread boundary.
         void Update(Framework::EntityWorld& world) override;
 

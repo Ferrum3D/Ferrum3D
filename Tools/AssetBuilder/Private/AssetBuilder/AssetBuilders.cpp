@@ -3,7 +3,6 @@
 #include <AssetBuilder/ModelProcessor.h>
 #include <AssetBuilder/PipelineInternal.h>
 #include <AssetBuilder/TextureProcessor.h>
-#include <Framework/Input/MappingTable.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
 
@@ -95,15 +94,12 @@ namespace FE::AssetBuilder::Internal
                 return false;
             }
 
-            if (const auto* action = request.m_artifact.m_buildSettings.TryGet<Input::Action>(); action && !action->Validate())
+            if (type->m_validate && !type->m_validate(request.m_artifact.m_buildSettings.GetValue()))
             {
-                Logger::LogError("Invalid input action configuration");
-                return false;
-            }
-
-            if (const auto* table = request.m_artifact.m_buildSettings.TryGet<Input::MappingTable>(); table && !table->Validate())
-            {
-                Logger::LogError("Invalid input mapping table: check duplicate actions, controls, types, and parameters");
+                Logger::LogError("Asset {} product '{}' failed {} validation",
+                                 request.m_artifact.m_assetId,
+                                 request.m_artifact.m_name,
+                                 type->m_qualifiedName);
                 return false;
             }
 

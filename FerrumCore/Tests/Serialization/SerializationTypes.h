@@ -36,9 +36,17 @@ namespace FE::Serialization::Tests
     };
 
 
+    struct IntermediateBase : SerializedBase
+    {
+        FE_RTTI("BED2B1FA-4BED-4B44-8EAD-7D7A2D3256EB");
+        FE_RTTI_Reflect();
+        uint32_t m_intermediateRuntime = 7;
+    };
+
+
     struct DerivedObject final
         : RuntimeBase
-        , SerializedBase
+        , IntermediateBase
         , ManualSerializedBase
     {
         FE_RTTI("D50860C5-2188-486F-8D18-A79D8C633C0C");

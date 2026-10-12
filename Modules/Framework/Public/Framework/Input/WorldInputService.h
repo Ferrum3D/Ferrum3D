@@ -19,8 +19,9 @@ namespace FE::Input
     {
         FE_RTTI("752DB03C-995A-4524-B593-72639A788807");
 
-        bool Configure(const Rtti::Any& settings) override;
-        Rtti::Any CaptureConfiguration() const override;
+        using Configuration = InputConfiguration;
+        bool Configure(const Configuration& settings);
+        Configuration CaptureConfiguration() const;
 
         void Init(Framework::EntityWorld& world) override;
         void Shutdown(Framework::EntityWorld& world) override;
@@ -32,15 +33,9 @@ namespace FE::Input
 
         [[nodiscard]] festd::vector<ContextDefinition> GetContexts() const;
 
-        template<class T>
-        [[nodiscard]] ActionHandle<T> Bind(const IO::Link<Action>& action)
-        {
-            return { BindInternal(action, kActionType<T>), m_inputFrame.m_generation };
-        }
-
         [[nodiscard]] const InputFrame& GetFrame() const
         {
-            return m_inputFrame;
+            return m_stack.GetFrame();
         }
 
         [[nodiscard]] float GetDeltaSeconds() const
@@ -58,13 +53,11 @@ namespace FE::Input
             IO::AssetRequest m_residency;
         };
 
-        InputConfiguration m_configuration;
         festd::unique_ptr<Core::Backend> m_backend;
         MappingStack m_stack;
-        InputFrame m_inputFrame;
+        uint64_t m_updateNumber = 0;
         festd::vector<Context> m_contexts;
         float m_deltaSeconds = 0;
         uint64_t m_lastSampleSequence = 0;
-        uint32_t BindInternal(const IO::Link<Action>& action, ActionType type);
     };
 } // namespace FE::Input

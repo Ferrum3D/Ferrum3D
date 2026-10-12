@@ -18,32 +18,25 @@
                         "m_mappings": [
                             {
                                 "m_action": "63238EA0-B29B-4ED2-A7CE-7D38C4C6F6DE",
-                                "m_type": 2,
                                 "m_bindings": [
                                     {
-                                        "m_kind": 2,
-                                        "m_controls": [
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 65,
-                                                "m_button": 0
-                                            },
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 68,
-                                                "m_button": 0
-                                            },
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 83,
-                                                "m_button": 0
-                                            },
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 87,
-                                                "m_button": 0
+                                        "m_source": {
+                                            "m_type": 2,
+                                            "m_value": {
+                                                "m_left": {
+                                                    "m_code": 65
+                                                },
+                                                "m_right": {
+                                                    "m_code": 68
+                                                },
+                                                "m_back": {
+                                                    "m_code": 83
+                                                },
+                                                "m_forward": {
+                                                    "m_code": 87
+                                                }
                                             }
-                                        ],
+                                        },
                                         "m_conditions": [],
                                         "m_scale": {
                                             "x": "0000803f",
@@ -53,29 +46,23 @@
                                         "m_integrate": false
                                     },
                                     {
-                                        "m_kind": 2,
-                                        "m_controls": [
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 37,
-                                                "m_button": 0
-                                            },
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 39,
-                                                "m_button": 0
-                                            },
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 40,
-                                                "m_button": 0
-                                            },
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 38,
-                                                "m_button": 0
+                                        "m_source": {
+                                            "m_type": 2,
+                                            "m_value": {
+                                                "m_left": {
+                                                    "m_code": 37
+                                                },
+                                                "m_right": {
+                                                    "m_code": 39
+                                                },
+                                                "m_back": {
+                                                    "m_code": 40
+                                                },
+                                                "m_forward": {
+                                                    "m_code": 38
+                                                }
                                             }
-                                        ],
+                                        },
                                         "m_conditions": [],
                                         "m_scale": {
                                             "x": "0000803f",
@@ -91,22 +78,19 @@
                             },
                             {
                                 "m_action": "29A62CFF-7780-4028-9E47-0F22E0A58926",
-                                "m_type": 1,
                                 "m_bindings": [
                                     {
-                                        "m_kind": 1,
-                                        "m_controls": [
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 81,
-                                                "m_button": 0
-                                            },
-                                            {
-                                                "m_kind": 0,
-                                                "m_key": 69,
-                                                "m_button": 0
+                                        "m_source": {
+                                            "m_type": 1,
+                                            "m_value": {
+                                                "m_negative": {
+                                                    "m_code": 81
+                                                },
+                                                "m_positive": {
+                                                    "m_code": 69
+                                                }
                                             }
-                                        ],
+                                        },
                                         "m_conditions": [],
                                         "m_scale": {
                                             "x": "0000803f",
@@ -122,16 +106,15 @@
                             },
                             {
                                 "m_action": "40C30B4A-A66C-4658-8A6D-5A326AFA4293",
-                                "m_type": 2,
                                 "m_bindings": [
                                     {
-                                        "m_kind": 3,
-                                        "m_controls": [],
+                                        "m_source": {
+                                            "m_type": 3,
+                                            "m_value": {}
+                                        },
                                         "m_conditions": [
                                             {
-                                                "m_kind": 1,
-                                                "m_key": 0,
-                                                "m_button": 1
+                                                "m_code": 257
                                             }
                                         ],
                                         "m_scale": {
@@ -166,8 +149,8 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "6CCAD178-902D-4485-AAAB-D623AA03320C",
-                "m_builtArtifactId": "2ACD8581-29AB-42F7-8F38-AAD787D4AC5C",
+                "m_lastBuildKey": "355663E2-65F1-4BCD-A76B-81B4FA6AAA27",
+                "m_builtArtifactId": "103B0E23-7B20-4E73-8871-03885DCAC45E",
                 "m_isRemoved": false
             }
         ]

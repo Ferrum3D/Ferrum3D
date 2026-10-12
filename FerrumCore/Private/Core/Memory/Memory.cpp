@@ -1,4 +1,4 @@
-﻿#include <Core/Base/PlatformInclude.h>
+#include <Core/Base/PlatformInclude.h>
 #include <Core/Base/StackTrace.h>
 #include <Core/IO/BaseIO.h>
 #include <Core/Memory/Memory.h>
@@ -58,6 +58,7 @@ namespace FE::Memory
         };
 
         MemoryState* GMemoryState;
+        thread_local uint64_t GThreadAllocationCount = 0;
 
 
         constexpr uint32_t kMemoryProfilerCallstackDepth = 32;
@@ -360,6 +361,8 @@ namespace FE::Memory
 
     void* DefaultAllocate(const size_t byteSize)
     {
+        if (Build::IsDevelopment())
+            ++GThreadAllocationCount;
         void* ptr = MallocImpl(byteSize);
         TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
         return ptr;
@@ -368,6 +371,8 @@ namespace FE::Memory
 
     void* DefaultAllocate(const size_t byteSize, const size_t byteAlignment)
     {
+        if (Build::IsDevelopment())
+            ++GThreadAllocationCount;
         void* ptr = MallocAlignedImpl(byteSize, byteAlignment);
         TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
         return ptr;
@@ -376,10 +381,18 @@ namespace FE::Memory
 
     void* DefaultReallocate(void* ptr, const size_t newSize)
     {
+        if (Build::IsDevelopment())
+            ++GThreadAllocationCount;
         void* newPtr = ReallocImpl(ptr, newSize);
         TracySecureFreeS(ptr, kMemoryProfilerCallstackDepth);
         TracySecureAllocS(newPtr, newSize, kMemoryProfilerCallstackDepth);
         return newPtr;
+    }
+
+
+    uint64_t GetThreadAllocationCount()
+    {
+        return GThreadAllocationCount;
     }
 
 

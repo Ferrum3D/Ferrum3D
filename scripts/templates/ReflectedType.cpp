@@ -230,7 +230,7 @@ namespace {{ type.namespace }}
     static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);
 {%- if type.is_serializable %}
 
-    FE::Serialization::ResultCode {{ type.name }}::Serialize(FE::Serialization::SerializationContext& context) const
+    FE::Serialization::ResultCode {{ type.name }}::{{ "RTTI_SerializeFields" if type.serialization_fields_only else "Serialize" }}(FE::Serialization::SerializationContext& context) const
     {
         if (auto object = context.BeginObject())
         {
@@ -245,7 +245,7 @@ namespace {{ type.namespace }}
         return context.GetResultCode();
     }
 
-    FE::Serialization::ResultCode {{ type.name }}::Deserialize(FE::Serialization::DeserializationContext& context)
+    FE::Serialization::ResultCode {{ type.name }}::{{ "RTTI_DeserializeFields" if type.serialization_fields_only else "Deserialize" }}(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
         {

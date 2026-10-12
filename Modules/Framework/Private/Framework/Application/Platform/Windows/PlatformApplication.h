@@ -59,6 +59,9 @@ namespace FE::Framework::Windows
 
         Input::Desktop::Backend m_inputBackend;
         double m_previousPollSeconds = 0;
+        double m_queuedEventSeconds = -1;
+        HWND m_queuedWindow = nullptr;
+        UINT m_queuedMessage = 0;
         HWND m_mouseTrackWindow = nullptr;
         MouseTrackArea m_mouseTrackArea = MouseTrackArea::kNone;
         uint32_t m_mouseButtonsDown = Constants::kMaxU32;

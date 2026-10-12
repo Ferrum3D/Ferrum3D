@@ -40,6 +40,9 @@ namespace FE
         [[nodiscard]] void* DefaultReallocate(void* ptr, size_t newSize);
         void DefaultFree(void* ptr);
 
+        //! Allocation/reallocation requests on this thread; available in development builds for profiling scopes.
+        [[nodiscard]] uint64_t GetThreadAllocationCount();
+
         [[nodiscard]] size_t GetAllocatedSize(const void* ptr);
 
         void AssertPointerIsValid(const void* ptr);

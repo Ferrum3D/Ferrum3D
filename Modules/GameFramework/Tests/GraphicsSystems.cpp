@@ -272,14 +272,12 @@ TEST_F(GraphicsFixture, AuthoredInputMovesEveryCameraBeforeTransformAndGraphicsE
     Input::MappingTable table;
     Input::ActionMapping mapping;
     mapping.m_action = moveLink;
-    mapping.m_type = Input::ActionType::kVector2;
     mapping.m_bindings = { Input::Binding::WASD() };
     table.m_mappings.push_back(mapping);
     mapping.m_action = elevateLink;
-    mapping.m_type = Input::ActionType::kScalar;
     Input::Binding elevateBinding;
-    elevateBinding.m_kind = Input::BindingKind::kAxis1D;
-    elevateBinding.m_controls = { Input::Control::Key(Input::Core::Key::kQ), Input::Control::Key(Input::Core::Key::kE) };
+    elevateBinding.m_source =
+        Input::Axis1DBinding{ Input::Control::Key(Input::Core::Key::kQ), Input::Control::Key(Input::Core::Key::kE) };
     mapping.m_bindings = { elevateBinding };
     table.m_mappings.push_back(mapping);
     const auto tableLink = BuildCameraInputAsset(directory, "table.asset", table);

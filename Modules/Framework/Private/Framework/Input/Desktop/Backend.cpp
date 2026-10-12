@@ -13,6 +13,8 @@ namespace FE::Input::Desktop
 
     void Backend::Update()
     {
+        FE_PROFILER_ZONE();
+
         const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
         const float elapsed = m_previousUpdateSeconds == 0 ? 0 : static_cast<float>(now - m_previousUpdateSeconds);
         Update(Framework::Core::PlatformApplication::Get().GetEvents(), elapsed, now);
@@ -23,6 +25,8 @@ namespace FE::Input::Desktop
     void Backend::Update(const festd::span<const Framework::Core::PlatformEvent> events, const float deltaSeconds,
                          const double frameEndSeconds)
     {
+        FE_PROFILER_ZONE();
+
         using Framework::Core::PlatformEventType;
         ++m_sampleSequence;
         m_keyboard.m_keyPressMap.reset();
@@ -33,17 +37,59 @@ namespace FE::Input::Desktop
         m_mouse.m_wheelDelta = 0;
 
         m_samples.clear();
-        m_samples.push_back({ m_keyboard, m_mouse, 0 });
         Vector2 accumulatedDelta{ 0, 0 };
         float accumulatedWheel = 0;
         double previous = frameEndSeconds - deltaSeconds;
         const double end = frameEndSeconds;
         for (const auto& event : events)
         {
-            const double time = event.m_timestampSeconds == 0 ? end : Math::Clamp(event.m_timestampSeconds, previous, end);
-            m_samples.push_back({ m_keyboard, m_mouse, static_cast<float>(time - previous) });
-            m_samples.back().m_mouse.m_delta = { 0, 0 };
-            m_samples.back().m_mouse.m_wheelDelta = 0;
+            const bool affectsInput = event.m_type == PlatformEventType::kKeyboardKeyDown
+                || event.m_type == PlatformEventType::kKeyboardKeyUp || event.m_type == PlatformEventType::kMouseDown
+                || event.m_type == PlatformEventType::kMouseUp || event.m_type == PlatformEventType::kMouseMove
+                || event.m_type == PlatformEventType::kMouseWheel || event.m_type == PlatformEventType::kWindowUnfocus;
+            if (!affectsInput)
+            {
+                if (event.m_type == PlatformEventType::kMouseLeave || event.m_type == PlatformEventType::kWindowFocus)
+                    m_hasPosition = false;
+                continue;
+            }
+
+            if (event.m_type == PlatformEventType::kKeyboardKeyDown || event.m_type == PlatformEventType::kKeyboardKeyUp)
+            {
+                const uint32_t key = static_cast<uint32_t>(event.m_keyboardKeyPayload.m_key);
+                const bool down = event.m_type == PlatformEventType::kKeyboardKeyDown;
+                if (key == 0 || key >= 256 || m_keyboard.m_keyDownMap.test(key) == down)
+                    continue;
+            }
+
+            if (event.m_type == PlatformEventType::kMouseDown || event.m_type == PlatformEventType::kMouseUp)
+            {
+                const uint32_t button = event.m_mouseButtonPayload.m_button;
+                const bool down = event.m_type == PlatformEventType::kMouseDown;
+                if (button >= 5 || m_mouse.m_buttonDownMap.test(button) == down)
+                    continue;
+            }
+
+            if (event.m_type == PlatformEventType::kMouseMove)
+            {
+                const Vector2 position{ static_cast<float>(static_cast<int16_t>(event.m_mouseMovePayload.m_x)),
+                                        static_cast<float>(static_cast<int16_t>(event.m_mouseMovePayload.m_y)) };
+                if (!m_hasPosition || position == m_position)
+                {
+                    m_position = position;
+                    m_hasPosition = true;
+                    continue;
+                }
+            }
+
+            const double time = event.m_timestampSeconds < 0 ? end : Math::Clamp(event.m_timestampSeconds, previous, end);
+            if (time > previous)
+            {
+                m_samples.push_back({ m_keyboard, m_mouse, static_cast<float>(time - previous) });
+                m_samples.back().m_mouse.m_delta = { 0, 0 };
+                m_samples.back().m_mouse.m_wheelDelta = 0;
+            }
+
             previous = time;
             m_keyboard.m_keyPressMap.reset();
             m_keyboard.m_keyUpMap.reset();
@@ -128,7 +174,10 @@ namespace FE::Input::Desktop
 
             accumulatedDelta = accumulatedDelta + m_mouse.m_delta;
             accumulatedWheel += m_mouse.m_wheelDelta;
-            m_samples.push_back({ m_keyboard, m_mouse, 0 });
+            const bool changed = m_keyboard.m_keyPressMap.any() || m_keyboard.m_keyUpMap.any() || m_mouse.m_buttonPressMap.any()
+                || m_mouse.m_buttonUpMap.any() || m_mouse.m_delta != Vector2::kZero || m_mouse.m_wheelDelta != 0;
+            if (changed)
+                m_samples.push_back({ m_keyboard, m_mouse, 0 });
         }
 
         m_keyboard.m_keyPressMap.reset();
@@ -137,7 +186,8 @@ namespace FE::Input::Desktop
         m_mouse.m_buttonUpMap.reset();
         m_mouse.m_delta = { 0, 0 };
         m_mouse.m_wheelDelta = 0;
-        m_samples.push_back({ m_keyboard, m_mouse, static_cast<float>(end - previous) });
+        if (end > previous || m_samples.empty())
+            m_samples.push_back({ m_keyboard, m_mouse, static_cast<float>(end - previous) });
         for (const Core::Sample& sample : m_samples)
         {
             m_keyboard.m_keyPressMap |= sample.m_keyboard.m_keyPressMap;

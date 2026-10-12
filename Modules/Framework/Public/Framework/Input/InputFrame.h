@@ -1,5 +1,6 @@
 #pragma once
 #include <Framework/Input/Action.h>
+#include <festd/unordered_map.h>
 
 namespace FE::Input
 {
@@ -10,11 +11,32 @@ namespace FE::Input
 
 
     template<class T>
-    struct ActionHandle final
+    struct ActionReference final
     {
         static_assert(std::same_as<T, Vector2> || std::same_as<T, float> || std::same_as<T, bool>);
-        uint32_t m_index = Constants::kMaxU32;
-        uint64_t m_generation = 0;
+        ActionReference() = default;
+
+        ActionReference(const IO::Link<Action>& link)
+            : m_link(link)
+        {
+        }
+
+        [[nodiscard]] const IO::Link<Action>& GetLink() const
+        {
+            return m_link;
+        }
+
+        [[nodiscard]] bool Validate() const
+        {
+            if (!m_link.GetAssetID().IsValid())
+                return true;
+
+            const auto action = m_link.GetAssetHandle().Read();
+            return !action || action->m_type == kActionType<T>;
+        }
+
+    private:
+        IO::Link<Action> m_link;
     };
 
 
@@ -22,12 +44,13 @@ namespace FE::Input
     struct InputFrame final
     {
         template<class T>
-        [[nodiscard]] T Read(const ActionHandle<T> handle) const
+        [[nodiscard]] T Read(const ActionReference<T>& reference) const
         {
-            if (handle.m_generation != m_generation || handle.m_index >= m_actions.size())
+            const auto found = m_indices.find(reference.GetLink().GetAssetID());
+            if (found == m_indices.end())
                 return T{};
 
-            const ResolvedAction& action = m_actions[handle.m_index];
+            const ResolvedAction& action = m_actions[found->second];
             if (!action.m_active || action.m_type != kActionType<T>)
                 return T{};
 
@@ -50,10 +73,37 @@ namespace FE::Input
         }
 
     private:
-        friend struct WorldInputService;
-        uint64_t m_generation = 0;
+        friend struct MappingStack;
+        festd::unordered_dense_map<IO::AssetID, uint32_t> m_indices;
         uint64_t m_number = 0;
         festd::vector<ResolvedAction> m_actions;
         festd::vector<ActionEvent> m_events;
     };
 } // namespace FE::Input
+
+
+namespace FE::Serialization
+{
+    template<class T>
+    struct Serializer<Input::ActionReference<T>>
+    {
+        static ResultCode Serialize(SerializationContext& context, const Input::ActionReference<T>& reference)
+        {
+            return SerializeValue(context, reference.GetLink());
+        }
+
+        static ResultCode Deserialize(DeserializationContext& context, Input::ActionReference<T>& reference)
+        {
+            IO::Link<Input::Action> link;
+            const ResultCode result = DeserializeValue(context, link);
+            if (result == ResultCode::kSuccess)
+                reference = link;
+            return result;
+        }
+
+        static uint64_t GetSchemaHash()
+        {
+            return Serialization::GetSchemaHash<IO::Link<Input::Action>>();
+        }
+    };
+} // namespace FE::Serialization

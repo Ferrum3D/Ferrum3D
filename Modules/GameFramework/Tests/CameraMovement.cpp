@@ -1,8 +1,30 @@
+#include <Core/IO/BaseIO.h>
+#include <Core/Time/BaseTime.h>
 #include <GameFramework/CameraMovementSystem.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
 using namespace FE::GameFramework;
+
+
+TEST(CameraMovement, DISABLED_IdleConsumerMeasurement)
+{
+    CameraMovementComponent movement;
+    TransformComponent transform;
+    const uint64_t allocations = Memory::GetThreadAllocationCount();
+    const uint64_t start = Platform::GetTicks();
+    uint32_t changed = 0;
+    for (uint32_t i = 0; i < 200000; ++i)
+        changed += CameraMovementSystem::ApplyMovement(movement, transform, {}, 0.016f);
+
+    const double nanos = (Platform::GetTicks() - start) * Platform::GetSecondsPerTick() * 1e9 / 200000;
+    EXPECT_EQ(changed, 0);
+    EXPECT_EQ(Memory::GetThreadAllocationCount() - allocations, 0);
+    IO::PrintLn("Idle camera measurement: ns={} allocations={} changed={}",
+                nanos,
+                Memory::GetThreadAllocationCount() - allocations,
+                changed);
+}
 
 TEST(CameraMovement, MovementUsesTimeAndLookUsesAngularDisplacement)
 {

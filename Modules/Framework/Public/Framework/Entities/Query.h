@@ -101,7 +101,7 @@ namespace FE::Framework
         static_assert(sizeof...(Terms) > 0, "Query needs at least one component term");
         static_assert(Internal::UniqueTerms<Terms...>::kValue, "Duplicate component terms in the same source");
 
-        //! @brief Record typed access. A bool callback reports actual writes; false leaves column versions unchanged.
+        //! @brief Record typed access. QueryWriteResult explicitly opts into conditional write publication.
         template<class Callable>
         static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, Callable&& callable)
         {
@@ -139,7 +139,7 @@ namespace FE::Framework
                   accesses,
                   storage,
                   [](void* function, Entity& entity, void** values) {
-                      Invoke(*static_cast<Function*>(function), entity, values, ValueIndices{});
+                      return Invoke(*static_cast<Function*>(function), entity, values, ValueIndices{});
                   },
                   [](void* function) {
                       static_cast<Function*>(function)->~Function();
@@ -147,10 +147,7 @@ namespace FE::Framework
                   festd::span<const Rc<WaitGroup>>(prerequisites.begin(), static_cast<uint32_t>(prerequisites.size())),
                   cursor,
                   policy,
-                  Cascade,
-                  [](void* function, Entity& entity, void** values) {
-                      return InvokeChanged(*static_cast<Function*>(function), entity, values, ValueIndices{});
-                  } });
+                  Cascade });
         }
 
         //! @brief Record work using a persistent cursor; one cursor may be consumed only once per epoch.
@@ -176,13 +173,13 @@ namespace FE::Framework
 
 
         template<class Function, size_t... Indices>
-        static bool InvokeChanged(Function& function, Entity& entity, void** values, std::index_sequence<Indices...>)
+        static bool Invoke(Function& function, Entity& entity, void** values, std::index_sequence<Indices...>)
         {
             if constexpr (std::is_invocable_v<Function&, Entity&, typename ValueTerm<Indices>::Argument...>)
             {
                 if constexpr (std::same_as<std::invoke_result_t<Function&, Entity&, typename ValueTerm<Indices>::Argument...>,
-                                           bool>)
-                    return function(entity, ValueTerm<Indices>::Get(values[Indices])...);
+                                           QueryWriteResult>)
+                    return function(entity, ValueTerm<Indices>::Get(values[Indices])...) == QueryWriteResult::kChanged;
                 else
                 {
                     function(entity, ValueTerm<Indices>::Get(values[Indices])...);
@@ -191,24 +188,15 @@ namespace FE::Framework
             }
             else
             {
-                if constexpr (std::same_as<std::invoke_result_t<Function&, typename ValueTerm<Indices>::Argument...>, bool>)
-                    return function(ValueTerm<Indices>::Get(values[Indices])...);
+                if constexpr (std::same_as<std::invoke_result_t<Function&, typename ValueTerm<Indices>::Argument...>,
+                                           QueryWriteResult>)
+                    return function(ValueTerm<Indices>::Get(values[Indices])...) == QueryWriteResult::kChanged;
                 else
                 {
                     function(ValueTerm<Indices>::Get(values[Indices])...);
                     return true;
                 }
             }
-        }
-
-
-        template<class Function, size_t... Indices>
-        static void Invoke(Function& function, Entity& entity, void** values, std::index_sequence<Indices...>)
-        {
-            if constexpr (std::is_invocable_v<Function&, Entity&, typename ValueTerm<Indices>::Argument...>)
-                function(entity, ValueTerm<Indices>::Get(values[Indices])...);
-            else
-                function(ValueTerm<Indices>::Get(values[Indices])...);
         }
     };
 
