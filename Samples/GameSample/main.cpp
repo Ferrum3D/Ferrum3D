@@ -28,7 +28,7 @@ int main(const int argc, const char** argv)
         if (application->Initialize(settings))
         {
             exitCode = application->Run(smoke ? 8 : 0);
-            if (smoke)
+            if (smoke && exitCode == 0)
                 Logger::LogInfo("GameSample rendered its disk world successfully");
         }
         else

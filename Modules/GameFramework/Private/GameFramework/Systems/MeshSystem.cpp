@@ -21,6 +21,7 @@ namespace FE::GameFramework
 
         const auto traverse = [sceneService](MeshComponent& mesh, const WorldTransformComponent& transform) {
             sceneService->GetMeshes().Update(mesh, transform.m_world);
+            return Framework::QueryWriteResult::kUnchanged;
         };
 
         using Query = Framework::Query<MeshComponent, const WorldTransformComponent>;

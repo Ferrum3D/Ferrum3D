@@ -282,6 +282,7 @@ namespace FE::Framework
     private:
         friend struct EntityCommandList;
         friend struct EntityScheduler;
+
         struct Impl;
         Impl* m_impl;
 

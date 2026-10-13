@@ -44,6 +44,7 @@ namespace FE::Graphics
         [[nodiscard]] virtual Scene* CreateScene() = 0;
         //! @brief Release renderer ownership of a scene after removing its entity membership.
         virtual void DestroyScene(Scene* scene) = 0;
+        //! @brief Present a cleared frame when the scene is null or has no enabled camera views.
         virtual void Render(Scene* scene, Core::Viewport* viewport) = 0;
 
         virtual Core::GraphicsQueue* GetGraphicsQueue() const = 0;

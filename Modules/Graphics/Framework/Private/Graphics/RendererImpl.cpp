@@ -95,13 +95,12 @@ namespace FE::Graphics
 
     void RendererImpl::Render(Scene* scene, Core::Viewport* viewport)
     {
-        FE_Assert(scene != nullptr);
         bool hasEnabledView = false;
-        for (uint32_t i = 0; i < scene->GetViewCount(); ++i)
-            hasEnabledView |= scene->GetView(i)->IsEnabled();
-
-        if (!hasEnabledView)
-            return;
+        if (scene)
+        {
+            for (uint32_t i = 0; i < scene->GetViewCount(); ++i)
+                hasEnabledView |= scene->GetView(i)->IsEnabled();
+        }
 
         FE_Assert(viewport != nullptr);
 
@@ -112,26 +111,36 @@ namespace FE::Graphics
 
         m_frameGraph->BeginFrame();
 
-        scene->GetModules().ForEachActive([](SceneModuleBase& module) {
-            module.Update();
-        });
+        if (hasEnabledView)
+        {
+            scene->GetModules().ForEachActive([](SceneModuleBase& module) {
+                module.Update();
+            });
 
-        scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
-            module.UpdateRenderData(*m_frameGraph, m_renderQueueUploader);
-        });
+            scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
+                module.UpdateRenderData(*m_frameGraph, m_renderQueueUploader);
+            });
+        }
 
         m_database->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
         m_materialParameters->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
 
-        for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
+        if (hasEnabledView)
         {
-            View* view = scene->GetView(viewIndex);
-            if (!view->IsEnabled())
-                continue;
+            for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
+            {
+                View* view = scene->GetView(viewIndex);
+                if (!view->IsEnabled())
+                    continue;
 
-            FE_FG_SCOPE(*m_frameGraph, Fmt::FixedFormat("View{}", viewIndex));
-            m_frameGraph->GetBlackboard().Reset();
-            SetupFrameGraph(*m_frameGraph, m_frameGraph->GetBlackboard(), *scene, *view, *viewport);
+                FE_FG_SCOPE(*m_frameGraph, Fmt::FixedFormat("View{}", viewIndex));
+                m_frameGraph->GetBlackboard().Reset();
+                SetupFrameGraph(*m_frameGraph, m_frameGraph->GetBlackboard(), *scene, *view, *viewport);
+            }
+        }
+        else
+        {
+            ClearTargets(*m_frameGraph, *viewport);
         }
 
         viewport->PrepareBlit();
@@ -212,6 +221,20 @@ namespace FE::Graphics
     }
 
 
+    void RendererImpl::ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport)
+    {
+        auto* clearPass = graph.AllocatePassData<RendererTargetClearPassDesc>();
+        clearPass->m_colorTarget = Core::TextureView::Create(m_mainColorTarget.Get());
+        clearPass->m_depthTarget = Core::TextureView::Create(m_mainDepthTarget.Get());
+        clearPass->m_viewport = viewport.GetDesc().GetRect();
+        graph.AddPass("ClearRendererTargets", clearPass, [](Core::FrameGraphContext& context) {
+            context.ClearColorTarget(0, Colors::kDarkSlateBlue);
+            context.ClearDepthStencilTarget(0.0f, 0);
+            context.ClearRenderTargets();
+        });
+    }
+
+
     void RendererImpl::SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                                        Core::Viewport& viewport)
     {
@@ -227,15 +250,7 @@ namespace FE::Graphics
 
         view.Update(blackboard);
 
-        auto* clearPass = graph.AllocatePassData<RendererTargetClearPassDesc>();
-        clearPass->m_colorTarget = Core::TextureView::Create(viewData.m_mainColorTarget);
-        clearPass->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
-        clearPass->m_viewport = viewData.m_viewportRect;
-        graph.AddPass("ClearRendererTargets", clearPass, [](Core::FrameGraphContext& context) {
-            context.ClearColorTarget(0, Colors::kDarkSlateBlue);
-            context.ClearDepthStencilTarget(0.0f, 0);
-            context.ClearRenderTargets();
-        });
+        ClearTargets(graph, viewport);
 
         scene.GetModules().ForEachActive([&](SceneModuleBase& module) {
             module.PrepareRenderView(graph, m_renderQueueUploader);

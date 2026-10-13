@@ -95,31 +95,29 @@ namespace FE::GameFramework
                                       Rtti::GetTypeID<Input::WorldInputService>(),
                                       Rtti::GetTypeID<WorldGraphicsSceneService>(),
                                       Rtti::GetTypeID<WorldStreamingService>() };
-            return m_world->Load(definition);
+            m_worldDefinitionLoaded = m_world->Load(definition);
+            return m_worldDefinitionLoaded;
         }
 
-        return LoadWorld(settings.m_world);
+        m_worldRequest = IO::AssetManager::LoadAsset(IO::Link<Framework::EntityWorldAsset>(settings.m_world));
+        return m_worldRequest.IsValid();
     }
 
 
-    bool Application::LoadWorld(const IO::AssetID asset)
+    bool Application::UpdateWorldLoading()
     {
         FE_PROFILER_ZONE();
 
-        auto request = IO::AssetManager::LoadAsset(IO::Link<Framework::EntityWorldAsset>(asset));
-        while (!request.IsCompleted())
-        {
-            IO::AssetManager::Tick();
-            Threading::Sleep(1);
-        }
+        if (m_worldDefinitionLoaded || !m_worldRequest.IsCompleted())
+            return true;
 
-        if (request.GetResult() != IO::AssetLoadResult::kSucceeded)
+        if (m_worldRequest.GetResult() != IO::AssetLoadResult::kSucceeded)
         {
-            Logger::LogError("World asset is unavailable: {}", request.GetError());
+            Logger::LogError("World asset is unavailable: {}", m_worldRequest.GetError());
             return false;
         }
 
-        const auto definition = IO::AssetHandle<Framework::EntityWorldAsset>(request.GetAssetSlot()).Read();
+        const auto definition = IO::AssetHandle<Framework::EntityWorldAsset>(m_worldRequest.GetAssetSlot()).Read();
         if (!definition)
         {
             Logger::LogError("World asset is unavailable");
@@ -132,26 +130,7 @@ namespace FE::GameFramework
             return false;
         }
 
-        // Definition loading completes before per-entity dependency acquisitions and lifecycle activation.
-        for (;;)
-        {
-            IO::AssetManager::Tick();
-            if (!m_world->GetWorld().CommitBootstrap())
-                return false;
-
-            const auto status = m_world->GetStatus();
-            if (status.m_state == Framework::MaterializationState::kReady)
-                break;
-
-            if (status.m_state != Framework::MaterializationState::kPending)
-            {
-                Logger::LogError("World asset is invalid: {}", status.m_error);
-                return false;
-            }
-
-            Threading::Sleep(1);
-        }
-
+        m_worldDefinitionLoaded = true;
         return true;
     }
 
@@ -170,13 +149,34 @@ namespace FE::GameFramework
                 break;
 
             FrameMark;
-            if (const Rc<WaitGroup> waitGroup = ScheduleUpdate())
-                waitGroup->Wait();
+            IO::AssetManager::Tick();
+            if (!UpdateWorldLoading())
+                return 1;
 
-            if (auto* graphics = GetWorld().FindService<WorldGraphicsSceneService>())
-                Renderer::Get().Render(&graphics->GetScene(), m_viewport.Get());
+            if (m_worldDefinitionLoaded)
+            {
+                if (const Rc<WaitGroup> waitGroup = ScheduleUpdate())
+                    waitGroup->Wait();
+            }
 
-            if (maxFrames && ++frames == maxFrames)
+            const auto status = m_world->GetStatus();
+            const bool loadFailed = status.m_state == Framework::MaterializationState::kFailed
+                || status.m_state == Framework::MaterializationState::kCanceled;
+            if (loadFailed)
+            {
+                Logger::LogError("World asset is invalid: {}", status.m_error);
+                return 1;
+            }
+
+            const bool worldReady = m_worldDefinitionLoaded && status.m_state == Framework::MaterializationState::kReady;
+            if (worldReady)
+                m_worldRequest.Reset();
+
+            auto* graphics = GetWorld().FindService<WorldGraphicsSceneService>();
+            Scene* scene = graphics ? &graphics->GetScene() : nullptr;
+            Renderer::Get().Render(scene, m_viewport.Get());
+
+            if (maxFrames && worldReady && ++frames == maxFrames)
                 break;
         }
 
@@ -194,6 +194,8 @@ namespace FE::GameFramework
 
         m_device->WaitIdle();
         m_world.reset();
+        m_worldRequest.Reset();
+        m_worldDefinitionLoaded = false;
         m_viewport.Reset();
 
         IO::AssetManager::Shutdown();
@@ -230,8 +232,6 @@ namespace FE::GameFramework
     Rc<WaitGroup> Application::ScheduleUpdate()
     {
         FE_PROFILER_ZONE();
-
-        IO::AssetManager::Tick();
 
         auto& world = GetWorld();
         world.BeginUpdate();

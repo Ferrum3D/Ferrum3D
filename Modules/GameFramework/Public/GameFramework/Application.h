@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/IO/Assets.h>
 #include <Core/IO/Path.h>
 #include <Framework/Application/Application.h>
 #include <Framework/Entities/EntityWorldInstance.h>
@@ -42,27 +43,30 @@ namespace FE::GameFramework
         Application();
         ~Application() override;
 
-        //! @brief Create the window, graphics services and initial world on the main job fiber after Env::Init.
+        //! @brief Create the window and graphics services, then request the initial world without waiting for assets.
         bool Initialize(const ApplicationSettings& settings);
         void Shutdown();
 
-        //! @brief Run until the window closes, or for a bounded frame count; leaves the job system running for Shutdown.
+        //! @brief Run until the window closes, or for a bounded frame count after world readiness; loading frames still render.
         int32_t Run(uint32_t maxFrames = 0);
         [[nodiscard]] Framework::EntityWorld& GetWorld();
 
     protected:
         //! @brief Order default transform/extraction phases; override to insert application phases or stages.
         virtual void ScheduleWorldUpdate(Framework::EntityWorld& world);
-        //! @brief Tick assets, collect systems and execute the application's world schedule for one frame.
+        //! @brief Collect systems and execute the application's world schedule for one frame.
         Rc<WaitGroup> ScheduleUpdate() override;
 
     private:
-        bool LoadWorld(IO::AssetID asset);
+        bool UpdateWorldLoading();
         void DoRelease() override;
+
         Rc<Graphics::Core::Device> m_device;
         Rc<Graphics::Core::Viewport> m_viewport;
         Rc<Graphics::Core::PipelineFactory> m_pipelineFactory;
         festd::unique_ptr<Framework::EntityWorldInstance> m_world;
+        IO::AssetRequest m_worldRequest;
+        bool m_worldDefinitionLoaded = false;
         Graphics::MaterialStreamer* m_materialStreamer = nullptr;
         Graphics::MeshStreamer* m_meshStreamer = nullptr;
         Graphics::TextureStreamer* m_textureStreamer = nullptr;
