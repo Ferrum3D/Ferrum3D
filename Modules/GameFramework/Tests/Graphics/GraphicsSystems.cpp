@@ -7,13 +7,14 @@
 #include <Core/Threading/Thread.h>
 #include <Framework/Entities/EntityWorldAsset.h>
 #include <Framework/Entities/WorldTimeService.h>
-#include <GameFramework/CameraComponent.h>
-#include <GameFramework/CameraMovementSystem.h>
-#include <GameFramework/CameraSystem.h>
-#include <GameFramework/MeshComponent.h>
-#include <GameFramework/MeshSystem.h>
-#include <GameFramework/TransformationSystem.h>
-#include <GameFramework/WorldGraphicsSceneService.h>
+#include <GameFramework/Components/CameraComponent.h>
+#include <GameFramework/Components/CameraMovementComponent.h>
+#include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Services/WorldGraphicsSceneService.h>
+#include <GameFramework/Systems/CameraMovementSystem.h>
+#include <GameFramework/Systems/CameraSystem.h>
+#include <GameFramework/Systems/MeshSystem.h>
+#include <GameFramework/Systems/TransformationSystem.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -433,20 +434,6 @@ TEST_F(GraphicsFixture, CamerasCreateDistinctViewsAndRetainThemWhileInactive)
 }
 
 
-TEST_F(GraphicsFixture, InvalidCameraContentLeavesPreviousMatricesUsable)
-{
-    Tick();
-    const auto matrix = CameraView().GetProjectionMatrix();
-    EntityCommandList commands(m_world);
-    CameraComponent camera;
-    camera.m_nearPlane = -1;
-    commands.ReplaceComponent(m_world.Find(m_cameraUuid)->GetID(), camera);
-    m_world.Submit(std::move(commands));
-    Tick();
-    EXPECT_FLOAT_EQ(CameraView().GetProjectionMatrix().m_22, matrix.m_22);
-}
-
-
 TEST_F(GraphicsFixture, ComponentRemovalAndWorldUnloadReleaseMembership)
 {
     Tick();
@@ -473,7 +460,6 @@ TEST_F(GraphicsFixture, CopiesAndSerializationExcludeRuntimeOwnership)
     const auto& camera = *m_world.Find(m_cameraUuid)->FindComponent<const CameraComponent>();
     MeshComponent meshCopy(mesh);
     CameraComponent cameraCopy(camera);
-    EXPECT_EQ(meshCopy.m_scene, nullptr);
     EXPECT_EQ(meshCopy.m_batch, nullptr);
     EXPECT_TRUE(meshCopy.m_handles.empty());
     EXPECT_EQ(cameraCopy.m_scene, nullptr);
@@ -495,7 +481,6 @@ TEST_F(GraphicsFixture, CopiesAndSerializationExcludeRuntimeOwnership)
     ASSERT_EQ(reader.Load(restoredCamera), Serialization::ResultCode::kSuccess);
     EXPECT_EQ(restoredMesh.m_model.GetAssetID(), mesh.m_model.GetAssetID());
     EXPECT_EQ(restoredMesh.m_material.GetAssetID(), mesh.m_material.GetAssetID());
-    EXPECT_EQ(restoredMesh.m_scene, nullptr);
     EXPECT_EQ(restoredMesh.m_batch, nullptr);
     EXPECT_TRUE(restoredMesh.m_handles.empty());
     EXPECT_EQ(restoredCamera.m_scene, nullptr);

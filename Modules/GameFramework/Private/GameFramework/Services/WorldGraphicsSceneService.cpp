@@ -1,4 +1,4 @@
-#include <GameFramework/WorldGraphicsSceneService.h>
+#include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <Graphics/Assets/Streamers.h>
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/OpaquePass.h>
@@ -22,6 +22,7 @@ namespace FE::GameFramework
 
         FE_Assert(m_scene && m_scene->GetViewCount() == 0);
         m_meshes.reset();
+
         if (m_scene->GetModules().Contains<Graphics::MeshSceneModule>())
             m_scene->GetModules().Remove<Graphics::MeshSceneModule>();
         if (Graphics::Renderer* renderer = m_scene->GetRenderer())
@@ -33,14 +34,12 @@ namespace FE::GameFramework
 
     Graphics::Scene& WorldGraphicsSceneService::GetScene() const
     {
-        FE_Assert(m_scene);
         return *m_scene;
     }
 
 
     MeshSceneBridge& WorldGraphicsSceneService::GetMeshes() const
     {
-        FE_Assert(m_meshes);
         return *m_meshes;
     }
 

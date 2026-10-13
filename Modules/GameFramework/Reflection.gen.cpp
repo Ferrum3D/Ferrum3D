@@ -6,16 +6,16 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <GameFramework/Application.h>
-#include <GameFramework/CameraComponent.h>
-#include <GameFramework/CameraMovementComponent.h>
-#include <GameFramework/CameraMovementSystem.h>
-#include <GameFramework/CameraSystem.h>
-#include <GameFramework/MeshComponent.h>
-#include <GameFramework/MeshSystem.h>
-#include <GameFramework/TransformComponents.h>
-#include <GameFramework/TransformationSystem.h>
-#include <GameFramework/WorldGraphicsSceneService.h>
-#include <GameFramework/WorldStreamingService.h>
+#include <GameFramework/Components/CameraComponent.h>
+#include <GameFramework/Components/CameraMovementComponent.h>
+#include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Components/TransformComponents.h>
+#include <GameFramework/Services/WorldGraphicsSceneService.h>
+#include <GameFramework/Services/WorldStreamingService.h>
+#include <GameFramework/Systems/CameraMovementSystem.h>
+#include <GameFramework/Systems/CameraSystem.h>
+#include <GameFramework/Systems/MeshSystem.h>
+#include <GameFramework/Systems/TransformationSystem.h>
 
 
 namespace FE
@@ -658,13 +658,11 @@ namespace FE::GameFramework
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[7 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_model
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_material
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_scene
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_batch
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -680,8 +678,6 @@ namespace FE::GameFramework
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_material = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scene = {};
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_batch = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_handles = {};
@@ -690,7 +686,7 @@ namespace FE::GameFramework
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_loadedMaterial = {};
 
-        static const festd::array<Rtti::FieldInfo, 7> kFields = {
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_model",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &MeshComponent::m_model,
@@ -701,28 +697,23 @@ namespace FE::GameFramework
                                                         &MeshComponent::m_material,
                                                         kAttributes_m_material,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scene",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MeshComponent::m_scene,
-                                                        kAttributes_m_scene,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_batch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &MeshComponent::m_batch,
                                                         kAttributes_m_batch,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_handles",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &MeshComponent::m_handles,
                                                         kAttributes_m_handles,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_loadedModel",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &MeshComponent::m_loadedModel,
                                                         kAttributes_m_loadedModel,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_loadedMaterial",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &MeshComponent::m_loadedMaterial,
                                                         kAttributes_m_loadedMaterial,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),

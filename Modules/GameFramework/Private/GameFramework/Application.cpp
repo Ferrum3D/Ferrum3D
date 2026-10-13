@@ -6,12 +6,12 @@
 #include <Framework/Input/WorldInputService.h>
 #include <Framework/Reflection.gen.h>
 #include <GameFramework/Application.h>
-#include <GameFramework/CameraSystem.h>
-#include <GameFramework/MeshSystem.h>
 #include <GameFramework/Reflection.gen.h>
-#include <GameFramework/TransformationSystem.h>
-#include <GameFramework/WorldGraphicsSceneService.h>
-#include <GameFramework/WorldStreamingService.h>
+#include <GameFramework/Services/WorldGraphicsSceneService.h>
+#include <GameFramework/Services/WorldStreamingService.h>
+#include <GameFramework/Systems/CameraSystem.h>
+#include <GameFramework/Systems/MeshSystem.h>
+#include <GameFramework/Systems/TransformationSystem.h>
 #include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Assets/Streamers.h>
 #include <Graphics/Core/Device.h>

@@ -1,7 +1,7 @@
 #include <Framework/Entities/Query.h>
-#include <GameFramework/CameraComponent.h>
-#include <GameFramework/CameraSystem.h>
-#include <GameFramework/TransformComponents.h>
+#include <GameFramework/Components/CameraComponent.h>
+#include <GameFramework/Components/TransformComponents.h>
+#include <GameFramework/Systems/CameraSystem.h>
 
 namespace FE::GameFramework
 {

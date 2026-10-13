@@ -1,8 +1,8 @@
 #include <Framework/Entities/Query.h>
-#include <GameFramework/MeshComponent.h>
-#include <GameFramework/MeshSystem.h>
-#include <GameFramework/TransformComponents.h>
-#include <GameFramework/WorldGraphicsSceneService.h>
+#include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Components/TransformComponents.h>
+#include <GameFramework/Services/WorldGraphicsSceneService.h>
+#include <GameFramework/Systems/MeshSystem.h>
 
 namespace FE::GameFramework
 {
@@ -17,8 +17,10 @@ namespace FE::GameFramework
     {
         FE_PROFILER_ZONE();
 
-        const auto traverse = [](MeshComponent& mesh, const WorldTransformComponent& transform) {
-            mesh.m_scene->GetMeshes().Update(mesh, transform.m_world);
+        auto* sceneService = context.m_world.FindService<WorldGraphicsSceneService>();
+
+        const auto traverse = [sceneService](MeshComponent& mesh, const WorldTransformComponent& transform) {
+            sceneService->GetMeshes().Update(mesh, transform.m_world);
         };
 
         using Query = Framework::Query<MeshComponent, const WorldTransformComponent>;

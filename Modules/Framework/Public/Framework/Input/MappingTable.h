@@ -1,6 +1,7 @@
 #pragma once
 #include <Framework/Input/Action.h>
 #include <Framework/Input/Core/Keys.h>
+#include <festd/variant.h>
 
 namespace FE::Input
 {
@@ -82,7 +83,7 @@ namespace FE::Input
         FE_RTTI_Reflect("AF710BC7-D755-4116-A5DC-F44202849DFC");
         FE_RTTI_Serialize();
 
-        std::variant<ButtonBinding, Axis1DBinding, Axis2DBinding, MouseDeltaBinding, MouseWheelBinding, ChordBinding> m_source;
+        festd::variant<ButtonBinding, Axis1DBinding, Axis2DBinding, MouseDeltaBinding, MouseWheelBinding, ChordBinding> m_source;
         festd::vector<Control> m_conditions;
         Vector2 m_scale{ 1, 1 };
         float m_sensitivity = 1;

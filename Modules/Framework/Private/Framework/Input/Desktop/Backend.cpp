@@ -1,29 +1,41 @@
-#include <Core/Time/BaseTime.h>
-#include <Framework/Application/Core/PlatformApplication.h>
 #include <Framework/Input/Desktop/Backend.h>
 
 namespace FE::Input::Desktop
 {
+    namespace
+    {
+        constexpr Core::DeviceKind kDevices[] = { Core::DeviceKind::kKeyboard, Core::DeviceKind::kMouse };
+
+
+        bool IsInputEvent(const Framework::Core::PlatformEventType type)
+        {
+            using Framework::Core::PlatformEventType;
+            switch (type)
+            {
+            case PlatformEventType::kKeyboardKeyDown:
+            case PlatformEventType::kKeyboardKeyUp:
+            case PlatformEventType::kMouseDown:
+            case PlatformEventType::kMouseUp:
+            case PlatformEventType::kMouseMove:
+            case PlatformEventType::kMouseWheel:
+            case PlatformEventType::kWindowUnfocus:
+                return true;
+
+            default:
+                return false;
+            }
+        }
+    } // namespace
+
+
     festd::span<const Core::DeviceKind> Backend::EnumerateDevices() const
     {
-        static constexpr Core::DeviceKind devices[] = { Core::DeviceKind::kKeyboard, Core::DeviceKind::kMouse };
-        return devices;
+        return kDevices;
     }
 
 
-    void Backend::Update()
-    {
-        FE_PROFILER_ZONE();
-
-        const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
-        const float elapsed = m_previousUpdateSeconds == 0 ? 0 : static_cast<float>(now - m_previousUpdateSeconds);
-        Update(Framework::Core::PlatformApplication::Get().GetEvents(), elapsed, now);
-        m_previousUpdateSeconds = now;
-    }
-
-
-    void Backend::Update(const festd::span<const Framework::Core::PlatformEvent> events, const float deltaSeconds,
-                         const double frameEndSeconds)
+    void Backend::ProcessEvents(const festd::span<const Framework::Core::PlatformEvent> events, const float deltaSeconds,
+                                const double frameEndSeconds)
     {
         FE_PROFILER_ZONE();
 
@@ -43,11 +55,7 @@ namespace FE::Input::Desktop
         const double end = frameEndSeconds;
         for (const auto& event : events)
         {
-            const bool affectsInput = event.m_type == PlatformEventType::kKeyboardKeyDown
-                || event.m_type == PlatformEventType::kKeyboardKeyUp || event.m_type == PlatformEventType::kMouseDown
-                || event.m_type == PlatformEventType::kMouseUp || event.m_type == PlatformEventType::kMouseMove
-                || event.m_type == PlatformEventType::kMouseWheel || event.m_type == PlatformEventType::kWindowUnfocus;
-            if (!affectsInput)
+            if (!IsInputEvent(event.m_type))
             {
                 if (event.m_type == PlatformEventType::kMouseLeave || event.m_type == PlatformEventType::kWindowFocus)
                     m_hasPosition = false;
@@ -72,8 +80,8 @@ namespace FE::Input::Desktop
 
             if (event.m_type == PlatformEventType::kMouseMove)
             {
-                const Vector2 position{ static_cast<float>(static_cast<int16_t>(event.m_mouseMovePayload.m_x)),
-                                        static_cast<float>(static_cast<int16_t>(event.m_mouseMovePayload.m_y)) };
+                const Vector2 position{ static_cast<float>(event.m_mouseMovePayload.m_x),
+                                        static_cast<float>(event.m_mouseMovePayload.m_y) };
                 if (!m_hasPosition || position == m_position)
                 {
                     m_position = position;
@@ -137,8 +145,8 @@ namespace FE::Input::Desktop
 
             case PlatformEventType::kMouseMove:
                 {
-                    const Vector2 position{ static_cast<float>(static_cast<int16_t>(event.m_mouseMovePayload.m_x)),
-                                            static_cast<float>(static_cast<int16_t>(event.m_mouseMovePayload.m_y)) };
+                    const Vector2 position{ static_cast<float>(event.m_mouseMovePayload.m_x),
+                                            static_cast<float>(event.m_mouseMovePayload.m_y) };
                     if (m_hasPosition)
                         m_mouse.m_delta = m_mouse.m_delta + position - m_position;
 
@@ -174,9 +182,10 @@ namespace FE::Input::Desktop
 
             accumulatedDelta = accumulatedDelta + m_mouse.m_delta;
             accumulatedWheel += m_mouse.m_wheelDelta;
-            const bool changed = m_keyboard.m_keyPressMap.any() || m_keyboard.m_keyUpMap.any() || m_mouse.m_buttonPressMap.any()
-                || m_mouse.m_buttonUpMap.any() || m_mouse.m_delta != Vector2::kZero || m_mouse.m_wheelDelta != 0;
-            if (changed)
+            const bool keyboardChanged = m_keyboard.m_keyPressMap.any() || m_keyboard.m_keyUpMap.any();
+            const bool buttonsChanged = m_mouse.m_buttonPressMap.any() || m_mouse.m_buttonUpMap.any();
+            const bool pointerChanged = m_mouse.m_delta != Vector2::kZero || m_mouse.m_wheelDelta != 0;
+            if (keyboardChanged || buttonsChanged || pointerChanged)
                 m_samples.push_back({ m_keyboard, m_mouse, 0 });
         }
 

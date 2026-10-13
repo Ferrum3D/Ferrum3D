@@ -323,13 +323,21 @@ namespace FE::Framework::Windows
             return DefWindowProcW(hWnd, message, wParam, lParam);
 
         auto* app = ImplCast(window->GetApplication());
-        const double queuedSeconds = app->m_queuedEventSeconds;
-        const bool isQueued = app->m_queuedWindow == hWnd && app->m_queuedMessage == message;
-        app->m_queuedMessage = 0;
-        if (!isQueued)
-            app->m_queuedEventSeconds = -1;
+        const auto previousTimestamp = app->m_eventTimestamp;
+        const MSG* pending = app->m_pendingMessage;
+        app->m_pendingMessage = nullptr;
+        app->m_eventTimestamp.reset();
+        if (pending && pending->hwnd == hWnd && pending->message == message)
+        {
+            const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
+            const uint32_t uptime = static_cast<uint32_t>(GetTickCount64());
+            // Subtraction unwraps the 32-bit millisecond clock for nearby queued messages.
+            const int32_t offset = static_cast<int32_t>(pending->time - uptime);
+            app->m_eventTimestamp = now + offset / 1000.0;
+        }
+
         auto restoreTimestamp = festd::defer([&] {
-            app->m_queuedEventSeconds = queuedSeconds;
+            app->m_eventTimestamp = previousTimestamp;
         });
 
         switch (message)
@@ -617,8 +625,7 @@ namespace FE::Framework::Windows
 
     void PlatformApplication::RecordEvent(Core::PlatformEvent event)
     {
-        event.m_timestampSeconds =
-            m_queuedEventSeconds >= 0 ? m_queuedEventSeconds : Platform::GetTicks() * Platform::GetSecondsPerTick();
+        event.m_timestampSeconds = m_eventTimestamp ? *m_eventTimestamp : Platform::GetTicks() * Platform::GetSecondsPerTick();
         m_events.push_back(event);
     }
 
@@ -632,21 +639,15 @@ namespace FE::Framework::Windows
         MSG msg;
         while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
-            const uint64_t tick = GetTickCount64();
-            // MSG.time is the low 32 bits of the uptime clock. Signed subtraction unwraps nearby queued messages.
-            const int32_t offset = static_cast<int32_t>(msg.time - static_cast<uint32_t>(tick));
-            m_queuedEventSeconds = now + static_cast<double>(offset) / 1000.0;
-            m_queuedWindow = msg.hwnd;
-            m_queuedMessage = msg.message;
             TranslateMessage(&msg);
+            m_pendingMessage = &msg;
             DispatchMessageW(&msg);
-            m_queuedEventSeconds = -1;
+            m_pendingMessage = nullptr;
         }
 
         const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
         const float elapsed = m_previousPollSeconds == 0 ? 0 : static_cast<float>(now - m_previousPollSeconds);
-        m_inputBackend.Update(m_events, elapsed, now);
+        m_inputBackend.ProcessEvents(m_events, elapsed, now);
         m_previousPollSeconds = now;
     }
 

@@ -1,6 +1,6 @@
 #include <Framework/Entities/EntityWorld.h>
-#include <GameFramework/MeshComponent.h>
-#include <GameFramework/WorldGraphicsSceneService.h>
+#include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Services/WorldGraphicsSceneService.h>
 
 namespace FE::GameFramework
 {
@@ -20,19 +20,19 @@ namespace FE::GameFramework
 
     Framework::LifecycleResult MeshComponent::Activate(Framework::ComponentContext& context)
     {
-        m_scene = context.m_world.FindService<WorldGraphicsSceneService>();
-        if (!m_scene)
+        auto* sceneService = context.m_world.FindService<WorldGraphicsSceneService>();
+        if (!sceneService)
             return Framework::LifecycleResult::kFailed;
 
-        return m_scene->GetMeshes().Create(*this);
+        return sceneService->GetMeshes().Create(*this);
     }
 
 
-    void MeshComponent::Deactivate(Framework::ComponentContext&)
+    void MeshComponent::Deactivate(Framework::ComponentContext& context)
     {
-        if (m_scene)
-            m_scene->GetMeshes().Destroy(*this);
+        auto* sceneService = context.m_world.FindService<WorldGraphicsSceneService>();
+        FE_Assert(sceneService);
 
-        m_scene = nullptr;
+        sceneService->GetMeshes().Destroy(*this);
     }
 } // namespace FE::GameFramework

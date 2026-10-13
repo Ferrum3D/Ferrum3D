@@ -1,5 +1,5 @@
 #include <Core/Threading/Thread.h>
-#include <GameFramework/WorldStreamingService.h>
+#include <GameFramework/Services/WorldStreamingService.h>
 
 namespace FE::GameFramework
 {
@@ -20,14 +20,16 @@ namespace FE::GameFramework
 
     void WorldStreamingService::Load(const Uuid registry, const IO::AssetID placement)
     {
-        FE_Assert(Threading::IsMainThread() && m_world && registry.IsValid() && placement.IsValid());
+        FE_Assert(Threading::IsMainThread());
+        FE_Assert(registry.IsValid() && placement.IsValid());
         m_requests.push_back({ registry, placement });
     }
 
 
     void WorldStreamingService::Unload(const Uuid registry)
     {
-        FE_Assert(Threading::IsMainThread() && m_world && registry.IsValid());
+        FE_Assert(Threading::IsMainThread());
+        FE_Assert(registry.IsValid());
         m_requests.push_back({ registry, IO::AssetID::kNull });
     }
 
@@ -36,7 +38,8 @@ namespace FE::GameFramework
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(Threading::IsMainThread() && m_world);
+        FE_Assert(Threading::IsMainThread());
+
         for (const auto& entry : m_entries)
         {
             if (entry.m_placement == placement)
@@ -66,9 +69,10 @@ namespace FE::GameFramework
                 registry = &world.CreateRegistry(request.m_registry);
 
             const auto token = world.LoadPlacement(*registry, request.m_placement);
-            auto found = festd::find_if(m_entries.begin(), m_entries.end(), [&](const Entry& entry) {
+            const auto found = festd::find_if(m_entries.begin(), m_entries.end(), [&](const Entry& entry) {
                 return entry.m_placement == request.m_placement;
             });
+
             if (found == m_entries.end())
                 m_entries.push_back({ request.m_placement, token });
             else

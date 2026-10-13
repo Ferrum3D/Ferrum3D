@@ -1,12 +1,14 @@
 #include <Core/Logging/Logger.h>
 #include <Framework/Input/MappingStack.h>
-#include <algorithm>
 #include <atomic>
 
 namespace FE::Input
 {
     namespace
     {
+        std::atomic<uint64_t> GNextContext = 0;
+
+
         struct Controls final
         {
             festd::bitset<256> m_keys;
@@ -34,7 +36,7 @@ namespace FE::Input
         };
 
 
-        bool Held(const Control& control, const Core::Sample& sample, const Controls& consumed)
+        bool IsHeld(const Control& control, const Core::Sample& sample, const Controls& consumed)
         {
             if (control.m_code < 256)
             {
@@ -63,37 +65,48 @@ namespace FE::Input
             MappingValue result;
             for (const Control& condition : binding.m_conditions)
             {
-                if (!Held(condition, sample, consumed))
+                if (!IsHeld(condition, sample, consumed))
                     return {};
             }
 
-            const auto down = [&](const Control control) {
-                const bool held = Held(control, sample, consumed);
+            const auto readControl = [&](const Control control) {
+                const bool held = IsHeld(control, sample, consumed);
                 if (held)
                 {
                     Use(control, result.m_controls);
                     result.m_participates = true;
                 }
+
                 return held ? 1.0f : 0.0f;
             };
-            std::visit(
+
+            festd::visit(
                 [&]<class T>(const T& source) {
                     if constexpr (std::same_as<T, ButtonBinding>)
-                        result.m_direction = Vector2(down(source.m_control));
+                    {
+                        result.m_direction = Vector2(readControl(source.m_control));
+                    }
                     else if constexpr (std::same_as<T, Axis1DBinding>)
-                        result.m_direction.x = down(source.m_positive) - down(source.m_negative);
+                    {
+                        result.m_direction.x = readControl(source.m_positive) - readControl(source.m_negative);
+                    }
                     else if constexpr (std::same_as<T, Axis2DBinding>)
-                        result.m_direction = { down(source.m_right) - down(source.m_left),
-                                               down(source.m_forward) - down(source.m_back) };
+                    {
+                        result.m_direction = { readControl(source.m_right) - readControl(source.m_left),
+                                               readControl(source.m_forward) - readControl(source.m_back) };
+                    }
                     else if constexpr (std::same_as<T, ChordBinding>)
                     {
                         for (const Control& control : source.m_controls)
                         {
-                            if (!Held(control, sample, consumed))
+                            if (!IsHeld(control, sample, consumed))
                                 return;
                         }
+
                         for (const Control& control : source.m_controls)
-                            (void)down(control);
+                            Use(control, result.m_controls);
+
+                        result.m_participates = true;
                         result.m_direction = { 1, 1 };
                     }
                     else if constexpr (std::same_as<T, MouseDeltaBinding>)
@@ -117,8 +130,6 @@ namespace FE::Input
 
             result.m_direction = result.m_direction * binding.m_scale;
             result.m_actuation = result.m_direction * binding.m_sensitivity;
-            result.m_value = result.m_actuation;
-
             return result;
         }
 
@@ -134,17 +145,16 @@ namespace FE::Input
                 const MappingValue value = EvaluateBinding(binding, sample, consumed);
                 if (mapping.m_operation == MappingOperation::kSum)
                 {
-                    result.m_value = result.m_value + value.m_value;
                     result.m_actuation = result.m_actuation + value.m_actuation;
                     result.m_direction = result.m_direction + value.m_direction;
                     result.m_controls.Merge(value.m_controls);
                     result.m_participates |= value.m_participates;
                 }
-                else if (value.m_participates
-                         && (!result.m_participates
-                             || Math::LengthSquared(value.m_actuation) > Math::LengthSquared(result.m_actuation)))
+                else if (value.m_participates)
                 {
-                    result = value;
+                    const bool stronger = Math::LengthSquared(value.m_actuation) > Math::LengthSquared(result.m_actuation);
+                    if (!result.m_participates || stronger)
+                        result = value;
                 }
             }
 
@@ -177,8 +187,7 @@ namespace FE::Input
 
         FE_Assert(table.IsValid());
 
-        static std::atomic<uint64_t> nextContext = 0;
-        const ContextHandle handle{ ++nextContext };
+        const ContextHandle handle{ ++GNextContext };
 
         TableEntry entry;
         entry.m_table = std::move(table);
@@ -186,7 +195,7 @@ namespace FE::Input
         entry.m_priority = priority;
         entry.m_modal = modal;
         m_tables.push_back(std::move(entry));
-        std::sort(m_tables.begin(), m_tables.end(), [](const TableEntry& lhs, const TableEntry& rhs) {
+        festd::sort(m_tables.begin(), m_tables.end(), [](const TableEntry& lhs, const TableEntry& rhs) {
             return lhs.m_priority == rhs.m_priority ? lhs.m_handle.m_value > rhs.m_handle.m_value
                                                     : lhs.m_priority > rhs.m_priority;
         });
@@ -198,12 +207,9 @@ namespace FE::Input
     {
         FE_PROFILER_ZONE();
 
-        m_tables.erase(std::remove_if(m_tables.begin(),
-                                      m_tables.end(),
-                                      [context](const TableEntry& entry) {
-                                          return entry.m_handle == context;
-                                      }),
-                       m_tables.end());
+        festd::erase_if(m_tables, [context](const TableEntry& entry) {
+            return entry.m_handle == context;
+        });
     }
 
 
@@ -304,9 +310,10 @@ namespace FE::Input
                 if (!runtime.m_asset.IsValid())
                     runtime.m_asset = compiled.m_mapping.m_action.GetAssetHandle();
 
-                const bool changed = runtime.m_owner != entry.m_handle.m_value || runtime.m_tableGeneration != entry.m_generation
-                    || runtime.m_actionGeneration != runtime.m_asset.GetGeneration();
-                if (!changed)
+                const bool ownerChanged = runtime.m_owner != entry.m_handle.m_value;
+                const bool tableChanged = runtime.m_tableGeneration != entry.m_generation;
+                const bool actionChanged = runtime.m_actionGeneration != runtime.m_asset.GetGeneration();
+                if (!ownerChanged && !tableChanged && !actionChanged)
                     continue;
 
                 Cancel(compiled.m_index);
@@ -345,18 +352,11 @@ namespace FE::Input
                 Cancel(i);
         }
 
-        const bool compact = std::any_of(m_runtime.begin(), m_runtime.end(), [](const RuntimeAction& runtime) {
+        const uint32_t removed = festd::erase_if(m_runtime, [](const RuntimeAction& runtime) {
             return !runtime.m_visited;
         });
-        if (compact)
+        if (removed != 0)
         {
-            m_runtime.erase(std::remove_if(m_runtime.begin(),
-                                           m_runtime.end(),
-                                           [](const RuntimeAction& runtime) {
-                                               return !runtime.m_visited;
-                                           }),
-                            m_runtime.end());
-
             m_inputFrame.m_indices.clear();
             for (uint32_t i = 0; i < m_runtime.size(); ++i)
                 m_inputFrame.m_indices.emplace(m_runtime[i].m_id, i);
@@ -406,7 +406,7 @@ namespace FE::Input
 
                 const bool started = context.m_pressed;
                 const bool ended = !context.m_active && context.m_wasActive;
-                const bool completed = context.m_completed;
+                const bool wasCompleted = context.m_completed;
                 auto emit = [&](const ActionState state) {
                     if (publishEvents)
                         m_inputFrame.m_events.push_back({ runtime.m_id, state, value.m_value });
@@ -415,9 +415,12 @@ namespace FE::Input
                     emit(ActionState::kStarted);
 
                 const ActionState state = runtime.m_processor ? runtime.m_processor->Process(context) : ActionState::kTriggered;
-                if (state == ActionState::kTriggered && context.m_active && (!completed || !context.m_completed))
+                const bool triggered = state == ActionState::kTriggered && context.m_active;
+                const bool canTrigger = !wasCompleted || !context.m_completed;
+                if (triggered && canTrigger)
                 {
-                    if (started || (runtime.m_processor && sample.m_deltaSeconds > 0 && !runtime.m_triggeredThisFrame))
+                    const bool continuing = runtime.m_processor && sample.m_deltaSeconds > 0;
+                    if (started || (continuing && !runtime.m_triggeredThisFrame))
                     {
                         emit(ActionState::kTriggered);
                         runtime.m_triggeredThisFrame = true;

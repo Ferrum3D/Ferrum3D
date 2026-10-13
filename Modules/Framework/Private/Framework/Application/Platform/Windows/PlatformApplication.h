@@ -42,7 +42,9 @@ namespace FE::Framework::Windows
 
         void UnregisterWindow(PlatformWindow* window)
         {
-            m_windows.erase(eastl::remove(m_windows.begin(), m_windows.end(), window), m_windows.end());
+            const auto found = festd::find(m_windows.begin(), m_windows.end(), window);
+            if (found != m_windows.end())
+                m_windows.erase(found);
         }
 
         static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -59,9 +61,8 @@ namespace FE::Framework::Windows
 
         Input::Desktop::Backend m_inputBackend;
         double m_previousPollSeconds = 0;
-        double m_queuedEventSeconds = -1;
-        HWND m_queuedWindow = nullptr;
-        UINT m_queuedMessage = 0;
+        const MSG* m_pendingMessage = nullptr;
+        festd::optional<double> m_eventTimestamp;
         HWND m_mouseTrackWindow = nullptr;
         MouseTrackArea m_mouseTrackArea = MouseTrackArea::kNone;
         uint32_t m_mouseButtonsDown = Constants::kMaxU32;

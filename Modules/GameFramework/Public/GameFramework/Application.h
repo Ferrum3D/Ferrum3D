@@ -9,6 +9,7 @@ namespace FE::Graphics
     struct MaterialStreamer;
     struct MeshStreamer;
     struct TextureStreamer;
+
     namespace Core
     {
         struct Device;

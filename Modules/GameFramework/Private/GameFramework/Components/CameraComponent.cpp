@@ -1,6 +1,6 @@
 #include <Framework/Entities/EntityWorld.h>
-#include <GameFramework/CameraComponent.h>
-#include <GameFramework/WorldGraphicsSceneService.h>
+#include <GameFramework/Components/CameraComponent.h>
+#include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <cmath>
 
 namespace FE::GameFramework

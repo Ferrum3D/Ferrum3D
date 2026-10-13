@@ -8,14 +8,13 @@ namespace FE::Input::Desktop
     struct Backend final : Core::Backend
     {
         [[nodiscard]] festd::span<const Core::DeviceKind> EnumerateDevices() const override;
-        void Update() override;
 
         [[nodiscard]] uint64_t GetSampleSequence() const override
         {
             return m_sampleSequence;
         }
 
-        void Update(festd::span<const Framework::Core::PlatformEvent> events, float deltaSeconds = 0, double frameEndSeconds = 0);
+        void ProcessEvents(festd::span<const Framework::Core::PlatformEvent> events, float deltaSeconds, double frameEndSeconds);
 
         [[nodiscard]] festd::span<const Core::Sample> GetSamples() const override
         {
@@ -34,7 +33,6 @@ namespace FE::Input::Desktop
 
     private:
         festd::vector<Core::Sample> m_samples;
-        double m_previousUpdateSeconds = 0;
         uint64_t m_sampleSequence = 0;
         Core::KeyboardState m_keyboard;
         Core::MouseState m_mouse;

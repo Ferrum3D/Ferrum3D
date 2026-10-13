@@ -6,9 +6,9 @@
 #include <Core/RTTI/Reflection.h>
 #include <concepts>
 #include <festd/string.h>
+#include <festd/variant.h>
 #include <festd/vector.h>
 #include <type_traits>
-#include <variant>
 
 namespace FE::Serialization
 {
@@ -844,16 +844,16 @@ namespace FE::Serialization
 
     //! Tagged alternatives with transactional payload decoding.
     template<class... Types>
-    struct Serializer<std::variant<Types...>>
+    struct Serializer<festd::variant<Types...>>
     {
-        using Variant = std::variant<Types...>;
+        using Variant = festd::variant<Types...>;
 
         static ResultCode Serialize(SerializationContext& context, const Variant& value)
         {
             if (auto object = context.BeginObject())
             {
                 object.Field("m_type", static_cast<uint32_t>(value.index()));
-                std::visit(
+                festd::visit(
                     [&]<class T>(const T& payload) {
                         object.Field("m_value", payload);
                     },
@@ -892,7 +892,7 @@ namespace FE::Serialization
             {
                 if (index == Index)
                 {
-                    std::variant_alternative_t<Index, Variant> payload;
+                    festd::variant_alternative_t<Index, Variant> payload;
                     object.Field("m_value", payload);
                     if (context.IsValid())
                         value = std::move(payload);

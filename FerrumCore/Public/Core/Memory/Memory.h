@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Core/Memory/RefCount.h>
 #include <Core/Threading/SpinLock.h>
 #include <festd/span.h>
@@ -39,9 +39,6 @@ namespace FE
         [[nodiscard]] void* DefaultAllocate(size_t byteSize, size_t byteAlignment);
         [[nodiscard]] void* DefaultReallocate(void* ptr, size_t newSize);
         void DefaultFree(void* ptr);
-
-        //! Allocation/reallocation requests on this thread; available in development builds for profiling scopes.
-        [[nodiscard]] uint64_t GetThreadAllocationCount();
 
         [[nodiscard]] size_t GetAllocatedSize(const void* ptr);
 

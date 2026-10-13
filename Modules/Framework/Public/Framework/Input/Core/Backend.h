@@ -45,7 +45,9 @@ namespace FE::Input::Core
         virtual ~Backend() = default;
 
         [[nodiscard]] virtual festd::span<const DeviceKind> EnumerateDevices() const = 0;
-        virtual void Update() = 0;
+
+        //! Poll self-driven devices. Platform-fed backends receive events from their application instead.
+        virtual void Update() {}
 
         //! Nonzero sequence identifies an ordered snapshot; zero means an unsampled state backend.
         [[nodiscard]] virtual uint64_t GetSampleSequence() const

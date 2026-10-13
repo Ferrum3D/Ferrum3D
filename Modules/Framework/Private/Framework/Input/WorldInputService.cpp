@@ -153,12 +153,9 @@ namespace FE::Input
         FE_PROFILER_ZONE();
 
         m_stack.Deactivate(context);
-        m_contexts.erase(std::remove_if(m_contexts.begin(),
-                                        m_contexts.end(),
-                                        [context](const Context& entry) {
-                                            return entry.m_handle == context;
-                                        }),
-                         m_contexts.end());
+        festd::erase_if(m_contexts, [context](const Context& entry) {
+            return entry.m_handle == context;
+        });
     }
 
 

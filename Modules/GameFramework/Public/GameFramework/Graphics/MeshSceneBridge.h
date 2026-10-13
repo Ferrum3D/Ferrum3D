@@ -1,5 +1,5 @@
 #pragma once
-#include <GameFramework/MeshComponent.h>
+#include <GameFramework/Components/MeshComponent.h>
 
 namespace FE::Graphics
 {

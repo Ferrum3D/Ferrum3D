@@ -15,8 +15,6 @@ namespace FE::GameFramework
         //! @brief Hard material dependency shared by this model's instances.
         IO::Link<Graphics::MaterialInstanceAsset> m_material;
 
-        //! @brief Borrowed world scene service used to undo runtime membership.
-        FE_SKIP_SERIALIZING WorldGraphicsSceneService* m_scene = nullptr;
         //! @brief Scene batch owned until deactivation.
         FE_SKIP_SERIALIZING Graphics::MeshBatch* m_batch = nullptr;
         //! @brief Generation-checked scene instances; relocation transfers ownership.

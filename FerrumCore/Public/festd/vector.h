@@ -1,7 +1,7 @@
 ﻿#pragma once
+#include <Core/Memory/Memory.h>
 #include <EASTL/fixed_vector.h>
 #include <EASTL/vector.h>
-#include <Core/Memory/Memory.h>
 #include <gch/small_vector.hpp>
 
 namespace FE::festd
@@ -42,6 +42,8 @@ namespace FE::festd
     template<class T, uint32_t TSize>
     using fixed_vector = eastl::fixed_vector<T, TSize, false>;
 
+    using eastl::erase;
+    using eastl::erase_if;
     using eastl::vector;
 
 

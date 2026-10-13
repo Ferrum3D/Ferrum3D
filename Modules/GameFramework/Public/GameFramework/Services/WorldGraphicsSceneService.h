@@ -1,6 +1,6 @@
 #pragma once
 #include <Framework/Entities/EntityWorld.h>
-#include <GameFramework/MeshSceneBridge.h>
+#include <GameFramework/Graphics/MeshSceneBridge.h>
 
 namespace FE::GameFramework
 {

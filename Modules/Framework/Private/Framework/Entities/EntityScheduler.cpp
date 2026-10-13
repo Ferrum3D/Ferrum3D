@@ -78,6 +78,7 @@ namespace FE::Framework
         FE_Assert(desc.m_callable && desc.m_destroy);
         FE_Assert(&context.m_world == &m_world.m_owner && context.m_epoch == m_epoch && IsUpdating());
         FE_Assert(!IsExecuting() && !m_validated);
+
         Traversal traversal;
         traversal.m_phase = desc.m_phase;
         traversal.m_policy = desc.m_policy;
@@ -86,12 +87,12 @@ namespace FE::Framework
         traversal.m_accesses.assign(desc.m_accesses.begin(), desc.m_accesses.end());
         traversal.m_callable = desc.m_callable;
         traversal.m_invoke = desc.m_invoke;
-        traversal.m_hasWrites = std::any_of(desc.m_accesses.begin(), desc.m_accesses.end(), [](const QueryAccess& access) {
+        traversal.m_hasWrites = eastl::any_of(desc.m_accesses.begin(), desc.m_accesses.end(), [](const QueryAccess& access) {
             return access.m_write && !access.m_parent && !access.m_excluded;
         });
         traversal.m_destroy = desc.m_destroy;
         traversal.m_system = context.m_system;
-        traversal.m_completion = Rc<WaitGroup>(WaitGroup::Create(1));
+        traversal.m_completion = WaitGroup::Create(1);
         traversal.m_prerequisites.assign(desc.m_prerequisites.begin(), desc.m_prerequisites.end());
 
         Rc<WaitGroup> result = traversal.m_completion;
@@ -116,6 +117,7 @@ namespace FE::Framework
     bool EntityScheduler::AddPrerequisite(WaitGroup& completion, const Rc<WaitGroup>& prerequisite)
     {
         FE_Assert(IsUpdating() && !m_validated);
+
         if (!prerequisite)
         {
             FE_Assert(false, "Invalid schedule prerequisite");
@@ -164,6 +166,7 @@ namespace FE::Framework
             return true;
 
         FE_Assert(IsUpdating());
+
         festd::unordered_dense_map<uint64_t, uint32_t> phaseIndices;
         for (uint32_t i = 0; i < m_phases.size(); ++i)
         {
@@ -195,6 +198,7 @@ namespace FE::Framework
             auto& traversal = m_traversals[index];
             traversal.m_dependencies.clear();
             traversal.m_externalPrerequisites.clear();
+
             FE_Assert(traversal.m_invoke || traversal.m_stageInvoke, "Traversal requires an invocation adapter");
 
             const uint32_t phase = phaseIndex(traversal.m_phase);
@@ -371,6 +375,7 @@ namespace FE::Framework
         FE_PROFILER_ZONE();
 
         FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+
         if (!m_validated && !ValidateSchedule())
             return false;
 
@@ -492,7 +497,7 @@ namespace FE::Framework
         {
             // Reprocess all matching descendants, including through filtered ancestors.
             const bool hierarchyChanged = cursor.m_hierarchyRevision != m_world.m_storage.m_hierarchyRevision;
-            if (!hierarchyChanged && !std::any_of(chunks.begin(), chunks.end(), changed))
+            if (!hierarchyChanged && !eastl::any_of(chunks.begin(), chunks.end(), changed))
                 chunks.clear();
         }
         else
@@ -551,9 +556,14 @@ namespace FE::Framework
 
     void EntityScheduler::ExecuteTraversal(const uint32_t index)
     {
-        FE_PROFILER_ZONE();
-
         auto& traversal = m_traversals[index];
+
+        [[maybe_unused]] festd::ascii_view systemName = "Query";
+        if (traversal.m_system)
+            systemName = traversal.m_system->RTTI_GetDynamicType().m_name;
+
+        FE_PROFILER_ZONE_TEXT("%.*s", systemName.length(), systemName.data());
+
         if (traversal.m_stageInvoke)
         {
             // A structural stage may commit queued edits, but cannot record work into the compiled schedule.
@@ -686,7 +696,7 @@ namespace FE::Framework
             std::lock_guard guard(m_world.m_storage.m_versionLock);
 
             const bool writes = traversal.m_hasWrites;
-            const bool changedWrites = writes && std::any_of(chunks.begin(), chunks.end(), [](const PreparedChunk& entry) {
+            const bool changedWrites = writes && eastl::any_of(chunks.begin(), chunks.end(), [](const PreparedChunk& entry) {
                                            return entry.m_changed != 0;
                                        });
             const uint64_t publishedVersion = changedWrites ? m_world.NextChangeVersion() : m_world.m_storage.m_changeVersion;

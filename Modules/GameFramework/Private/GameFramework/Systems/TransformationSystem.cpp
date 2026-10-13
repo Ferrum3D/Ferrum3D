@@ -1,5 +1,5 @@
-#include <GameFramework/TransformationSystem.h>
-#include <algorithm>
+#include <EASTL/algorithm.h>
+#include <GameFramework/Systems/TransformationSystem.h>
 #include <cmath>
 
 namespace FE::GameFramework
@@ -28,25 +28,28 @@ namespace FE::GameFramework
             if (!Math::DecomposeTransform(matrix, translation, rotation, scale, shear))
                 return false;
 
-            constexpr float kTolerance = 0.00001f;
-            if (!Math::CmpEqual(shear, Vector3::kZero, kTolerance))
-                return false;
-
-            if (!hasScaleModifier)
-            {
-                const float scaleMagnitude = std::max({ std::abs(scale.x), std::abs(scale.y), std::abs(scale.z) });
-                if (!Math::CmpEqual(scale, Vector3(scale.x), kTolerance * scaleMagnitude))
-                    return false;
-            }
-
             local = Transform::Create(translation, rotation, hasScaleModifier ? 1.0f : scale.x);
             modifier = hasScaleModifier ? scale : Vector3(1, 1, 1);
-            const Matrix4x4 reconstructed = Matrix4x4::Scale(modifier) * Transform::ToMatrix(local);
-            for (uint32_t i = 0; i < 16; ++i)
+
+            if (Build::IsDebug())
             {
-                const float tolerance = kTolerance * std::max(1.0f, std::abs(matrix.m_values[i]));
-                if (std::abs(reconstructed.m_values[i] - matrix.m_values[i]) > tolerance)
-                    return false;
+                if (!Math::CmpEqual(shear, Vector3::kZero))
+                    FE_DebugBreak();
+
+                if (!hasScaleModifier)
+                {
+                    const float scaleMagnitude = Math::Max(Math::Abs(scale.x), Math::Max(Math::Abs(scale.y), Math::Abs(scale.z)));
+                    if (!Math::CmpEqual(scale, Vector3(scale.x), Constants::kEpsilon * scaleMagnitude))
+                        FE_DebugBreak();
+                }
+
+                const Matrix4x4 reconstructed = Matrix4x4::Scale(modifier) * Transform::ToMatrix(local);
+                for (uint32_t i = 0; i < 16; ++i)
+                {
+                    const float tolerance = Constants::kEpsilon * Math::Max(1.0f, Math::Abs(matrix.m_values[i]));
+                    if (Math::Abs(reconstructed.m_values[i] - matrix.m_values[i]) > tolerance)
+                        FE_DebugBreak();
+                }
             }
 
             return true;
@@ -56,6 +59,7 @@ namespace FE::GameFramework
         bool EvaluateWorld(const Framework::ReparentContext& context, uint32_t entity, Matrix4x4& result)
         {
             result = Matrix4x4::kIdentity;
+
             uint32_t depth = 0;
             while (entity < context.m_entityCount)
             {
@@ -86,6 +90,12 @@ namespace FE::GameFramework
 
             Matrix4x4 parentWorld;
             if (!EvaluateWorld(context, context.m_newParent, parentWorld))
+                return false;
+
+            const Vector3 parentX{ parentWorld.m_00, parentWorld.m_01, parentWorld.m_02 };
+            const Vector3 parentY{ parentWorld.m_10, parentWorld.m_11, parentWorld.m_12 };
+            const Vector3 parentZ{ parentWorld.m_20, parentWorld.m_21, parentWorld.m_22 };
+            if (Math::Dot(parentX, Math::Cross(parentY, parentZ)) == 0)
                 return false;
 
             Matrix4x4 inverseParent = Math::InvertTransform(parentWorld);
@@ -142,6 +152,8 @@ namespace FE::GameFramework
     {
         FE_PROFILER_ZONE();
 
+        using namespace Framework;
+
         const auto traverse = [](const TransformComponent& local,
                                  const NonUniformScaleComponent* scale,
                                  const WorldTransformComponent* parent,
@@ -151,12 +163,11 @@ namespace FE::GameFramework
             output.m_world = parent ? effectiveLocal * parent->m_world : effectiveLocal;
         };
 
-        using Query = Framework::CascadeQuery<const TransformComponent,
-                                              const NonUniformScaleComponent*,
-                                              Framework::Parent<const WorldTransformComponent*>,
-                                              WorldTransformComponent>;
+        using Query = CascadeQuery<const TransformComponent,
+                                   const NonUniformScaleComponent*,
+                                   Parent<const WorldTransformComponent*>,
+                                   WorldTransformComponent>;
 
-        m_completion =
-            Query::TraverseChanged(context, Phases::Transformation, m_changes, traverse, Framework::ExecutionPolicy::kParallel);
+        m_completion = Query::TraverseChanged(context, Phases::Transformation, m_changes, traverse, ExecutionPolicy::kParallel);
     }
 } // namespace FE::GameFramework

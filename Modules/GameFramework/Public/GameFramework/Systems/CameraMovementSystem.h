@@ -1,8 +1,6 @@
 #pragma once
 #include <Framework/Entities/EntityWorld.h>
 #include <Framework/Input/WorldInputService.h>
-#include <GameFramework/CameraMovementComponent.h>
-#include <GameFramework/TransformComponents.h>
 
 namespace FE::GameFramework
 {
@@ -19,13 +17,6 @@ namespace FE::GameFramework
         FE_RTTI("9A548BD5-6768-49BC-9FE6-77F418F8C9C5");
 
         void Init(Framework::EntityWorld& world) override;
-        void Shutdown(Framework::EntityWorld& world) override;
         void Update(Framework::EntityUpdateContext& context) override;
-
-        static bool ApplyMovement(const CameraMovementComponent& movement, TransformComponent& transform,
-                                  const CameraInput& input, float deltaSeconds);
-
-    private:
-        Input::WorldInputService* m_input = nullptr;
     };
 } // namespace FE::GameFramework

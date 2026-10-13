@@ -1,4 +1,4 @@
-file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp" "*.h")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "*.cpp" "*.h")
 list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ReflectionLink.cpp")
 add_executable(FeGameFrameworkTests ${SOURCES})
 fe_configure_target(FeGameFrameworkTests)

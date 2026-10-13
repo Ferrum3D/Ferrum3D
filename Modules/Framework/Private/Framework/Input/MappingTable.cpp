@@ -1,6 +1,5 @@
 #include <Core/Logging/Logger.h>
 #include <Framework/Input/MappingTable.h>
-#include <algorithm>
 
 namespace FE::Input
 {
@@ -40,22 +39,35 @@ namespace FE::Input
                 return false;
         }
 
-        return std::visit(
+        return festd::visit(
             [&]<class T>(const T& source) {
                 if constexpr (std::same_as<T, ButtonBinding>)
+                {
                     return source.m_control.Validate();
+                }
                 else if constexpr (std::same_as<T, Axis1DBinding>)
+                {
                     return source.m_negative.Validate() && source.m_positive.Validate();
+                }
                 else if constexpr (std::same_as<T, Axis2DBinding>)
-                    return source.m_left.Validate() && source.m_right.Validate() && source.m_back.Validate()
-                        && source.m_forward.Validate();
+                {
+                    const bool horizontalValid = source.m_left.Validate() && source.m_right.Validate();
+                    const bool verticalValid = source.m_back.Validate() && source.m_forward.Validate();
+                    return horizontalValid && verticalValid;
+                }
                 else if constexpr (std::same_as<T, ChordBinding>)
-                    return !source.m_controls.empty()
-                        && std::all_of(source.m_controls.begin(), source.m_controls.end(), [](const Control& control) {
-                               return control.Validate();
-                           });
+                {
+                    if (source.m_controls.empty())
+                        return false;
+
+                    return eastl::all_of(source.m_controls.begin(), source.m_controls.end(), [](const Control& control) {
+                        return control.Validate();
+                    });
+                }
                 else
+                {
                     return !m_integrate;
+                }
             },
             m_source);
     }
@@ -63,11 +75,11 @@ namespace FE::Input
 
     bool Binding::Supports(const ActionType type) const
     {
-        if (std::holds_alternative<Axis1DBinding>(m_source))
+        if (festd::holds_alternative<Axis1DBinding>(m_source))
             return type == ActionType::kScalar;
-        if (std::holds_alternative<Axis2DBinding>(m_source) || std::holds_alternative<MouseDeltaBinding>(m_source))
+        if (festd::holds_alternative<Axis2DBinding>(m_source) || festd::holds_alternative<MouseDeltaBinding>(m_source))
             return type == ActionType::kVector2;
-        if (std::holds_alternative<MouseWheelBinding>(m_source))
+        if (festd::holds_alternative<MouseWheelBinding>(m_source))
             return type == ActionType::kScalar;
 
         return true;
@@ -76,8 +88,10 @@ namespace FE::Input
 
     bool Binding::IsDisplacement() const
     {
-        return m_integrate || std::holds_alternative<MouseDeltaBinding>(m_source)
-            || std::holds_alternative<MouseWheelBinding>(m_source);
+        if (m_integrate)
+            return true;
+
+        return festd::holds_alternative<MouseDeltaBinding>(m_source) || festd::holds_alternative<MouseWheelBinding>(m_source);
     }
 
 
@@ -86,8 +100,9 @@ namespace FE::Input
         for (uint32_t i = 0; i < m_mappings.size(); ++i)
         {
             const ActionMapping& mapping = m_mappings[i];
-            if (mapping.m_action.GetAssetID() == IO::AssetID::kNull || mapping.m_operation > MappingOperation::kStrongest
-                || mapping.m_bindings.empty())
+            const bool validAction = mapping.m_action.GetAssetID() != IO::AssetID::kNull;
+            const bool validOperation = mapping.m_operation <= MappingOperation::kStrongest;
+            if (!validAction || !validOperation || mapping.m_bindings.empty())
             {
                 Logger::LogError("Input mapping {} has an invalid action, operation or empty bindings", i);
                 return false;
@@ -107,10 +122,11 @@ namespace FE::Input
             {
                 const Binding& binding = mapping.m_bindings[bindingIndex];
                 const bool compatibleIntegration = binding.m_integrate == mapping.m_bindings.front().m_integrate;
-                const bool mouseSource = std::holds_alternative<MouseDeltaBinding>(binding.m_source)
-                    || std::holds_alternative<MouseWheelBinding>(binding.m_source);
-                if (!binding.Validate() || binding.IsDisplacement() != displacement || !compatibleIntegration
-                    || (mouseSource && mapping.m_clampMagnitude))
+                const bool mouseSource = festd::holds_alternative<MouseDeltaBinding>(binding.m_source)
+                    || festd::holds_alternative<MouseWheelBinding>(binding.m_source);
+                const bool compatibleUnits = binding.IsDisplacement() == displacement && compatibleIntegration;
+                const bool validClamping = !mouseSource || !mapping.m_clampMagnitude;
+                if (!binding.Validate() || !compatibleUnits || !validClamping)
                 {
                     Logger::LogError("Input mapping {} binding {} has invalid controls, finite parameters or incompatible units",
                                      i,

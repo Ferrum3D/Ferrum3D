@@ -1,4 +1,4 @@
-#include <GameFramework/MeshSceneBridge.h>
+#include <GameFramework/Graphics/MeshSceneBridge.h>
 #include <Graphics/Assets/Streamers.h>
 #include <Graphics/Passes/DrawTags.h>
 
@@ -16,6 +16,7 @@ namespace FE::GameFramework
     Framework::LifecycleResult MeshSceneBridge::Create(MeshComponent& component)
     {
         FE_PROFILER_ZONE();
+
         FE_Assert(m_module && component.m_handles.empty());
         const auto model = component.m_model.GetAssetHandle().Read();
         const auto material = component.m_material.GetAssetHandle().Read();
@@ -81,6 +82,7 @@ namespace FE::GameFramework
     void MeshSceneBridge::Destroy(MeshComponent& component)
     {
         FE_PROFILER_ZONE();
+
         FE_Assert(m_module);
         if (component.m_batch)
             m_module->DestroyBatch(component.m_batch);
@@ -93,6 +95,8 @@ namespace FE::GameFramework
 
     void MeshSceneBridge::Update(MeshComponent& component, const Matrix4x4& world)
     {
+        FE_PROFILER_ZONE();
+
         if (component.m_loadedModel != component.m_model.GetAssetID())
         {
             // Build replacement membership first; an invalid model leaves the previous scene state intact.

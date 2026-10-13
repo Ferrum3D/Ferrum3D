@@ -36,9 +36,6 @@ namespace FE::Framework::Core
 
         struct WindowPayload final
         {
-            // TODO: this is the only payload that is more than a DWORD in size.
-            //       Maybe we can replace it with some kind of ID.
-
             PlatformWindow* m_window;
         };
 
@@ -64,8 +61,8 @@ namespace FE::Framework::Core
 
         struct MouseMovePayload final
         {
-            uint32_t m_x : 16;
-            uint32_t m_y : 16;
+            int32_t m_x;
+            int32_t m_y;
         };
 
         PlatformEventType m_type = PlatformEventType::kNone;
@@ -173,7 +170,7 @@ namespace FE::Framework::Core
             return event;
         }
 
-        static PlatformEvent MouseMove(const uint32_t x, const uint32_t y)
+        static PlatformEvent MouseMove(const int32_t x, const int32_t y)
         {
             PlatformEvent event;
             event.m_type = PlatformEventType::kMouseMove;

@@ -1,19 +1,23 @@
 #pragma once
 #include <Framework/Input/Action.h>
+#include <concepts>
 #include <festd/unordered_map.h>
 
 namespace FE::Input
 {
     template<class T>
+    concept ActionValue = std::same_as<T, Vector2> || std::same_as<T, float> || std::same_as<T, bool>;
+
+
+    template<ActionValue T>
     inline constexpr ActionType kActionType = std::same_as<T, Vector2> ? ActionType::kVector2
         : std::same_as<T, float>                                       ? ActionType::kScalar
                                                                        : ActionType::kBoolean;
 
 
-    template<class T>
+    template<ActionValue T>
     struct ActionReference final
     {
-        static_assert(std::same_as<T, Vector2> || std::same_as<T, float> || std::same_as<T, bool>);
         ActionReference() = default;
 
         ActionReference(const IO::Link<Action>& link)
@@ -43,7 +47,7 @@ namespace FE::Input
     //! Stable values and ordered events until the world's next input update.
     struct InputFrame final
     {
-        template<class T>
+        template<ActionValue T>
         [[nodiscard]] T Read(const ActionReference<T>& reference) const
         {
             const auto found = m_indices.find(reference.GetLink().GetAssetID());
@@ -74,6 +78,7 @@ namespace FE::Input
 
     private:
         friend struct MappingStack;
+
         festd::unordered_dense_map<IO::AssetID, uint32_t> m_indices;
         uint64_t m_number = 0;
         festd::vector<ResolvedAction> m_actions;
@@ -84,7 +89,7 @@ namespace FE::Input
 
 namespace FE::Serialization
 {
-    template<class T>
+    template<Input::ActionValue T>
     struct Serializer<Input::ActionReference<T>>
     {
         static ResultCode Serialize(SerializationContext& context, const Input::ActionReference<T>& reference)

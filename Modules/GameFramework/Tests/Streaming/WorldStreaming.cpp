@@ -5,9 +5,9 @@
 #include <Core/Threading/Thread.h>
 #include <Framework/Entities/EntityReference.h>
 #include <Framework/Entities/EntityWorldAsset.h>
-#include <GameFramework/TransformComponents.h>
-#include <GameFramework/TransformationSystem.h>
-#include <GameFramework/WorldStreamingService.h>
+#include <GameFramework/Components/TransformComponents.h>
+#include <GameFramework/Services/WorldStreamingService.h>
+#include <GameFramework/Systems/TransformationSystem.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
