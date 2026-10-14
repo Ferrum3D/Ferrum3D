@@ -37,6 +37,7 @@ namespace FE::Graphics
     private:
         void EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc);
         void EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc);
+        void EnsureVisibilityTarget(const Core::ViewportDesc& viewportDesc);
         void ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);
@@ -55,6 +56,7 @@ namespace FE::Graphics
         festd::vector<Rc<Scene>> m_scenes;
         Rc<Core::Texture> m_mainColorTarget;
         Rc<Core::Texture> m_mainDepthTarget;
+        Rc<Core::Texture> m_visibilityTarget;
         Core::RingUploader m_renderQueueUploader;
     };
 } // namespace FE::Graphics

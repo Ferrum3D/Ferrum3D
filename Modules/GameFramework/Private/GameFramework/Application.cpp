@@ -24,6 +24,7 @@
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Reflection.gen.h>
 #include <Graphics/Renderer.h>
+#include <Graphics/Scene/View.h>
 
 namespace FE::GameFramework
 {
@@ -48,6 +49,7 @@ namespace FE::GameFramework
 
     bool Application::Initialize(const ApplicationSettings& settings)
     {
+        m_visibilityDebugMode = settings.m_visibilityDebugMode;
         FE_PROFILER_ZONE();
         FE_Assert(Threading::IsMainThread() && !m_device);
 
@@ -174,6 +176,12 @@ namespace FE::GameFramework
 
             auto* graphics = GetWorld().FindService<WorldGraphicsSceneService>();
             Scene* scene = graphics ? &graphics->GetScene() : nullptr;
+            if (scene != nullptr)
+            {
+                for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
+                    scene->GetView(viewIndex)->SetVisibilityDebugMode(m_visibilityDebugMode);
+            }
+
             Renderer::Get().Render(scene, m_viewport.Get());
 
             if (maxFrames && worldReady && ++frames == maxFrames)

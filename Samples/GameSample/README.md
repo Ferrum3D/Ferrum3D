@@ -1,5 +1,7 @@
 # GameSample
 
+Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`); the default is forward shading. Add `--smoke` to render eight frames after world readiness and exit. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).
+
 Build the `GameSample` and `FerrumCli` executables. GameSample owns its asset catalog with the same layout as Renderer:
 
 - `Assets/source/Helmet/`: model, textures, and material source files, copied from Renderer.

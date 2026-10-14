@@ -1,5 +1,7 @@
 # Renderer sample
 
+Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`). Forward shading remains the default. `--smoke` renders eight frames and exits. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).
+
 Build `RendererSample` and launch it from `cmake-build/windows-debug-msvc/Samples/Renderer`.
 The sample displays warm bunnies on the left, textured bunnies and a damaged helmet in the center, and cool bunnies on the right,
 using the default depth and opaque passes. Every object rotates around its local Y axis at 30 degrees per second,

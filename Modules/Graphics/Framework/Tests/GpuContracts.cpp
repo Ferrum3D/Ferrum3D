@@ -1,4 +1,5 @@
 #include "GpuProbe.h"
+#include "RasterProbe.h"
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/DeviceFactory.h>
@@ -142,6 +143,59 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_EQ(words[1], std::bit_cast<uint32_t>(2.25f));
             EXPECT_EQ(words[2], std::bit_cast<uint32_t>(2.25f));
             readback->Unmap();
+            Core::GraphicsPipelineRequest coverageRequest;
+            coverageRequest.m_desc.SetAmplificationShader(Env::Name("Shaders/Passes/MeshPass/MeshCull.as.hlsl"))
+                .SetMeshShader(Env::Name("Shaders/Passes/Visibility/DepthVisibility.ms.hlsl"))
+                .SetPixelShader(Env::Name("Shaders/Passes/Visibility/DepthVisibility.ps.hlsl"))
+                .SetRTVFormat(Core::Format::kR32G32_UINT)
+                .SetDSVFormat(Core::Format::kD32_SFLOAT);
+            Core::GraphicsPipeline* coveragePipeline = pipelines->CreateGraphicsPipeline(coverageRequest);
+            coveragePipeline->GetCompletionWaitGroup()->Wait();
+            EXPECT_TRUE(coveragePipeline->IsReady());
+
+            Core::ComputePipelineRequest reconstructionRequest;
+            reconstructionRequest.m_desc.SetComputeShader(Env::Name("Shaders/Tests/ReconstructionProbe.cs.hlsl"));
+            Core::ComputePipeline* reconstructionPipeline = pipelines->CreateComputePipeline(reconstructionRequest);
+            reconstructionPipeline->GetCompletionWaitGroup()->Wait();
+            ASSERT_TRUE(reconstructionPipeline->IsReady());
+            Rc<Core::Buffer> reconstructed = Core::Buffer::CreateByteAddress(device.Get(), "ReconstructionProbe", 192);
+            Rc<Core::Buffer> reconstructionReadback =
+                Core::Buffer::CreateByteAddress(device.Get(), "ReconstructionReadback", 192);
+            pool->CommitBufferMemory(reconstructionReadback.Get(), commit);
+            queue->BeginFrame();
+            graph->BeginFrame();
+            auto* reconstruction = graph->AllocatePassData<Stage1Probe::PassDesc>();
+            reconstruction->m_pipeline = reconstructionPipeline;
+            reconstruction->m_constants.m_words = graph->GetUAV(reconstructed.Get());
+            graph->AddDispatchPass("CheckPerspectiveReconstruction", reconstruction, Core::ComputeWorkGroupCount(4));
+            graph->AddCopyPass(Core::BufferView(reconstructionReadback.Get()), Core::BufferView(reconstructed.Get()));
+            graph->CompileAndExecute();
+            Vulkan::CommandBuffer* reconstructionCommands = Vulkan::ImplCast(queue.Get())->GetCurrentCommandBuffer();
+            const Core::FenceSyncPoint reconstructionFence = queue->CloseFrame();
+            reconstructionCommands->EnqueueFenceToSignal(reconstructionFence);
+            reconstructionCommands->Submit();
+            reconstructionFence.Wait();
+            device->WaitIdle();
+            const uint32_t* results = static_cast<const uint32_t*>(reconstructionReadback->Map());
+            reconstructionReadback->InvalidateMappedRange(0, 192);
+            for (uint32_t triangle = 0; triangle < 3; ++triangle)
+            {
+                const uint32_t* record = results + triangle * 12;
+                EXPECT_EQ(record[0], 1u);
+                const float w0 = std::bit_cast<float>(record[1]);
+                const float w1 = std::bit_cast<float>(record[2]);
+                const float w2 = std::bit_cast<float>(record[3]);
+                EXPECT_NEAR(w0 + w1 + w2, 1.0f, 1e-6f);
+                EXPECT_LT(std::bit_cast<float>(record[10]), 5e-6f);
+                EXPECT_LT(std::bit_cast<float>(record[11]), 5e-6f);
+            }
+
+            EXPECT_EQ(results[36], 0u);
+            EXPECT_NEAR(std::bit_cast<float>(results[1]), 0.25f / 0.525f, 1e-6f);
+            EXPECT_NEAR(std::bit_cast<float>(results[2]), 0.175f / 0.525f, 1e-6f);
+            EXPECT_NEAR(std::bit_cast<float>(results[3]), 0.1f / 0.525f, 1e-6f);
+            reconstructionReadback->Unmap();
+            RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             graph.Reset();
             copyQueue->Drain();
             device->WaitIdle();

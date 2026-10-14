@@ -4,6 +4,7 @@
 #include <Framework/Application/Application.h>
 #include <Framework/Entities/EntityWorldInstance.h>
 #include <Graphics/Core/DeviceFactory.h>
+#include <Graphics/Passes/VisibilityDebug.h>
 
 namespace FE::Graphics
 {
@@ -32,6 +33,7 @@ namespace FE::GameFramework
         Vector2Int m_windowSize{ 1280, 720 };
         //! @brief Graphics backend used to create the device.
         Graphics::Core::GraphicsApi m_graphicsApi = Graphics::Core::GraphicsApi::kVulkan;
+        Graphics::Visibility::DebugMode m_visibilityDebugMode = Graphics::Visibility::DebugMode::kForward;
     };
 
 
@@ -67,6 +69,7 @@ namespace FE::GameFramework
         festd::unique_ptr<Framework::EntityWorldInstance> m_world;
         IO::AssetRequest m_worldRequest;
         bool m_worldDefinitionLoaded = false;
+        Graphics::Visibility::DebugMode m_visibilityDebugMode = Graphics::Visibility::DebugMode::kForward;
         Graphics::MaterialStreamer* m_materialStreamer = nullptr;
         Graphics::MeshStreamer* m_meshStreamer = nullptr;
         Graphics::TextureStreamer* m_textureStreamer = nullptr;

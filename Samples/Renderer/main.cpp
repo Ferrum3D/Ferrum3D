@@ -1,3 +1,4 @@
+#include <Core/CLI/CommandLine.h>
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/Jobs/Jobs.h>
@@ -46,6 +47,14 @@ namespace
     {
         ~ExampleApplication() override
         {
+            ShutdownApp();
+        }
+
+        void ShutdownApp()
+        {
+            if (m_device == nullptr)
+                return;
+
             m_device->WaitIdle();
 
             m_scene->GetModules().Remove<MeshSceneModule>();
@@ -69,6 +78,20 @@ namespace
             m_device.Reset();
             Renderer::Shutdown();
             Core::DeviceFactory::Shutdown();
+        }
+
+        int32_t RunSmoke()
+        {
+            for (uint32_t frame = 0; frame < 8; ++frame)
+            {
+                m_platformApplication->PollEvents();
+                ScheduleUpdate();
+            }
+
+            Logger::LogInfo("RendererSample completed its smoke frames");
+            ShutdownApp();
+            Jobs::StopJobSystem();
+            return 0;
         }
 
         void InitializeApp()
@@ -121,6 +144,8 @@ namespace
             m_view = m_scene->CreateView();
             m_view->GetModules().Add<DepthPrepass::ViewModule>();
             m_view->GetModules().Add<OpaquePass::ViewModule>();
+            if (const auto debugMode = Cli::GetValue("--visibility-debug"))
+                m_view->SetVisibilityDebugMode(Visibility::ParseDebugMode(*debugMode));
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
             const Vector3 cameraPosition(0.0f, 3.0f, -8.0f);
@@ -306,7 +331,7 @@ int main(const int32_t argc, const char** argv)
         {
             m_application->InitializeWindow();
             m_application->InitializeApp();
-            m_exitCode = m_application->Run();
+            m_exitCode = Cli::Check("--smoke") ? m_application->RunSmoke() : m_application->Run();
         }
 
         ExampleApplication* m_application = nullptr;

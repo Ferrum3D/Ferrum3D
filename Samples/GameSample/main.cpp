@@ -21,6 +21,8 @@ int main(const int argc, const char** argv)
     GameFramework::ApplicationSettings settings;
     settings.m_assetDirectory = FE_GAME_SAMPLE_ASSET_DIR;
     settings.m_world = kWorldAssetId;
+    if (const auto debugMode = Cli::GetValue("--visibility-debug"))
+        settings.m_visibilityDebugMode = Graphics::Visibility::ParseDebugMode(*debugMode);
 
     int32_t exitCode = 0;
     const bool smoke = Cli::Check("--smoke");

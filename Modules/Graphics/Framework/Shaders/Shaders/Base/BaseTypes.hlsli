@@ -18,6 +18,7 @@ typedef uint2 uint64_t;
 #    define ms_payload
 #    define ms_vertices
 #    define ms_indices
+#    define ms_primitives
 
 #    define FE_CONST const
 
@@ -28,6 +29,7 @@ typedef uint2 uint64_t;
 #    define ms_payload payload
 #    define ms_vertices vertices
 #    define ms_indices indices
+#    define ms_primitives primitives
 
 #    define FE_CONST
 #endif

@@ -1,6 +1,6 @@
 # Visibility buffer and compute deferred shading migration
 
-Status: Stage 1 core/material contracts are implemented; reference frames and the manual GPU-capture checkpoint remain pending. Reviewed against the current repository on 2026-10-13. See `VISIBILITY_BUFFER_STAGE1.md` for the implemented interfaces and validation workflow. Implementation proceeds in stages, with manual visual verification and GPU captures between major stages.
+Status: Stages 1 and 2 are implemented, including selectable forward/visibility reconstruction views and automated GPU readback validation. Reference-frame comparisons and manual GPU-capture checkpoints remain pending. Reviewed on 2026-10-14. See `VISIBILITY_BUFFER_STAGE1.md` and `VISIBILITY_BUFFER_STAGE2.md` for interfaces and validation workflows.
 
 ## 1. Direction
 

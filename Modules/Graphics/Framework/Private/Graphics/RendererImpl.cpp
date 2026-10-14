@@ -10,6 +10,8 @@
 #include <Graphics/Passes/OpaquePass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/Tools/Tonemap.h>
+#include <Graphics/Passes/VisibilityPass.h>
+#include <Graphics/Passes/VisibilitySupport.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/SceneImpl.h>
 
@@ -64,6 +66,7 @@ namespace FE::Graphics
         m_database.reset();
         m_mainColorTarget.Reset();
         m_mainDepthTarget.Reset();
+        m_visibilityTarget.Reset();
         m_descriptorManager.Reset();
         m_device->WaitIdle();
 
@@ -198,6 +201,12 @@ namespace FE::Graphics
                                                   "RendererMainColor",
                                                   Core::Format::kB10G11R11_UFLOAT,
                                                   { viewportDesc.m_width, viewportDesc.m_height });
+
+        Core::ResourceCommitParams commitParams;
+        commitParams.m_bindFlags = Core::BarrierAccessFlags::kRenderTarget | Core::BarrierAccessFlags::kShaderRead
+            | Core::BarrierAccessFlags::kShaderWrite;
+        commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
+        m_resourcePool->CommitTextureMemory(m_mainColorTarget.Get(), commitParams);
     }
 
 
@@ -211,13 +220,32 @@ namespace FE::Graphics
 
         m_mainDepthTarget = Core::Texture::Create(m_device.Get(),
                                                   "RendererMainDepth",
-                                                  Core::Format::kD32_SFLOAT_S8_UINT,
+                                                  Core::Format::kD32_SFLOAT,
                                                   { viewportDesc.m_width, viewportDesc.m_height });
 
         Core::ResourceCommitParams commitParams;
-        commitParams.m_bindFlags = Core::BarrierAccessFlags::kDepthStencilRead | Core::BarrierAccessFlags::kDepthStencilWrite;
+        commitParams.m_bindFlags = Core::BarrierAccessFlags::kDepthStencilRead | Core::BarrierAccessFlags::kDepthStencilWrite
+            | Core::BarrierAccessFlags::kShaderRead;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
         m_resourcePool->CommitTextureMemory(m_mainDepthTarget.Get(), commitParams);
+    }
+
+
+    void RendererImpl::EnsureVisibilityTarget(const Core::ViewportDesc& viewportDesc)
+    {
+        if (m_visibilityTarget != nullptr && m_visibilityTarget->GetDesc().m_width == viewportDesc.m_width
+            && m_visibilityTarget->GetDesc().m_height == viewportDesc.m_height)
+        {
+            return;
+        }
+
+        const VisibilitySupport support = VisibilitySupport::Query(*m_device);
+        FE_Assert(support.m_supported && support.m_hdrFormat == Core::Format::kB10G11R11_UFLOAT,
+                  "Visibility debug rendering requires sampled D32, R32G32_UINT attachment and packed HDR storage writes");
+        m_visibilityTarget = Core::Texture::Create(m_device.Get(),
+                                                   "RendererVisibility",
+                                                   Core::Format::kR32G32_UINT,
+                                                   { viewportDesc.m_width, viewportDesc.m_height });
     }
 
 
@@ -250,14 +278,21 @@ namespace FE::Graphics
 
         view.Update(blackboard);
 
-        ClearTargets(graph, viewport);
-
         scene.GetModules().ForEachActive([&](SceneModuleBase& module) {
             module.PrepareRenderView(graph, m_renderQueueUploader);
         });
 
-        DepthPrepass::AddPasses(graph, blackboard);
-        OpaquePass::AddPasses(graph, blackboard);
+        if (view.GetVisibilityDebugMode() != Visibility::DebugMode::kForward)
+        {
+            EnsureVisibilityTarget(viewport.GetDesc());
+            Visibility::AddPasses(graph, blackboard, m_visibilityTarget.Get());
+        }
+        else
+        {
+            ClearTargets(graph, viewport);
+            DepthPrepass::AddPasses(graph, blackboard);
+            OpaquePass::AddPasses(graph, blackboard);
+        }
     }
 
 

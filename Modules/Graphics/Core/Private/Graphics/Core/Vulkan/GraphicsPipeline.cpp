@@ -41,14 +41,17 @@ namespace FE::Graphics::Vulkan
         for (int32_t rtIndex = 0; rtIndex < m_desc.m_renderTargetCount; ++rtIndex)
             rtvFormats[rtIndex] = Translate(m_desc.m_rtvFormats[rtIndex]);
 
-        VkFormat dsvFormat = Translate(m_desc.m_dsvFormat);
+        const VkFormat dsvFormat = Translate(m_desc.m_dsvFormat);
+        const Core::FormatInfo depthStencilFormat{ m_desc.m_dsvFormat };
 
         VkPipelineRenderingCreateInfoKHR renderingCI = {};
         renderingCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         renderingCI.colorAttachmentCount = m_desc.m_renderTargetCount;
         renderingCI.pColorAttachmentFormats = rtvFormats;
-        renderingCI.depthAttachmentFormat = dsvFormat;
-        renderingCI.stencilAttachmentFormat = dsvFormat;
+        renderingCI.depthAttachmentFormat =
+            Bit::AnySet(depthStencilFormat.m_aspectFlags, Core::ImageAspect::kDepth) ? dsvFormat : VK_FORMAT_UNDEFINED;
+        renderingCI.stencilAttachmentFormat =
+            Bit::AnySet(depthStencilFormat.m_aspectFlags, Core::ImageAspect::kStencil) ? dsvFormat : VK_FORMAT_UNDEFINED;
 
         VkGraphicsPipelineCreateInfo pipelineCI = {};
         pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

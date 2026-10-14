@@ -3,6 +3,7 @@
 #include <Graphics/Base/Base.h>
 #include <Graphics/Base/BaseModuleList.h>
 #include <Graphics/Core/Base.h>
+#include <Graphics/Passes/VisibilityDebug.h>
 
 namespace FE::Graphics
 {
@@ -86,6 +87,16 @@ namespace FE::Graphics
         }
 
         void SetCameraTransform(const Transform& transform);
+        void SetVisibilityDebugMode(const Visibility::DebugMode mode)
+        {
+            m_visibilityDebugMode = mode;
+        }
+
+        [[nodiscard]] Visibility::DebugMode GetVisibilityDebugMode() const
+        {
+            return m_visibilityDebugMode;
+        }
+
         void SetProjection(float fovY, float aspectRatio, float near, float far);
         virtual void Update(Core::FrameGraphBlackboard& blackboard) = 0;
 
@@ -107,6 +118,7 @@ namespace FE::Graphics
         float m_nearPlane = 1.0f;
         float m_farPlane = 100.0f;
         bool m_enabled = true;
+        Visibility::DebugMode m_visibilityDebugMode = Visibility::DebugMode::kForward;
 
         Matrix4x4 m_viewMatrix = Matrix4x4::kIdentity;
         Matrix4x4 m_projectionMatrix = Matrix4x4::kIdentity;
