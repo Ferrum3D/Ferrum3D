@@ -274,6 +274,15 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void BufferInstance::InvalidateMappedRange(Core::Device* device, const uint32_t offset, const uint32_t byteSize)
+    {
+        FE_Assert(m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
+                  || m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
+        const VmaAllocator allocator = ImplCast(device)->GetVmaInstance();
+        VerifyVk(vmaInvalidateAllocation(allocator, m_vmaAllocation, offset, byteSize));
+    }
+
+
     TextureInstance* TextureInstance::Create(const Core::TextureDesc desc, const Core::ResourceCommitParams commitParams,
                                              Core::ResourcePool* pool)
     {

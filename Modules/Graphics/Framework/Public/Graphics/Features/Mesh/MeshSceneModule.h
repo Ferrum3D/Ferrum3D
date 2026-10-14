@@ -5,6 +5,7 @@
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Database/Base.h>
 #include <Graphics/Materials/MaterialInstance.h>
+#include <Graphics/Scene/ComputePassRegistry.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
 #include <Graphics/Scene/Octree.h>
 #include <Graphics/Scene/Scene.h>
@@ -134,6 +135,16 @@ namespace FE::Graphics
 
         [[nodiscard]] IO::AssetRead<MaterialInstanceAsset> FindMaterial(DB::Ref<MeshGroupTable> group) const;
 
+        [[nodiscard]] const ComputePassRegistry& GetEvaluationPipelines() const
+        {
+            return m_evaluationPipelines;
+        }
+
+        [[nodiscard]] const ComputePassRegistry& GetShadingPipelines() const
+        {
+            return m_shadingPipelines;
+        }
+
     private:
         void DoRelease() override;
 
@@ -178,6 +189,8 @@ namespace FE::Graphics
         Rc<MeshBatchTable> m_batchTable;
         Rc<MeshMemberTable> m_memberTable;
         festd::vector<MeshPipelineRegistry> m_registries;
+        ComputePassRegistry m_evaluationPipelines;
+        ComputePassRegistry m_shadingPipelines;
         uint64_t m_revision = 1;
         Octree m_octree;
     };

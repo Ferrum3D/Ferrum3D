@@ -9,13 +9,17 @@
 
 struct MaterialInstanceTable
 {
-    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(BufferPointer));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(uint32_t) + sizeof(uint32_t));
 
     FE_CONSTEXPR uint32_t kOffset_m_materialParameters = 0;
+    FE_CONSTEXPR uint32_t kOffset_m_evaluationSlot = kOffset_m_materialParameters + sizeof(BufferPointer) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_shadingSlot = kOffset_m_evaluationSlot + sizeof(uint32_t) * kRowsPerPage;
 
     struct Row
     {
         DB::ElementHandle<BufferPointer, kOffset_m_materialParameters> m_materialParameters;
+        DB::ElementHandle<uint32_t, kOffset_m_evaluationSlot> m_evaluationSlot;
+        DB::ElementHandle<uint32_t, kOffset_m_shadingSlot> m_shadingSlot;
     };
 
     struct Instance
@@ -39,6 +43,8 @@ struct MaterialInstanceTable
 
         Row row;
         row.m_materialParameters.Setup(pageAddress, localRowIndex);
+        row.m_evaluationSlot.Setup(pageAddress, localRowIndex);
+        row.m_shadingSlot.Setup(pageAddress, localRowIndex);
         return row;
     }
 

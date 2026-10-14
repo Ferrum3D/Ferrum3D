@@ -51,3 +51,5 @@ target_link_libraries(FeGraphics FeGraphicsCore TracyClient)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeGraphics PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
+
+add_subdirectory(Tests)

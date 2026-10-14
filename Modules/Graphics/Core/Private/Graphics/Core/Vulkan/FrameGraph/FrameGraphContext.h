@@ -29,7 +29,9 @@ namespace FE::Graphics::Vulkan
                              uint32_t instanceOffset) override;
         void DispatchMeshImpl(Vector3UInt workGroupCount) override;
         void DispatchMeshIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) override;
+        void BindComputeState();
         void DispatchImpl(Vector3UInt workGroupCount) override;
+        void DispatchIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) override;
         void BeginRenderPassImpl() override;
         void EndRenderPassImpl() override;
 

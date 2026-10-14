@@ -48,9 +48,18 @@ namespace FE::Graphics
     };
 
 
+    enum class MaterialTechniqueKind : uint32_t
+    {
+        kGraphics,
+        kCompute,
+    };
+
+
     struct MaterialTechniqueDesc final
     {
         Env::Name m_role;
+        MaterialTechniqueKind m_kind = MaterialTechniqueKind::kGraphics;
+        Env::Name m_computeShader;
         festd::string m_permutationKey;
         Env::Name m_vertexShader;
         Env::Name m_amplificationShader;

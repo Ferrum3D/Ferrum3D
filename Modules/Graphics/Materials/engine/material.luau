@@ -91,13 +91,18 @@ function Material.technique(
             local techniqueContext = TechniqueContext.new(specializerValues)
             local techniqueDesc: TechniqueContext.TechniqueDesc = {
                 role = role,
+                kind = if role == "SurfaceEvaluate" or role == "DeferredShade" then "Compute" else "Graphics",
                 shaderDefines = {},
-                renderTargetFormats = {},
-                depthTargetFormat = "Undefined",
-                rasterization = Pipeline.RasterizationState.fillNoCull(),
-                depthStencil = Pipeline.DepthStencilState.disabled(),
-                blend = Pipeline.BlendState.disabled()
+
             }
+
+            if techniqueDesc.kind == "Graphics" then
+                techniqueDesc.renderTargetFormats = {}
+                techniqueDesc.depthTargetFormat = "Undefined"
+                techniqueDesc.rasterization = Pipeline.RasterizationState.fillNoCull()
+                techniqueDesc.depthStencil = Pipeline.DepthStencilState.disabled()
+                techniqueDesc.blend = Pipeline.BlendState.disabled()
+            end
 
             local isValidTechnique = f(techniqueDesc, techniqueContext)
             if isValidTechnique then

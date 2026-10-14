@@ -137,7 +137,7 @@ namespace FE::Graphics
             return WriteRow(reference.m_rowIndex);
         }
         {% for column in table.columns %}
-        void CopyColumn(const DB::Slice<{{ table.name }}> destination, const festd::span<const {{ column.typename }}> source)
+        void CopyColumn{% if table.columns | selectattr('typename', 'equalto', column.typename) | list | length > 1 %}_{{ column.name }}{% endif %}(const DB::Slice<{{ table.name }}> destination, const festd::span<const {{ column.typename }}> source)
         {
             FE_Assert(destination.m_count == source.size());
 

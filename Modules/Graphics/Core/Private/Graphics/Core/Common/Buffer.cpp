@@ -77,6 +77,13 @@ namespace FE::Graphics::Common
     }
 
 
+    void Buffer::InvalidateMappedRange(const uint32_t offset, const uint32_t byteSize)
+    {
+        FE_Assert(offset <= m_desc.m_size && byteSize <= m_desc.m_size - offset);
+        m_instance->InvalidateMappedRange(m_device, offset, byteSize);
+    }
+
+
     void Buffer::SetState(const SubresourceState state)
     {
         std::unique_lock lk{ m_lock };

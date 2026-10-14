@@ -165,6 +165,8 @@ namespace FE::Graphics::Vulkan
                                               Core::GraphicsQueue* commandQueue) override;
         Rc<Core::Viewport> CreateViewport(Core::ResourcePool* resourcePool, Core::GraphicsQueue* graphicsQueue) override;
 
+        Core::ComputeCapabilities GetComputeCapabilities() const override;
+        Core::FormatCapabilities GetFormatCapabilities(Core::Format format) const override;
         void WaitIdle() override;
 
     private:
@@ -176,6 +178,7 @@ namespace FE::Graphics::Vulkan
         VkDevice m_nativeDevice = VK_NULL_HANDLE;
         VkPhysicalDevice m_nativeAdapter = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties m_adapterProperties{};
+        Core::ComputeCapabilities m_computeCapabilities{};
 
         VmaAllocator m_vmaInstance = VK_NULL_HANDLE;
 

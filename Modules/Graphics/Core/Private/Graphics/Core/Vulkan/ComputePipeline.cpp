@@ -65,6 +65,25 @@ namespace FE::Graphics::Vulkan
         if (!specializationMapEntries.empty())
             shaderStageCI.pSpecializationInfo = &specializationInfo;
 
+        VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroupSize{};
+        subgroupSize.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO;
+        if (m_desc.m_waveLaneCount != 0)
+        {
+            const Core::ComputeCapabilities capabilities = m_device->GetComputeCapabilities();
+            const uint32_t size = m_desc.m_waveLaneCount;
+            const bool validSize =
+                (size & (size - 1)) == 0 && size >= capabilities.m_minWaveLaneCount && size <= capabilities.m_maxWaveLaneCount;
+            if (!capabilities.m_waveLaneCountControl || !validSize)
+            {
+                Logger::LogError("Unsupported compute subgroup size {}", size);
+                m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
+                return;
+            }
+
+            subgroupSize.requiredSubgroupSize = size;
+            shaderStageCI.pNext = &subgroupSize;
+        }
+
         pipelineCI.stage = shaderStageCI;
 
         m_descriptorSetLayout = context.m_bindlessSetLayout;

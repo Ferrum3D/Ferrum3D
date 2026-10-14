@@ -37,7 +37,7 @@ namespace FE::Graphics::Common
         void SetRenderTargetLoadOperations(const Core::RenderTargetLoadOperations& operations) final;
         void SetRenderTargetStoreOperations(const Core::RenderTargetStoreOperations& operations) final;
 
-        void ClearColorTarget(uint32_t renderTargetIndex, Color4F color) final;
+        void ClearColorTarget(uint32_t renderTargetIndex, Core::ColorClearValue color) final;
         void ClearDepthStencilTarget(float depth, uint8_t stencil) final;
         void DiscardColorTarget(uint32_t renderTargetIndex) final;
         void DiscardDepthStencilTarget() final;
@@ -62,6 +62,7 @@ namespace FE::Graphics::Common
         void DispatchMesh(Core::ComputeWorkGroupCount workGroupCount) final;
         void DispatchMeshIndirect(uint32_t byteOffset = 0) final;
         void Dispatch(Core::ComputeWorkGroupCount workGroupCount) final;
+        void DispatchIndirect(uint32_t byteOffset = 0) final;
 
         bool IsCleanState() const final;
 
@@ -77,6 +78,7 @@ namespace FE::Graphics::Common
         virtual void DispatchMeshImpl(Vector3UInt workGroupCount) = 0;
         virtual void DispatchMeshIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) = 0;
         virtual void DispatchImpl(Vector3UInt workGroupCount) = 0;
+        virtual void DispatchIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) = 0;
         virtual void BeginRenderPassImpl() = 0;
         virtual void EndRenderPassImpl() = 0;
 

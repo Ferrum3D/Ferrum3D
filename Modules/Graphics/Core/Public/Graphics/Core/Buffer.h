@@ -71,6 +71,7 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual void* Map() = 0;
         virtual void Unmap() = 0;
         virtual void FlushMappedRange(uint32_t offset, uint32_t byteSize) = 0;
+        virtual void InvalidateMappedRange(uint32_t offset, uint32_t byteSize) = 0;
 
         [[nodiscard]] const BufferDesc& GetDesc() const
         {

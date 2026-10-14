@@ -16,6 +16,7 @@ namespace FE::Graphics
         MaterialInstanceRuntime& operator=(const MaterialInstanceRuntime&) = delete;
 
         [[nodiscard]] Core::GraphicsPipeline* GetPipeline(Env::Name role);
+        [[nodiscard]] Core::ComputePipeline* GetComputePipeline(Env::Name role);
         [[nodiscard]] bool HasTechnique(Env::Name role) const;
         [[nodiscard]] BufferPointer GetMaterialParameters() const;
         [[nodiscard]] MaterialParameterAllocator::Allocation AllocateInstanceParameters();
@@ -27,8 +28,11 @@ namespace FE::Graphics
         {
             Env::Name m_role;
             Core::GraphicsPipeline* m_pipeline = nullptr;
+            Core::ComputePipeline* m_computePipeline = nullptr;
         };
 
+        void MergeShaderLayouts(Env::Name shader, Env::Name defines);
+        const MaterialTechniqueDesc* FindTechnique(Env::Name role) const;
         const MaterialParameterValue* FindValue(Env::Name name) const;
         festd::vector<std::byte> PackParameters(MaterialParameterScope scope) const;
         const Core::ShaderStructLayout& GetLayout(MaterialParameterScope scope) const;

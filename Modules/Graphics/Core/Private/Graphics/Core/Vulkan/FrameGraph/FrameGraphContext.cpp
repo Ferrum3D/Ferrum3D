@@ -20,7 +20,7 @@ namespace FE::Graphics::Vulkan
             {
                 attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 memcpy(attachmentInfo.clearValue.color.float32,
-                       loadOperations.m_colorClearValues[renderTargetIndex].Data(),
+                       loadOperations.m_colorClearValues[renderTargetIndex].m_words,
                        sizeof(Color4F));
             }
 
@@ -127,8 +127,10 @@ namespace FE::Graphics::Vulkan
                                             m_renderTargetState.m_loadOperations,
                                             m_renderTargetState.m_storeOperations);
 
-            renderingInfo.pDepthAttachment = &depthAttachment;
-            renderingInfo.pStencilAttachment = &depthAttachment;
+            if (Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspect::kDepth))
+                renderingInfo.pDepthAttachment = &depthAttachment;
+            if (Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspect::kStencil))
+                renderingInfo.pStencilAttachment = &depthAttachment;
         }
 
         renderingInfo.layerCount = 1;
@@ -336,7 +338,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void FrameGraphContext::DispatchImpl(const Vector3UInt workGroupCount)
+    void FrameGraphContext::BindComputeState()
     {
         const ComputePipeline* pipelineImpl = ImplCast(m_pipelineState.m_computePipeline);
         FE_Assert(pipelineImpl->IsReady());
@@ -362,8 +364,22 @@ namespace FE::Graphics::Vulkan
 
         if (m_pipelineState.m_action == StateAction::kSet)
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineImpl->GetNative());
+    }
 
-        vkCmdDispatch(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
+
+    void FrameGraphContext::DispatchImpl(const Vector3UInt workGroupCount)
+    {
+        BindComputeState();
+        vkCmdDispatch(m_graphicsCommandBuffer->GetNative(), workGroupCount.x, workGroupCount.y, workGroupCount.z);
+    }
+
+
+    void FrameGraphContext::DispatchIndirectImpl(const Core::BufferView arguments, const uint32_t byteOffset)
+    {
+        BindComputeState();
+        vkCmdDispatchIndirect(m_graphicsCommandBuffer->GetNative(),
+                              NativeCast(arguments.m_resource),
+                              arguments.m_slice.m_offset + byteOffset);
     }
 
 

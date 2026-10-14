@@ -37,6 +37,7 @@ REFLECTION_PROJECTS = [
     Project("GameFramework", PROJECT_DIR / "Modules/GameFramework", "GameFramework"),
     Project("GraphicsCore", PROJECT_DIR / "Modules/Graphics/Core", "Graphics/Core"),
     Project("Graphics", PROJECT_DIR / "Modules/Graphics/Framework", "Graphics"),
+    Project("GraphicsTests", PROJECT_DIR / "Modules/Graphics/Framework/Tests"),
     Project("AssetBuilder", PROJECT_DIR / "Tools/AssetBuilder", "AssetBuilder"),
     Project("FerrumCli", PROJECT_DIR / "Tools/FerrumCli", "FerrumCli"),
 ]

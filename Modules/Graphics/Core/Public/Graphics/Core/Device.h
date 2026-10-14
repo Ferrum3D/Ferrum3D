@@ -1,12 +1,36 @@
 ﻿#pragma once
 #include <Core/Memory/Memory.h>
 #include <Graphics/Core/Base.h>
+#include <Graphics/Core/Format.h>
 
 namespace FE::Graphics::Core
 {
+    struct ComputeCapabilities final
+    {
+        uint32_t m_waveLaneCount = 0;
+        uint32_t m_minWaveLaneCount = 0;
+        uint32_t m_maxWaveLaneCount = 0;
+        bool m_waveLaneCountControl = false;
+    };
+
+
+    struct FormatCapabilities final
+    {
+        bool m_sampled = false;
+        bool m_storage = false;
+        bool m_storageReadWithoutFormat = false;
+        bool m_storageWriteWithoutFormat = false;
+        bool m_colorAttachment = false;
+        bool m_depthAttachment = false;
+    };
+
+
     struct Device : public Memory::RefCountedObjectBase
     {
         FE_RTTI("23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");
+
+        [[nodiscard]] virtual ComputeCapabilities GetComputeCapabilities() const = 0;
+        [[nodiscard]] virtual FormatCapabilities GetFormatCapabilities(Format format) const = 0;
 
         virtual void WaitIdle() = 0;
         virtual void EndFrame() = 0;

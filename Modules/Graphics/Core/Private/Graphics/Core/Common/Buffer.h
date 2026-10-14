@@ -20,6 +20,7 @@ namespace FE::Graphics::Common
         [[nodiscard]] void* Map() override;
         void Unmap() override;
         void FlushMappedRange(uint32_t offset, uint32_t byteSize) override;
+        void InvalidateMappedRange(uint32_t offset, uint32_t byteSize) override;
 
         void SetState(SubresourceState state);
         SubresourceState GetState() const;

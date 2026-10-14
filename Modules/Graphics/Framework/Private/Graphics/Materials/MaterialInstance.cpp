@@ -35,29 +35,20 @@ namespace FE::Graphics
         FE_Assert(material && instance && allocator && pipelineFactory);
         for (const MaterialTechniqueDesc& technique : m_material->m_techniques)
         {
-            if (technique.m_permutationKey != m_instance->m_permutationKey || !technique.m_pixelShader.IsValid())
+            if (technique.m_permutationKey != m_instance->m_permutationKey)
                 continue;
 
             const Env::Name defines =
                 technique.m_shaderDefines.empty() ? Env::Name::kEmpty : Env::Name(technique.m_shaderDefines);
-            const Core::ShaderReflection* reflection =
-                m_pipelineFactory->GetShaderLibrary()->GetCompiledReflection(technique.m_pixelShader, defines);
-            FE_Assert(reflection != nullptr, "Failed to compile material shader");
-
-            for (const Core::ShaderStructLayout& layout : reflection->GetStructLayouts())
+            const Env::Name shaders[] = { technique.m_vertexShader,
+                                          technique.m_amplificationShader,
+                                          technique.m_meshShader,
+                                          technique.m_pixelShader,
+                                          technique.m_computeShader };
+            for (const Env::Name shader : shaders)
             {
-                if (layout.m_name == Env::Name("MaterialParameters"))
-                {
-                    FE_Assert(m_materialLayout.m_byteSize == 0 || LayoutsMatch(m_materialLayout, layout),
-                              "Material parameter layouts differ between techniques");
-                    m_materialLayout = layout;
-                }
-                else if (layout.m_name == Env::Name("InstanceParameters"))
-                {
-                    FE_Assert(m_instanceLayout.m_byteSize == 0 || LayoutsMatch(m_instanceLayout, layout),
-                              "Instance parameter layouts differ between techniques");
-                    m_instanceLayout = layout;
-                }
+                if (shader.IsValid())
+                    MergeShaderLayouts(shader, defines);
             }
         }
 
@@ -66,6 +57,29 @@ namespace FE::Graphics
         m_materialAllocation = m_allocator->Allocate(m_materialBytes.size());
         m_allocator->Write(m_materialAllocation, m_materialBytes.data(), m_materialBytes.size());
         m_allocator->Register(this);
+    }
+
+
+    void MaterialInstanceRuntime::MergeShaderLayouts(const Env::Name shader, const Env::Name defines)
+    {
+        const Core::ShaderReflection* reflection = m_pipelineFactory->GetShaderLibrary()->GetCompiledReflection(shader, defines);
+        FE_Assert(reflection != nullptr, "Failed to compile material shader");
+
+        for (const Core::ShaderStructLayout& layout : reflection->GetStructLayouts())
+        {
+            if (layout.m_name == Env::Name("MaterialParameters"))
+            {
+                FE_Assert(m_materialLayout.m_byteSize == 0 || LayoutsMatch(m_materialLayout, layout),
+                          "Material parameter layouts differ between techniques");
+                m_materialLayout = layout;
+            }
+            else if (layout.m_name == Env::Name("InstanceParameters"))
+            {
+                FE_Assert(m_instanceLayout.m_byteSize == 0 || LayoutsMatch(m_instanceLayout, layout),
+                          "Instance parameter layouts differ between techniques");
+                m_instanceLayout = layout;
+            }
+        }
     }
 
 
@@ -209,6 +223,50 @@ namespace FE::Graphics
     }
 
 
+    const MaterialTechniqueDesc* MaterialInstanceRuntime::FindTechnique(const Env::Name role) const
+    {
+        for (const MaterialTechniqueDesc& technique : m_material->m_techniques)
+        {
+            if (technique.m_role == role && technique.m_permutationKey == m_instance->m_permutationKey)
+                return &technique;
+        }
+
+        return nullptr;
+    }
+
+
+    Core::ComputePipeline* MaterialInstanceRuntime::GetComputePipeline(const Env::Name role)
+    {
+        for (const PipelineEntry& entry : m_pipelines)
+        {
+            if (entry.m_role == role)
+                return entry.m_computePipeline;
+        }
+
+        const MaterialTechniqueDesc* technique = FindTechnique(role);
+        if (technique == nullptr)
+            return nullptr;
+
+        FE_Assert(technique->m_kind == MaterialTechniqueKind::kCompute);
+
+        Core::ComputePipelineRequest request;
+        request.m_desc.SetComputeShader(technique->m_computeShader);
+        request.m_defines = technique->m_shaderDefines.empty() ? Env::Name::kEmpty : Env::Name(technique->m_shaderDefines);
+        Core::ComputePipeline* pipeline = m_pipelineFactory->CreateComputePipeline(request);
+        pipeline->GetCompletionWaitGroup()->Wait();
+        if (!pipeline->IsReady())
+        {
+            Logger::LogError("Failed to compile material '{}' compute technique '{}'", m_material->m_name, role);
+            return nullptr;
+        }
+
+        PipelineEntry& entry = m_pipelines.emplace_back();
+        entry.m_role = role;
+        entry.m_computePipeline = pipeline;
+        return pipeline;
+    }
+
+
     Core::GraphicsPipeline* MaterialInstanceRuntime::GetPipeline(const Env::Name role)
     {
         for (const PipelineEntry& entry : m_pipelines)
@@ -236,6 +294,7 @@ namespace FE::Graphics
         }
 
         FE_Assert(technique != nullptr, "Missing material technique");
+        FE_Assert(technique->m_kind == MaterialTechniqueKind::kGraphics);
 
         Core::GraphicsPipelineRequest request;
         if (technique->m_vertexShader.IsValid())

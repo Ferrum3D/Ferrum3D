@@ -7,6 +7,29 @@
 
 namespace FE::Graphics::Core
 {
+    struct ColorClearValue final
+    {
+        uint32_t m_words[4]{};
+
+        static ColorClearValue Float(const Color4F color)
+        {
+            ColorClearValue value;
+            memcpy(value.m_words, color.Data(), sizeof(value.m_words));
+            return value;
+        }
+
+        static ColorClearValue Uint(const uint32_t x, const uint32_t y = 0, const uint32_t z = 0, const uint32_t w = 0)
+        {
+            return { { x, y, z, w } };
+        }
+
+        static ColorClearValue Sint(const int32_t x, const int32_t y = 0, const int32_t z = 0, const int32_t w = 0)
+        {
+            return { { static_cast<uint32_t>(x), static_cast<uint32_t>(y), static_cast<uint32_t>(z), static_cast<uint32_t>(w) } };
+        }
+    };
+
+
     struct RenderTargetLoadOperations final
     {
         static constexpr uint32_t kMaxRenderTargets = 8;
@@ -18,14 +41,14 @@ namespace FE::Graphics::Core
         uint32_t m_unused : 6 = 0;
         uint32_t m_stencilClearValue : kMaxRenderTargets = 0;
         float m_depthClearValue = 0.0f;
-        Color4F m_colorClearValues[kMaxRenderTargets];
-
-        RenderTargetLoadOperations()
-        {
-            festd::fill(m_colorClearValues, Colors::kTransparentBlack);
-        }
+        ColorClearValue m_colorClearValues[kMaxRenderTargets]{};
 
         RenderTargetLoadOperations& ClearColor(const uint32_t renderTargetIndex, const Color4F color)
+        {
+            return ClearColor(renderTargetIndex, ColorClearValue::Float(color));
+        }
+
+        RenderTargetLoadOperations& ClearColor(const uint32_t renderTargetIndex, const ColorClearValue color)
         {
             FE_AssertDebug(renderTargetIndex < kMaxRenderTargets, "Render target index out of range");
             FE_AssertDebug((m_colorClearMask & (1 << renderTargetIndex)) == 0, "Render target already cleared");
@@ -73,7 +96,7 @@ namespace FE::Graphics::Core
             FE_AssertDebug(m_depthStencilCleared == 0, "Depth stencil already cleared");
             FE_AssertDebug(m_depthStencilDiscarded == 0, "Depth stencil already discarded");
 
-            eastl::fill_n(m_colorClearValues, festd::size(m_colorClearValues), color);
+            eastl::fill_n(m_colorClearValues, festd::size(m_colorClearValues), ColorClearValue::Float(color));
 
             m_depthClearValue = depth;
             m_stencilClearValue = stencil;
@@ -184,7 +207,12 @@ namespace FE::Graphics::Core
         virtual void SetRenderTargetLoadOperations(const RenderTargetLoadOperations& operations) = 0;
         virtual void SetRenderTargetStoreOperations(const RenderTargetStoreOperations& operations) = 0;
 
-        virtual void ClearColorTarget(uint32_t renderTargetIndex, Color4F color) = 0;
+        void ClearColorTarget(const uint32_t renderTargetIndex, const Color4F color)
+        {
+            ClearColorTarget(renderTargetIndex, ColorClearValue::Float(color));
+        }
+
+        virtual void ClearColorTarget(uint32_t renderTargetIndex, ColorClearValue color) = 0;
         virtual void ClearDepthStencilTarget(float depth, uint8_t stencil) = 0;
         virtual void ClearRenderTargets() = 0;
         virtual void BeginRenderPass() = 0;
@@ -223,6 +251,7 @@ namespace FE::Graphics::Core
         virtual void DispatchMesh(ComputeWorkGroupCount workGroupCount) = 0;
         virtual void DispatchMeshIndirect(uint32_t byteOffset = 0) = 0;
         virtual void Dispatch(ComputeWorkGroupCount workGroupCount) = 0;
+        virtual void DispatchIndirect(uint32_t byteOffset = 0) = 0;
 
         virtual void Copy(BufferView destination, BufferView source) = 0;
 

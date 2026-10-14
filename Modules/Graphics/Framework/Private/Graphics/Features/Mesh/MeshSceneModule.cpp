@@ -13,6 +13,7 @@
 
 #include <Shaders/Passes/MeshPass/IndirectArguments.h>
 #include <Shaders/Passes/MeshPass/MeshPass.h>
+#include <Shaders/Passes/Visibility/Contracts.h>
 
 namespace FE::Graphics
 {
@@ -122,6 +123,7 @@ namespace FE::Graphics
         const MaterialParameterAllocator::Allocation parameters = material->m_runtime->AllocateInstanceParameters();
 
         const DB::Ref<MeshInstanceTable> instanceRef = m_meshInstanceTable->AllocateRow();
+        FE_Assert(instanceRef.m_rowIndex <= Visibility::kMaxInstanceRow);
         const MeshHandle handle = AllocateHandle(instanceRef, desc.m_batch, meshGroup, parameters);
 
         const MeshInstanceTable::RWRow instance = m_meshInstanceTable->WriteRow(instanceRef);
@@ -644,6 +646,8 @@ namespace FE::Graphics
             lodInfos.reserve(submesh.m_lods.size());
             for (const MeshLodAssetInfo& assetLod : submesh.m_lods)
             {
+                FE_Assert(assetLod.m_meshletCount <= Visibility::kMaxMeshletCount);
+
                 Core::MeshLodInfo& lod = lodInfos.emplace_back();
                 lod.m_vertexCount = assetLod.m_vertexCount;
                 lod.m_indexCount = assetLod.m_indexCount;
@@ -679,8 +683,12 @@ namespace FE::Graphics
 
         if (materialChanged)
         {
-            m_materialInstanceTable->WriteRow(group->m_materialRef).m_materialParameters.Get() =
-                material->m_runtime->GetMaterialParameters();
+            const MaterialInstanceTable::RWRow materialRow = m_materialInstanceTable->WriteRow(group->m_materialRef);
+            materialRow.m_materialParameters.Get() = material->m_runtime->GetMaterialParameters();
+            materialRow.m_evaluationSlot.Get() =
+                m_evaluationPipelines.Register(material->m_runtime->GetComputePipeline(Env::Name("SurfaceEvaluate")));
+            materialRow.m_shadingSlot.Get() =
+                m_shadingPipelines.Register(material->m_runtime->GetComputePipeline(Env::Name("DeferredShade")));
             tableRow.m_materialInstance.Get() = group->m_materialRef;
             for (const MeshHandle handle : group->m_instances)
             {

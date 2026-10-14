@@ -13,20 +13,27 @@ namespace FE::Graphics
     {
         FE_RTTI("DA93720C-B6A5-58C2-9859-E0A2BB3CA5F8");
 
-        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(BufferPointer));
+        static constexpr uint32_t kRowsPerPage =
+            DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(uint32_t) + sizeof(uint32_t));
 
         static constexpr uint32_t kOffset_m_materialParameters = 0;
+        static constexpr uint32_t kOffset_m_evaluationSlot = kOffset_m_materialParameters + sizeof(BufferPointer) * kRowsPerPage;
+        static constexpr uint32_t kOffset_m_shadingSlot = kOffset_m_evaluationSlot + sizeof(uint32_t) * kRowsPerPage;
 
         static_assert(kRowsPerPage > 0);
 
         struct Row final
         {
             DB::ElementHandle<BufferPointer, kOffset_m_materialParameters> m_materialParameters;
+            DB::ElementHandle<uint32_t, kOffset_m_evaluationSlot> m_evaluationSlot;
+            DB::ElementHandle<uint32_t, kOffset_m_shadingSlot> m_shadingSlot;
         };
 
         struct RWRow final
         {
             DB::RWElementHandle<BufferPointer, kOffset_m_materialParameters> m_materialParameters;
+            DB::RWElementHandle<uint32_t, kOffset_m_evaluationSlot> m_evaluationSlot;
+            DB::RWElementHandle<uint32_t, kOffset_m_shadingSlot> m_shadingSlot;
         };
 
         using Instance = BufferPointer;
@@ -46,6 +53,8 @@ namespace FE::Graphics
             const uint32_t rowIndex = AllocateRowUninitialized();
             const RWRow row = WriteRow(rowIndex);
             row.m_materialParameters.Construct();
+            row.m_evaluationSlot.Construct();
+            row.m_shadingSlot.Construct();
             return DB::Ref<MaterialInstanceTable>{ rowIndex };
         }
 
@@ -57,6 +66,8 @@ namespace FE::Graphics
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_materialParameters.Construct();
+                row.m_evaluationSlot.Construct();
+                row.m_shadingSlot.Construct();
             }
 
             return DB::Slice<MaterialInstanceTable>{ range.m_offset, range.m_size };
@@ -72,6 +83,8 @@ namespace FE::Graphics
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_materialParameters.Construct();
+                row.m_evaluationSlot.Construct();
+                row.m_shadingSlot.Construct();
             }
 
             rows = { range.m_offset, range.m_size };
@@ -98,6 +111,8 @@ namespace FE::Graphics
 
             Row row;
             row.m_materialParameters.Setup(storage, localRowIndex);
+            row.m_evaluationSlot.Setup(storage, localRowIndex);
+            row.m_shadingSlot.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -117,6 +132,8 @@ namespace FE::Graphics
 
             RWRow row;
             row.m_materialParameters.Setup(storage, localRowIndex);
+            row.m_evaluationSlot.Setup(storage, localRowIndex);
+            row.m_shadingSlot.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -140,6 +157,44 @@ namespace FE::Graphics
             m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<BufferPointer*>(storage + kOffset_m_materialParameters) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn_m_evaluationSlot(const DB::Slice<MaterialInstanceTable> destination,
+                                         const festd::span<const uint32_t> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            if (destination.m_count == 0)
+                return;
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+            auto* destinationData = reinterpret_cast<uint32_t*>(storage + kOffset_m_evaluationSlot) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn_m_shadingSlot(const DB::Slice<MaterialInstanceTable> destination,
+                                      const festd::span<const uint32_t> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            if (destination.m_count == 0)
+                return;
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+            auto* destinationData = reinterpret_cast<uint32_t*>(storage + kOffset_m_shadingSlot) + localRowIndex;
             festd::copy(source, destinationData);
         }
     };

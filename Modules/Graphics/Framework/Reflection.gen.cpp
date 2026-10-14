@@ -2635,9 +2635,13 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[12 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[14 * sizeof(Rtti::TypeID)] = {
             0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
             0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_role
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_kind
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
+            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_computeShader
             0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
             0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_permutationKey
             0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
@@ -2665,6 +2669,10 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_role = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_kind = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_computeShader = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_permutationKey = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_vertexShader = {};
@@ -2687,64 +2695,74 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_blend = {};
 
-        static const festd::array<Rtti::FieldInfo, 12> kFields = {
+        static const festd::array<Rtti::FieldInfo, 14> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_role",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_role,
                                                         kAttributes_m_role,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_permutationKey",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_kind",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_kind,
+                                                        kAttributes_m_kind,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_computeShader",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_computeShader,
+                                                        kAttributes_m_computeShader,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_permutationKey",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_permutationKey,
                                                         kAttributes_m_permutationKey,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_vertexShader,
                                                         kAttributes_m_vertexShader,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_amplificationShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_amplificationShader,
                                                         kAttributes_m_amplificationShader,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_meshShader,
                                                         kAttributes_m_meshShader,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixelShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_pixelShader,
                                                         kAttributes_m_pixelShader,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderDefines",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_shaderDefines,
                                                         kAttributes_m_shaderDefines,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_renderTargetFormats",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_renderTargetFormats,
                                                         kAttributes_m_renderTargetFormats,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTargetFormat",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_depthTargetFormat,
                                                         kAttributes_m_depthTargetFormat,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_rasterization",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_rasterization,
                                                         kAttributes_m_rasterization,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthStencil",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_depthStencil,
                                                         kAttributes_m_depthStencil,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_blend",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
                                                         &MaterialTechniqueDesc::m_blend,
                                                         kAttributes_m_blend,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
@@ -2765,6 +2783,8 @@ namespace FE::Graphics
         if (auto object = context.BeginObject())
         {
             object.Field("m_role", m_role);
+            object.Field("m_kind", m_kind);
+            object.Field("m_computeShader", m_computeShader);
             object.Field("m_permutationKey", m_permutationKey);
             object.Field("m_vertexShader", m_vertexShader);
             object.Field("m_amplificationShader", m_amplificationShader);
@@ -2786,6 +2806,8 @@ namespace FE::Graphics
         if (auto object = context.BeginObject())
         {
             object.Field("m_role", m_role);
+            object.Field("m_kind", m_kind);
+            object.Field("m_computeShader", m_computeShader);
             object.Field("m_permutationKey", m_permutationKey);
             object.Field("m_vertexShader", m_vertexShader);
             object.Field("m_amplificationShader", m_amplificationShader);
@@ -2812,6 +2834,10 @@ namespace FE::Graphics
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
             hasher.Update("m_role", 6);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_role)>());
+            hasher.Update("m_kind", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_kind)>());
+            hasher.Update("m_computeShader", 15);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_computeShader)>());
             hasher.Update("m_permutationKey", 16);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_permutationKey)>());
             hasher.Update("m_vertexShader", 14);

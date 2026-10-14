@@ -39,6 +39,7 @@ namespace FE::Graphics::Vulkan
         void* Map(Core::Device* device) override;
         void Unmap(Core::Device* device) override;
         void FlushMappedRange(Core::Device* device, uint32_t offset, uint32_t byteSize) override;
+        void InvalidateMappedRange(Core::Device* device, uint32_t offset, uint32_t byteSize) override;
     };
 
 

@@ -38,7 +38,7 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::ClearColorTarget(const uint32_t renderTargetIndex, const Color4F color)
+    void FrameGraphContext::ClearColorTarget(const uint32_t renderTargetIndex, const Core::ColorClearValue color)
     {
         m_setStateMask |= PipelineStateFlags::kLoadOperations;
         m_renderTargetState.m_loadOperations.ClearColor(renderTargetIndex, color);
@@ -309,6 +309,25 @@ namespace FE::Graphics::Common
 
         PrepareStatesInternal();
         DispatchImpl(workGroupCount.m_workGroupCount);
+        ClearStatesInternal();
+    }
+
+
+    void FrameGraphContext::DispatchIndirect(const uint32_t byteOffset)
+    {
+        FE_PROFILER_ZONE();
+
+        FE_Assert(!m_renderPassActive);
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kComputePipeline));
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kAllGraphics));
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kIndirectArgs));
+        FE_Assert(m_indirectArgs.IsValid());
+        FE_Assert((m_indirectArgs.m_slice.m_offset + byteOffset) % sizeof(uint32_t) == 0);
+        FE_Assert(byteOffset <= m_indirectArgs.m_slice.m_size);
+        FE_Assert(3 * sizeof(uint32_t) <= m_indirectArgs.m_slice.m_size - byteOffset);
+
+        PrepareStatesInternal();
+        DispatchIndirectImpl(m_indirectArgs, byteOffset);
         ClearStatesInternal();
     }
 

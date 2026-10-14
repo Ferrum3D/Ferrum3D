@@ -416,7 +416,6 @@ namespace FE::Graphics::Common
             else if (field.m_type == Rtti::GetTypeID<Core::PassIndirectArgs>())
             {
                 FE_Assert(field.m_arraySize == 1, "Indirect arguments can only be specified once");
-                FE_Assert(isGraphicsPass);
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kIndirectArgs));
 
                 const Core::PassIndirectArgs indirectArgs = field.Get<Core::PassIndirectArgs>(binding.m_data);

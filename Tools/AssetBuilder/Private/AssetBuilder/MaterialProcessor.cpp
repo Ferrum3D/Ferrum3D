@@ -451,6 +451,33 @@ namespace FE::AssetBuilder
         }
 
 
+        bool ReadComputeTechnique(lua_State* state, const int table, Graphics::MaterialTechniqueDesc& technique)
+        {
+            if (!technique.m_computeShader.IsValid() || technique.m_vertexShader.IsValid()
+                || technique.m_amplificationShader.IsValid() || technique.m_meshShader.IsValid()
+                || technique.m_pixelShader.IsValid())
+            {
+                return false;
+            }
+
+            constexpr const char* graphicsFields[] = { "renderTargetFormats",
+                                                       "depthTargetFormat",
+                                                       "rasterization",
+                                                       "depthStencil",
+                                                       "blend" };
+            for (const char* field : graphicsFields)
+            {
+                lua_getfield(state, table, field);
+                const bool present = !lua_isnil(state, -1);
+                lua_pop(state, 1);
+                if (present)
+                    return false;
+            }
+
+            return true;
+        }
+
+
         bool ReadTechniques(lua_State* state, const int material, Graphics::MaterialAsset& output)
         {
             lua_getfield(state, material, "techniques");
@@ -476,34 +503,56 @@ namespace FE::AssetBuilder
                     technique.m_amplificationShader = GetName(state, -1, "amplificationShader");
                     technique.m_meshShader = GetName(state, -1, "meshShader");
                     technique.m_pixelShader = GetName(state, -1, "pixelShader");
-                    if (!technique.m_meshShader.IsValid() && !technique.m_vertexShader.IsValid())
-                        return false;
-                    if (!ReadTargetFormats(state, lua_absindex(state, -1), technique))
+                    technique.m_computeShader = GetName(state, -1, "computeShader");
+                    const festd::string kind = GetString(state, -1, "kind");
+                    const bool isCompute = kind == "Compute";
+                    if (!kind.empty() && kind != "Graphics" && !isCompute)
                         return false;
 
-                    lua_getfield(state, -1, "rasterization");
-                    if (!lua_istable(state, -1))
+                    const bool computeRole = role == Env::Name("SurfaceEvaluate") || role == Env::Name("DeferredShade");
+                    if (computeRole != isCompute && (computeRole || role == Env::Name("DepthVisibility")))
                         return false;
-                    if (!ReadRasterization(state, -1, technique.m_rasterization))
-                        return false;
-                    lua_pop(state, 1);
 
-                    lua_getfield(state, -1, "depthStencil");
-                    if (!lua_istable(state, -1))
-                        return false;
-                    if (!ReadDepthStencil(state, -1, technique.m_depthStencil))
-                        return false;
-                    lua_pop(state, 1);
+                    technique.m_kind =
+                        isCompute ? Graphics::MaterialTechniqueKind::kCompute : Graphics::MaterialTechniqueKind::kGraphics;
+                    if (isCompute)
+                    {
+                        if (!ReadComputeTechnique(state, lua_absindex(state, -1), technique))
+                            return false;
+                    }
+                    else
+                    {
+                        if (technique.m_computeShader.IsValid())
+                            return false;
+                        if (!technique.m_meshShader.IsValid() && !technique.m_vertexShader.IsValid())
+                            return false;
+                        if (!ReadTargetFormats(state, lua_absindex(state, -1), technique))
+                            return false;
 
-                    lua_getfield(state, -1, "blend");
-                    if (!lua_istable(state, -1))
-                        return false;
-                    Graphics::Core::TargetColorBlending blend;
-                    if (!ReadBlend(state, -1, blend))
-                        return false;
-                    memset(&technique.m_blend, 0, sizeof(technique.m_blend));
-                    technique.m_blend.m_targetBlendStates[0] = blend;
-                    lua_pop(state, 1);
+                        lua_getfield(state, -1, "rasterization");
+                        if (!lua_istable(state, -1))
+                            return false;
+                        if (!ReadRasterization(state, -1, technique.m_rasterization))
+                            return false;
+                        lua_pop(state, 1);
+
+                        lua_getfield(state, -1, "depthStencil");
+                        if (!lua_istable(state, -1))
+                            return false;
+                        if (!ReadDepthStencil(state, -1, technique.m_depthStencil))
+                            return false;
+                        lua_pop(state, 1);
+
+                        lua_getfield(state, -1, "blend");
+                        if (!lua_istable(state, -1))
+                            return false;
+                        Graphics::Core::TargetColorBlending blend;
+                        if (!ReadBlend(state, -1, blend))
+                            return false;
+                        memset(&technique.m_blend, 0, sizeof(technique.m_blend));
+                        technique.m_blend.m_targetBlendStates[0] = blend;
+                        lua_pop(state, 1);
+                    }
 
                     lua_getfield(state, -1, "shaderDefines");
                     if (!lua_istable(state, -1))
@@ -519,7 +568,7 @@ namespace FE::AssetBuilder
                         lua_pop(state, 1);
                     }
                     lua_pop(state, 1);
-                    festd::sort(defineEntries, [](const auto& lhs, const auto& rhs) {
+                    festd::sort(defineEntries, [](const festd::string& lhs, const festd::string& rhs) {
                         return lhs < rhs;
                     });
                     for (const festd::string& entry : defineEntries)
@@ -533,11 +582,12 @@ namespace FE::AssetBuilder
                 lua_pop(state, 1);
             }
             lua_pop(state, 1);
-            festd::sort(output.m_techniques, [](const auto& lhs, const auto& rhs) {
-                if (lhs.m_role != rhs.m_role)
-                    return lhs.m_role.GetHash() < rhs.m_role.GetHash();
-                return lhs.m_permutationKey < rhs.m_permutationKey;
-            });
+            festd::sort(output.m_techniques,
+                        [](const Graphics::MaterialTechniqueDesc& lhs, const Graphics::MaterialTechniqueDesc& rhs) {
+                            if (lhs.m_role != rhs.m_role)
+                                return lhs.m_role.GetHash() < rhs.m_role.GetHash();
+                            return lhs.m_permutationKey < rhs.m_permutationKey;
+                        });
             return !output.m_techniques.empty();
         }
 

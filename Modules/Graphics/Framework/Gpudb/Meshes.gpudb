@@ -13,6 +13,8 @@ table MeshLodInfoTable
 table MaterialInstanceTable
 {
 	BufferPointer m_materialParameters;
+    uint32_t m_evaluationSlot;
+    uint32_t m_shadingSlot;
 }
 
 table MeshGroupTable

@@ -6,10 +6,14 @@ namespace FE::Graphics::Core
     struct ComputePipelineDesc final
     {
         Env::Name m_shader;
+        uint32_t m_waveLaneCount = 0;
 
         [[nodiscard]] uint64_t GetHash() const
         {
-            return m_shader.GetHash();
+            Hasher hasher;
+            hasher.UpdateRaw(m_shader.GetHash());
+            hasher.UpdateRaw(m_waveLaneCount);
+            return hasher.Finalize();
         }
 
         ComputePipelineDesc& SetComputeShader(const Env::Name shaderName)

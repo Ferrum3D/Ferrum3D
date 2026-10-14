@@ -55,6 +55,14 @@ namespace FE::Graphics::Common
         virtual void Unmap(Core::Device* device) = 0;
         virtual void FlushMappedRange(Core::Device* device, uint32_t offset, uint32_t byteSize) = 0;
 
+        virtual void InvalidateMappedRange(Core::Device* device, uint32_t offset, uint32_t byteSize)
+        {
+            FE_Unused(device);
+            FE_Unused(offset);
+            FE_Unused(byteSize);
+            FE_DebugBreak();
+        }
+
         festd::array<uint64_t, festd::to_underlying(Core::DeviceQueueType::kCount)> m_lastFenceValues = {};
 
         uint64_t m_bufferDeviceAddress = 0;

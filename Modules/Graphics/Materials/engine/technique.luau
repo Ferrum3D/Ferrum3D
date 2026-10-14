@@ -9,6 +9,8 @@ export type TechniqueRole = string
 
 export type TechniqueDesc = {
     role: TechniqueRole,
+    kind: "Graphics" | "Compute",
+    computeShader: string?,
 
     vertexShader: string?,
     amplificationShader: string?,
@@ -16,12 +18,12 @@ export type TechniqueDesc = {
     pixelShader: string?,
 
     shaderDefines: { [string]: string },
-    renderTargetFormats: { Pipeline.RenderTargetFormat },
-    depthTargetFormat: Pipeline.DepthTargetFormat,
+    renderTargetFormats: { Pipeline.RenderTargetFormat }?,
+    depthTargetFormat: Pipeline.DepthTargetFormat?,
 
-    rasterization: Pipeline.RasterizationState,
-    depthStencil: Pipeline.DepthStencilState,
-    blend: Pipeline.BlendState
+    rasterization: Pipeline.RasterizationState?,
+    depthStencil: Pipeline.DepthStencilState?,
+    blend: Pipeline.BlendState?
 }
 
 export type TechniqueContext = typeof(setmetatable(

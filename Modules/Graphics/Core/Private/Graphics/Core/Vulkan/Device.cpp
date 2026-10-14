@@ -3,6 +3,7 @@
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Device.h>
+#include <Graphics/Core/Vulkan/Format.h>
 #include <festd/vector.h>
 
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
@@ -98,7 +99,30 @@ namespace FE::Graphics::Vulkan
 
         m_nativeAdapter = nativeAdapter;
 
-        vkGetPhysicalDeviceProperties(nativeAdapter, &m_adapterProperties);
+        VkPhysicalDeviceSubgroupSizeControlProperties sizeProperties{};
+        sizeProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
+        VkPhysicalDeviceSubgroupProperties subgroupProperties{};
+        subgroupProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
+        subgroupProperties.pNext = &sizeProperties;
+        VkPhysicalDeviceProperties2 properties{};
+        properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        properties.pNext = &subgroupProperties;
+        vkGetPhysicalDeviceProperties2(nativeAdapter, &properties);
+        m_adapterProperties = properties.properties;
+
+        VkPhysicalDeviceVulkan13Features supported13{};
+        supported13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        VkPhysicalDeviceFeatures2 supportedFeatures{};
+        supportedFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        supportedFeatures.pNext = &supported13;
+        vkGetPhysicalDeviceFeatures2(nativeAdapter, &supportedFeatures);
+
+        const bool computeSubgroups = (subgroupProperties.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) != 0;
+        m_computeCapabilities.m_waveLaneCount = computeSubgroups ? subgroupProperties.subgroupSize : 0;
+        m_computeCapabilities.m_minWaveLaneCount = sizeProperties.minSubgroupSize;
+        m_computeCapabilities.m_maxWaveLaneCount = sizeProperties.maxSubgroupSize;
+        m_computeCapabilities.m_waveLaneCountControl =
+            supported13.subgroupSizeControl && (sizeProperties.requiredSubgroupSizeStages & VK_SHADER_STAGE_COMPUTE_BIT) != 0;
         Logger::LogInfo("Creating Vulkan Device on GPU: {}...", m_adapterProperties.deviceName);
 
         FindQueueFamilies();
@@ -153,6 +177,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures13.pNext = &mutableDescriptorTypeFeatures;
         deviceFeatures13.synchronization2 = true;
         deviceFeatures13.dynamicRendering = true;
+        deviceFeatures13.subgroupSizeControl = supported13.subgroupSizeControl;
 
         VkPhysicalDeviceVulkan12Features deviceFeatures12{};
         deviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -187,6 +212,9 @@ namespace FE::Graphics::Vulkan
         deviceFeatures.sampleRateShading = true;
         deviceFeatures.shaderImageGatherExtended = true;
         deviceFeatures.shaderInt64 = true;
+        deviceFeatures.shaderStorageImageExtendedFormats = supportedFeatures.features.shaderStorageImageExtendedFormats;
+        deviceFeatures.shaderStorageImageReadWithoutFormat = supportedFeatures.features.shaderStorageImageReadWithoutFormat;
+        deviceFeatures.shaderStorageImageWriteWithoutFormat = supportedFeatures.features.shaderStorageImageWriteWithoutFormat;
 
         VkDeviceCreateInfo deviceCI{};
         deviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -217,6 +245,32 @@ namespace FE::Graphics::Vulkan
         VerifyVk(vmaCreateAllocator(&createInfo, &m_vmaInstance));
 
         m_samplerCache.Init(this);
+    }
+
+
+    Core::ComputeCapabilities Device::GetComputeCapabilities() const
+    {
+        return m_computeCapabilities;
+    }
+
+
+    Core::FormatCapabilities Device::GetFormatCapabilities(const Core::Format format) const
+    {
+        VkFormatProperties3 formatProperties{};
+        formatProperties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3;
+        VkFormatProperties2 properties{};
+        properties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
+        properties.pNext = &formatProperties;
+        vkGetPhysicalDeviceFormatProperties2(m_nativeAdapter, Translate(format), &properties);
+        const VkFormatFeatureFlags2 flags = formatProperties.optimalTilingFeatures;
+        Core::FormatCapabilities result;
+        result.m_sampled = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
+        result.m_storage = (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
+        result.m_storageReadWithoutFormat = (flags & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT) != 0;
+        result.m_storageWriteWithoutFormat = (flags & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) != 0;
+        result.m_colorAttachment = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
+        result.m_depthAttachment = (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+        return result;
     }
 
 
