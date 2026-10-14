@@ -195,8 +195,14 @@ namespace FE::Graphics::RasterProbe
         clear->m_constants.m_resolution = Vector2UInt(64, 64);
         clear->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
         graph->AddDispatchPass("ClearRasterSurface", clear, Core::ComputeWorkGroupCount(Vector2UInt(8, 8)));
-        const auto surfaceWork = Visibility::CreateSurfaceWork(device, 1, 2 * 1024 * 1024);
-        Visibility::BuildSurfaceWork(*graph, viewBuffer.Get(), visibility.Get(), planes[0].Get(), surfaceWork, 0, 1, 32);
+        const Visibility::SurfaceBinding binding{ group.m_rowIndex, 0 };
+        auto surfaceWork = Visibility::CreateSurfaceWork(device,
+                                                         Vector2UInt(64, 64),
+                                                         festd::span(&binding, 1),
+                                                         groups.GetReservedRowCount(),
+                                                         1,
+                                                         32);
+        Visibility::BuildSurfaceWork(*graph, uploader, viewBuffer.Get(), visibility.Get(), planes[0].Get(), surfaceWork);
         Core::ComputePipelineRequest evaluateRequest;
         evaluateRequest.m_desc.SetComputeShader("Shaders/Materials/EvaluateBunnyVariants.cs.hlsl");
         evaluateRequest.m_defines = Env::Name("BUNNY_PALETTE=1");

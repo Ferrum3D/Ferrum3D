@@ -1,6 +1,6 @@
 # Visibility buffer and compute deferred shading migration
 
-Status: Stages 1 through 3 are implemented, including bounded GPU loose tiling, indirect material evaluation and packed GBuffer debug views. Forward shading remains the default. Manual visual comparisons, GPU captures and performance measurements remain pending. See `VISIBILITY_BUFFER_STAGE1.md`, `VISIBILITY_BUFFER_STAGE2.md` and `VISIBILITY_BUFFER_STAGE3.md` for interfaces and validation workflows.
+Status: Stages 1 through 3 are implemented, including full-view histogram-based GPU loose tiling, indirect material evaluation and packed GBuffer debug views. Forward shading remains the default. Manual visual comparisons, GPU captures and performance measurements remain pending. See `VISIBILITY_BUFFER_STAGE1.md`, `VISIBILITY_BUFFER_STAGE2.md` and `VISIBILITY_BUFFER_STAGE3.md` for interfaces and validation workflows.
 
 ## 1. Direction
 
@@ -63,7 +63,7 @@ MeshInstanceTable row
 | --- | --- | --- |
 | `Samples/Renderer/Assets/source/Textured.mat.luau`, `BunnyMaterial.asset` | Albedo texture, `Tint`, per-instance `UvScale`, and `TwoSided` raster permutation. | `texel.rgb * tint.rgb * (0.15 + 0.85 * max(dot(N, normalize(0.4, 0.7, -0.2)), 0))`. |
 | `BunnyVariants.mat.luau`, `BunnyWarm.asset`, `BunnyCool.asset` | `Palette=0/1` and their exact authored warm/cool linear colors. | The same non-PBR directional/ambient equation as today. |
-| Both sample depots' `Helmet/StandardPBR.mat.luau` and `DamagedHelmetMaterial.asset` | Base color, linear ORM, BC5 normal map, emissive, per-instance `UvScale`, and `TwoSided`. Preserve texture color-space and tangent conventions. | Existing GGX/Smith/Schlick/Lambert behavior, 10,000-lux light, 1,000-cd/m² emissive scale and EV100 12 pre-exposure. AO remains reserved for indirect lighting, not multiplied into direct light. |
+| Both sample depots' `Helmet/StandardPBR.mat.luau` and `DamagedHelmetMaterial.asset` | Base color, linear ORM, BC5 normal map, emissive, per-instance `UvScale`, and `TwoSided`. Preserve texture color-space and tangent conventions. | Existing GGX/Smith/Schlick/Lambert behavior, 10,000-lux light, 1,000-cd/mВІ emissive scale and EV100 12 pre-exposure. AO remains reserved for indirect lighting, not multiplied into direct light. |
 
 The sample techniques are opaque with blending disabled. `Textured` returns alpha today, but the RGB HDR target does not retain it; do not introduce opacity or cutout semantics during migration. `TwoSided` currently disables culling without automatically flipping shading normals; preserve that behavior. Also provide a non-PBR surface mapping for the generic `OpaquePass.ps.hlsl` constant-color shader if it remains reachable.
 
@@ -124,29 +124,23 @@ Follow McLaren's spatial-locality and uniform-wave design, using 128x128 screen 
 
 Order work by `(evaluation PSO, tile, mesh/material group)`. Within each tile/group, build consecutive pixel records and split them into logical wave-sized commands. A dispatch for a shader can consume many groups and tiles, with the group uniform within each command.
 
-- Pixel command: 16 bits, `localX | (localY << 7)`; two upper bits are reserved. Bounds are checked for partial edge tiles. Do not store full coordinates or visibility IDs again.
+- Pixel command: initially a 32-bit word containing `localX | (localY << 7)`; upper bits are reserved. Native 16-bit storage or later pair packing can reduce it after measurement. Bounds are checked for partial edge tiles. Do not store full coordinates or visibility IDs again.
 - Wave command, initially 16 bytes: tile index, uniform group ID, pixel-list offset, valid pixel count. Each field starts as 32 bits; compress later only with measured benefit and explicit bounds.
 - Shader range: first wave command, command count and indirect dispatch arguments. Pixel lists contain actual pixels; tail waves have a valid count instead of up to 63 stored padding pixels.
 
 Support 32- and 64-lane targets through device/pipeline capabilities, rather than hard-code McLaren's console wave64 assumption. A simple correct baseline is one logical command per compute workgroup, all lanes sharing its material. When an exact hardware subgroup size is available, specialize group width accordingly. Otherwise keep group-uniform correctness even if the workgroup maps to more than one hardware subgroup; wave intrinsics must use the actual subgroup layout. Pack using the same logical width consumed by that pipeline.
 
-### Construction and bounded memory
+### Full-view classification and scratch
 
-Use sparse tile/group records; never allocate `screen tiles * every material in the depot` counters. Start with a bounded window of adjacent tiles:
+The current implementation replaces the original bounded-window sorting proposal after performance captures showed severe serial dependencies and low sort occupancy. The user explicitly permits resolution-dependent scratch and practical limits when justified.
 
-1. Read visibility, reject background, and emit compact `(group, local pixel)` records for each tile. Resolve each group's evaluation slot once into sparse group metadata.
-2. Group records by tile/group using a segmented GPU radix/binning implementation. Fixed-size tile segments make scratch bounded; build active group runs, counts, pixel offsets and wave counts. Order the resulting runs by evaluation shader and tile using count/prefix-sum/scatter passes.
-3. Generate wave commands, shader ranges and indirect arguments on the GPU. Store adjacent tiles consecutively within each shader range to retain spatial locality.
-4. Material compute dispatches read their wave command, reconstruct each valid pixel's attributes, evaluate textures and write its GBuffer record exactly once.
-5. Reuse scratch only after all consumers of that window finish. Process the next window; complete material evaluation for the view before beginning the second classification stage.
+1. Map persistent resident group rows to dense binding IDs ordered by evaluation shader.
+2. Clear counters/cursors and G0; count pixels by shader/tile/binding using many small workgroups and wave-aggregated atomics.
+3. Hierarchically prefix-scan paired pixel/wave counts into ranges, preserving shader/tile/group locality.
+4. Reread visibility and scatter one coordinate word per pixel into disjoint reservations.
+5. Generate wave commands and shader ranges/indirect arguments, then dispatch each evaluation shader once for the entire view.
 
-This bounded sorting path is the correctness baseline. Once captures show classification cost, use small shared-memory histograms or sparse local hashing for ordinary low-diversity tiles, retaining bounded segmented sorting for high-diversity tiles. Do not assume a fixed 32-material limit or silently omit groups that do not fit a fast path.
-
-Budget all scratch, including sort ping-pong buffers and run metadata. With `N` pixels in a window, the maximum number of active group runs and wave commands is `N` (one different group per pixel). Pixel storage is at most approximately `2N` bytes plus packing alignment; the initial wave buffer is bounded by `16N`. Typical wave storage is closer to `16N / waveWidth`, but capacity must not rely on that average. Size the tile window from the configured scratch budget and proven worst-case allocation sizes; do not allocate this pathological maximum for the full screen.
-
-Pack pairs of 16-bit coordinates into 32-bit stores with one writer per word, or explicitly enable supported native 16-bit storage. Avoid racing half-word read/modify/write stores during scatter. Allocate even-aligned run ranges and account for the possible two-byte padding per run if using pair ownership.
-
-Normally submit one indirect compute dispatch per resident evaluation PSO per window, with zero work for empty ranges. CPU submission enumerates resident registry slots, not GPU-visible material instances. No GPU readback is needed. If the whole view fits the configured budget, the window naturally becomes the whole view. Split/linearize very large command ranges using the target hardware baseline dispatch limits. Record the additional dispatch cost of windowing when choosing the memory budget.
+Scratch is persistent and reused on the same graphics queue, with reallocation on dimensions/routing changes and fence-safe retirement. For padded view pixels `P`, tiles `T`, dense bindings `G` and lane count `L`, buckets are `B=TG` and safe command capacity is `min(P,ceil(P/L)+min(P,B))`. There is no fixed shader/group limit; buffer sizes are checked against addressable limits. See `VISIBILITY_BUFFER_STAGE3.md` and `VISIBILITY_BUFFER_CLASSIFICATION_OPTIMIZATION.md` for allocation accounting and sparse-mask alternatives.
 
 ## 6. Attribute reconstruction and texture filtering
 
@@ -172,7 +166,7 @@ Start with four separately addressable `R32_UINT` planes. Use raw integer loads/
 | G0 | RGB8 + 8-bit shading-model ID | Linear base color manually encoded to sRGB8; decoder identifies PBR. | Unlit texture*tint or palette color manually encoded to sRGB8; decoder identifies SimpleLit. |
 | G1 | Two signed 16-bit octahedral coordinates | Final world-space shading normal, after normal mapping. | Interpolated world-space normal. |
 | G2 | Four 8-bit fields | Perceptual roughness UNORM8, metallic UNORM8, AO UNORM8, model-specific flags. | Model-local fields; initially unused values set deterministically, plus flags if needed. These bytes are not interpreted as PBR properties. |
-| G3 | Packed nonnegative R11/G11/B10 floating-point emissive | Scene-linear emissive radiance, before exposure, using the existing 1,000-cd/m² scale. | Optional model-specific payload; current SimpleLit does not need it. |
+| G3 | Packed nonnegative R11/G11/B10 floating-point emissive | Scene-linear emissive radiance, before exposure, using the existing 1,000-cd/mВІ scale. | Optional model-specific payload; current SimpleLit does not need it. |
 
 This is a 12-byte base surface plus an optional 4-byte extended plane. Both present sample scenes include an emissive-capable helmet, so budget the full 16 bytes/pixel for them. Do not claim an average 12-byte resident allocation simply because many pixels are non-emissive. If a view has no extended-payload models, omit G3 entirely. Otherwise use an explicit payload-valid flag and skip G3 stores/loads for pixels that do not need it. A zero-emissive PBR pixel can clear that flag without writing G3.
 
@@ -261,12 +255,12 @@ Manual checkpoint: inspect silhouettes, occlusion, near-plane crossings, mirrore
 
 ### Stage 3: First loose tiling and material GBuffer
 
-- Implement the bounded command builder, subgroup-width handling and race-free 16-bit pixel packing.
+- Implement the full-view count/prefix/scatter command builder, wave-width handling and race-free coordinate stores.
 - Dispatch surface evaluation through GPU-written ranges, initially visualizing tile/group IDs and active lane counts.
 - Port StandardPBR, Textured and both BunnyVariants permutations to the new surface contract; add encode/decode helpers and GBuffer debug views.
 - Update and manually cook both sample depots so all required materials can populate the GBuffer.
 
-Manual checkpoint: inspect every surface channel, material boundaries, normal-map orientation, palette/tint colors, UV scale, emissive values and streaming changes. Confirm high material diversity and partial tiles produce no missing, duplicate or stale pixels, and scratch remains within budget.
+Manual checkpoint: inspect every surface channel, material boundaries, normal-map orientation, palette/tint colors, UV scale, emissive values and streaming changes. Confirm high material diversity and partial tiles produce no missing, duplicate or stale pixels, and scratch follows the documented full-view capacity bound.
 
 ### Stage 4: Second loose tiling and deferred shading
 

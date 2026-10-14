@@ -41,19 +41,13 @@
 
 namespace FE::Graphics::Vulkan
 {
-#if FE_DEVELOPMENT
     inline constexpr auto kRequiredInstanceLayers = std::array{
         "VK_LAYER_KHRONOS_validation",
     };
-#else
-    inline constexpr auto kRequiredInstanceLayers = std::array<const char*, 0>{};
-#endif
 
 
     inline constexpr auto kRequiredInstanceExtensions = std::array{
-#if FE_DEVELOPMENT
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
-#endif
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,

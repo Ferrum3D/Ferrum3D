@@ -67,6 +67,7 @@ namespace FE::Graphics
         m_mainColorTarget.Reset();
         m_mainDepthTarget.Reset();
         m_visibilityTarget.Reset();
+        m_surfaceWork = {};
         m_descriptorManager.Reset();
         m_device->WaitIdle();
 
@@ -275,6 +276,7 @@ namespace FE::Graphics
         viewData.m_viewportRect = viewport.GetDesc().GetRect();
         viewData.m_database = m_database.get();
         viewData.m_renderQueueUploader = &m_renderQueueUploader;
+        viewData.m_surfaceWork = &m_surfaceWork;
 
         view.Update(blackboard);
 

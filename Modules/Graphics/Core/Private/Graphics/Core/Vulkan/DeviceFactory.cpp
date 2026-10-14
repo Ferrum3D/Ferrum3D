@@ -13,7 +13,6 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
-#if FE_DEVELOPMENT
         Logger::Severity GetLogMessageType(const VkDebugReportFlagsEXT flags)
         {
             switch (static_cast<VkDebugReportFlagBitsEXT>(flags))
@@ -59,7 +58,6 @@ namespace FE::Graphics::Vulkan
 
             return VK_FALSE;
         }
-#endif
 
 
         Core::AdapterKind Translate(const VkPhysicalDeviceType src) noexcept
@@ -86,7 +84,8 @@ namespace FE::Graphics::Vulkan
 
     DeviceFactory::~DeviceFactory()
     {
-        vkDestroyDebugReportCallbackEXT(m_instance, m_debug, VK_NULL_HANDLE);
+        if (m_debug != VK_NULL_HANDLE)
+            vkDestroyDebugReportCallbackEXT(m_instance, m_debug, VK_NULL_HANDLE);
         vkDestroyInstance(m_instance, VK_NULL_HANDLE);
         Logger::LogInfo("Vulkan instance was destroyed");
     }
@@ -118,12 +117,17 @@ namespace FE::Graphics::Vulkan
         m_api = Core::GraphicsApi::kVulkan;
         VerifyVk(volkInitialize());
 
+        const bool gpuValidation = Cli::Check("--gpu-validation");
+        const bool apiValidation = gpuValidation || Cli::Check("--api-validation");
+        const festd::span<const char* const> requiredLayers =
+            apiValidation ? festd::span<const char* const>(kRequiredInstanceLayers) : festd::span<const char* const>();
+
         uint32_t layerCount;
         VerifyVk(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
         festd::vector layers(layerCount, VkLayerProperties{});
         VerifyVk(vkEnumerateInstanceLayerProperties(&layerCount, layers.data()));
-        for (const char* layer : kRequiredInstanceLayers)
+        for (const char* layer : requiredLayers)
         {
             const festd::string_view layerSlice{ layer };
             const bool found = eastl::any_of(layers.begin(), layers.end(), [&](const VkLayerProperties& props) {
@@ -160,18 +164,17 @@ namespace FE::Graphics::Vulkan
 
         VkInstanceCreateInfo instanceCI{};
         instanceCI.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        instanceCI.pNext = &validationFeatures;
+        instanceCI.pNext = gpuValidation ? &validationFeatures : nullptr;
         instanceCI.pApplicationInfo = &appInfo;
-        instanceCI.enabledLayerCount = static_cast<uint32_t>(kRequiredInstanceLayers.size());
-        instanceCI.ppEnabledLayerNames = kRequiredInstanceLayers.data();
+        instanceCI.enabledLayerCount = requiredLayers.size();
+        instanceCI.ppEnabledLayerNames = requiredLayers.data();
         instanceCI.enabledExtensionCount = static_cast<uint32_t>(kRequiredInstanceExtensions.size());
         instanceCI.ppEnabledExtensionNames = kRequiredInstanceExtensions.data();
 
         VerifyVk(vkCreateInstance(&instanceCI, VK_NULL_HANDLE, &m_instance));
         volkLoadInstance(m_instance);
 
-#if FE_DEVELOPMENT
-        if (!Cli::Check("--no-api-validation"))
+        if (apiValidation)
         {
             VkDebugReportCallbackCreateInfoEXT debugCI{};
             debugCI.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
@@ -182,9 +185,9 @@ namespace FE::Graphics::Vulkan
             debugCI.pfnCallback = &DebugReportCallback;
             VerifyVk(vkCreateDebugReportCallbackEXT(m_instance, &debugCI, VK_NULL_HANDLE, &m_debug));
         }
-#endif
 
         Logger::LogInfo("Vulkan instance created successfully");
+        Logger::LogInfo("API validation: {}; GPU validation: {}", apiValidation ? "on" : "off", gpuValidation ? "on" : "off");
 
         uint32_t adapterCount;
         VerifyVk(vkEnumeratePhysicalDevices(m_instance, &adapterCount, nullptr));

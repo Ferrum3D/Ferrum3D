@@ -1,23 +1,26 @@
 #include <Graphics/Core/PipelineVariantSet.h>
+#include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Passes/SurfaceWorkBuilder.h>
-#include <bit>
 
 namespace FE::Graphics::Visibility
 {
     static_assert(sizeof(TilingConstants) <= 128);
-    static_assert(sizeof(SurfaceRun) == 24);
 
     namespace
     {
-        FE_COMPUTE_PIPELINE_SET(EmitPixelsPipeline, "Shaders/Passes/Visibility/EmitSurfacePixels.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(HistogramPipeline, "Shaders/Passes/Visibility/RadixHistogram.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(OffsetsPipeline, "Shaders/Passes/Visibility/RadixOffsets.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(ScatterPipeline, "Shaders/Passes/Visibility/RadixScatter.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(RunsPipeline, "Shaders/Passes/Visibility/BuildSurfaceRuns.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(ScanWavesPipeline, "Shaders/Passes/Visibility/ScanSurfaceWaves.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(ScanBlocksPipeline, "Shaders/Passes/Visibility/ScanSurfaceBlocks.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(EmitWavesPipeline, "Shaders/Passes/Visibility/EmitSurfaceWaves.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(RangesPipeline, "Shaders/Passes/Visibility/SurfaceRanges.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(ClearPipeline, "Shaders/Passes/Visibility/ClearSurfaceWork.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(CountPipeline, "Shaders/Passes/Visibility/CountSurfacePixels.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(ScanPipeline, "Shaders/Passes/Visibility/ScanSurfaceBuckets.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(PropagatePipeline, "Shaders/Passes/Visibility/PropagateSurfaceOffsets.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(ScatterPipeline, "Shaders/Passes/Visibility/ScatterSurfacePixels.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(CommandsPipeline, "Shaders/Passes/Visibility/EmitSurfaceCommands.cs.hlsl");
+
+
+        Core::ComputeWorkGroupCount DispatchSize(const uint32_t threads)
+        {
+            const uint32_t groups = Math::Max(Math::CeilDivide(threads, kSurfaceBlockSize), 1u);
+            return Core::ComputeWorkGroupCount(Vector2UInt(Math::Min(groups, 65535u), Math::CeilDivide(groups, 65535u)));
+        }
 
 
         TilingPassDesc* AllocateStep(Core::FrameGraph& graph, Core::ComputePipeline* pipeline, const TilingConstants& dimensions)
@@ -27,143 +30,224 @@ namespace FE::Graphics::Visibility
             pass->m_constants = dimensions;
             return pass;
         }
-
-
-        void RadixSort(Core::FrameGraph& graph, const SurfaceWork& work, const TilingConstants& dimensions, const bool segmented,
-                       uint32_t& input)
-        {
-            for (uint32_t shift = 0; shift < 32; shift += 4)
-            {
-                auto* histogram = AllocateStep(graph, HistogramPipeline::GetPipeline(), dimensions);
-                histogram->m_constants.m_input = graph.GetSRV(work.m_records[input].Get());
-                histogram->m_constants.m_histogram = graph.GetUAV(work.m_histogram.Get());
-                histogram->m_constants.m_shift = shift;
-
-                graph.AddDispatchPass("SurfaceRadixHistogram",
-                                      histogram,
-                                      Core::ComputeWorkGroupCount(dimensions.m_pixelCount / kSortBlockSize));
-                auto* offsets = AllocateStep(graph, OffsetsPipeline::GetPipeline(), dimensions);
-                offsets->m_constants.m_histogramRead = graph.GetSRV(work.m_histogram.Get());
-                offsets->m_constants.m_offsets = graph.GetUAV(work.m_offsets.Get());
-                offsets->m_constants.m_segmented = segmented;
-
-                graph.AddDispatchPass("SurfaceRadixOffsets",
-                                      offsets,
-                                      Core::ComputeWorkGroupCount(segmented ? dimensions.m_tileCount : 1));
-                auto* scatter = AllocateStep(graph, ScatterPipeline::GetPipeline(), dimensions);
-                scatter->m_constants.m_input = graph.GetSRV(work.m_records[input].Get());
-                scatter->m_constants.m_output = graph.GetUAV(work.m_records[input ^ 1].Get());
-                scatter->m_constants.m_offsetsRead = graph.GetSRV(work.m_offsets.Get());
-                scatter->m_constants.m_shift = shift;
-                graph.AddDispatchPass("SurfaceRadixScatter",
-                                      scatter,
-                                      Core::ComputeWorkGroupCount(dimensions.m_pixelCount / kSortBlockSize));
-                input ^= 1;
-            }
-        }
     } // namespace
 
 
-    uint32_t GetSurfaceTileCapacity(const uint32_t shaderCount, const uint64_t budget)
+    SurfaceWork CreateSurfaceWork(Core::Device* device, const Vector2UInt resolution,
+                                  const festd::span<const SurfaceBinding> bindings, const uint32_t groupRowCount,
+                                  const uint32_t shaderCount, const uint32_t waveLaneCount)
     {
-        const uint64_t overhead = uint64_t(Math::Max(shaderCount, 1u)) * 40 + 4096;
-        if (budget <= overhead)
-            return 0;
-
-        const uint64_t tiles = (budget - overhead) / kSurfaceScratchBytesPerTile;
-        return std::bit_floor(static_cast<uint32_t>(Math::Min(tiles, uint64_t(64))));
-    }
-
-
-    SurfaceWork CreateSurfaceWork(Core::Device* device, const uint32_t shaderCount, const uint64_t budget)
-    {
+        FE_Assert(waveLaneCount == 32 || waveLaneCount == 64);
+        FE_Assert(resolution.x > 0 && resolution.y > 0);
         SurfaceWork work;
+        work.m_resolution = resolution;
         work.m_shaderCount = shaderCount;
-        work.m_tileCapacity = GetSurfaceTileCapacity(shaderCount, budget);
-        FE_Assert(work.m_tileCapacity > 0, "Surface scratch budget cannot hold one tile");
-        const uint32_t pixels = work.m_tileCapacity * kTileSize * kTileSize;
-        const uint32_t blocks = pixels / kSortBlockSize;
-        const uint32_t slots = Math::Max(shaderCount, 1u);
-        work.m_records[0] = Core::Buffer::CreateStructured<Vector2UInt>(device, "SurfaceRecords0", pixels);
-        work.m_records[1] = Core::Buffer::CreateStructured<Vector2UInt>(device, "SurfaceRecords1", pixels);
-        work.m_histogram = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceHistogram", blocks * kRadixBinCount);
-        work.m_offsets = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceRadixOffsets", blocks * kRadixBinCount);
-        work.m_pixels = Core::Buffer::CreateStructured<uint32_t>(device, "SurfacePixels", pixels);
-        work.m_runs = Core::Buffer::CreateStructured<SurfaceRun>(device, "SurfaceRuns", pixels);
-        work.m_waves = Core::Buffer::CreateStructured<WaveCommand>(device, "SurfaceWaves", pixels);
-        work.m_ranges = Core::Buffer::CreateStructured<ShaderRange>(device, "SurfaceRanges", slots);
-        work.m_arguments = Core::Buffer::CreateStructured<DispatchArguments>(device, "SurfaceArguments", slots);
-        work.m_scan = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceScan", pixels);
-        work.m_blockTotals = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceBlockTotals", blocks);
-        work.m_blockOffsets = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceBlockOffsets", blocks);
-        work.m_scratchBytes = work.m_tileCapacity * kSurfaceScratchBytesPerTile + uint64_t(slots) * 40 + 4096;
-        FE_Assert(work.m_scratchBytes <= budget);
+        work.m_waveLaneCount = waveLaneCount;
+        const uint64_t tiles = uint64_t(Math::CeilDivide(resolution.x, kTileSize)) * Math::CeilDivide(resolution.y, kTileSize);
+        const uint64_t pixels = tiles * kTileSize * kTileSize;
+        const uint64_t buckets = tiles * bindings.size();
+        FE_Assert(pixels <= Constants::kMaxU32 / 4 && buckets <= Constants::kMaxU32 / 8);
+        FE_Assert(groupRowCount <= Constants::kMaxU32 / 8 && shaderCount <= Constants::kMaxU32 / 12);
+        work.m_tileCount = static_cast<uint32_t>(tiles);
+        work.m_bucketCount = static_cast<uint32_t>(buckets);
+        work.m_waveCapacity = static_cast<uint32_t>(
+            Math::Min(pixels, Math::CeilDivide(pixels, uint64_t(waveLaneCount)) + Math::Min(pixels, buckets)));
+        if (bindings.empty())
+            work.m_waveCapacity = 0;
+        work.m_sourceBindings.assign(bindings.begin(), bindings.end());
+        work.m_lookupData.resize(Math::Max(groupRowCount, 1u), Vector2UInt(kInvalidIndex, 0));
+        work.m_shaderBindingData.resize(Math::Max(shaderCount, 1u), Vector2UInt(0, 0));
+        festd::vector<SurfaceBinding> sorted;
+        sorted.assign(bindings.begin(), bindings.end());
+        eastl::sort(sorted.begin(), sorted.end(), [](const SurfaceBinding& lhs, const SurfaceBinding& rhs) {
+            return lhs.m_shaderSlot != rhs.m_shaderSlot ? lhs.m_shaderSlot < rhs.m_shaderSlot : lhs.m_group < rhs.m_group;
+        });
+        work.m_bindingData.resize(Math::Max(sorted.size(), 1u), kInvalidIndex);
+        uint32_t firstBinding = 0;
+        for (uint32_t slot = 0; slot < shaderCount; ++slot)
+        {
+            uint32_t end = firstBinding;
+            while (end < sorted.size() && sorted[end].m_shaderSlot == slot)
+                ++end;
+
+            const uint32_t count = end - firstBinding;
+            work.m_shaderBindingData[slot] = Vector2UInt(firstBinding, count);
+            for (uint32_t index = firstBinding; index < end; ++index)
+            {
+                const uint32_t group = sorted[index].m_group;
+                FE_Assert(group < groupRowCount && work.m_lookupData[group].x == kInvalidIndex);
+                work.m_lookupData[group] = Vector2UInt(firstBinding * work.m_tileCount + index - firstBinding, count);
+                work.m_bindingData[index] = group;
+            }
+
+            firstBinding = end;
+        }
+
+        FE_Assert(firstBinding == sorted.size(), "Surface binding has an invalid shader slot");
+        const auto create = [&](const char* name, const uint32_t stride, const uint32_t count) {
+            const uint64_t bytes = uint64_t(stride) * Math::Max(count, 1u);
+            FE_Assert(bytes <= Constants::kMaxU32, "Surface buffer exceeds addressable size");
+            work.m_scratchBytes += bytes;
+            return Core::Buffer::CreateByteAddress(device, Env::Name(name), static_cast<uint32_t>(bytes));
+        };
+        work.m_lookup = create("SurfaceBindingLookup", 8, work.m_lookupData.size());
+        work.m_bindings = create("SurfaceBindings", 4, work.m_bindingData.size());
+        work.m_shaderBindings = create("SurfaceShaderBindings", 8, work.m_shaderBindingData.size());
+        work.m_counts = create("SurfaceCounts", 4, work.m_bucketCount);
+        work.m_cursors = create("SurfaceCursors", 4, work.m_bucketCount);
+        work.m_pixels = create("SurfacePixels", 4, bindings.empty() ? 0 : static_cast<uint32_t>(pixels));
+        work.m_waves = create("SurfaceWaves", 16, work.m_waveCapacity);
+        work.m_ranges = create("SurfaceRanges", 8, shaderCount);
+        work.m_arguments = create("SurfaceArguments", 12, shaderCount);
+        uint32_t count = Math::Max(work.m_bucketCount, 1u);
+        for (;;)
+        {
+            const uint32_t blocks = Math::CeilDivide(count, kSurfaceBlockSize);
+            SurfaceScanLevel level;
+            level.m_count = count;
+            level.m_offsets = create("SurfaceOffsets", 8, count);
+            level.m_sums = create("SurfaceBlockSums", 8, blocks);
+            work.m_scanLevels.push_back(level);
+            if (blocks == 1)
+                break;
+
+            count = blocks;
+        }
+
         return work;
     }
 
 
-    void BuildSurfaceWork(Core::FrameGraph& graph, Core::Buffer* view, Core::Texture* visibility, Core::Texture* g0,
-                          const SurfaceWork& work, const uint32_t firstTile, const uint32_t tileCount,
-                          const uint32_t waveLaneCount)
+    void EnsureSurfaceWork(SurfaceWork& work, Core::Device* device, const Vector2UInt resolution,
+                           const festd::span<const SurfaceBinding> bindings, const uint32_t groupRowCount,
+                           const uint32_t shaderCount, const uint32_t waveLaneCount)
     {
-        FE_Assert(tileCount > 0 && tileCount <= work.m_tileCapacity);
-        FE_Assert(waveLaneCount == 32 || waveLaneCount == 64);
+        bool compatible = work.m_resolution == resolution && work.m_shaderCount == shaderCount
+            && work.m_waveLaneCount == waveLaneCount && work.m_lookupData.size() == Math::Max(groupRowCount, 1u)
+            && work.m_sourceBindings.size() == bindings.size();
+        if (compatible)
+        {
+            for (uint32_t index = 0; index < bindings.size(); ++index)
+            {
+                const SurfaceBinding& previous = work.m_sourceBindings[index];
+                compatible = previous.m_group == bindings[index].m_group && previous.m_shaderSlot == bindings[index].m_shaderSlot;
+                if (!compatible)
+                    break;
+            }
+        }
+
+        if (compatible)
+            return;
+
+        work = CreateSurfaceWork(device, resolution, bindings, groupRowCount, shaderCount, waveLaneCount);
+    }
+
+
+    void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, Core::Buffer* view, Core::Texture* visibility,
+                          Core::Texture* g0, SurfaceWork& work)
+    {
+        FE_Assert(Vector2UInt(visibility->GetDesc().m_width, visibility->GetDesc().m_height) == work.m_resolution);
+        if (!work.m_uploaded)
+        {
+            const auto commit = [&](Core::Buffer* buffer) {
+                Core::ResourceCommitParams params;
+                params.m_memory = Core::ResourceMemory::kDeviceLocal;
+                params.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
+                    | Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest;
+                if (buffer == work.m_arguments.Get())
+                    params.m_bindFlags |= Core::BarrierAccessFlags::kIndirectArgument;
+
+                graph.GetResourcePool()->CommitBufferMemory(buffer, params);
+            };
+            for (Core::Buffer* buffer : { work.m_lookup.Get(),
+                                          work.m_bindings.Get(),
+                                          work.m_shaderBindings.Get(),
+                                          work.m_counts.Get(),
+                                          work.m_cursors.Get(),
+                                          work.m_pixels.Get(),
+                                          work.m_waves.Get(),
+                                          work.m_ranges.Get(),
+                                          work.m_arguments.Get() })
+                commit(buffer);
+
+            for (const SurfaceScanLevel& level : work.m_scanLevels)
+            {
+                commit(level.m_offsets.Get());
+                commit(level.m_sums.Get());
+            }
+
+            FE_Verify(uploader.UploadArray(graph, work.m_lookup.Get(), festd::span(work.m_lookupData)));
+            FE_Verify(uploader.UploadArray(graph, work.m_bindings.Get(), festd::span(work.m_bindingData)));
+            FE_Verify(uploader.UploadArray(graph, work.m_shaderBindings.Get(), festd::span(work.m_shaderBindingData)));
+            work.m_uploaded = true;
+        }
+
         TilingConstants dimensions{};
-        dimensions.m_resolution = { visibility->GetDesc().m_width, visibility->GetDesc().m_height };
-        dimensions.m_firstTile = firstTile;
-        dimensions.m_tileCount = tileCount;
-        dimensions.m_pixelCount = tileCount * kTileSize * kTileSize;
-        dimensions.m_tilesPerRow = Math::CeilDivide(dimensions.m_resolution.x, kTileSize);
+        dimensions.m_resolution = work.m_resolution;
+        dimensions.m_tilesPerRow = Math::CeilDivide(work.m_resolution.x, kTileSize);
+        dimensions.m_tileCount = work.m_tileCount;
+        dimensions.m_bucketCount = work.m_bucketCount;
+        dimensions.m_groupRowCount = work.m_lookupData.size();
         dimensions.m_shaderCount = work.m_shaderCount;
-        dimensions.m_waveLaneCount = waveLaneCount;
-        const uint32_t groups = dimensions.m_pixelCount / kSortBlockSize;
+        dimensions.m_waveLaneCount = work.m_waveLaneCount;
+        const uint32_t pixels = work.m_resolution.x * work.m_resolution.y;
+        auto* clear = AllocateStep(graph, ClearPipeline::GetPipeline(), dimensions);
+        clear->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
+        clear->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
+        clear->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(g0));
+        graph.AddDispatchPass("ClearSurfaceWork", clear, DispatchSize(Math::Max(pixels, work.m_bucketCount)));
+        auto* count = AllocateStep(graph, CountPipeline::GetPipeline(), dimensions);
+        count->m_constants.m_view = graph.GetSRV(view);
+        count->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
+        count->m_constants.m_lookup = graph.GetSRV(work.m_lookup.Get());
+        count->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
+        count->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(g0));
+        const Core::ComputeWorkGroupCount screenGroups(
+            Vector2UInt(Math::CeilDivide(work.m_resolution.x, 16u), Math::CeilDivide(work.m_resolution.y, 16u)));
+        graph.AddDispatchPass("CountSurfacePixels", count, screenGroups);
+        for (uint32_t index = 0; index < work.m_scanLevels.size(); ++index)
+        {
+            const SurfaceScanLevel& level = work.m_scanLevels[index];
+            auto* scan = AllocateStep(graph, ScanPipeline::GetPipeline(), dimensions);
+            scan->m_constants.m_scanCount = level.m_count;
+            scan->m_constants.m_scanBuckets = index == 0;
+            if (index == 0)
+                scan->m_constants.m_countsRead = graph.GetSRV(work.m_counts.Get());
+            else
+                scan->m_constants.m_scanInput = graph.GetSRV(work.m_scanLevels[index - 1].m_sums.Get());
 
-        auto* emit = AllocateStep(graph, EmitPixelsPipeline::GetPipeline(), dimensions);
-        emit->m_constants.m_view = graph.GetSRV(view);
-        emit->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
-        emit->m_constants.m_output = graph.GetUAV(work.m_records[0].Get());
-        emit->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(g0));
-        graph.AddDispatchPass("EmitSurfacePixels", emit, Core::ComputeWorkGroupCount(groups));
-        uint32_t input = 0;
-        RadixSort(graph, work, dimensions, true, input);
+            scan->m_constants.m_scanOutput = graph.GetUAV(level.m_offsets.Get());
+            scan->m_constants.m_scanSums = graph.GetUAV(level.m_sums.Get());
+            graph.AddDispatchPass("ScanSurfaceBuckets", scan, DispatchSize(level.m_count));
+        }
 
-        auto* runs = AllocateStep(graph, RunsPipeline::GetPipeline(), dimensions);
-        runs->m_constants.m_view = graph.GetSRV(view);
-        runs->m_constants.m_input = graph.GetSRV(work.m_records[input].Get());
-        runs->m_constants.m_output = graph.GetUAV(work.m_records[input ^ 1].Get());
-        runs->m_constants.m_runs = graph.GetUAV(work.m_runs.Get());
-        runs->m_constants.m_pixels = graph.GetUAV(work.m_pixels.Get());
-        graph.AddDispatchPass("BuildSurfaceRuns", runs, Core::ComputeWorkGroupCount(groups));
-        input ^= 1;
-        RadixSort(graph, work, dimensions, false, input);
+        for (uint32_t index = work.m_scanLevels.size() - 1; index > 0; --index)
+        {
+            const SurfaceScanLevel& child = work.m_scanLevels[index - 1];
+            auto* propagate = AllocateStep(graph, PropagatePipeline::GetPipeline(), dimensions);
+            propagate->m_constants.m_scanCount = child.m_count;
+            propagate->m_constants.m_scanOutput = graph.GetUAV(child.m_offsets.Get());
+            propagate->m_constants.m_parentOffsets = graph.GetSRV(work.m_scanLevels[index].m_offsets.Get());
+            graph.AddDispatchPass("PropagateSurfaceOffsets", propagate, DispatchSize(child.m_count));
+        }
 
-        auto* scan = AllocateStep(graph, ScanWavesPipeline::GetPipeline(), dimensions);
-        scan->m_constants.m_input = graph.GetSRV(work.m_records[input].Get());
-        scan->m_constants.m_runsRead = graph.GetSRV(work.m_runs.Get());
-        scan->m_constants.m_scan = graph.GetUAV(work.m_scan.Get());
-        scan->m_constants.m_blockTotals = graph.GetUAV(work.m_blockTotals.Get());
-        graph.AddDispatchPass("ScanSurfaceWaves", scan, Core::ComputeWorkGroupCount(groups));
-        auto* blocks = AllocateStep(graph, ScanBlocksPipeline::GetPipeline(), dimensions);
-        blocks->m_constants.m_blockTotalsRead = graph.GetSRV(work.m_blockTotals.Get());
-        blocks->m_constants.m_blockOffsets = graph.GetUAV(work.m_blockOffsets.Get());
-
-        graph.AddDispatchPass("ScanSurfaceBlocks", blocks, Core::ComputeWorkGroupCount(1));
-        auto* waves = AllocateStep(graph, EmitWavesPipeline::GetPipeline(), dimensions);
-        waves->m_constants.m_input = graph.GetSRV(work.m_records[input].Get());
-        waves->m_constants.m_runsRead = graph.GetSRV(work.m_runs.Get());
-        waves->m_constants.m_scanRead = graph.GetSRV(work.m_scan.Get());
-        waves->m_constants.m_blockOffsetsRead = graph.GetSRV(work.m_blockOffsets.Get());
-        waves->m_constants.m_waves = graph.GetUAV(work.m_waves.Get());
-        graph.AddDispatchPass("EmitSurfaceWaves", waves, Core::ComputeWorkGroupCount(groups));
-        auto* ranges = AllocateStep(graph, RangesPipeline::GetPipeline(), dimensions);
-        ranges->m_constants.m_input = graph.GetSRV(work.m_records[input].Get());
-        ranges->m_constants.m_scanRead = graph.GetSRV(work.m_scan.Get());
-        ranges->m_constants.m_blockTotalsRead = graph.GetSRV(work.m_blockTotals.Get());
-        ranges->m_constants.m_blockOffsetsRead = graph.GetSRV(work.m_blockOffsets.Get());
-        ranges->m_constants.m_ranges = graph.GetUAV(work.m_ranges.Get());
-        ranges->m_constants.m_arguments = graph.GetUAV(work.m_arguments.Get());
-        graph.AddDispatchPass("SurfaceShaderRanges",
-                              ranges,
-                              Core::ComputeWorkGroupCount(Math::CeilDivide(work.m_shaderCount, kSortBlockSize)));
+        auto* scatter = AllocateStep(graph, ScatterPipeline::GetPipeline(), dimensions);
+        scatter->m_constants.m_view = graph.GetSRV(view);
+        scatter->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
+        scatter->m_constants.m_lookup = graph.GetSRV(work.m_lookup.Get());
+        scatter->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
+        scatter->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
+        scatter->m_constants.m_pixels = graph.GetUAV(work.m_pixels.Get());
+        graph.AddDispatchPass("ScatterSurfacePixels", scatter, screenGroups);
+        auto* commands = AllocateStep(graph, CommandsPipeline::GetPipeline(), dimensions);
+        commands->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
+        commands->m_constants.m_totals = graph.GetSRV(work.m_scanLevels.back().m_sums.Get());
+        commands->m_constants.m_countsRead = graph.GetSRV(work.m_counts.Get());
+        commands->m_constants.m_bindings = graph.GetSRV(work.m_bindings.Get());
+        commands->m_constants.m_shaderBindings = graph.GetSRV(work.m_shaderBindings.Get());
+        commands->m_constants.m_waves = graph.GetUAV(work.m_waves.Get());
+        commands->m_constants.m_ranges = graph.GetUAV(work.m_ranges.Get());
+        commands->m_constants.m_arguments = graph.GetUAV(work.m_arguments.Get());
+        graph.AddDispatchPass("EmitSurfaceCommands", commands, DispatchSize(Math::Max(work.m_waveCapacity, work.m_shaderCount)));
     }
 } // namespace FE::Graphics::Visibility

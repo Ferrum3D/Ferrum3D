@@ -22,8 +22,11 @@ namespace FE::Graphics::SurfaceProbe
         MeshGroupTable groups(&database);
         MaterialInstanceTable materials(&database);
         constexpr uint32_t kGroupCount = 257;
+        const auto unusedGroups = groups.AllocateRows(kGroupCount);
         const auto instanceRows = instances.AllocateRows(kGroupCount);
         const auto groupRows = groups.AllocateRows(kGroupCount);
+        EXPECT_NE(groupRows.m_rowIndex, unusedGroups.m_rowIndex);
+        EXPECT_GT(groupRows.m_rowIndex, 0u);
         const auto materialRows = materials.AllocateRows(kGroupCount);
         for (uint32_t index = 0; index < kGroupCount; ++index)
         {
@@ -45,7 +48,7 @@ namespace FE::Graphics::SurfaceProbe
         Rc<Core::Texture> g0 = Core::Texture::Create(device, "SurfaceProbeG0", Core::Format::kR32_UINT, kResolution);
         Rc<Core::Buffer> marks = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceProbeMarks", kPixelCount * 2);
         Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "SurfaceProbeReadback", kPixelCount * 8);
-        Rc<Core::Buffer> argsReadback = Core::Buffer::CreateByteAddress(device, "SurfaceProbeArgsReadback", 3 * 5 * 12);
+        Rc<Core::Buffer> argsReadback = Core::Buffer::CreateByteAddress(device, "SurfaceProbeArgsReadback", 3 * 17 * 12);
         Rc<Core::Buffer> codec = Core::Buffer::CreateByteAddress(device, "SurfaceCodecProbe", 32);
         Rc<Core::Buffer> codecReadback = Core::Buffer::CreateByteAddress(device, "SurfaceCodecReadback", 32);
         Core::ResourceCommitParams commit;
@@ -54,10 +57,6 @@ namespace FE::Graphics::SurfaceProbe
         pool->CommitBufferMemory(readback.Get(), commit);
         pool->CommitBufferMemory(argsReadback.Get(), commit);
         pool->CommitBufferMemory(codecReadback.Get(), commit);
-        const auto work = Visibility::CreateSurfaceWork(device, 5, 3 * 1024 * 1024);
-        EXPECT_EQ(work.m_tileCapacity, 2u);
-        EXPECT_LE(work.m_scratchBytes, 3u * 1024 * 1024);
-        EXPECT_EQ(Visibility::GetSurfaceTileCapacity(5, 1024), 0u);
         Core::ComputePipelineRequest generateRequest;
         generateRequest.m_desc.SetComputeShader("Shaders/Tests/SurfaceProbeGenerate.cs.hlsl");
         Core::ComputePipeline* generate = pipelines->CreateComputePipeline(generateRequest);
@@ -69,12 +68,42 @@ namespace FE::Graphics::SurfaceProbe
         codecPipeline->GetCompletionWaitGroup()->Wait();
         ASSERT_TRUE(codecPipeline->IsReady());
 
-        for (const uint32_t testCase : { 32u, 64u, 0u })
+        Visibility::SurfaceWork work;
+        for (const uint32_t testCase : { 32u, 64u, 1u, 32u, 0u, 2u })
         {
-            const uint32_t laneCount = testCase == 0 ? 32 : testCase;
+            const uint32_t shaderCount = testCase == 1 ? 1 : testCase == 64 ? 17 : 5;
+            const uint32_t activeShaders = Math::Min(shaderCount, 3u);
+            const uint32_t shaderStride = testCase == 64 ? 8 : 1;
+            festd::vector<Visibility::SurfaceBinding> bindings;
+            for (uint32_t index = 0; index < kGroupCount; ++index)
+            {
+                const uint32_t slot = (index % activeShaders) * shaderStride;
+                materials.WriteRow(materialRows.m_rowIndex + index).m_evaluationSlot.Get() = slot;
+                if (testCase != 2)
+                    bindings.push_back({ groupRows.m_rowIndex + index, slot });
+            }
+
+            const uint32_t laneCount = testCase == 64 ? 64 : 32;
+            Visibility::EnsureSurfaceWork(work,
+                                          device,
+                                          kResolution,
+                                          bindings,
+                                          groups.GetReservedRowCount(),
+                                          shaderCount,
+                                          laneCount);
+            if (testCase == 0)
+                EXPECT_TRUE(work.m_uploaded);
+            EXPECT_EQ(work.m_tileCount, 6u);
+            EXPECT_EQ(work.m_bucketCount, testCase == 2 ? 0u : 6u * kGroupCount);
+            if (testCase == 2)
+                EXPECT_EQ(work.m_waveCapacity, 0u);
+            EXPECT_LT(work.m_scratchBytes, 1024u * 1024);
             Core::ComputePipelineRequest visitRequest;
             visitRequest.m_desc.SetComputeShader("Shaders/Tests/SurfaceProbeVisit.cs.hlsl");
-            visitRequest.m_defines = Env::Name(Fmt::Format("VISIT_LANES={}", laneCount));
+            visitRequest.m_defines = Env::Name(Fmt::Format("VISIT_LANES={} VISIT_SHADER_COUNT={} VISIT_SHADER_STRIDE={}",
+                                                           laneCount,
+                                                           activeShaders,
+                                                           shaderStride));
             Core::ComputePipeline* visit = pipelines->CreateComputePipeline(visitRequest);
             visit->GetCompletionWaitGroup()->Wait();
             ASSERT_TRUE(visit->IsReady());
@@ -93,32 +122,28 @@ namespace FE::Graphics::SurfaceProbe
             seed->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(g0.Get()));
             seed->m_constants.m_marks = graph->GetUAV(marks.Get());
             seed->m_constants.m_instanceBase = instanceRows.m_rowIndex;
-            seed->m_constants.m_groupCount = testCase == 0 ? 0 : kGroupCount;
+            seed->m_constants.m_groupCount = testCase == 0 || testCase == 2 ? 0 : kGroupCount;
             graph->AddDispatchPass("GenerateSurfaceProbe", seed, Core::ComputeWorkGroupCount(Vector2UInt(33, 17)));
-            for (uint32_t firstTile = 0; firstTile < 6; firstTile += 2)
+            Visibility::BuildSurfaceWork(*graph, uploader, viewBuffer.Get(), visibility.Get(), g0.Get(), work);
+            for (uint32_t slot = 0; slot < work.m_shaderCount; ++slot)
             {
-                Visibility::BuildSurfaceWork(*graph, viewBuffer.Get(), visibility.Get(), g0.Get(), work, firstTile, 2, laneCount);
-                for (uint32_t slot = 0; slot < 5; ++slot)
-                {
-                    auto* evaluation = graph->AllocatePassData<ProbeIndirectDesc>();
-                    evaluation->m_pipeline = visit;
-                    evaluation->m_arguments = Core::BufferView(work.m_arguments.Get()).Slice(slot * 12, 12);
-                    evaluation->m_constants.m_resolution = kResolution;
-                    evaluation->m_constants.m_groupBase = groupRows.m_rowIndex;
-                    evaluation->m_constants.m_groupCount = kGroupCount;
-                    evaluation->m_constants.m_shaderSlot = slot;
-                    evaluation->m_constants.m_pixels = graph->GetSRV(work.m_pixels.Get());
-                    evaluation->m_constants.m_waves = graph->GetSRV(work.m_waves.Get());
-                    evaluation->m_constants.m_ranges = graph->GetSRV(work.m_ranges.Get());
-                    evaluation->m_constants.m_marks = graph->GetUAV(marks.Get());
-                    graph->AddPass("VisitSurfaceProbe", evaluation, [](Core::FrameGraphContext& context) {
-                        context.DispatchIndirect();
-                    });
-                }
-
-                graph->AddCopyPass(Core::BufferView(argsReadback.Get()).Slice((firstTile / 2) * 60, 60),
-                                   Core::BufferView(work.m_arguments.Get()));
+                auto* evaluation = graph->AllocatePassData<ProbeIndirectDesc>();
+                evaluation->m_pipeline = visit;
+                evaluation->m_arguments = Core::BufferView(work.m_arguments.Get()).Slice(slot * 12, 12);
+                evaluation->m_constants.m_resolution = kResolution;
+                evaluation->m_constants.m_groupBase = groupRows.m_rowIndex;
+                evaluation->m_constants.m_groupCount = kGroupCount;
+                evaluation->m_constants.m_shaderSlot = slot;
+                evaluation->m_constants.m_pixels = graph->GetSRV(work.m_pixels.Get());
+                evaluation->m_constants.m_waves = graph->GetSRV(work.m_waves.Get());
+                evaluation->m_constants.m_ranges = graph->GetSRV(work.m_ranges.Get());
+                evaluation->m_constants.m_marks = graph->GetUAV(marks.Get());
+                graph->AddPass("VisitSurfaceProbe", evaluation, [](Core::FrameGraphContext& context) {
+                    context.DispatchIndirect();
+                });
             }
+            graph->AddCopyPass(Core::BufferView(argsReadback.Get()).Slice(0, shaderCount * 12),
+                               Core::BufferView(work.m_arguments.Get()).Slice(0, shaderCount * 12));
 
             auto* pack = graph->AllocatePassData<Stage1Probe::PassDesc>();
             pack->m_pipeline = codecPipeline;
@@ -138,16 +163,21 @@ namespace FE::Graphics::SurfaceProbe
             readback->InvalidateMappedRange(0, kPixelCount * 8);
             uint32_t wrong = 0;
             for (uint32_t pixel = 0; pixel < kPixelCount; ++pixel)
-                wrong += results[pixel * 2] != (testCase == 0 || pixel % 7 == 0 ? 0u : 1u) || results[pixel * 2 + 1] != 0;
+                wrong += results[pixel * 2] != (testCase == 0 || testCase == 2 || pixel % 7 == 0 ? 0u : 1u)
+                    || results[pixel * 2 + 1] != 0;
 
             EXPECT_EQ(wrong, 0u);
             readback->Unmap();
             const uint32_t* args = static_cast<const uint32_t*>(argsReadback->Map());
-            argsReadback->InvalidateMappedRange(0, 180);
-            for (uint32_t window = 0; window < 3; ++window)
+            argsReadback->InvalidateMappedRange(0, shaderCount * 12);
+            for (uint32_t slot = 0; slot < work.m_shaderCount; ++slot)
             {
-                EXPECT_EQ(args[window * 15 + 9], 0u);
-                EXPECT_EQ(args[window * 15 + 12], 0u);
+                const bool active =
+                    testCase != 0 && testCase != 2 && slot % shaderStride == 0 && slot / shaderStride < activeShaders;
+                if (active)
+                    EXPECT_GT(args[slot * 3], 0u);
+                else
+                    EXPECT_EQ(args[slot * 3], 0u);
             }
 
             argsReadback->Unmap();

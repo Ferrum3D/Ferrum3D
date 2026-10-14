@@ -1,5 +1,7 @@
 # Renderer sample
 
+Validation is disabled by default. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Use neither flag for performance measurements and Nsight captures.
+
 Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These run GPU loose tiling and surface evaluation; lighting remains forward until Stage 4. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).
 
 Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`). Forward shading remains the default. `--smoke` renders eight frames and exits. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).

@@ -6,6 +6,7 @@
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Materials/ParameterAllocator.h>
+#include <Graphics/Passes/SurfaceWorkBuilder.h>
 #include <Graphics/Renderer.h>
 #include <festd/vector.h>
 #include <memory>
@@ -58,5 +59,6 @@ namespace FE::Graphics
         Rc<Core::Texture> m_mainDepthTarget;
         Rc<Core::Texture> m_visibilityTarget;
         Core::RingUploader m_renderQueueUploader;
+        Visibility::SurfaceWork m_surfaceWork;
     };
 } // namespace FE::Graphics

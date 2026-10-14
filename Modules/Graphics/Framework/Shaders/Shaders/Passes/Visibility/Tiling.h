@@ -6,19 +6,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
 #if FE_HOST
     using MeshPass::ViewData;
 #endif
-    FE_CONSTEXPR uint32_t kSortBlockSize = 256;
-    FE_CONSTEXPR uint32_t kRadixBinCount = 16;
-
-    struct SurfaceRun final
-    {
-        uint32_t m_group;
-        uint32_t m_tile;
-        uint32_t m_pixelOffset;
-        uint32_t m_count;
-        uint32_t m_evaluationSlot;
-        uint32_t m_shadingRoute;
-    };
-
+    FE_CONSTEXPR uint32_t kSurfaceBlockSize = 256;
 
     struct ShaderRange final
     {
@@ -31,34 +19,32 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     {
         StructuredBufferDescriptor<ViewData> m_view;
         Texture2DDescriptor<uint2> m_visibility;
-        StructuredBufferDescriptor<uint2> m_input;
-        RWStructuredBufferDescriptor<uint2> m_output;
-        RWStructuredBufferDescriptor<uint32_t> m_histogram;
-        RWStructuredBufferDescriptor<uint32_t> m_offsets;
+        StructuredBufferDescriptor<uint2> m_lookup;
+        StructuredBufferDescriptor<uint32_t> m_bindings;
+        StructuredBufferDescriptor<uint2> m_shaderBindings;
+        RWStructuredBufferDescriptor<uint32_t> m_counts;
+        RWStructuredBufferDescriptor<uint32_t> m_cursors;
+        StructuredBufferDescriptor<uint32_t> m_countsRead;
         RWStructuredBufferDescriptor<uint32_t> m_pixels;
-        RWStructuredBufferDescriptor<SurfaceRun> m_runs;
         RWStructuredBufferDescriptor<WaveCommand> m_waves;
         RWStructuredBufferDescriptor<ShaderRange> m_ranges;
         RWStructuredBufferDescriptor<DispatchArguments> m_arguments;
-        RWStructuredBufferDescriptor<uint32_t> m_scan;
-        RWStructuredBufferDescriptor<uint32_t> m_blockTotals;
-        RWStructuredBufferDescriptor<uint32_t> m_blockOffsets;
-        StructuredBufferDescriptor<uint32_t> m_histogramRead;
-        StructuredBufferDescriptor<uint32_t> m_offsetsRead;
-        StructuredBufferDescriptor<SurfaceRun> m_runsRead;
-        StructuredBufferDescriptor<uint32_t> m_scanRead;
-        StructuredBufferDescriptor<uint32_t> m_blockTotalsRead;
-        StructuredBufferDescriptor<uint32_t> m_blockOffsetsRead;
+        StructuredBufferDescriptor<uint2> m_scanInput;
+        RWStructuredBufferDescriptor<uint2> m_scanOutput;
+        RWStructuredBufferDescriptor<uint2> m_scanSums;
+        StructuredBufferDescriptor<uint2> m_parentOffsets;
+        StructuredBufferDescriptor<uint2> m_offsets;
+        StructuredBufferDescriptor<uint2> m_totals;
         RWTexture2DDescriptor<uint32_t> m_g0;
         uint2 m_resolution;
-        uint32_t m_firstTile;
-        uint32_t m_tileCount;
-        uint32_t m_pixelCount;
         uint32_t m_tilesPerRow;
+        uint32_t m_tileCount;
+        uint32_t m_bucketCount;
+        uint32_t m_groupRowCount;
         uint32_t m_shaderCount;
         uint32_t m_waveLaneCount;
-        uint32_t m_shift;
-        uint32_t m_segmented;
+        uint32_t m_scanCount;
+        uint32_t m_scanBuckets;
         FE_RTTI_Reflect("D2156239-F9FB-4508-A008-00EBB0F01084");
     };
 

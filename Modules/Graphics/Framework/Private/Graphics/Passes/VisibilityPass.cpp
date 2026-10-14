@@ -28,55 +28,65 @@ namespace FE::Graphics::Visibility
                                                       Core::Format::kR32_UINT,
                                                       resolution);
 
-            auto* clear = graph.AllocatePassData<SurfaceDirectPassDesc>();
-            clear->m_pipeline = ClearSurfacePipeline::GetPipeline();
-            clear->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(planes[0].Get()));
-            clear->m_constants.m_resolution = resolution;
-            graph.AddDispatchPass(
-                "ClearSurfaceG0",
-                clear,
-                Core::ComputeWorkGroupCount(Vector2UInt(Math::CeilDivide(resolution.x, 8u), Math::CeilDivide(resolution.y, 8u))));
             if (!view.m_scene->GetModules().Contains<MeshSceneModule>())
+            {
+                auto* clear = graph.AllocatePassData<SurfaceDirectPassDesc>();
+                clear->m_pipeline = ClearSurfacePipeline::GetPipeline();
+                clear->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(planes[0].Get()));
+                clear->m_constants.m_resolution = resolution;
+                graph.AddDispatchPass("ClearSurfaceG0",
+                                      clear,
+                                      Core::ComputeWorkGroupCount(
+                                          Vector2UInt(Math::CeilDivide(resolution.x, 8u), Math::CeilDivide(resolution.y, 8u))));
                 return;
+            }
 
             const MeshSceneModule& meshes = view.m_scene->GetModules().Find<MeshSceneModule>();
             const auto pipelines = meshes.GetEvaluationPipelines().GetPipelines();
-            const SurfaceWork work = CreateSurfaceWork(graph.GetDevice(), pipelines.size());
-            const uint32_t tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
-            const uint32_t tiles = tilesPerRow * Math::CeilDivide(resolution.y, kTileSize);
-            for (uint32_t firstTile = 0; firstTile < tiles; firstTile += work.m_tileCapacity)
+            festd::vector<SurfaceBinding> bindings;
+            for (const MeshGroup* group : meshes.GetGroups())
             {
-                FE_FG_SCOPE(graph, Fmt::FixedFormat("SurfaceTiles{}", firstTile));
-                BuildSurfaceWork(graph,
-                                 viewBuffer,
-                                 visibility,
-                                 planes[0].Get(),
-                                 work,
-                                 firstTile,
-                                 Math::Min(work.m_tileCapacity, tiles - firstTile),
-                                 meshes.GetEvaluationWaveLaneCount());
-                for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
-                {
-                    auto* evaluation = graph.AllocatePassData<SurfacePassDesc>();
-                    evaluation->m_pipeline = pipelines[slot].Get();
-                    evaluation->m_arguments = Core::BufferView(work.m_arguments.Get())
-                                                  .Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
-                    evaluation->m_constants.m_view = graph.GetSRV(viewBuffer);
-                    evaluation->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
-                    evaluation->m_constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
-                    evaluation->m_constants.m_waves = graph.GetSRV(work.m_waves.Get());
-                    evaluation->m_constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
-                    evaluation->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(planes[0].Get()));
-                    evaluation->m_constants.m_g1 = graph.GetUAV(Core::TextureView::Create(planes[1].Get()));
-                    evaluation->m_constants.m_g2 = graph.GetUAV(Core::TextureView::Create(planes[2].Get()));
-                    evaluation->m_constants.m_g3 = graph.GetUAV(Core::TextureView::Create(planes[3].Get()));
-                    evaluation->m_constants.m_resolution = resolution;
-                    evaluation->m_constants.m_tilesPerRow = tilesPerRow;
-                    evaluation->m_constants.m_shaderSlot = slot;
-                    graph.AddPass("EvaluateSurface", evaluation, [](Core::FrameGraphContext& context) {
-                        context.DispatchIndirect();
-                    });
-                }
+                if (group == nullptr || group->m_buffer == nullptr || group->m_instanceCount == 0)
+                    continue;
+
+                const auto material = meshes.GetMaterialInstanceTable()->ReadRow(group->m_materialRef);
+                const uint32_t slot = material.m_evaluationSlot.Get();
+                if (slot < pipelines.size() && material.m_shadingSlot.Get() < 254)
+                    bindings.push_back({ group->m_tableRef.m_rowIndex, slot });
+            }
+
+            SurfaceWork& work = *view.m_surfaceWork;
+            EnsureSurfaceWork(work,
+                              graph.GetDevice(),
+                              resolution,
+                              bindings,
+                              meshes.GetMeshGroupTable()->GetReservedRowCount(),
+                              pipelines.size(),
+                              meshes.GetEvaluationWaveLaneCount());
+            FE_FG_SCOPE(graph, "SurfaceClassification");
+            BuildSurfaceWork(graph, *view.m_renderQueueUploader, viewBuffer, visibility, planes[0].Get(), work);
+            const uint32_t tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
+            for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
+            {
+                auto* evaluation = graph.AllocatePassData<SurfacePassDesc>();
+                evaluation->m_pipeline = pipelines[slot].Get();
+                evaluation->m_arguments =
+                    Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
+                evaluation->m_constants.m_view = graph.GetSRV(viewBuffer);
+                evaluation->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
+                evaluation->m_constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
+                evaluation->m_constants.m_waves = graph.GetSRV(work.m_waves.Get());
+                evaluation->m_constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
+                evaluation->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(planes[0].Get()));
+                evaluation->m_constants.m_g1 = graph.GetUAV(Core::TextureView::Create(planes[1].Get()));
+                evaluation->m_constants.m_g2 = graph.GetUAV(Core::TextureView::Create(planes[2].Get()));
+                evaluation->m_constants.m_g3 = graph.GetUAV(Core::TextureView::Create(planes[3].Get()));
+                evaluation->m_constants.m_resolution = resolution;
+                evaluation->m_constants.m_tilesPerRow = tilesPerRow;
+                evaluation->m_constants.m_shaderSlot = slot;
+                graph.AddPass("EvaluateSurface", evaluation, [](Core::FrameGraphContext& context) {
+                    context.DispatchIndirect();
+                });
             }
         }
     } // namespace

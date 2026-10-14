@@ -111,6 +111,11 @@ namespace FE::Graphics
             return m_batches;
         }
 
+        [[nodiscard]] const festd::vector<MeshGroup*>& GetGroups() const
+        {
+            return m_meshGroups;
+        }
+
         [[nodiscard]] IO::AssetRead<MeshAsset> FindAsset(DB::Ref<MeshGroupTable> group) const;
 
         [[nodiscard]] MeshInstanceTable* GetMeshInstanceTable() const

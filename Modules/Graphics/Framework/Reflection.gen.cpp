@@ -5517,67 +5517,63 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[30 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[28 * sizeof(Rtti::TypeID)] = {
             0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
             0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
             0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
             0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_visibility
             0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_input
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_lookup
+            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_bindings
+            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_shaderBindings
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_output
+            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_counts
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_histogram
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_offsets
+            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_cursors
+            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_countsRead
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
             0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_pixels
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_runs
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
             0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_waves
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
             0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_ranges
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
             0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_arguments
+            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_scanInput
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_scan
+            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_scanOutput
             0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_blockTotals
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_blockOffsets
+            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_scanSums
             0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_histogramRead
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_parentOffsets
             0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_offsetsRead
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_offsets
             0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_runsRead
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_scanRead
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_blockTotalsRead
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_blockOffsetsRead
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_totals
             0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
             0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_g0
             0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
             0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_firstTile
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tileCount
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_pixelCount
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_bucketCount
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_groupRowCount
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_shaderCount
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_waveLaneCount
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_shift
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_scanCount
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_segmented
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_scanBuckets
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -5585,17 +5581,19 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_visibility = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_input = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lookup = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_output = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bindings = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_histogram = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderBindings = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offsets = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counts = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_cursors = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_countsRead = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixels = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runs = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_waves = {};
 
@@ -5603,45 +5601,39 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scan = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanInput = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_blockTotals = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanOutput = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_blockOffsets = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanSums = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_histogramRead = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_parentOffsets = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offsetsRead = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offsets = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runsRead = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanRead = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_blockTotalsRead = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_blockOffsetsRead = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_totals = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g0 = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_firstTile = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tileCount = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixelCount = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bucketCount = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderCount = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_waveLaneCount = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shift = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanCount = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_segmented = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanBuckets = {};
 
-        static const festd::array<Rtti::FieldInfo, 30> kFields = {
+        static const festd::array<Rtti::FieldInfo, 28> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &TilingConstants::m_view,
@@ -5652,145 +5644,135 @@ namespace FE::Graphics::Visibility
                                                         &TilingConstants::m_visibility,
                                                         kAttributes_m_visibility,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_input",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lookup",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &TilingConstants::m_input,
-                                                        kAttributes_m_input,
+                                                        &TilingConstants::m_lookup,
+                                                        kAttributes_m_lookup,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bindings",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &TilingConstants::m_output,
-                                                        kAttributes_m_output,
+                                                        &TilingConstants::m_bindings,
+                                                        kAttributes_m_bindings,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_histogram",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderBindings",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &TilingConstants::m_histogram,
-                                                        kAttributes_m_histogram,
+                                                        &TilingConstants::m_shaderBindings,
+                                                        kAttributes_m_shaderBindings,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsets",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counts",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &TilingConstants::m_offsets,
-                                                        kAttributes_m_offsets,
+                                                        &TilingConstants::m_counts,
+                                                        kAttributes_m_counts,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cursors",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        &TilingConstants::m_cursors,
+                                                        kAttributes_m_cursors,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_countsRead",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        &TilingConstants::m_countsRead,
+                                                        kAttributes_m_countsRead,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixels",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
                                                         &TilingConstants::m_pixels,
                                                         kAttributes_m_pixels,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_runs",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &TilingConstants::m_runs,
-                                                        kAttributes_m_runs,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_waves",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
                                                         &TilingConstants::m_waves,
                                                         kAttributes_m_waves,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_ranges",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
                                                         &TilingConstants::m_ranges,
                                                         kAttributes_m_ranges,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
                                                         &TilingConstants::m_arguments,
                                                         kAttributes_m_arguments,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scan",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &TilingConstants::m_scan,
-                                                        kAttributes_m_scan,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_blockTotals",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanInput",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
-                                                        &TilingConstants::m_blockTotals,
-                                                        kAttributes_m_blockTotals,
+                                                        &TilingConstants::m_scanInput,
+                                                        kAttributes_m_scanInput,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_blockOffsets",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanOutput",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
-                                                        &TilingConstants::m_blockOffsets,
-                                                        kAttributes_m_blockOffsets,
+                                                        &TilingConstants::m_scanOutput,
+                                                        kAttributes_m_scanOutput,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_histogramRead",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanSums",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 14 * sizeof(TypeID)),
-                                                        &TilingConstants::m_histogramRead,
-                                                        kAttributes_m_histogramRead,
+                                                        &TilingConstants::m_scanSums,
+                                                        kAttributes_m_scanSums,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsetsRead",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_parentOffsets",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 15 * sizeof(TypeID)),
-                                                        &TilingConstants::m_offsetsRead,
-                                                        kAttributes_m_offsetsRead,
+                                                        &TilingConstants::m_parentOffsets,
+                                                        kAttributes_m_parentOffsets,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_runsRead",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsets",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 16 * sizeof(TypeID)),
-                                                        &TilingConstants::m_runsRead,
-                                                        kAttributes_m_runsRead,
+                                                        &TilingConstants::m_offsets,
+                                                        kAttributes_m_offsets,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanRead",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_totals",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 17 * sizeof(TypeID)),
-                                                        &TilingConstants::m_scanRead,
-                                                        kAttributes_m_scanRead,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_blockTotalsRead",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 18 * sizeof(TypeID)),
-                                                        &TilingConstants::m_blockTotalsRead,
-                                                        kAttributes_m_blockTotalsRead,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_blockOffsetsRead",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 19 * sizeof(TypeID)),
-                                                        &TilingConstants::m_blockOffsetsRead,
-                                                        kAttributes_m_blockOffsetsRead,
+                                                        &TilingConstants::m_totals,
+                                                        kAttributes_m_totals,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 20 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 18 * sizeof(TypeID)),
                                                         &TilingConstants::m_g0,
                                                         kAttributes_m_g0,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 21 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 19 * sizeof(TypeID)),
                                                         &TilingConstants::m_resolution,
                                                         kAttributes_m_resolution,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_firstTile",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 22 * sizeof(TypeID)),
-                                                        &TilingConstants::m_firstTile,
-                                                        kAttributes_m_firstTile,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tileCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 23 * sizeof(TypeID)),
-                                                        &TilingConstants::m_tileCount,
-                                                        kAttributes_m_tileCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixelCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 24 * sizeof(TypeID)),
-                                                        &TilingConstants::m_pixelCount,
-                                                        kAttributes_m_pixelCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 25 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 20 * sizeof(TypeID)),
                                                         &TilingConstants::m_tilesPerRow,
                                                         kAttributes_m_tilesPerRow,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tileCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 21 * sizeof(TypeID)),
+                                                        &TilingConstants::m_tileCount,
+                                                        kAttributes_m_tileCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bucketCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 22 * sizeof(TypeID)),
+                                                        &TilingConstants::m_bucketCount,
+                                                        kAttributes_m_bucketCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_groupRowCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 23 * sizeof(TypeID)),
+                                                        &TilingConstants::m_groupRowCount,
+                                                        kAttributes_m_groupRowCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 26 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 24 * sizeof(TypeID)),
                                                         &TilingConstants::m_shaderCount,
                                                         kAttributes_m_shaderCount,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_waveLaneCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 27 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 25 * sizeof(TypeID)),
                                                         &TilingConstants::m_waveLaneCount,
                                                         kAttributes_m_waveLaneCount,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shift",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 28 * sizeof(TypeID)),
-                                                        &TilingConstants::m_shift,
-                                                        kAttributes_m_shift,
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 26 * sizeof(TypeID)),
+                                                        &TilingConstants::m_scanCount,
+                                                        kAttributes_m_scanCount,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_segmented",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 29 * sizeof(TypeID)),
-                                                        &TilingConstants::m_segmented,
-                                                        kAttributes_m_segmented,
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanBuckets",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 27 * sizeof(TypeID)),
+                                                        &TilingConstants::m_scanBuckets,
+                                                        kAttributes_m_scanBuckets,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 

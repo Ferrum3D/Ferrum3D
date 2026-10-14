@@ -23,8 +23,7 @@ bool LoadEvaluationPixel(uint3 dispatch, uint lane, out uint2 pixel, out uint gr
         return false;
 
     const uint offset = command.m_pixelOffset + lane;
-    const uint packed = GConstants.m_pixels.Load(offset / 2);
-    const uint local = (packed >> ((offset & 1) * 16)) & 65535;
+    const uint local = GConstants.m_pixels.Load(offset);
     pixel = uint2(command.m_tile % GConstants.m_tilesPerRow, command.m_tile / GConstants.m_tilesPerRow) * kTileSize
         + uint2(local & 127, (local >> 7) & 127);
     groupIndex = command.m_group;
