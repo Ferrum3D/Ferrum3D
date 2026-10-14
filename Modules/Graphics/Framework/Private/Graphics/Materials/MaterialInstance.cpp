@@ -235,11 +235,11 @@ namespace FE::Graphics
     }
 
 
-    Core::ComputePipeline* MaterialInstanceRuntime::GetComputePipeline(const Env::Name role)
+    Core::ComputePipeline* MaterialInstanceRuntime::GetComputePipeline(const Env::Name role, const uint32_t waveLaneCount)
     {
         for (const PipelineEntry& entry : m_pipelines)
         {
-            if (entry.m_role == role)
+            if (entry.m_role == role && entry.m_waveLaneCount == waveLaneCount)
                 return entry.m_computePipeline;
         }
 
@@ -252,6 +252,18 @@ namespace FE::Graphics
         Core::ComputePipelineRequest request;
         request.m_desc.SetComputeShader(technique->m_computeShader);
         request.m_defines = technique->m_shaderDefines.empty() ? Env::Name::kEmpty : Env::Name(technique->m_shaderDefines);
+        if (waveLaneCount != 32)
+        {
+            FE_Assert(waveLaneCount == 64);
+            request.m_defines = Env::Name(Fmt::Format("{} EVALUATION_LANES=64", technique->m_shaderDefines));
+            const Core::ComputeCapabilities capabilities = m_pipelineFactory->GetDevice()->GetComputeCapabilities();
+            if (capabilities.m_waveLaneCountControl && capabilities.m_minWaveLaneCount <= 64
+                && capabilities.m_maxWaveLaneCount >= 64)
+            {
+                request.m_desc.m_waveLaneCount = 64;
+            }
+        }
+
         Core::ComputePipeline* pipeline = m_pipelineFactory->CreateComputePipeline(request);
         pipeline->GetCompletionWaitGroup()->Wait();
         if (!pipeline->IsReady())
@@ -263,6 +275,7 @@ namespace FE::Graphics
         PipelineEntry& entry = m_pipelines.emplace_back();
         entry.m_role = role;
         entry.m_computePipeline = pipeline;
+        entry.m_waveLaneCount = waveLaneCount;
         return pipeline;
     }
 

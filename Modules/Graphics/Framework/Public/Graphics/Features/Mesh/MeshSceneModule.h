@@ -135,6 +135,11 @@ namespace FE::Graphics
 
         [[nodiscard]] IO::AssetRead<MaterialInstanceAsset> FindMaterial(DB::Ref<MeshGroupTable> group) const;
 
+        [[nodiscard]] uint32_t GetEvaluationWaveLaneCount() const
+        {
+            return m_evaluationWaveLaneCount;
+        }
+
         [[nodiscard]] const ComputePassRegistry& GetEvaluationPipelines() const
         {
             return m_evaluationPipelines;
@@ -189,6 +194,7 @@ namespace FE::Graphics
         Rc<MeshBatchTable> m_batchTable;
         Rc<MeshMemberTable> m_memberTable;
         festd::vector<MeshPipelineRegistry> m_registries;
+        uint32_t m_evaluationWaveLaneCount = 32;
         ComputePassRegistry m_evaluationPipelines;
         ComputePassRegistry m_shadingPipelines;
         uint64_t m_revision = 1;

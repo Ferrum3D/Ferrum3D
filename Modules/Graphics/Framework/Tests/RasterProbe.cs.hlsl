@@ -1,5 +1,6 @@
 #include <Shaders/Tests/RasterProbe.h>
 #include <Shaders/Passes/Visibility/Reconstruction.hlsli>
+#include <Shaders/Passes/Visibility/SurfaceCodec.hlsli>
 
 [[vk::push_constant]] Constants GConstants;
 
@@ -12,7 +13,7 @@ void main(uint3 group : SV_GroupID)
     const float depth = GConstants.m_depth.Load(uint3(pixel, 0));
     ReconstructedAttributes attributes;
     const bool valid = ReconstructAttributes(GConstants.m_view.Load(0), id, float2(pixel) + 0.5f, float2(64, 64), attributes);
-    const uint offset = group.x * 12;
+    const uint offset = group.x * 16;
     GConstants.m_words.Store(offset, id.x);
     GConstants.m_words.Store(offset + 1, id.y);
     GConstants.m_words.Store(offset + 2, asuint(depth));
@@ -25,4 +26,10 @@ void main(uint3 group : SV_GroupID)
     GConstants.m_words.Store(offset + 9, asuint(attributes.m_uvDdx.x));
     GConstants.m_words.Store(offset + 10, asuint(attributes.m_uvDdy.y));
     GConstants.m_words.Store(offset + 11, asuint(attributes.m_depth));
+    const uint color = GConstants.m_g0.Load(uint3(pixel, 0));
+    GConstants.m_words.Store(offset + 12, color >> 24);
+    GConstants.m_words.Store(offset + 13, color);
+    const float normalZ = color >> 24 != 0 ? DecodeSurfaceNormal(GConstants.m_g1.Load(uint3(pixel, 0))).z : 0;
+    GConstants.m_words.Store(offset + 14, asuint(normalZ));
+    GConstants.m_words.Store(offset + 15, color >> 24 != 0 ? GConstants.m_g2.Load(uint3(pixel, 0)) : 0);
 }

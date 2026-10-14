@@ -49,4 +49,14 @@ material:technique("Opaque", function(t, ctx)
     return true
 end)
 
+material:technique("SurfaceEvaluate", function(t, ctx)
+    t.computeShader = "Shaders/Materials/EvaluateTextured.cs.hlsl"
+    return true
+end)
+
+material:technique("DeferredShade", function(t, ctx)
+    t.computeShader = "Shaders/Passes/Visibility/ShadeSimpleLit.cs.hlsl"
+    return true
+end)
+
 return material

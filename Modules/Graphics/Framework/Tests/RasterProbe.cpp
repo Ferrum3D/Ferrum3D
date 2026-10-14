@@ -3,12 +3,15 @@
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/PipelineFactory.h>
+#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
+#include <Graphics/Passes/SurfaceWorkBuilder.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Shaders/Passes/MeshPass/IndirectArguments.h>
 #include <Shaders/Passes/MeshPass/MeshPass.h>
+#include <Shaders/Passes/Visibility/Surface.h>
 #include <gtest/gtest.h>
 
 namespace FE::Graphics::RasterProbe
@@ -44,10 +47,16 @@ namespace FE::Graphics::RasterProbe
     void Check(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue, Core::DescriptorManager* descriptors,
                Core::PipelineFactory* pipelines)
     {
+        Core::CompileGlobalPipelineSets(pipelines);
+        Core::WaitForGlobalPipelineSets();
         DB::Database database(device, pool);
         MeshInstanceTable instances(&database);
         MeshGroupTable groups(&database);
         MeshLodInfoTable lods(&database);
+        MaterialInstanceTable materials(&database);
+        const auto material = materials.AllocateRow();
+        materials.WriteRow(material).m_evaluationSlot.Get() = 0;
+        materials.WriteRow(material).m_shadingSlot.Get() = 0;
         const auto unusedInstance = instances.AllocateRow();
         const auto instance = instances.AllocateRow();
         const auto group = groups.AllocateRow();
@@ -81,6 +90,7 @@ namespace FE::Graphics::RasterProbe
         const auto groupRow = groups.WriteRow(group);
         groupRow.m_geometry.Get() = BufferPointer(geometryBuffer->GetDeviceAddress());
         groupRow.m_lods.Get() = { lod.m_rowIndex, 1 };
+        groupRow.m_materialInstance.Get() = material;
         lods.WriteRow(lod).m_info.Get() = { 3, 3, 2, 2 };
         const auto instanceRow = instances.WriteRow(instance);
         instanceRow.m_meshGroup.Get() = group;
@@ -95,8 +105,8 @@ namespace FE::Graphics::RasterProbe
         Rc<Core::Buffer> commands = Core::Buffer::CreateStructured<MeshPass::MeshCommandRange>(device, "RasterProbeCommands", 1);
         Rc<Core::Buffer> arguments =
             Core::Buffer::CreateStructured<MeshPass::MeshDispatchArguments>(device, "RasterProbeArguments", 1);
-        Rc<Core::Buffer> output = Core::Buffer::CreateByteAddress(device, "RasterProbeOutput", 96);
-        Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "RasterProbeReadback", 96);
+        Rc<Core::Buffer> output = Core::Buffer::CreateByteAddress(device, "RasterProbeOutput", 128);
+        Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "RasterProbeReadback", 128);
         Core::ResourceCommitParams readbackCommit;
         readbackCommit.m_memory = Core::ResourceMemory::kHostRandomAccess;
         readbackCommit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
@@ -139,6 +149,7 @@ namespace FE::Graphics::RasterProbe
         view.m_instances = instances.GetDeviceAddress();
         view.m_groups = groups.GetDeviceAddress();
         view.m_lods = lods.GetDeviceAddress();
+        view.m_materials = materials.GetDeviceAddress();
         view.m_visibleInstances = graph->GetSRV(visible.Get());
         view.m_workChunks = graph->GetSRV(work.Get());
         view.m_commands = graph->GetSRV(commands.Get());
@@ -168,11 +179,55 @@ namespace FE::Graphics::RasterProbe
                            context.PushConstants(MeshPass::Constants{ viewDescriptor, 0 });
                            context.DispatchMeshIndirect();
                        });
+        Rc<Core::Texture> planes[4];
+        for (uint32_t plane = 0; plane < 4; ++plane)
+            planes[plane] = Core::Texture::Create(device,
+                                                  Fmt::FormatName("RasterSurfaceG{}", plane),
+                                                  Core::Format::kR32_UINT,
+                                                  Vector2UInt(64, 64));
+
+        Core::ComputePipelineRequest clearRequest;
+        clearRequest.m_desc.SetComputeShader("Shaders/Passes/Visibility/ClearSurface.cs.hlsl");
+        Core::ComputePipeline* clearPipeline = pipelines->CreateComputePipeline(clearRequest);
+        clearPipeline->GetCompletionWaitGroup()->Wait();
+        auto* clear = graph->AllocatePassData<Visibility::SurfaceDirectPassDesc>();
+        clear->m_pipeline = clearPipeline;
+        clear->m_constants.m_resolution = Vector2UInt(64, 64);
+        clear->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
+        graph->AddDispatchPass("ClearRasterSurface", clear, Core::ComputeWorkGroupCount(Vector2UInt(8, 8)));
+        const auto surfaceWork = Visibility::CreateSurfaceWork(device, 1, 2 * 1024 * 1024);
+        Visibility::BuildSurfaceWork(*graph, viewBuffer.Get(), visibility.Get(), planes[0].Get(), surfaceWork, 0, 1, 32);
+        Core::ComputePipelineRequest evaluateRequest;
+        evaluateRequest.m_desc.SetComputeShader("Shaders/Materials/EvaluateBunnyVariants.cs.hlsl");
+        evaluateRequest.m_defines = Env::Name("BUNNY_PALETTE=1");
+        Core::ComputePipeline* evaluate = pipelines->CreateComputePipeline(evaluateRequest);
+        evaluate->GetCompletionWaitGroup()->Wait();
+        ASSERT_TRUE(evaluate->IsReady());
+        auto* evaluation = graph->AllocatePassData<Visibility::SurfacePassDesc>();
+        evaluation->m_pipeline = evaluate;
+        evaluation->m_arguments = Core::BufferView(surfaceWork.m_arguments.Get()).Slice(0, 12);
+        evaluation->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
+        evaluation->m_constants.m_visibility = graph->GetSRV(Core::TextureView::Create(visibility.Get()));
+        evaluation->m_constants.m_pixels = graph->GetSRV(surfaceWork.m_pixels.Get());
+        evaluation->m_constants.m_waves = graph->GetSRV(surfaceWork.m_waves.Get());
+        evaluation->m_constants.m_ranges = graph->GetSRV(surfaceWork.m_ranges.Get());
+        evaluation->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
+        evaluation->m_constants.m_g1 = graph->GetUAV(Core::TextureView::Create(planes[1].Get()));
+        evaluation->m_constants.m_g2 = graph->GetUAV(Core::TextureView::Create(planes[2].Get()));
+        evaluation->m_constants.m_g3 = graph->GetUAV(Core::TextureView::Create(planes[3].Get()));
+        evaluation->m_constants.m_resolution = Vector2UInt(64, 64);
+        evaluation->m_constants.m_tilesPerRow = 1;
+        graph->AddPass("EvaluateRasterSurface", evaluation, [](Core::FrameGraphContext& context) {
+            context.DispatchIndirect();
+        });
         auto* inspect = graph->AllocatePassData<PassDesc>();
         inspect->m_pipeline = probe;
         inspect->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
         inspect->m_constants.m_visibility = graph->GetSRV(Core::TextureView::Create(visibility.Get()));
         inspect->m_constants.m_depth = graph->GetSRV(Core::TextureView::Create(depth.Get()));
+        inspect->m_constants.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
+        inspect->m_constants.m_g1 = graph->GetSRV(Core::TextureView::Create(planes[1].Get()));
+        inspect->m_constants.m_g2 = graph->GetSRV(Core::TextureView::Create(planes[2].Get()));
         inspect->m_constants.m_words = graph->GetUAV(output.Get());
         graph->AddDispatchPass("InspectRasterProbe", inspect, Core::ComputeWorkGroupCount(2));
         graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(output.Get()));
@@ -185,7 +240,7 @@ namespace FE::Graphics::RasterProbe
         fence.Wait();
         device->WaitIdle();
         const uint32_t* words = static_cast<const uint32_t*>(readback->Map());
-        readback->InvalidateMappedRange(0, 96);
+        readback->InvalidateMappedRange(0, 128);
         EXPECT_EQ(words[0], instance.m_rowIndex + 1);
         EXPECT_EQ(words[1], 64u);
         EXPECT_NEAR(std::bit_cast<float>(words[2]), 0.5f, 1e-6f);
@@ -198,9 +253,14 @@ namespace FE::Graphics::RasterProbe
         EXPECT_NEAR(std::bit_cast<float>(words[9]), -0.01953125f, 1e-5f);
         EXPECT_NEAR(std::bit_cast<float>(words[10]), -0.01953125f, 1e-5f);
         EXPECT_NEAR(std::bit_cast<float>(words[11]), 0.5f, 1e-6f);
-        EXPECT_EQ(words[12], 0u);
-        EXPECT_EQ(words[14], 0u);
+        EXPECT_EQ(words[12], 1u);
+        EXPECT_EQ(words[13], 0x01f3da89u);
+        EXPECT_GT(std::bit_cast<float>(words[14]), 0.9999f);
         EXPECT_EQ(words[15], 0u);
+        EXPECT_EQ(words[16], 0u);
+        EXPECT_EQ(words[18], 0u);
+        EXPECT_EQ(words[19], 0u);
+        EXPECT_EQ(words[28], 0u);
         readback->Unmap();
         graph.Reset();
         uploader.Shutdown();

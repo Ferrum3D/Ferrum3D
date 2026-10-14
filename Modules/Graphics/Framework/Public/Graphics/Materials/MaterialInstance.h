@@ -16,7 +16,7 @@ namespace FE::Graphics
         MaterialInstanceRuntime& operator=(const MaterialInstanceRuntime&) = delete;
 
         [[nodiscard]] Core::GraphicsPipeline* GetPipeline(Env::Name role);
-        [[nodiscard]] Core::ComputePipeline* GetComputePipeline(Env::Name role);
+        [[nodiscard]] Core::ComputePipeline* GetComputePipeline(Env::Name role, uint32_t waveLaneCount = 32);
         [[nodiscard]] bool HasTechnique(Env::Name role) const;
         [[nodiscard]] BufferPointer GetMaterialParameters() const;
         [[nodiscard]] MaterialParameterAllocator::Allocation AllocateInstanceParameters();
@@ -29,6 +29,7 @@ namespace FE::Graphics
             Env::Name m_role;
             Core::GraphicsPipeline* m_pipeline = nullptr;
             Core::ComputePipeline* m_computePipeline = nullptr;
+            uint32_t m_waveLaneCount = 32;
         };
 
         void MergeShaderLayouts(Env::Name shader, Env::Name defines);

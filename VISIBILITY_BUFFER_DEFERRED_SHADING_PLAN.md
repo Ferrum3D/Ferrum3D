@@ -1,6 +1,6 @@
 # Visibility buffer and compute deferred shading migration
 
-Status: Stages 1 and 2 are implemented, including selectable forward/visibility reconstruction views and automated GPU readback validation. Reference-frame comparisons and manual GPU-capture checkpoints remain pending. Reviewed on 2026-10-14. See `VISIBILITY_BUFFER_STAGE1.md` and `VISIBILITY_BUFFER_STAGE2.md` for interfaces and validation workflows.
+Status: Stages 1 through 3 are implemented, including bounded GPU loose tiling, indirect material evaluation and packed GBuffer debug views. Forward shading remains the default. Manual visual comparisons, GPU captures and performance measurements remain pending. See `VISIBILITY_BUFFER_STAGE1.md`, `VISIBILITY_BUFFER_STAGE2.md` and `VISIBILITY_BUFFER_STAGE3.md` for interfaces and validation workflows.
 
 ## 1. Direction
 

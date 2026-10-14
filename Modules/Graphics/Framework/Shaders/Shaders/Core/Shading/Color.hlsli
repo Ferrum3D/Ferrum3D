@@ -11,6 +11,14 @@ namespace Shading
     }
 
 
+    float3 SRGBToLinear(const float3 color)
+    {
+        const float3 low = color / 12.92f;
+        const float3 high = pow((max(color, 0.0f) + 0.055f) / 1.055f, 2.4f);
+        return select(color <= 0.04045f, low, high);
+    }
+
+
     // Narkowicz's ACES filmic fit, applied to pre-exposed linear RGB.
     float3 TonemapACES(const float3 color)
     {

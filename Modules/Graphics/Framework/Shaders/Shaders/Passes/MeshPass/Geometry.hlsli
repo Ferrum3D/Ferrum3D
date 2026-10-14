@@ -68,10 +68,13 @@ MeshDrawData ResolveMeshDrawData(const ViewData view, const uint32_t instanceInd
 
 
 PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t vertexIndex, const uint32_t instanceIndex,
-                                    const float4x4 viewProjection)
+                                    const float4x4 viewProjection, const bool needUV = true, const bool needTangent = true)
 {
-    const VertexInput input = drawData.m_geometry.Read<VertexInput>(vertexIndex * sizeof(VertexInput));
-    const float4 worldPosition = mul(float4(input.m_pos, 1.0f), drawData.m_worldTransform);
+    const uint offset = vertexIndex * sizeof(VertexInput);
+    const float3 position = drawData.m_geometry.Read<float3>(offset);
+    const uint packedNormal = drawData.m_geometry.Read<uint>(offset + 20);
+    const float3 inputNormal = Math::Pack::A2R10G10B10UnormToRGBA32Float(packedNormal).xyz * 2.0f - 1.0f;
+    const float4 worldPosition = mul(float4(position, 1.0f), drawData.m_worldTransform);
     const float3x3 normalMatrix = (float3x3)drawData.m_worldTransform;
 
     PixelAttributes output;
@@ -80,11 +83,11 @@ PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t 
     const float3x3 cofactorMatrix = float3x3(cross(normalMatrix[1], normalMatrix[2]),
                                              cross(normalMatrix[2], normalMatrix[0]),
                                              cross(normalMatrix[0], normalMatrix[1]));
-    output.m_normal = mul(input.UnpackNormal(), cofactorMatrix) / determinant(normalMatrix);
-    const float4 tangent = Math::Pack::A2R10G10B10UnormToRGBA32Float(input.m_packedTangent);
+    output.m_normal = mul(inputNormal, cofactorMatrix) / determinant(normalMatrix);
+    const float4 tangent = Math::Pack::A2R10G10B10UnormToRGBA32Float(needTangent ? drawData.m_geometry.Read<uint>(offset + 24) : 0);
     const float handedness = determinant(normalMatrix) < 0.0f ? -1.0f : 1.0f;
     output.m_tangent = float4(mul(tangent.xyz * 2.0f - 1.0f, normalMatrix), (tangent.w > 0.5f ? -1.0f : 1.0f) * handedness);
-    output.m_uv = input.UnpackUv();
+    output.m_uv = needUV ? Math::Pack::RG16FloatToRG32Float(drawData.m_geometry.Read<uint>(offset + 12)) : 0;
     output.m_instanceIndex = instanceIndex;
     return output;
 }

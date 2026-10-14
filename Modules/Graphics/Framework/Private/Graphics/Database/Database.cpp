@@ -307,18 +307,14 @@ namespace FE::Graphics::DB
 
         // Shader accesses to the Database pages are not known to the FrameGraph.
         // So we have to manually transition them to a readable state in the beginning of the frame.
-        for (uint32_t pageIndex = 0; pageIndex < m_pages.size(); ++pageIndex)
-        {
-            if (m_freePages.test(pageIndex))
-                continue;
-
+        Bit::Traverse(m_dirtyPages.view(), [&](const uint32_t pageIndex) {
             const StoragePage* page = m_pages[pageIndex];
             auto* barrierPassDesc = graph.AllocatePassData<Core::BufferAccessPassDesc>();
             barrierPassDesc->m_access = { page->m_deviceStorage.Get(),
                                           Core::BarrierSyncFlags::kAllShading,
                                           Core::BarrierAccessFlags::kShaderRead };
             graph.AddPass("BarrierPass", barrierPassDesc);
-        }
+        });
 
         m_dirtyPages.reset();
     }

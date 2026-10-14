@@ -15,6 +15,13 @@ namespace FE::Graphics::Visibility
         kTangent,
         kDerivatives,
         kDepthError,
+        kEvaluationTile,
+        kEvaluationGroup,
+        kSurfaceColor,
+        kSurfaceNormal,
+        kSurfaceProperties,
+        kSurfaceEmissive,
+        kSurfaceRoute,
     };
 
 

@@ -1,5 +1,6 @@
 #include "GpuProbe.h"
 #include "RasterProbe.h"
+#include "SurfaceProbe.h"
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/DeviceFactory.h>
@@ -196,6 +197,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_NEAR(std::bit_cast<float>(results[3]), 0.1f / 0.525f, 1e-6f);
             reconstructionReadback->Unmap();
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+            SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             graph.Reset();
             copyQueue->Drain();
             device->WaitIdle();

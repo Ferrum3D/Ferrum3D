@@ -60,4 +60,15 @@ material:technique("MaskProbe", function(t, ctx)
     return true
 end)
 
+material:technique("SurfaceEvaluate", function(t, ctx)
+    t.computeShader = "Shaders/Materials/EvaluateBunnyVariants.cs.hlsl"
+    t.shaderDefines["BUNNY_PALETTE"] = tostring(ctx:getInt(palette))
+    return true
+end)
+
+material:technique("DeferredShade", function(t, ctx)
+    t.computeShader = "Shaders/Passes/Visibility/ShadeSimpleLit.cs.hlsl"
+    return true
+end)
+
 return material

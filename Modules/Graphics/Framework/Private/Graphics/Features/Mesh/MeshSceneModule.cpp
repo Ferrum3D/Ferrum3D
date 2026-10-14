@@ -1,8 +1,10 @@
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
+#include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/RendererPassCommon.h>
+#include <Graphics/Passes/VisibilitySupport.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
 #include <Graphics/Scene/RenderBatch.h>
@@ -37,6 +39,7 @@ namespace FE::Graphics
         RendererImpl* renderer = Rtti::AssertCast<RendererImpl*>(scene->GetRenderer());
         DB::Database* database = renderer->GetDatabase();
         FE_Assert(database != nullptr);
+        m_evaluationWaveLaneCount = VisibilitySupport::Query(*renderer->GetGraphicsQueue()->GetDevice()).m_logicalWaveWidth;
 
         m_meshLodInfoTable = Memory::DefaultNew<MeshLodInfoTable>(database);
         m_meshGroupTable = Memory::DefaultNew<MeshGroupTable>(database);
@@ -685,8 +688,8 @@ namespace FE::Graphics
         {
             const MaterialInstanceTable::RWRow materialRow = m_materialInstanceTable->WriteRow(group->m_materialRef);
             materialRow.m_materialParameters.Get() = material->m_runtime->GetMaterialParameters();
-            materialRow.m_evaluationSlot.Get() =
-                m_evaluationPipelines.Register(material->m_runtime->GetComputePipeline(Env::Name("SurfaceEvaluate")));
+            materialRow.m_evaluationSlot.Get() = m_evaluationPipelines.Register(
+                material->m_runtime->GetComputePipeline(Env::Name("SurfaceEvaluate"), m_evaluationWaveLaneCount));
             materialRow.m_shadingSlot.Get() =
                 m_shadingPipelines.Register(material->m_runtime->GetComputePipeline(Env::Name("DeferredShade")));
             tableRow.m_materialInstance.Get() = group->m_materialRef;
