@@ -263,3 +263,17 @@ TEST(Matrix4x4, InverseTransform)
     const Matrix4x4 identity = m * Math::InvertTransform(m);
     EXPECT_TRUE(Math::CmpEqual(identity, Matrix4x4::kIdentity));
 }
+
+
+TEST(Matrix4x4, InverseViewProjection)
+{
+    const Matrix4x4 camera = Matrix4x4::RotationX(0.7f) * Matrix4x4::RotationY(-1.1f) * Matrix4x4::Translation(Vector3(3, -2, 5));
+    const Matrix4x4 viewProjection = Math::InvertTransform(camera) * Matrix4x4::Projection(1.0f, 1.7f, 0.1f, 1000.0f);
+    const Matrix4x4 inverse = Math::Invert(viewProjection);
+    const Matrix4x4 identity = viewProjection * inverse;
+    for (uint32_t row = 0; row < 4; ++row)
+    {
+        for (uint32_t column = 0; column < 4; ++column)
+            EXPECT_NEAR(identity.m_values[row * 4 + column], Matrix4x4::kIdentity.m_values[row * 4 + column], 1.0e-4f);
+    }
+}

@@ -6,10 +6,12 @@ struct MaterialParameters
     float4 Tint;
 };
 
+
 struct InstanceParameters
 {
     float4 UvScale;
 };
+
 
 void main(const in PixelAttributes input, out float4 output : SV_Target0)
 {

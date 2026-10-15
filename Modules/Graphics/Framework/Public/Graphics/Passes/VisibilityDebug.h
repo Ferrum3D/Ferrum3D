@@ -22,6 +22,7 @@ namespace FE::Graphics::Visibility
         kSurfaceProperties,
         kSurfaceEmissive,
         kSurfaceRoute,
+        kDeferred,
     };
 
 

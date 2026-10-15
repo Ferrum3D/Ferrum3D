@@ -69,21 +69,28 @@ namespace FE::Graphics::SurfaceProbe
         ASSERT_TRUE(codecPipeline->IsReady());
 
         Visibility::SurfaceWork work;
-        for (const uint32_t testCase : { 32u, 64u, 1u, 32u, 0u, 2u })
+        for (const uint32_t testCase : { 32u, 64u, 1u, 32u, 0u, 2u, 3u, 4u })
         {
-            const uint32_t shaderCount = testCase == 1 ? 1 : testCase == 64 ? 17 : 5;
+            const bool shadingTest = testCase == 3 || testCase == 4;
+            const uint32_t shaderCount = testCase == 1 ? 1 : testCase == 64 || shadingTest ? 17 : 5;
             const uint32_t activeShaders = Math::Min(shaderCount, 3u);
-            const uint32_t shaderStride = testCase == 64 ? 8 : 1;
+            const uint32_t shaderStride = testCase == 64 || shadingTest ? 8 : 1;
             festd::vector<Visibility::SurfaceBinding> bindings;
             for (uint32_t index = 0; index < kGroupCount; ++index)
             {
                 const uint32_t slot = (index % activeShaders) * shaderStride;
                 materials.WriteRow(materialRows.m_rowIndex + index).m_evaluationSlot.Get() = slot;
-                if (testCase != 2)
+                if (testCase != 2 && !shadingTest)
                     bindings.push_back({ groupRows.m_rowIndex + index, slot });
             }
 
-            const uint32_t laneCount = testCase == 64 ? 64 : 32;
+            if (shadingTest)
+            {
+                for (uint32_t slot = 0; slot < shaderCount; ++slot)
+                    bindings.push_back({ slot, slot });
+            }
+
+            const uint32_t laneCount = testCase == 64 || testCase == 4 ? 64 : 32;
             Visibility::EnsureSurfaceWork(work,
                                           device,
                                           kResolution,
@@ -94,19 +101,25 @@ namespace FE::Graphics::SurfaceProbe
             if (testCase == 0)
                 EXPECT_TRUE(work.m_uploaded);
             EXPECT_EQ(work.m_tileCount, 6u);
-            EXPECT_EQ(work.m_bucketCount, testCase == 2 ? 0u : 6u * kGroupCount);
+            EXPECT_EQ(work.m_bucketCount, testCase == 2 ? 0u : 6u * (shadingTest ? shaderCount : kGroupCount));
             if (testCase == 2)
                 EXPECT_EQ(work.m_waveCapacity, 0u);
             EXPECT_LT(work.m_scratchBytes, 1024u * 1024);
             Core::ComputePipelineRequest visitRequest;
             visitRequest.m_desc.SetComputeShader("Shaders/Tests/SurfaceProbeVisit.cs.hlsl");
-            visitRequest.m_defines = Env::Name(Fmt::Format("VISIT_LANES={} VISIT_SHADER_COUNT={} VISIT_SHADER_STRIDE={}",
-                                                           laneCount,
-                                                           activeShaders,
-                                                           shaderStride));
+            visitRequest.m_defines =
+                Env::Name(Fmt::Format("VISIT_LANES={} VISIT_SHADER_COUNT={} VISIT_SHADER_STRIDE={} VISIT_SHADING={}",
+                                      laneCount,
+                                      activeShaders,
+                                      shaderStride,
+                                      shadingTest ? 1 : 0));
             Core::ComputePipeline* visit = pipelines->CreateComputePipeline(visitRequest);
             visit->GetCompletionWaitGroup()->Wait();
             ASSERT_TRUE(visit->IsReady());
+            generateRequest.m_defines = shadingTest ? Env::Name("GENERATE_SHADING=1") : Env::Name::kEmpty;
+            generate = pipelines->CreateComputePipeline(generateRequest);
+            generate->GetCompletionWaitGroup()->Wait();
+            ASSERT_TRUE(generate->IsReady());
             queue->BeginFrame();
             graph->BeginFrame();
             database.Update(*graph, queue->GetCurrentFence());
@@ -124,7 +137,13 @@ namespace FE::Graphics::SurfaceProbe
             seed->m_constants.m_instanceBase = instanceRows.m_rowIndex;
             seed->m_constants.m_groupCount = testCase == 0 || testCase == 2 ? 0 : kGroupCount;
             graph->AddDispatchPass("GenerateSurfaceProbe", seed, Core::ComputeWorkGroupCount(Vector2UInt(33, 17)));
-            Visibility::BuildSurfaceWork(*graph, uploader, viewBuffer.Get(), visibility.Get(), g0.Get(), work);
+            Visibility::BuildSurfaceWork(*graph,
+                                         uploader,
+                                         shadingTest ? nullptr : viewBuffer.Get(),
+                                         shadingTest ? nullptr : visibility.Get(),
+                                         g0.Get(),
+                                         work,
+                                         shadingTest);
             for (uint32_t slot = 0; slot < work.m_shaderCount; ++slot)
             {
                 auto* evaluation = graph->AllocatePassData<ProbeIndirectDesc>();
@@ -163,7 +182,8 @@ namespace FE::Graphics::SurfaceProbe
             readback->InvalidateMappedRange(0, kPixelCount * 8);
             uint32_t wrong = 0;
             for (uint32_t pixel = 0; pixel < kPixelCount; ++pixel)
-                wrong += results[pixel * 2] != (testCase == 0 || testCase == 2 || pixel % 7 == 0 ? 0u : 1u)
+                wrong += results[pixel * 2]
+                        != (testCase == 0 || testCase == 2 || pixel % 7 == 0 || (shadingTest && pixel % 11 == 0) ? 0u : 1u)
                     || results[pixel * 2 + 1] != 0;
 
             EXPECT_EQ(wrong, 0u);

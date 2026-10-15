@@ -1,3 +1,4 @@
+#include "DeferredProbe.h"
 #include "GpuProbe.h"
 #include "RasterProbe.h"
 #include "SurfaceProbe.h"
@@ -198,6 +199,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             reconstructionReadback->Unmap();
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+            DeferredProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             graph.Reset();
             copyQueue->Drain();
             device->WaitIdle();

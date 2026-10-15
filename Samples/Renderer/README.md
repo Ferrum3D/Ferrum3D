@@ -1,5 +1,7 @@
 # Renderer sample
 
+Stage 4 adds `--visibility-debug deferred` for independent GBuffer classification and compute lighting before tonemapping. Forward remains the default. See [Stage 4 notes](../../VISIBILITY_BUFFER_STAGE4.md).
+
 Validation is disabled by default. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Use neither flag for performance measurements and Nsight captures.
 
 Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These run GPU loose tiling and surface evaluation; lighting remains forward until Stage 4. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).

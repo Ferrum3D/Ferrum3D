@@ -142,7 +142,6 @@ namespace FE
 
     namespace Math
     {
-        //! Select rhs components where mask bits are set (bit 0 is x); otherwise select lhs.
         template<class T>
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> Blend(const Vector2Base<T> lhs, const Vector2Base<T> rhs,
                                                                    const uint32_t mask)
@@ -151,7 +150,23 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(const Vector2Base<float> lhs, const Vector2Base<float> rhs)
+        template<std::integral TLeft, std::integral TRight>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE auto CeilDivide(const Vector2Base<TLeft> lhs, const Vector2Base<TRight> rhs)
+            -> Vector2Base<decltype(CeilDivide(lhs.x, rhs.x))>
+        {
+            return Vector2Base<decltype(CeilDivide(lhs.x, rhs.x))>{ CeilDivide(lhs.x, rhs.x), CeilDivide(lhs.y, rhs.y) };
+        }
+
+
+        template<std::integral TLeft, std::integral TRight>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE auto CeilDivide(const Vector2Base<TLeft> lhs, const TRight rhs)
+            -> Vector2Base<decltype(CeilDivide(lhs.x, rhs))>
+        {
+            return Vector2Base<decltype(CeilDivide(lhs.x, rhs))>{ CeilDivide(lhs.x, rhs), CeilDivide(lhs.y, rhs) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Dot(const Vector2Base<float> lhs, const Vector2Base<float> rhs)
         {
             return lhs.x * rhs.x + lhs.y * rhs.y;
         }

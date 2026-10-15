@@ -9,9 +9,9 @@
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Passes/SurfaceWorkBuilder.h>
 #include <Graphics/Passes/VisibilityPass.h>
+#include <Shaders/Deferred/Surface.h>
 #include <Shaders/Passes/MeshPass/IndirectArguments.h>
 #include <Shaders/Passes/MeshPass/MeshPass.h>
-#include <Shaders/Passes/Visibility/Surface.h>
 #include <gtest/gtest.h>
 
 namespace FE::Graphics::RasterProbe
@@ -187,7 +187,7 @@ namespace FE::Graphics::RasterProbe
                                                   Vector2UInt(64, 64));
 
         Core::ComputePipelineRequest clearRequest;
-        clearRequest.m_desc.SetComputeShader("Shaders/Passes/Visibility/ClearSurface.cs.hlsl");
+        clearRequest.m_desc.SetComputeShader("Shaders/Deferred/ClearSurface.cs.hlsl");
         Core::ComputePipeline* clearPipeline = pipelines->CreateComputePipeline(clearRequest);
         clearPipeline->GetCompletionWaitGroup()->Wait();
         auto* clear = graph->AllocatePassData<Visibility::SurfaceDirectPassDesc>();

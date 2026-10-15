@@ -1,5 +1,5 @@
 #pragma once
-#include <Shaders/Passes/Visibility/Tiling.h>
+#include <Shaders/Deferred/Tiling.h>
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::SurfaceProbe)
 #if FE_HOST
     using Visibility::ShaderRange;

@@ -16,8 +16,8 @@ float Cross2(const float2 a, const float2 b)
 }
 
 
-bool ComputePerspectiveWeights(const float4 clip0, const float4 clip1, const float4 clip2,
-                               const float2 ndc, const float2 ndcPerPixel, out PerspectiveWeights result)
+bool ComputePerspectiveWeights(const float4 clip0, const float4 clip1, const float4 clip2, const float2 ndc,
+                               const float2 ndcPerPixel, out PerspectiveWeights result)
 {
     result = (PerspectiveWeights)0;
     // Solve in homogeneous space so clipped triangles do not require division by a source vertex's W.
@@ -57,8 +57,8 @@ struct ReconstructedAttributes
 };
 
 
-bool ReconstructAttributes(const ViewData view, const uint2 visibility, const float2 pixelCenter,
-                           const float2 resolution, out ReconstructedAttributes result, const bool needUV = true, const bool needTangent = true)
+bool ReconstructAttributes(const ViewData view, const uint2 visibility, const float2 pixelCenter, const float2 resolution,
+                           out ReconstructedAttributes result, const bool needUV = true, const bool needTangent = true)
 {
     result = (ReconstructedAttributes)0;
     if (visibility.x == 0)
@@ -74,7 +74,8 @@ bool ReconstructAttributes(const ViewData view, const uint2 visibility, const fl
     const uint remapOffset = draw.m_lodInfo.m_vertexCount * sizeof(VertexInput);
     const uint headerOffset = remapOffset + draw.m_lodInfo.m_indexCount * sizeof(uint);
     const uint triangleOffset = headerOffset + draw.m_lodInfo.m_meshletCount * sizeof(Core::MeshletHeader);
-    const Core::MeshletHeader header = draw.m_geometry.Read<Core::MeshletHeader>(headerOffset + meshletIndex * sizeof(Core::MeshletHeader));
+    const Core::MeshletHeader header =
+        draw.m_geometry.Read<Core::MeshletHeader>(headerOffset + meshletIndex * sizeof(Core::MeshletHeader));
     if (primitiveIndex >= header.m_primitiveCount)
         return false;
 
@@ -87,6 +88,7 @@ bool ReconstructAttributes(const ViewData view, const uint2 visibility, const fl
     const PixelAttributes v2 = TransformAttributes(draw, i2, instanceIndex, view.m_viewProjection, needUV, needTangent);
     const float2 ndcPerPixel = float2(2.0f, -2.0f) / resolution;
     const float2 ndc = pixelCenter * ndcPerPixel + float2(-1.0f, 1.0f);
+
     PerspectiveWeights weights;
     if (!ComputePerspectiveWeights(v0.m_pos, v1.m_pos, v2.m_pos, ndc, ndcPerPixel, weights))
         return false;

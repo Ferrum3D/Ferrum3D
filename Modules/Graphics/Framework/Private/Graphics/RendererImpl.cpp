@@ -41,6 +41,7 @@ namespace FE::Graphics
     RendererImpl::RendererImpl(Core::Device* device)
         : m_device(device)
     {
+        m_visibilitySupport = VisibilitySupport::Query(*device);
         m_graphicsQueue = m_device->CreateGraphicsQueue();
         m_asyncCopyQueue = m_device->CreateAsyncCopyQueue();
 
@@ -68,6 +69,7 @@ namespace FE::Graphics
         m_mainDepthTarget.Reset();
         m_visibilityTarget.Reset();
         m_surfaceWork = {};
+        m_shadingWork = {};
         m_descriptorManager.Reset();
         m_device->WaitIdle();
 
@@ -110,7 +112,8 @@ namespace FE::Graphics
 
         m_graphicsQueue->BeginFrame();
         viewport->AcquireNextImage();
-        EnsureMainColorTarget(viewport->GetDesc());
+        if (!hasEnabledView)
+            EnsureMainColorTarget(viewport->GetDesc());
         EnsureMainDepthTarget(viewport->GetDesc());
 
         m_frameGraph->BeginFrame();
@@ -190,22 +193,28 @@ namespace FE::Graphics
     }
 
 
-    void RendererImpl::EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc)
+    void RendererImpl::EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc, const Core::Format format)
     {
         const bool sizeMismatch = m_mainColorTarget != nullptr
             && (m_mainColorTarget->GetDesc().m_width != viewportDesc.m_width
-                || m_mainColorTarget->GetDesc().m_height != viewportDesc.m_height);
+                || m_mainColorTarget->GetDesc().m_height != viewportDesc.m_height
+                || m_mainColorTarget->GetDesc().m_imageFormat != format);
         if (m_mainColorTarget != nullptr && !sizeMismatch)
             return;
 
-        m_mainColorTarget = Core::Texture::Create(m_device.Get(),
-                                                  "RendererMainColor",
-                                                  Core::Format::kB10G11R11_UFLOAT,
-                                                  { viewportDesc.m_width, viewportDesc.m_height });
+        m_mainColorTarget =
+            Core::Texture::Create(m_device.Get(), "RendererMainColor", format, { viewportDesc.m_width, viewportDesc.m_height });
 
         Core::ResourceCommitParams commitParams;
-        commitParams.m_bindFlags = Core::BarrierAccessFlags::kRenderTarget | Core::BarrierAccessFlags::kShaderRead
-            | Core::BarrierAccessFlags::kShaderWrite;
+        const Core::FormatCapabilities capabilities = m_device->GetFormatCapabilities(format);
+        commitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead;
+        if (capabilities.m_colorAttachment)
+            commitParams.m_bindFlags |= Core::BarrierAccessFlags::kRenderTarget;
+        if (capabilities.m_storage && capabilities.m_storageWriteWithoutFormat)
+            commitParams.m_bindFlags |= Core::BarrierAccessFlags::kShaderWrite;
+
+        if (format == Core::Format::kR16G16B16A16_SFLOAT)
+            Logger::LogInfo("HDR storage uses RGBA16F: 8 bytes/pixel instead of 4 bytes/pixel");
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
         m_resourcePool->CommitTextureMemory(m_mainColorTarget.Get(), commitParams);
     }
@@ -267,6 +276,14 @@ namespace FE::Graphics
     void RendererImpl::SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                                        Core::Viewport& viewport)
     {
+        if (view.GetVisibilityDebugMode() == Visibility::DebugMode::kForward)
+            EnsureMainColorTarget(viewport.GetDesc());
+        else
+        {
+            FE_Assert(m_visibilitySupport.m_supported, "Visibility shading formats are unavailable");
+            EnsureMainColorTarget(viewport.GetDesc(), m_visibilitySupport.m_hdrFormat);
+        }
+
         RendererViewData& viewData = blackboard.Add<RendererViewData>();
         viewData.m_scene = &scene;
         viewData.m_view = &view;
@@ -277,6 +294,7 @@ namespace FE::Graphics
         viewData.m_database = m_database.get();
         viewData.m_renderQueueUploader = &m_renderQueueUploader;
         viewData.m_surfaceWork = &m_surfaceWork;
+        viewData.m_shadingWork = &m_shadingWork;
 
         view.Update(blackboard);
 

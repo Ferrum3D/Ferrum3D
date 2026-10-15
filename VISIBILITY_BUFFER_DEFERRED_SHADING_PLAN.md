@@ -1,6 +1,6 @@
 # Visibility buffer and compute deferred shading migration
 
-Status: Stages 1 through 3 are implemented, including full-view histogram-based GPU loose tiling, indirect material evaluation and packed GBuffer debug views. Forward shading remains the default. Manual visual comparisons, GPU captures and performance measurements remain pending. See `VISIBILITY_BUFFER_STAGE1.md`, `VISIBILITY_BUFFER_STAGE2.md` and `VISIBILITY_BUFFER_STAGE3.md` for interfaces and validation workflows.
+Status: Stages 1 through 4 are implemented, including full-view histogram-based GPU loose tiling, indirect material evaluation, packed GBuffer debug views and independently classified compute lighting. Forward shading remains the default. Manual visual comparisons, GPU captures and performance measurements remain pending. See `VISIBILITY_BUFFER_STAGE1.md`, `VISIBILITY_BUFFER_STAGE2.md` and `VISIBILITY_BUFFER_STAGE3.md` and `VISIBILITY_BUFFER_STAGE4.md` for interfaces and validation workflows.
 
 ## 1. Direction
 
@@ -63,7 +63,7 @@ MeshInstanceTable row
 | --- | --- | --- |
 | `Samples/Renderer/Assets/source/Textured.mat.luau`, `BunnyMaterial.asset` | Albedo texture, `Tint`, per-instance `UvScale`, and `TwoSided` raster permutation. | `texel.rgb * tint.rgb * (0.15 + 0.85 * max(dot(N, normalize(0.4, 0.7, -0.2)), 0))`. |
 | `BunnyVariants.mat.luau`, `BunnyWarm.asset`, `BunnyCool.asset` | `Palette=0/1` and their exact authored warm/cool linear colors. | The same non-PBR directional/ambient equation as today. |
-| Both sample depots' `Helmet/StandardPBR.mat.luau` and `DamagedHelmetMaterial.asset` | Base color, linear ORM, BC5 normal map, emissive, per-instance `UvScale`, and `TwoSided`. Preserve texture color-space and tangent conventions. | Existing GGX/Smith/Schlick/Lambert behavior, 10,000-lux light, 1,000-cd/mВІ emissive scale and EV100 12 pre-exposure. AO remains reserved for indirect lighting, not multiplied into direct light. |
+| Both sample depots' `Helmet/StandardPBR.mat.luau` and `DamagedHelmetMaterial.asset` | Base color, linear ORM, BC5 normal map, emissive, per-instance `UvScale`, and `TwoSided`. Preserve texture color-space and tangent conventions. | Existing GGX/Smith/Schlick/Lambert behavior, 10,000-lux light, 1,000-cd/mР’Р† emissive scale and EV100 12 pre-exposure. AO remains reserved for indirect lighting, not multiplied into direct light. |
 
 The sample techniques are opaque with blending disabled. `Textured` returns alpha today, but the RGB HDR target does not retain it; do not introduce opacity or cutout semantics during migration. `TwoSided` currently disables culling without automatically flipping shading normals; preserve that behavior. Also provide a non-PBR surface mapping for the generic `OpaquePass.ps.hlsl` constant-color shader if it remains reachable.
 
@@ -166,7 +166,7 @@ Start with four separately addressable `R32_UINT` planes. Use raw integer loads/
 | G0 | RGB8 + 8-bit shading-model ID | Linear base color manually encoded to sRGB8; decoder identifies PBR. | Unlit texture*tint or palette color manually encoded to sRGB8; decoder identifies SimpleLit. |
 | G1 | Two signed 16-bit octahedral coordinates | Final world-space shading normal, after normal mapping. | Interpolated world-space normal. |
 | G2 | Four 8-bit fields | Perceptual roughness UNORM8, metallic UNORM8, AO UNORM8, model-specific flags. | Model-local fields; initially unused values set deterministically, plus flags if needed. These bytes are not interpreted as PBR properties. |
-| G3 | Packed nonnegative R11/G11/B10 floating-point emissive | Scene-linear emissive radiance, before exposure, using the existing 1,000-cd/mВІ scale. | Optional model-specific payload; current SimpleLit does not need it. |
+| G3 | Packed nonnegative R11/G11/B10 floating-point emissive | Scene-linear emissive radiance, before exposure, using the existing 1,000-cd/mР’Р† scale. | Optional model-specific payload; current SimpleLit does not need it. |
 
 This is a 12-byte base surface plus an optional 4-byte extended plane. Both present sample scenes include an emissive-capable helmet, so budget the full 16 bytes/pixel for them. Do not claim an average 12-byte resident allocation simply because many pixels are non-emissive. If a view has no extended-payload models, omit G3 entirely. Otherwise use an explicit payload-valid flag and skip G3 stores/loads for pixels that do not need it. A zero-emissive PBR pixel can clear that flag without writing G3.
 
@@ -180,10 +180,10 @@ Only G0's background/model field must be initialized globally. Clear G0 to zero,
 
 ## 8. Second loose-tiling pass and compute shading
 
-Run a second instance of the command builder after GBuffer production completes. Classify from G0's shading-model ID, optionally G2 feature flags, rather than going back to visibility, geometry, textures or material assets.
+Run a second instance of the command builder after GBuffer production completes. Classify from G0's shader-derived shading route, optionally G2 feature flags, rather than going back to visibility, geometry, textures or material assets.
 
 - Key by `(deferred shader/feature permutation, tile, optional uniform shading binding)` and compact actual pixels into wave commands again.
-- Current PBR and SimpleLit kernels have only shared view/light constants, so all pixels with the same shading model can mix within a wave regardless of original material/mesh. Do not retain first-pass mesh-group separation unnecessarily.
+- Current PBR and SimpleLit kernels have only shared view/light constants, so all pixels with the same shading shader can mix within a wave regardless of original material/mesh. Do not retain first-pass mesh-group separation unnecessarily.
 - Generate a fresh set of ranges and indirect arguments. This must be a genuine second classification, not reuse of material-evaluation commands under another name.
 - Share builder infrastructure and reuse the first stage's scratch allocation after its last read. With very few shading models, a small histogram plus prefix sums can replace the general sparse-sort path here.
 - Shade only recorded pixels. Reconstruct world position from sampled reverse-Z depth and inverse view-projection where required; SimpleLit does not need it. Add inverse view-projection and viewport data to the appropriate view constants.

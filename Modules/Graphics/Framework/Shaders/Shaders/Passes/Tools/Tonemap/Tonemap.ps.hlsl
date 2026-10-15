@@ -1,4 +1,4 @@
-#include <Shaders/Core/Shading/Color.hlsli>
+#include <Shaders/Shading/Color.hlsli>
 #include <Shaders/Passes/Tools/Blit/Blit.hlsli>
 
 void main(const in PixelAttributes input, out float4 color : SV_Target0)

@@ -25,6 +25,7 @@ namespace FE::Graphics
         DB::Database* m_database = nullptr;
         Core::RingUploader* m_renderQueueUploader = nullptr;
         Visibility::SurfaceWork* m_surfaceWork = nullptr;
+        Visibility::SurfaceWork* m_shadingWork = nullptr;
     };
 
 

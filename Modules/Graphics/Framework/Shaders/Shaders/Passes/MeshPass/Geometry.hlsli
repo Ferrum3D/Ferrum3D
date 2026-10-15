@@ -1,4 +1,5 @@
 #pragma once
+#include <Shaders/Base/Packing.hlsli>
 #include <Shaders/Core/Meshlet.hlsli>
 #include <Shaders/Tables/MaterialInstanceTable.hlsli>
 #include <Shaders/Tables/MeshGroupTable.hlsli>
@@ -84,10 +85,12 @@ PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t 
                                              cross(normalMatrix[2], normalMatrix[0]),
                                              cross(normalMatrix[0], normalMatrix[1]));
     output.m_normal = mul(inputNormal, cofactorMatrix) / determinant(normalMatrix);
-    const float4 tangent = Math::Pack::A2R10G10B10UnormToRGBA32Float(needTangent ? drawData.m_geometry.Read<uint>(offset + 24) : 0);
+    const uint packedTangent = needTangent ? drawData.m_geometry.Read<uint>(offset + 24) : 0;
+    const float4 tangent = Math::Pack::A2R10G10B10UnormToRGBA32Float(packedTangent);
     const float handedness = determinant(normalMatrix) < 0.0f ? -1.0f : 1.0f;
     output.m_tangent = float4(mul(tangent.xyz * 2.0f - 1.0f, normalMatrix), (tangent.w > 0.5f ? -1.0f : 1.0f) * handedness);
-    output.m_uv = needUV ? Math::Pack::RG16FloatToRG32Float(drawData.m_geometry.Read<uint>(offset + 12)) : 0;
+    const uint packedUV = needUV ? drawData.m_geometry.Read<uint>(offset + 12) : 0;
+    output.m_uv = needUV ? Math::Pack::RG16FloatToRG32Float(packedUV) : 0;
     output.m_instanceIndex = instanceIndex;
     return output;
 }

@@ -1,6 +1,6 @@
-#include <Shaders/Tests/RasterProbe.h>
+#include <Shaders/Deferred/GBuffer.hlsli>
 #include <Shaders/Passes/Visibility/Reconstruction.hlsli>
-#include <Shaders/Passes/Visibility/SurfaceCodec.hlsli>
+#include <Shaders/Tests/RasterProbe.h>
 
 [[vk::push_constant]] Constants GConstants;
 
@@ -29,7 +29,10 @@ void main(uint3 group : SV_GroupID)
     const uint color = GConstants.m_g0.Load(uint3(pixel, 0));
     GConstants.m_words.Store(offset + 12, color >> 24);
     GConstants.m_words.Store(offset + 13, color);
-    const float normalZ = color >> 24 != 0 ? DecodeSurfaceNormal(GConstants.m_g1.Load(uint3(pixel, 0))).z : 0;
+    GBuffer::Packed packed = (GBuffer::Packed)0;
+    packed.m_g1 = GConstants.m_g1.Load(uint3(pixel, 0));
+    const GBuffer::Unpacked surface = GBuffer::Decode(packed);
+    const float normalZ = color >> 24 != 0 ? surface.m_normal.z : 0;
     GConstants.m_words.Store(offset + 14, asuint(normalZ));
     GConstants.m_words.Store(offset + 15, color >> 24 != 0 ? GConstants.m_g2.Load(uint3(pixel, 0)) : 0);
 }

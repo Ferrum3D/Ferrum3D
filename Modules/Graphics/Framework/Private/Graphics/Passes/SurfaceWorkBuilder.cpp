@@ -8,12 +8,12 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
-        FE_COMPUTE_PIPELINE_SET(ClearPipeline, "Shaders/Passes/Visibility/ClearSurfaceWork.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(CountPipeline, "Shaders/Passes/Visibility/CountSurfacePixels.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(ScanPipeline, "Shaders/Passes/Visibility/ScanSurfaceBuckets.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(PropagatePipeline, "Shaders/Passes/Visibility/PropagateSurfaceOffsets.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(ScatterPipeline, "Shaders/Passes/Visibility/ScatterSurfacePixels.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(CommandsPipeline, "Shaders/Passes/Visibility/EmitSurfaceCommands.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(ClearPipeline, "Shaders/Deferred/ClearSurfaceWork.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(CountPipeline, "Shaders/Deferred/CountSurfacePixels.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(ScanPipeline, "Shaders/Deferred/ScanSurfaceBuckets.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(PropagatePipeline, "Shaders/Deferred/PropagateSurfaceOffsets.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(ScatterPipeline, "Shaders/Deferred/ScatterSurfacePixels.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(CommandsPipeline, "Shaders/Deferred/EmitSurfaceCommands.cs.hlsl");
 
 
         Core::ComputeWorkGroupCount DispatchSize(const uint32_t threads)
@@ -143,39 +143,64 @@ namespace FE::Graphics::Visibility
     }
 
 
-    void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, Core::Buffer* view, Core::Texture* visibility,
-                          Core::Texture* g0, SurfaceWork& work)
+    void ShareSurfaceStorage(Core::Device* device, SurfaceWork& evaluation, SurfaceWork& shading)
     {
-        FE_Assert(Vector2UInt(visibility->GetDesc().m_width, visibility->GetDesc().m_height) == work.m_resolution);
+        FE_Assert(evaluation.m_resolution == shading.m_resolution);
+        const auto share = [&](Rc<Core::Buffer>& first, Rc<Core::Buffer>& second, const uint32_t required) {
+            const uint32_t firstSize = first->GetDesc().m_size;
+            const uint32_t secondSize = second->GetDesc().m_size;
+            if (first->GetDesc().m_size < required)
+                first = Core::Buffer::CreateByteAddress(device, first->GetName(), required);
+
+            second = first;
+            evaluation.m_scratchBytes += first->GetDesc().m_size - firstSize;
+            shading.m_scratchBytes += second->GetDesc().m_size - secondSize;
+        };
+        share(evaluation.m_pixels,
+              shading.m_pixels,
+              Math::Max(evaluation.m_pixels->GetDesc().m_size, shading.m_pixels->GetDesc().m_size));
+        share(evaluation.m_waves,
+              shading.m_waves,
+              Math::Max(evaluation.m_waves->GetDesc().m_size, shading.m_waves->GetDesc().m_size));
+    }
+
+
+    void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, Core::Buffer* view, Core::Texture* visibility,
+                          Core::Texture* g0, SurfaceWork& work, const bool classifyShading)
+    {
+        FE_Assert(Vector2UInt(g0->GetDesc().m_width, g0->GetDesc().m_height) == work.m_resolution);
+        const auto commit = [&](Core::Buffer* buffer) {
+            if (buffer->GetMemoryStatus() != Core::ResourceMemory::kNotCommitted)
+                return;
+
+            Core::ResourceCommitParams params;
+            params.m_memory = Core::ResourceMemory::kDeviceLocal;
+            params.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
+                | Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest;
+            if (buffer == work.m_arguments.Get())
+                params.m_bindFlags |= Core::BarrierAccessFlags::kIndirectArgument;
+
+            graph.GetResourcePool()->CommitBufferMemory(buffer, params);
+        };
+        for (Core::Buffer* buffer : { work.m_lookup.Get(),
+                                      work.m_bindings.Get(),
+                                      work.m_shaderBindings.Get(),
+                                      work.m_counts.Get(),
+                                      work.m_cursors.Get(),
+                                      work.m_pixels.Get(),
+                                      work.m_waves.Get(),
+                                      work.m_ranges.Get(),
+                                      work.m_arguments.Get() })
+            commit(buffer);
+
+        for (const SurfaceScanLevel& level : work.m_scanLevels)
+        {
+            commit(level.m_offsets.Get());
+            commit(level.m_sums.Get());
+        }
+
         if (!work.m_uploaded)
         {
-            const auto commit = [&](Core::Buffer* buffer) {
-                Core::ResourceCommitParams params;
-                params.m_memory = Core::ResourceMemory::kDeviceLocal;
-                params.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
-                    | Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest;
-                if (buffer == work.m_arguments.Get())
-                    params.m_bindFlags |= Core::BarrierAccessFlags::kIndirectArgument;
-
-                graph.GetResourcePool()->CommitBufferMemory(buffer, params);
-            };
-            for (Core::Buffer* buffer : { work.m_lookup.Get(),
-                                          work.m_bindings.Get(),
-                                          work.m_shaderBindings.Get(),
-                                          work.m_counts.Get(),
-                                          work.m_cursors.Get(),
-                                          work.m_pixels.Get(),
-                                          work.m_waves.Get(),
-                                          work.m_ranges.Get(),
-                                          work.m_arguments.Get() })
-                commit(buffer);
-
-            for (const SurfaceScanLevel& level : work.m_scanLevels)
-            {
-                commit(level.m_offsets.Get());
-                commit(level.m_sums.Get());
-            }
-
             FE_Verify(uploader.UploadArray(graph, work.m_lookup.Get(), festd::span(work.m_lookupData)));
             FE_Verify(uploader.UploadArray(graph, work.m_bindings.Get(), festd::span(work.m_bindingData)));
             FE_Verify(uploader.UploadArray(graph, work.m_shaderBindings.Get(), festd::span(work.m_shaderBindingData)));
@@ -190,18 +215,27 @@ namespace FE::Graphics::Visibility
         dimensions.m_groupRowCount = work.m_lookupData.size();
         dimensions.m_shaderCount = work.m_shaderCount;
         dimensions.m_waveLaneCount = work.m_waveLaneCount;
+        dimensions.m_classifyShading = classifyShading;
         const uint32_t pixels = work.m_resolution.x * work.m_resolution.y;
         auto* clear = AllocateStep(graph, ClearPipeline::GetPipeline(), dimensions);
         clear->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
         clear->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
-        clear->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(g0));
-        graph.AddDispatchPass("ClearSurfaceWork", clear, DispatchSize(Math::Max(pixels, work.m_bucketCount)));
+        if (!classifyShading)
+            clear->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(g0));
+        graph.AddDispatchPass("ClearSurfaceWork",
+                              clear,
+                              DispatchSize(classifyShading ? work.m_bucketCount : Math::Max(pixels, work.m_bucketCount)));
         auto* count = AllocateStep(graph, CountPipeline::GetPipeline(), dimensions);
-        count->m_constants.m_view = graph.GetSRV(view);
-        count->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
+        if (classifyShading)
+            count->m_constants.m_g0Read = graph.GetSRV(Core::TextureView::Create(g0));
+        else
+        {
+            count->m_constants.m_view = graph.GetSRV(view);
+            count->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
+            count->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(g0));
+        }
         count->m_constants.m_lookup = graph.GetSRV(work.m_lookup.Get());
         count->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
-        count->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(g0));
         const Core::ComputeWorkGroupCount screenGroups(
             Vector2UInt(Math::CeilDivide(work.m_resolution.x, 16u), Math::CeilDivide(work.m_resolution.y, 16u)));
         graph.AddDispatchPass("CountSurfacePixels", count, screenGroups);
@@ -232,8 +266,13 @@ namespace FE::Graphics::Visibility
         }
 
         auto* scatter = AllocateStep(graph, ScatterPipeline::GetPipeline(), dimensions);
-        scatter->m_constants.m_view = graph.GetSRV(view);
-        scatter->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
+        if (classifyShading)
+            scatter->m_constants.m_g0Read = graph.GetSRV(Core::TextureView::Create(g0));
+        else
+        {
+            scatter->m_constants.m_view = graph.GetSRV(view);
+            scatter->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(visibility));
+        }
         scatter->m_constants.m_lookup = graph.GetSRV(work.m_lookup.Get());
         scatter->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
         scatter->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());

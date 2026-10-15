@@ -57,7 +57,7 @@ material:technique("SurfaceEvaluate", function(t, ctx)
 end)
 
 material:technique("DeferredShade", function(t, ctx)
-    t.computeShader = "Shaders/Passes/Visibility/ShadeStandardPBR.cs.hlsl"
+    t.computeShader = "Shaders/Deferred/ShadeStandardPBR.cs.hlsl"
     return true
 end)
 

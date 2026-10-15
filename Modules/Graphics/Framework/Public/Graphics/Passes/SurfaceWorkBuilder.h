@@ -1,7 +1,7 @@
 #pragma once
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/RingUploader.h>
-#include <Shaders/Passes/Visibility/Tiling.h>
+#include <Shaders/Deferred/Tiling.h>
 
 namespace FE::Graphics::Visibility
 {
@@ -54,5 +54,6 @@ namespace FE::Graphics::Visibility
                            festd::span<const SurfaceBinding> bindings, uint32_t groupRowCount, uint32_t shaderCount,
                            uint32_t waveLaneCount);
     void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, Core::Buffer* view, Core::Texture* visibility,
-                          Core::Texture* g0, SurfaceWork& work);
+                          Core::Texture* g0, SurfaceWork& work, bool classifyShading = false);
+    void ShareSurfaceStorage(Core::Device* device, SurfaceWork& evaluation, SurfaceWork& shading);
 } // namespace FE::Graphics::Visibility

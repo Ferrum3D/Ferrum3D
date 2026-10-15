@@ -162,6 +162,8 @@ namespace FE
         C6 = _mm_shuffle_ps(C6, C6, _MM_SHUFFLE(3, 1, 2, 0));
 
         __m128 vTemp = Simd::DotProduct(C0, MT.m_rows[0].m_simdVector);
+        // DotProduct's low lane holds the determinant; all cofactors need the same divisor.
+        vTemp = _mm_shuffle_ps(vTemp, vTemp, _MM_SHUFFLE(0, 0, 0, 0));
         vTemp = _mm_div_ps(Simd::SSE::Constants::kAllOnes, vTemp);
 
         Matrix4x4 m;
