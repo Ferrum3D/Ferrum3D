@@ -10,7 +10,6 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Materials/MaterialInstance.h>
-#include <Graphics/Passes/VisibilitySupport.h>
 #include <Graphics/Scene/ComputePassRegistry.h>
 #include <gtest/gtest.h>
 
@@ -59,14 +58,21 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_EQ(evaluationPipelines.GetPipelines().size(), 1u);
             EXPECT_EQ(shadingPipelines.GetPipelines().size(), 2u);
 
-            const VisibilitySupport support = VisibilitySupport::Query(*device);
-            EXPECT_TRUE(support.m_supported);
-            EXPECT_TRUE(support.m_hdrBytesPerPixel == 4 || support.m_hdrBytesPerPixel == 8);
+            evaluationPipelines.Release(0);
+            EXPECT_EQ(evaluationPipelines.GetPipelines().size(), 1u);
+            evaluationPipelines.Release(0);
+            EXPECT_TRUE(evaluationPipelines.GetPipelines().empty());
+            EXPECT_EQ(evaluationPipelines.Register(shadingPipeline), 0u);
+            EXPECT_EQ(evaluationPipelines.Register(pipeline), 1u);
+            evaluationPipelines.Release(0);
+            EXPECT_EQ(evaluationPipelines.GetPipelines()[1].Get(), pipeline);
+            EXPECT_EQ(evaluationPipelines.Register(shadingPipeline), 0u);
 
-            if (support.m_waveLaneCount != 0)
+            const auto compute = device->GetComputeCapabilities();
+            if (compute.m_waveLaneCountControl)
             {
                 Core::ComputePipelineRequest waveRequest = request;
-                waveRequest.m_desc.m_waveLaneCount = support.m_waveLaneCount;
+                waveRequest.m_desc.m_waveLaneCount = compute.m_waveLaneCount;
                 Core::ComputePipeline* wavePipeline = pipelines->CreateComputePipeline(waveRequest);
                 wavePipeline->GetCompletionWaitGroup()->Wait();
                 EXPECT_TRUE(wavePipeline->IsReady());

@@ -1,16 +1,16 @@
 # Renderer sample
 
-Stage 4 adds `--visibility-debug deferred` for independent GBuffer classification and compute lighting before tonemapping. Forward remains the default. See [Stage 4 notes](../../VISIBILITY_BUFFER_STAGE4.md).
+Visibility rasterization, GBuffer evaluation and deferred compute shading are the default pipeline. Each stage has its own view module and exchanges targets through the FrameGraph blackboard. The forward path has been removed. See [Stage 5 notes](../../VISIBILITY_BUFFER_STAGE5.md).
 
 Validation is disabled by default. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Use neither flag for performance measurements and Nsight captures.
 
-Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These run GPU loose tiling and surface evaluation; lighting remains forward until Stage 4. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).
+Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These show GPU classification and surface evaluation. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).
 
-Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`). Forward shading remains the default. `--smoke` renders eight frames and exits. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).
+Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`). `--smoke` renders eight frames and exits. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).
 
 Build `RendererSample` and launch it from `cmake-build/windows-debug-msvc/Samples/Renderer`.
 The sample displays warm bunnies on the left, textured bunnies and a damaged helmet in the center, and cool bunnies on the right,
-using the default depth and opaque passes. Every object rotates around its local Y axis at 30 degrees per second,
+using the visibility and deferred passes. Every object rotates around its local Y axis at 30 degrees per second,
 with frame delta time measured by the engine high-resolution timer.
 
 GPU validation, lifecycle stress modes, and benchmarks live in `Samples/GpuDrivenTestApp`.

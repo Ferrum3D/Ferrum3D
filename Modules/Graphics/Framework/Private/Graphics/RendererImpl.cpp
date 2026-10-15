@@ -6,12 +6,11 @@
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Database/Database.h>
-#include <Graphics/Passes/DepthPrepass.h>
-#include <Graphics/Passes/OpaquePass.h>
+#include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
+#include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/Tools/Tonemap.h>
 #include <Graphics/Passes/VisibilityPass.h>
-#include <Graphics/Passes/VisibilitySupport.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/SceneImpl.h>
 
@@ -41,7 +40,6 @@ namespace FE::Graphics
     RendererImpl::RendererImpl(Core::Device* device)
         : m_device(device)
     {
-        m_visibilitySupport = VisibilitySupport::Query(*device);
         m_graphicsQueue = m_device->CreateGraphicsQueue();
         m_asyncCopyQueue = m_device->CreateAsyncCopyQueue();
 
@@ -67,9 +65,6 @@ namespace FE::Graphics
         m_database.reset();
         m_mainColorTarget.Reset();
         m_mainDepthTarget.Reset();
-        m_visibilityTarget.Reset();
-        m_surfaceWork = {};
-        m_shadingWork = {};
         m_descriptorManager.Reset();
         m_device->WaitIdle();
 
@@ -112,8 +107,7 @@ namespace FE::Graphics
 
         m_graphicsQueue->BeginFrame();
         viewport->AcquireNextImage();
-        if (!hasEnabledView)
-            EnsureMainColorTarget(viewport->GetDesc());
+        EnsureMainColorTarget(viewport->GetDesc());
         EnsureMainDepthTarget(viewport->GetDesc());
 
         m_frameGraph->BeginFrame();
@@ -151,9 +145,7 @@ namespace FE::Graphics
         }
 
         viewport->PrepareBlit();
-        Tools::Tonemap::AddPass(*m_frameGraph,
-                                Core::TextureView::Create(m_mainColorTarget.Get()),
-                                Core::TextureView::Create(viewport->GetCurrentColorTarget()));
+        Tools::Tonemap::AddPass(*m_frameGraph, m_mainColorTarget.Get(), viewport->GetCurrentColorTarget());
 
         m_frameGraph->CompileAndExecute();
         m_renderQueueUploader.CloseFrame(m_graphicsQueue->GetCurrentFence());
@@ -193,28 +185,22 @@ namespace FE::Graphics
     }
 
 
-    void RendererImpl::EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc, const Core::Format format)
+    void RendererImpl::EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc)
     {
         const bool sizeMismatch = m_mainColorTarget != nullptr
             && (m_mainColorTarget->GetDesc().m_width != viewportDesc.m_width
-                || m_mainColorTarget->GetDesc().m_height != viewportDesc.m_height
-                || m_mainColorTarget->GetDesc().m_imageFormat != format);
+                || m_mainColorTarget->GetDesc().m_height != viewportDesc.m_height);
         if (m_mainColorTarget != nullptr && !sizeMismatch)
             return;
 
-        m_mainColorTarget =
-            Core::Texture::Create(m_device.Get(), "RendererMainColor", format, { viewportDesc.m_width, viewportDesc.m_height });
+        m_mainColorTarget = Core::Texture::Create(m_device.Get(),
+                                                  "RendererMainColor",
+                                                  Core::Format::kB10G11R11_UFLOAT,
+                                                  { viewportDesc.m_width, viewportDesc.m_height });
 
         Core::ResourceCommitParams commitParams;
-        const Core::FormatCapabilities capabilities = m_device->GetFormatCapabilities(format);
-        commitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead;
-        if (capabilities.m_colorAttachment)
-            commitParams.m_bindFlags |= Core::BarrierAccessFlags::kRenderTarget;
-        if (capabilities.m_storage && capabilities.m_storageWriteWithoutFormat)
-            commitParams.m_bindFlags |= Core::BarrierAccessFlags::kShaderWrite;
-
-        if (format == Core::Format::kR16G16B16A16_SFLOAT)
-            Logger::LogInfo("HDR storage uses RGBA16F: 8 bytes/pixel instead of 4 bytes/pixel");
+        commitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
+            | Core::BarrierAccessFlags::kRenderTarget;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
         m_resourcePool->CommitTextureMemory(m_mainColorTarget.Get(), commitParams);
     }
@@ -241,24 +227,6 @@ namespace FE::Graphics
     }
 
 
-    void RendererImpl::EnsureVisibilityTarget(const Core::ViewportDesc& viewportDesc)
-    {
-        if (m_visibilityTarget != nullptr && m_visibilityTarget->GetDesc().m_width == viewportDesc.m_width
-            && m_visibilityTarget->GetDesc().m_height == viewportDesc.m_height)
-        {
-            return;
-        }
-
-        const VisibilitySupport support = VisibilitySupport::Query(*m_device);
-        FE_Assert(support.m_supported && support.m_hdrFormat == Core::Format::kB10G11R11_UFLOAT,
-                  "Visibility debug rendering requires sampled D32, R32G32_UINT attachment and packed HDR storage writes");
-        m_visibilityTarget = Core::Texture::Create(m_device.Get(),
-                                                   "RendererVisibility",
-                                                   Core::Format::kR32G32_UINT,
-                                                   { viewportDesc.m_width, viewportDesc.m_height });
-    }
-
-
     void RendererImpl::ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport)
     {
         auto* clearPass = graph.AllocatePassData<RendererTargetClearPassDesc>();
@@ -276,14 +244,6 @@ namespace FE::Graphics
     void RendererImpl::SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                                        Core::Viewport& viewport)
     {
-        if (view.GetVisibilityDebugMode() == Visibility::DebugMode::kForward)
-            EnsureMainColorTarget(viewport.GetDesc());
-        else
-        {
-            FE_Assert(m_visibilitySupport.m_supported, "Visibility shading formats are unavailable");
-            EnsureMainColorTarget(viewport.GetDesc(), m_visibilitySupport.m_hdrFormat);
-        }
-
         RendererViewData& viewData = blackboard.Add<RendererViewData>();
         viewData.m_scene = &scene;
         viewData.m_view = &view;
@@ -293,8 +253,6 @@ namespace FE::Graphics
         viewData.m_viewportRect = viewport.GetDesc().GetRect();
         viewData.m_database = m_database.get();
         viewData.m_renderQueueUploader = &m_renderQueueUploader;
-        viewData.m_surfaceWork = &m_surfaceWork;
-        viewData.m_shadingWork = &m_shadingWork;
 
         view.Update(blackboard);
 
@@ -302,17 +260,18 @@ namespace FE::Graphics
             module.PrepareRenderView(graph, m_renderQueueUploader);
         });
 
-        if (view.GetVisibilityDebugMode() != Visibility::DebugMode::kForward)
-        {
-            EnsureVisibilityTarget(viewport.GetDesc());
-            Visibility::AddPasses(graph, blackboard, m_visibilityTarget.Get());
-        }
-        else
-        {
+        const bool hasVisibility = blackboard.Contains<Visibility::PassData>();
+        const bool hasSurface = blackboard.Contains<SurfaceEvaluation::PassData>();
+        const bool hasShading = blackboard.Contains<DeferredShading::PassData>();
+        const auto mode = view.GetVisibilityDebugMode();
+        const bool needsSurface = mode >= Visibility::DebugMode::kEvaluationTile;
+        const bool needsShading = mode == Visibility::DebugMode::kDeferred;
+        if (!hasVisibility || (needsSurface && !hasSurface) || (needsShading && !hasShading))
             ClearTargets(graph, viewport);
-            DepthPrepass::AddPasses(graph, blackboard);
-            OpaquePass::AddPasses(graph, blackboard);
-        }
+
+        Visibility::AddPasses(graph, blackboard);
+        SurfaceEvaluation::AddPasses(graph, blackboard);
+        DeferredShading::AddPasses(graph, blackboard);
     }
 
 

@@ -24,6 +24,7 @@ namespace FE::Graphics::Core
                                        Options options = Options::kNone);
 
         template<class T>
+            requires(std::is_trivially_copyable_v<T>)
         [[nodiscard]] bool UploadArray(FrameGraph& graph, const BufferView destination, const festd::span<const T> source,
                                        const Options options = Options::kNone)
         {
@@ -31,6 +32,7 @@ namespace FE::Graphics::Core
         }
 
         template<class T>
+            requires(std::is_trivially_copyable_v<T>)
         [[nodiscard]] bool UploadArray(FrameGraph& graph, const BufferView destination, const festd::span<T> source,
                                        const Options options = Options::kNone)
         {

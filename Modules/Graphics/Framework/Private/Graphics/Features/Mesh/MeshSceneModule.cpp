@@ -4,7 +4,6 @@
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/RendererPassCommon.h>
-#include <Graphics/Passes/VisibilitySupport.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
 #include <Graphics/Scene/RenderBatch.h>
@@ -39,7 +38,8 @@ namespace FE::Graphics
         RendererImpl* renderer = Rtti::AssertCast<RendererImpl*>(scene->GetRenderer());
         DB::Database* database = renderer->GetDatabase();
         FE_Assert(database != nullptr);
-        m_evaluationWaveLaneCount = VisibilitySupport::Query(*renderer->GetGraphicsQueue()->GetDevice()).m_logicalWaveWidth;
+        const auto compute = renderer->GetGraphicsQueue()->GetDevice()->GetComputeCapabilities();
+        m_evaluationWaveLaneCount = compute.m_waveLaneCount == 64 ? 64 : 32;
 
         m_meshLodInfoTable = Memory::DefaultNew<MeshLodInfoTable>(database);
         m_meshGroupTable = Memory::DefaultNew<MeshGroupTable>(database);
@@ -349,12 +349,7 @@ namespace FE::Graphics
         if (registry->m_revision == m_revision)
             return *registry;
 
-        // Retain bucket identities while refreshing capacities and group routing for this technique.
-        for (auto& slot : registry->m_slots)
-        {
-            slot.m_instanceCapacity = 0;
-            slot.m_workCapacity = 0;
-        }
+        registry->m_slots.clear();
 
         festd::vector<MeshPass::PipelineRouting> routing(m_meshGroups.size());
         Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
@@ -588,6 +583,9 @@ namespace FE::Graphics
         meshGroup->m_material = material;
         meshGroup->m_tableRef = m_meshGroupTable->AllocateRow();
         meshGroup->m_materialRef = m_materialInstanceTable->AllocateRow();
+        const auto materialRow = m_materialInstanceTable->WriteRow(meshGroup->m_materialRef);
+        materialRow.m_evaluationSlot.Get() = kInvalidIndex;
+        materialRow.m_shadingSlot.Get() = kInvalidIndex;
         m_meshGroups.resize(m_meshGroupTable->GetReservedRowCount());
         m_meshGroups[meshGroup->m_tableRef.m_rowIndex] = meshGroup;
         m_activeMeshGroups.resize(m_meshGroups.size(), false);
@@ -603,6 +601,9 @@ namespace FE::Graphics
         const IO::AssetRead<MaterialInstanceAsset> material = group->m_material.Read();
         if (!mesh || !material || !material->m_runtime || !mesh->m_buffer)
         {
+            if (group->m_materialGeneration != 0)
+                ReleaseGroupPipelines(group);
+
             if (m_meshGroupTable->ReadRow(group->m_tableRef).m_renderable.Get() != 0)
             {
                 m_meshGroupTable->WriteRow(group->m_tableRef).m_renderable.Get() = 0;
@@ -686,16 +687,24 @@ namespace FE::Graphics
 
         if (materialChanged)
         {
+            if (group->m_materialGeneration != 0)
+                ReleaseGroupPipelines(group);
+
             const MaterialInstanceTable::RWRow materialRow = m_materialInstanceTable->WriteRow(group->m_materialRef);
             materialRow.m_materialParameters.Get() = material->m_runtime->GetMaterialParameters();
             materialRow.m_evaluationSlot.Get() = m_evaluationPipelines.Register(
                 material->m_runtime->GetComputePipeline(Env::Name("SurfaceEvaluate"), m_evaluationWaveLaneCount));
             materialRow.m_shadingSlot.Get() =
                 m_shadingPipelines.Register(material->m_runtime->GetComputePipeline(Env::Name("DeferredShade")));
+            if (materialRow.m_evaluationSlot.Get() == kInvalidIndex || materialRow.m_shadingSlot.Get() >= 254)
+                Logger::LogWarning("Material permutation '{}' has no supported deferred evaluation/shading combination",
+                                   material->m_permutationKey);
+
             tableRow.m_materialInstance.Get() = group->m_materialRef;
             for (const MeshHandle handle : group->m_instances)
             {
                 InstanceRecord& record = m_instances[handle.m_value];
+                FreeInstanceParameters(group->m_material, record.m_materialGeneration, record.m_parameters);
                 record.m_parameters = material->m_runtime->AllocateInstanceParameters();
                 record.m_materialGeneration = materialGeneration;
                 m_meshInstanceTable->WriteRow(record.m_tableRef).m_instanceData.Get() = record.m_parameters.m_devicePointer;
@@ -704,6 +713,17 @@ namespace FE::Graphics
             group->m_materialGeneration = materialGeneration;
         }
         tableRow.m_renderable.Get() = 1;
+    }
+
+
+    void MeshSceneModule::ReleaseGroupPipelines(MeshGroup* group)
+    {
+        const auto row = m_materialInstanceTable->WriteRow(group->m_materialRef);
+        m_evaluationPipelines.Release(row.m_evaluationSlot.Get());
+        m_shadingPipelines.Release(row.m_shadingSlot.Get());
+        row.m_evaluationSlot.Get() = kInvalidIndex;
+        row.m_shadingSlot.Get() = kInvalidIndex;
+        group->m_materialGeneration = 0;
     }
 
 
@@ -716,6 +736,7 @@ namespace FE::Graphics
         if (group->m_lodsRef.m_count != 0)
             m_meshLodInfoTable->Free(group->m_lodsRef);
 
+        ReleaseGroupPipelines(group);
         m_materialInstanceTable->Free(group->m_materialRef);
         m_meshGroupTable->Free(group->m_tableRef);
         Memory::DefaultDelete(group);

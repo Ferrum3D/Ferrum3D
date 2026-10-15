@@ -1,7 +1,8 @@
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <Graphics/Assets/Streamers.h>
-#include <Graphics/Passes/DepthPrepass.h>
-#include <Graphics/Passes/OpaquePass.h>
+#include <Graphics/Passes/DeferredShadingPass.h>
+#include <Graphics/Passes/SurfaceEvaluationPass.h>
+#include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
 
 namespace FE::GameFramework
@@ -49,8 +50,9 @@ namespace FE::GameFramework
         FE_PROFILER_ZONE();
 
         Graphics::View* view = GetScene().CreateView();
-        view->GetModules().Add<Graphics::DepthPrepass::ViewModule>();
-        view->GetModules().Add<Graphics::OpaquePass::ViewModule>();
+        view->GetModules().Add<Graphics::Visibility::ViewModule>();
+        view->GetModules().Add<Graphics::SurfaceEvaluation::ViewModule>();
+        view->GetModules().Add<Graphics::DeferredShading::ViewModule>();
         view->SetEnabled(false);
         return view;
     }

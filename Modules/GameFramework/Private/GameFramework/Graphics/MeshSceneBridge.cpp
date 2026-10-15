@@ -55,8 +55,7 @@ namespace FE::GameFramework
 
         Graphics::MeshBatchDesc batch;
         batch.m_bounds = bounds;
-        batch.m_drawTagMask =
-            Graphics::DrawTagMask(Graphics::DrawTags::DepthPrepass) | Graphics::DrawTagMask(Graphics::DrawTags::Opaque);
+        batch.m_drawTagMask = Graphics::DrawTagMask(Graphics::DrawTags::Visibility);
         component.m_batch = m_module->CreateBatch(batch);
         for (const auto& link : model->m_meshes)
         {

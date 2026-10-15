@@ -17,9 +17,10 @@
 #include <Graphics/Database/Database.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Materials/MaterialInstance.h>
-#include <Graphics/Passes/DepthPrepass.h>
+#include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
-#include <Graphics/Passes/OpaquePass.h>
+#include <Graphics/Passes/SurfaceEvaluationPass.h>
+#include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
 #include <Graphics/Tables/MeshMemberTable.h>
 
@@ -110,8 +111,8 @@ namespace
             m_materialRequest.Reset();
             m_warmMaterialRequest.Reset();
             m_coolMaterialRequest.Reset();
-            m_opaqueOnlyRequest.Reset();
-            m_depthOnlyRequest.Reset();
+            m_noVisibilityRequest.Reset();
+            m_unsupportedRequest.Reset();
 
             m_modelRequest.Reset();
             IO::AssetManager::Shutdown();
@@ -176,8 +177,9 @@ namespace
 
             m_scene->GetModules().Add<MeshSceneModule>();
             m_view = m_scene->CreateView();
-            m_view->GetModules().Add<DepthPrepass::ViewModule>();
-            m_view->GetModules().Add<OpaquePass::ViewModule>();
+            m_view->GetModules().Add<Visibility::ViewModule>();
+            m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();
+            m_view->GetModules().Add<DeferredShading::ViewModule>();
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
             const Vector3 cameraPosition(0.0f, 3.0f, -8.0f);
@@ -244,15 +246,15 @@ namespace
                       "Failed to load cool bunny material instance");
             if (GStressMode)
             {
-                m_opaqueOnlyRequest = IO::AssetManager::LoadAsset(IO::AssetID("6C22D94D-661E-45CE-8AA3-F55783855D58"));
-                m_depthOnlyRequest = IO::AssetManager::LoadAsset(IO::AssetID("FDB669B8-4BC3-4DB9-82B2-7CF7D47B68D1"));
-                while (!m_opaqueOnlyRequest.IsCompleted() || !m_depthOnlyRequest.IsCompleted())
+                m_noVisibilityRequest = IO::AssetManager::LoadAsset(IO::AssetID("6C22D94D-661E-45CE-8AA3-F55783855D58"));
+                m_unsupportedRequest = IO::AssetManager::LoadAsset(IO::AssetID("FDB669B8-4BC3-4DB9-82B2-7CF7D47B68D1"));
+                while (!m_noVisibilityRequest.IsCompleted() || !m_unsupportedRequest.IsCompleted())
                 {
                     IO::AssetManager::Tick();
                     Threading::Sleep(1);
                 }
-                FE_Assert(m_opaqueOnlyRequest.GetResult() == IO::AssetLoadResult::kSucceeded);
-                FE_Assert(m_depthOnlyRequest.GetResult() == IO::AssetLoadResult::kSucceeded);
+                FE_Assert(m_noVisibilityRequest.GetResult() == IO::AssetLoadResult::kSucceeded);
+                FE_Assert(m_unsupportedRequest.GetResult() == IO::AssetLoadResult::kSucceeded);
             }
             const IO::AssetRead<MaterialInstanceAsset> materialInstance =
                 IO::AssetHandle<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot()).Read();
@@ -278,7 +280,7 @@ namespace
                 const float batchX = static_cast<float>(batchIndex) * 2.5f;
                 MeshBatchDesc batchDesc;
                 batchDesc.m_bounds = Aabb{ Vector3(batchX - 5.0f, -5.0f, -5.0f), Vector3(batchX + 5.0f, 5.0f, 5.0f) };
-                batchDesc.m_drawTagMask = DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque);
+                batchDesc.m_drawTagMask = DrawTagMask(DrawTags::Visibility);
                 instanceDesc.m_batch = meshSceneModule.CreateBatch(batchDesc);
                 if (batchIndex == -1)
                     m_migrationBatch = instanceDesc.m_batch;
@@ -294,14 +296,13 @@ namespace
             if (GStressMode)
             {
                 FE_Assert(GMaskProbeTag.m_value >= 32);
-                FE_Assert(warmMaterial.Read()->m_runtime->HasTechnique("MaskProbe"));
-                FE_Assert(coolMaterial.Read()->m_runtime->HasTechnique("MaskProbe"));
-                FE_Assert(!originalMaterial.Read()->m_runtime->HasTechnique("MaskProbe"));
+                FE_Assert(warmMaterial.Read()->m_runtime->HasTechnique("DepthVisibility"));
+                FE_Assert(coolMaterial.Read()->m_runtime->HasTechnique("DepthVisibility"));
+                FE_Assert(originalMaterial.Read()->m_runtime->HasTechnique("DepthVisibility"));
 
                 MeshBatchDesc stressBatch;
                 stressBatch.m_bounds = Aabb{ Vector3(-200.0f), Vector3(200.0f) };
-                stressBatch.m_drawTagMask =
-                    DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque) | DrawTagMask(GMaskProbeTag);
+                stressBatch.m_drawTagMask = DrawTagMask(DrawTags::Visibility) | DrawTagMask(GMaskProbeTag);
                 m_slotTestBatch = meshSceneModule.CreateBatch(stressBatch);
                 m_slotTestIndex = m_slotTestBatch->m_octreeEntry.m_userIndex;
                 m_stressBatch = meshSceneModule.CreateBatch(stressBatch);
@@ -318,11 +319,12 @@ namespace
                 instanceDesc.m_material = originalMaterial;
                 m_stressDesc = instanceDesc;
                 m_secondView = m_scene->CreateView();
-                m_secondView->GetModules().Add<DepthPrepass::ViewModule>();
-                m_secondView->GetModules().Add<OpaquePass::ViewModule>();
-                auto& probePass = m_secondView->GetModules().Find<OpaquePass::ViewModule>();
+                m_secondView->GetModules().Add<Visibility::ViewModule>();
+                m_secondView->GetModules().Add<SurfaceEvaluation::ViewModule>();
+                m_secondView->GetModules().Add<DeferredShading::ViewModule>();
+                auto& probePass = m_secondView->GetModules().Find<Visibility::ViewModule>();
                 probePass.m_drawTag = GMaskProbeTag;
-                probePass.m_techniqueRole = "MaskProbe";
+                probePass.m_techniqueRole = "DepthVisibility";
                 m_secondView->SetCameraTransform(Transform::Create(cameraPosition, Math::ExtractRotation(cameraMatrix), 1.0f));
                 m_secondView->SetProjection(Constants::kPI * 0.2f, aspectRatio, 0.01f, 1000.0f);
             }
@@ -330,7 +332,7 @@ namespace
             MeshBatchDesc culledBatchDesc;
             instanceDesc.m_material = originalMaterial;
             culledBatchDesc.m_bounds = Aabb{ Vector3(95.0f, -5.0f, -5.0f), Vector3(105.0f, 5.0f, 5.0f) };
-            culledBatchDesc.m_drawTagMask = DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque);
+            culledBatchDesc.m_drawTagMask = DrawTagMask(DrawTags::Visibility);
             instanceDesc.m_batch = meshSceneModule.CreateBatch(culledBatchDesc);
             instanceDesc.m_transform = Matrix4x4::Translation(Vector3(100.0f, 0.0f, 0.0f));
             m_meshInstances.push_back(meshSceneModule.CreateInstance(instanceDesc));
@@ -390,7 +392,7 @@ namespace
                     transientDesc.m_bounds = Aabb{ Vector3(-1.0f), Vector3(1.0f) };
                     scene.DestroyBatch(scene.CreateBatch(transientDesc));
 
-                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::Opaque));
+                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::Visibility));
                     Matrix4x4 shear = Matrix4x4::Translation(Vector3(0.0f, 0.0f, 3.0f));
                     shear.m_00 = -1.5f;
                     shear.m_11 = 0.25f;
@@ -405,17 +407,16 @@ namespace
                 }
                 if (m_frameIndex == 5)
                 {
-                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(GMaskProbeTag));
-                    m_view->GetModules().Deactivate<OpaquePass::ViewModule>();
+                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::Visibility) | DrawTagMask(GMaskProbeTag));
+                    m_view->GetModules().Deactivate<Visibility::ViewModule>();
                 }
                 if (m_frameIndex == 6)
-                    m_view->GetModules().Activate<OpaquePass::ViewModule>();
+                    m_view->GetModules().Activate<Visibility::ViewModule>();
                 if (m_frameIndex == 7)
                 {
-                    scene.SetBatchDrawTags(m_stressBatch,
-                                           DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque)
-                                               | DrawTagMask(GMaskProbeTag));
+                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::Visibility) | DrawTagMask(GMaskProbeTag));
                     scene.MoveInstance(m_stressInstances.back(), m_migrationBatch);
+                    m_mainWindow->SetSize(Vector2Int(960, 640));
                 }
                 if (m_frameIndex == 8 || m_frameIndex == 9)
                 {
@@ -448,10 +449,11 @@ namespace
 #endif
                 if (m_frameIndex == 11)
                 {
+                    m_mainWindow->SetSize(Vector2Int(1280, 720));
                     scene.UpdateMaterial(m_stressInstances[0],
-                                         IO::AssetLease<MaterialInstanceAsset>(m_opaqueOnlyRequest.GetAssetSlot()));
+                                         IO::AssetLease<MaterialInstanceAsset>(m_noVisibilityRequest.GetAssetSlot()));
                     scene.UpdateMaterial(m_stressInstances[1],
-                                         IO::AssetLease<MaterialInstanceAsset>(m_depthOnlyRequest.GetAssetSlot()));
+                                         IO::AssetLease<MaterialInstanceAsset>(m_unsupportedRequest.GetAssetSlot()));
                 }
                 if (m_frameIndex == 12)
                 {
@@ -532,8 +534,8 @@ namespace
         IO::AssetRequest m_materialRequest;
         IO::AssetRequest m_warmMaterialRequest;
         IO::AssetRequest m_coolMaterialRequest;
-        IO::AssetRequest m_opaqueOnlyRequest;
-        IO::AssetRequest m_depthOnlyRequest;
+        IO::AssetRequest m_noVisibilityRequest;
+        IO::AssetRequest m_unsupportedRequest;
         MaterialStreamer* m_materialStreamer = nullptr;
         MeshStreamer* m_meshStreamer = nullptr;
         TextureStreamer* m_textureStreamer = nullptr;

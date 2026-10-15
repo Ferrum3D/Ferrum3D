@@ -254,26 +254,6 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::FormatCapabilities Device::GetFormatCapabilities(const Core::Format format) const
-    {
-        VkFormatProperties3 formatProperties{};
-        formatProperties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3;
-        VkFormatProperties2 properties{};
-        properties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
-        properties.pNext = &formatProperties;
-        vkGetPhysicalDeviceFormatProperties2(m_nativeAdapter, Translate(format), &properties);
-        const VkFormatFeatureFlags2 flags = formatProperties.optimalTilingFeatures;
-        Core::FormatCapabilities result;
-        result.m_sampled = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
-        result.m_storage = (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
-        result.m_storageReadWithoutFormat = (flags & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT) != 0;
-        result.m_storageWriteWithoutFormat = (flags & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) != 0;
-        result.m_colorAttachment = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
-        result.m_depthAttachment = (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
-        return result;
-    }
-
-
     Rc<Core::AsyncCopyQueue> Device::CreateAsyncCopyQueue()
     {
         return Memory::DefaultNew<AsyncCopyQueue>(this);

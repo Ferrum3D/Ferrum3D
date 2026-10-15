@@ -77,17 +77,15 @@ namespace FE::Graphics::DeferredProbe
                                        cameraProbe   ? Env::Name("CAMERA_PROBE=1")
                                            : wideHDR ? Env::Name("WIDE_HDR=1")
                                                      : Env::Name::kEmpty);
-            const Core::FormatCapabilities support = device->GetFormatCapabilities(format);
-            ASSERT_TRUE(support.m_storage && support.m_sampled && support.m_storageWriteWithoutFormat);
             Visibility::EnsureSurfaceWork(work, device, resolution, bindings, 3, 3, lanes);
             Visibility::ShareSurfaceStorage(device, evaluationStorage, work);
             EXPECT_EQ(work.m_pixels.Get(), evaluationStorage.m_pixels.Get());
             EXPECT_EQ(work.m_waves.Get(), evaluationStorage.m_waves.Get());
             Rc<Core::Texture> color = Core::Texture::Create(device, "DeferredProbeColor", format, resolution);
-            Core::ComputePipeline* simple = pipeline("Shaders/Deferred/ShadeSimpleLit.cs.hlsl",
-                                                     Env::Name(Fmt::Format("EVALUATION_LANES={}", lanes)));
-            Core::ComputePipeline* pbr = pipeline("Shaders/Deferred/ShadeStandardPBR.cs.hlsl",
-                                                  Env::Name(Fmt::Format("EVALUATION_LANES={}", lanes)));
+            Core::ComputePipeline* simple =
+                pipeline("Shaders/Deferred/ShadeSimpleLit.cs.hlsl", Env::Name(Fmt::Format("EVALUATION_LANES={}", lanes)));
+            Core::ComputePipeline* pbr =
+                pipeline("Shaders/Deferred/ShadeStandardPBR.cs.hlsl", Env::Name(Fmt::Format("EVALUATION_LANES={}", lanes)));
             queue->BeginFrame();
             graph->BeginFrame();
             FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
@@ -101,7 +99,7 @@ namespace FE::Graphics::DeferredProbe
             seed->m_constants.m_stats = graph->GetUAV(stats.Get());
             seed->m_constants.m_resolution = resolution;
             seed->m_constants.m_empty = empty;
-            graph->AddDispatchPass("SeedDeferredProbe", seed, Core::ComputeWorkGroupCount(Vector2UInt(33, 17)));
+            graph->AddDispatchPass("SeedDeferredProbe", seed, Math::CeilDivide(resolution, 8u));
             auto* initialize = graph->AllocatePassData<Visibility::DeferredDirectPassDesc>();
             initialize->m_pipeline = initializePipeline;
             initialize->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
@@ -109,7 +107,7 @@ namespace FE::Graphics::DeferredProbe
             initialize->m_constants.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
             initialize->m_constants.m_resolution = resolution;
             initialize->m_constants.m_shaderCount = 3;
-            graph->AddDispatchPass("InitializeDeferredProbe", initialize, Core::ComputeWorkGroupCount(Vector2UInt(33, 17)));
+            graph->AddDispatchPass("InitializeDeferredProbe", initialize, Math::CeilDivide(resolution, 8u));
             Visibility::BuildSurfaceWork(*graph, uploader, nullptr, nullptr, planes[0].Get(), work, true);
             for (uint32_t slot = 0; slot < 3; ++slot)
             {
@@ -141,7 +139,7 @@ namespace FE::Graphics::DeferredProbe
             inspect->m_constants.m_stats = graph->GetUAV(stats.Get());
             inspect->m_constants.m_resolution = resolution;
             inspect->m_constants.m_empty = empty;
-            graph->AddDispatchPass("InspectDeferredProbe", inspect, Core::ComputeWorkGroupCount(Vector2UInt(33, 17)));
+            graph->AddDispatchPass("InspectDeferredProbe", inspect, Math::CeilDivide(resolution, 8u));
             graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(stats.Get()));
             graph->AddCopyPass(Core::BufferView(argsReadback.Get()), Core::BufferView(work.m_arguments.Get()));
             graph->CompileAndExecute();
@@ -169,6 +167,16 @@ namespace FE::Graphics::DeferredProbe
 
             argsReadback->Unmap();
         }
+
+        const uint64_t populatedScratchBytes = work.m_scratchBytes;
+        Visibility::EnsureSurfaceWork(work, device, resolution, {}, 0, 0, 32);
+        Visibility::EnsureSurfaceWork(evaluationStorage, device, resolution, {}, 0, 0, 32);
+        Visibility::ShareSurfaceStorage(device, evaluationStorage, work);
+        EXPECT_EQ(work.m_pixels.Get(), evaluationStorage.m_pixels.Get());
+        EXPECT_EQ(work.m_waves.Get(), evaluationStorage.m_waves.Get());
+        EXPECT_EQ(work.m_pixels->GetDesc().m_size, sizeof(uint32_t));
+        EXPECT_EQ(work.m_waves->GetDesc().m_size, sizeof(Visibility::WaveCommand));
+        EXPECT_LT(work.m_scratchBytes, populatedScratchBytes);
 
         graph.Reset();
         uploader.Shutdown();

@@ -14,8 +14,3 @@ target_compile_definitions(GpuDrivenTestApp PRIVATE FE_GPU_DRIVEN_TEST_APP_ASSET
 
 set_target_properties(GpuDrivenTestApp PROPERTIES FOLDER "Samples")
 target_link_libraries(GpuDrivenTestApp FeCore FeFramework FeGraphics)
-
-set(TEST_SHADER_SOURCE Assets/source/Shaders/Materials/BunnyVariants.ps.hlsl)
-set_source_files_properties(${TEST_SHADER_SOURCE} PROPERTIES HEADER_FILE_ONLY TRUE)
-target_sources(GpuDrivenTestApp PRIVATE ${TEST_SHADER_SOURCE})
-configure_file(${TEST_SHADER_SOURCE} Shaders/Shaders/Materials/BunnyVariants.ps.hlsl COPYONLY)

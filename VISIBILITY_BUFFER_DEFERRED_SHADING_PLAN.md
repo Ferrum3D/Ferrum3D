@@ -1,6 +1,6 @@
 # Visibility buffer and compute deferred shading migration
 
-Status: Stages 1 through 4 are implemented, including full-view histogram-based GPU loose tiling, indirect material evaluation, packed GBuffer debug views and independently classified compute lighting. Forward shading remains the default. Manual visual comparisons, GPU captures and performance measurements remain pending. See `VISIBILITY_BUFFER_STAGE1.md`, `VISIBILITY_BUFFER_STAGE2.md` and `VISIBILITY_BUFFER_STAGE3.md` and `VISIBILITY_BUFFER_STAGE4.md` for interfaces and validation workflows.
+Status: Stages 1 through 5 are implemented. Visibility rasterization, GBuffer evaluation and independent deferred compute shading are the default and only material pipeline. Each stage has a view module and exchanges resources through the FrameGraph blackboard. See `VISIBILITY_BUFFER_STAGE5.md` for lifecycle validation, requested image/scratch footprints and the measured frame benchmark. Per-stage GPU captures and visual review remain manual checkpoints.
 
 ## 1. Direction
 
@@ -197,7 +197,7 @@ The second classifier is deliberately loose tiled, as requested. DOOM's publishe
 
 1. Add `DispatchIndirect` through public/common/Vulkan `FrameGraphContext`, using the existing indirect-argument binding and compute state setup. Indirect arguments contain three 32-bit group counts, with required offset alignment and bounds. Emit compute-write -> indirect-command-read synchronization. See the [Vulkan dispatch reference](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdDispatchIndirect.html).
 2. Treat all cross-lane operations as baseline requirements on RDNA2+/Turing targets. Query wave lane counts and optional lane-count control, exposing `waveLaneCount` in the public compute API and its cache key. Do not equate `numthreads(64,1,1)` with guaranteed wave64. See the [Vulkan subgroup guide](https://docs.vulkan.org/guide/latest/subgroups.html).
-3. Check required format usages: visibility color attachment + sampled integer reads; GBuffer storage writes + reads; sampled depth; HDR storage writes + tonemap reads. The format enum alone does not establish device support. Prefer the current packed HDR target; use an explicit `RGBA16F` fallback if necessary and report its extra footprint.
+3. RDNA2+ and Turing+ are the supported baseline. Assume R32G32_UINT visibility, R32_UINT GBuffer, sampled D32 depth and B10G11R11_UFLOAT HDR support. Query only wave size and wave-size control; do not add format support queries or HDR fallbacks.
 4. Change depth to `D32_SFLOAT` and update material declarations/pipeline keys together. Commit it with both depth and shader-read usage, and use a depth-aspect view. Do not retain stencil solely to mark visibility validity.
 5. Represent every stage with frame graph pass data and correct access declarations: visibility attachment writes -> classification reads; classification/sort writes -> scans/scatter; command writes -> indirect and shader reads; evaluation UAV writes -> shading classification/reads; depth writes -> compute reads; HDR writes -> tonemap reads.
 6. Explicitly retain and declare GPU database pages, material allocation pages, device-address geometry and indirectly indexed textures. Resources discovered only through a shader's runtime pointer are not automatically visible to reflected pass descriptors.
@@ -218,9 +218,9 @@ For the initial required scenes, logical image residency before any aliasing is:
 | Packed HDR | 4 | 7.91 | 31.64 |
 | Total | 32 | 63.28 | 253.13 |
 
-These figures exclude alignment/compression, swapchain, streamed assets, GPU database and bounded command/sort scratch. They are per image set, not a promise about total device allocation; account separately for resource generations retained by frames in flight. An `RGBA16F` HDR fallback adds 4 bytes/pixel.
+These figures exclude alignment/compression, swapchain, streamed assets, GPU database and full-view classification scratch. They are per image set, not a promise about total device allocation; account separately for resource generations retained by frames in flight.
 
-The current forward renderer uses nominally 8-byte depth/stencil plus 4-byte HDR. This migration increases image residency; it aims to reduce redundant geometry work, material overshading and bandwidth relative to a naive deferred implementation, not to make visibility + GBuffer cheaper than today's forward targets in every scene.
+The removed forward renderer used nominally 8-byte depth/stencil plus 4-byte HDR. This migration increases image residency; it aims to reduce redundant geometry work, material overshading and bandwidth relative to a naive deferred implementation, not to make visibility + GBuffer cheaper than the previous forward targets in every scene.
 
 Priorities:
 

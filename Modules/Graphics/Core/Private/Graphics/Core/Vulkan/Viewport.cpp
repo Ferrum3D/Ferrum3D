@@ -200,18 +200,25 @@ namespace FE::Graphics::Vulkan
         const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
         const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
         const Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
-        const VkResult result = vkAcquireNextImageKHR(NativeCast(m_device),
-                                                      m_swapchain,
-                                                      Constants::kMaxU64,
-                                                      semaphore->GetNative(),
-                                                      VK_NULL_HANDLE,
-                                                      &m_imageIndex);
+        VkResult result = vkAcquireNextImageKHR(NativeCast(m_device),
+                                                m_swapchain,
+                                                Constants::kMaxU64,
+                                                semaphore->GetNative(),
+                                                VK_NULL_HANDLE,
+                                                &m_imageIndex);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        while (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RecreateSwapchain();
+            result = vkAcquireNextImageKHR(NativeCast(m_device),
+                                           m_swapchain,
+                                           Constants::kMaxU64,
+                                           semaphore->GetNative(),
+                                           VK_NULL_HANDLE,
+                                           &m_imageIndex);
         }
-        else if (result != VK_SUBOPTIMAL_KHR)
+
+        if (result != VK_SUBOPTIMAL_KHR)
         {
             VerifyVk(result);
         }
@@ -248,8 +255,16 @@ namespace FE::Graphics::Vulkan
         const VkSwapchainKHR oldSwapchain = m_swapchain;
         m_swapchain = VK_NULL_HANDLE;
 
-        m_desc.m_width = Math::Clamp(m_desc.m_width, minExtent.width, maxExtent.width);
-        m_desc.m_height = Math::Clamp(m_desc.m_height, minExtent.height, maxExtent.height);
+        if (capabilities.currentExtent.width != Constants::kMaxU32)
+        {
+            m_desc.m_width = capabilities.currentExtent.width;
+            m_desc.m_height = capabilities.currentExtent.height;
+        }
+        else
+        {
+            m_desc.m_width = Math::Clamp(m_desc.m_width, minExtent.width, maxExtent.width);
+            m_desc.m_height = Math::Clamp(m_desc.m_height, minExtent.height, maxExtent.height);
+        }
 
         VkSwapchainCreateInfoKHR swapchainCI = {};
         swapchainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

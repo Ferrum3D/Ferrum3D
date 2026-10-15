@@ -136,7 +136,7 @@ namespace FE::Graphics::SurfaceProbe
             seed->m_constants.m_marks = graph->GetUAV(marks.Get());
             seed->m_constants.m_instanceBase = instanceRows.m_rowIndex;
             seed->m_constants.m_groupCount = testCase == 0 || testCase == 2 ? 0 : kGroupCount;
-            graph->AddDispatchPass("GenerateSurfaceProbe", seed, Core::ComputeWorkGroupCount(Vector2UInt(33, 17)));
+            graph->AddDispatchPass("GenerateSurfaceProbe", seed, Math::CeilDivide(kResolution, 8u));
             Visibility::BuildSurfaceWork(*graph,
                                          uploader,
                                          shadingTest ? nullptr : viewBuffer.Get(),

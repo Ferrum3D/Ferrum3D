@@ -16,9 +16,10 @@
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Materials/MaterialInstance.h>
-#include <Graphics/Passes/DepthPrepass.h>
+#include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
-#include <Graphics/Passes/OpaquePass.h>
+#include <Graphics/Passes/SurfaceEvaluationPass.h>
+#include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
 #include <festd/vector.h>
 
@@ -142,8 +143,9 @@ namespace
 
             m_scene->GetModules().Add<MeshSceneModule>();
             m_view = m_scene->CreateView();
-            m_view->GetModules().Add<DepthPrepass::ViewModule>();
-            m_view->GetModules().Add<OpaquePass::ViewModule>();
+            m_view->GetModules().Add<Visibility::ViewModule>();
+            m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();
+            m_view->GetModules().Add<DeferredShading::ViewModule>();
             if (const auto debugMode = Cli::GetValue("--visibility-debug"))
                 m_view->SetVisibilityDebugMode(Visibility::ParseDebugMode(*debugMode));
 
@@ -247,7 +249,7 @@ namespace
                 const float batchX = static_cast<float>(batchIndex) * 2.5f;
                 MeshBatchDesc batchDesc;
                 batchDesc.m_bounds = Aabb{ Vector3(batchX - 5.0f, -5.0f, -5.0f), Vector3(batchX + 5.0f, 5.0f, 5.0f) };
-                batchDesc.m_drawTagMask = DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque);
+                batchDesc.m_drawTagMask = DrawTagMask(DrawTags::Visibility) | DrawTagMask(DrawTags::Visibility);
                 instanceDesc.m_batch = meshSceneModule.CreateBatch(batchDesc);
 
                 for (int32_t instanceIndex = -1; instanceIndex <= 1; ++instanceIndex)

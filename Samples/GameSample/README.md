@@ -1,12 +1,12 @@
 # GameSample
 
-Stage 4 adds `--visibility-debug deferred` for independent GBuffer classification and compute lighting before tonemapping. Forward remains the default. See [Stage 4 notes](../../VISIBILITY_BUFFER_STAGE4.md).
+Visibility rasterization, GBuffer evaluation and deferred compute shading are the default pipeline. Each stage has its own view module and exchanges targets through the FrameGraph blackboard. The forward path has been removed. See [Stage 5 notes](../../VISIBILITY_BUFFER_STAGE5.md).
 
 Validation is disabled by default. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Use neither flag for performance measurements and Nsight captures. The former `--no-api-validation` flag only hid validation messages and did not disable validation.
 
-Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These run GPU loose tiling and surface evaluation; lighting remains forward until Stage 4. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).
+Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These show GPU classification and surface evaluation. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).
 
-Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`); the default is forward shading. Add `--smoke` to render eight frames after world readiness and exit. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).
+Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`). Add `--smoke` to render eight frames after world readiness and exit. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).
 
 Build the `GameSample` and `FerrumCli` executables. GameSample owns its asset catalog with the same layout as Renderer:
 

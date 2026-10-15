@@ -10,13 +10,13 @@
             {
                 "m_productKey": "Serialized/Primary",
                 "m_name": "MaterialInstanceAsset",
-                "m_assetId": "6C22D94D-661E-45CE-8AA3-F55783855D58",
+                "m_assetId": "FDB669B8-4BC3-4DB9-82B2-7CF7D47B68D1",
                 "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
                 "m_buildSettings": {
                     "m_typeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
                     "m_value": {
                         "m_material": "3A837ECB-B74D-438F-9F49-359F97CC68AB",
-                        "m_permutationKey": "Palette=2",
+                        "m_permutationKey": "Palette=3",
                         "m_parameters": []
                     }
                 },
@@ -27,8 +27,8 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "D5615F1A-CA2A-4AEA-BEB9-CF6C214D0025",
-                "m_builtArtifactId": "8B9AF5EF-3D82-4848-A18E-562C64EAEC4B",
+                "m_lastBuildKey": "327E32DA-B399-4CDB-83DD-6D96FD0EF760",
+                "m_builtArtifactId": "60A656B1-DD34-49C3-A599-6C2CFC57DD48",
                 "m_isRemoved": false
             }
         ]

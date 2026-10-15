@@ -118,7 +118,7 @@ namespace FE::Graphics
         float m_nearPlane = 1.0f;
         float m_farPlane = 100.0f;
         bool m_enabled = true;
-        Visibility::DebugMode m_visibilityDebugMode = Visibility::DebugMode::kForward;
+        Visibility::DebugMode m_visibilityDebugMode = Visibility::DebugMode::kDeferred;
 
         Matrix4x4 m_viewMatrix = Matrix4x4::kIdentity;
         Matrix4x4 m_projectionMatrix = Matrix4x4::kIdentity;

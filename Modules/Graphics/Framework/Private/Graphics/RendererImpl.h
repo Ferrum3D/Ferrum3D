@@ -6,11 +6,8 @@
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Materials/ParameterAllocator.h>
-#include <Graphics/Passes/SurfaceWorkBuilder.h>
-#include <Graphics/Passes/VisibilitySupport.h>
 #include <Graphics/Renderer.h>
 #include <festd/vector.h>
-#include <memory>
 
 namespace FE::Graphics
 {
@@ -37,9 +34,8 @@ namespace FE::Graphics
         }
 
     private:
-        void EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc, Core::Format format = Core::Format::kB10G11R11_UFLOAT);
+        void EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc);
         void EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc);
-        void EnsureVisibilityTarget(const Core::ViewportDesc& viewportDesc);
         void ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);
@@ -58,10 +54,6 @@ namespace FE::Graphics
         festd::vector<Rc<Scene>> m_scenes;
         Rc<Core::Texture> m_mainColorTarget;
         Rc<Core::Texture> m_mainDepthTarget;
-        Rc<Core::Texture> m_visibilityTarget;
         Core::RingUploader m_renderQueueUploader;
-        Visibility::SurfaceWork m_surfaceWork;
-        Visibility::SurfaceWork m_shadingWork;
-        VisibilitySupport m_visibilitySupport;
     };
 } // namespace FE::Graphics

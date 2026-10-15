@@ -91,6 +91,9 @@ namespace FE::Graphics::Core
         template<class TPassDesc>
         void AddDispatchPass(festd::string_view name, TPassDesc* passDesc, ComputeWorkGroupCount workGroupCount);
 
+        template<class TPassDesc>
+        void AddDispatchIndirectPass(festd::string_view name, TPassDesc* passDesc);
+
     protected:
         struct PassNodeDesc final
         {
@@ -244,6 +247,15 @@ namespace FE::Graphics::Core
     {
         AddPass(name, passDesc, [workGroupCount](FrameGraphContext& context) {
             context.Dispatch(workGroupCount);
+        });
+    }
+
+
+    template<class TPassDesc>
+    void FrameGraph::AddDispatchIndirectPass(festd::string_view name, TPassDesc* passDesc)
+    {
+        AddPass(name, passDesc, [](FrameGraphContext& context) {
+            context.DispatchIndirect();
         });
     }
 

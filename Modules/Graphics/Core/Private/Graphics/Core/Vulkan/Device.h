@@ -166,7 +166,6 @@ namespace FE::Graphics::Vulkan
         Rc<Core::Viewport> CreateViewport(Core::ResourcePool* resourcePool, Core::GraphicsQueue* graphicsQueue) override;
 
         Core::ComputeCapabilities GetComputeCapabilities() const override;
-        Core::FormatCapabilities GetFormatCapabilities(Core::Format format) const override;
         void WaitIdle() override;
 
     private:

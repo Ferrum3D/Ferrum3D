@@ -174,6 +174,7 @@ namespace FE::Graphics
         void EnsureCapacity();
         void DestroyGroup(MeshGroup* group);
         void UpdateGroup(MeshGroup* group);
+        void ReleaseGroupPipelines(MeshGroup* group);
         MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
         void UpdateBatchBounds(MeshBatch* batch);
         void UpdateBatchMembership(MeshBatch* batch);

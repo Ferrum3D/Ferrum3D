@@ -5,8 +5,7 @@ namespace FE::Graphics::Visibility
 {
     enum class DebugMode : uint32_t
     {
-        kForward,
-        kVisibility,
+        kVisibility = 1,
         kInstance,
         kMeshlet,
         kTriangle,

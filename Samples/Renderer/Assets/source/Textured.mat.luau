@@ -17,16 +17,6 @@ local function setCull(t, ctx)
     end
 end
 
-material:technique("DepthOnly", function(t, ctx)
-    t.renderTargetFormats = {}
-    setCull(t, ctx)
-    t.depthTargetFormat = "D32_SFLOAT"
-    t.amplificationShader = "Shaders/Passes/MeshPass/MeshCull.as.hlsl"
-    t.meshShader = "Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl"
-    t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
-    return true
-end)
-
 material:technique("DepthVisibility", function(t, ctx)
     t.renderTargetFormats = { "R32G32_UINT" }
     setCull(t, ctx)
@@ -35,17 +25,6 @@ material:technique("DepthVisibility", function(t, ctx)
     t.meshShader = "Shaders/Passes/Visibility/DepthVisibility.ms.hlsl"
     t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
     t.pixelShader = "Shaders/Passes/Visibility/DepthVisibility.ps.hlsl"
-    return true
-end)
-
-material:technique("Opaque", function(t, ctx)
-    setCull(t, ctx)
-    t.depthTargetFormat = "D32_SFLOAT"
-    t.amplificationShader = "Shaders/Passes/MeshPass/MeshCull.as.hlsl"
-    t.meshShader = "Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl"
-    t.renderTargetFormats = { "B10G11R11_UFLOAT" }
-    t.pixelShader = "Shaders/Materials/Textured.ps.hlsl"
-    t.depthStencil = Pipeline.DepthStencilState.writeIfEqual()
     return true
 end)
 

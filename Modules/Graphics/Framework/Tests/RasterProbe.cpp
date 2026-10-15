@@ -194,7 +194,7 @@ namespace FE::Graphics::RasterProbe
         clear->m_pipeline = clearPipeline;
         clear->m_constants.m_resolution = Vector2UInt(64, 64);
         clear->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
-        graph->AddDispatchPass("ClearRasterSurface", clear, Core::ComputeWorkGroupCount(Vector2UInt(8, 8)));
+        graph->AddDispatchPass("ClearRasterSurface", clear, Math::CeilDivide(clear->m_constants.m_resolution, 8u));
         const Visibility::SurfaceBinding binding{ group.m_rowIndex, 0 };
         auto surfaceWork = Visibility::CreateSurfaceWork(device,
                                                          Vector2UInt(64, 64),
