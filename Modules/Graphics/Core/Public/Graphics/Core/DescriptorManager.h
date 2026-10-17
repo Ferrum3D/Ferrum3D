@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Threading/SpinLock.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/Sampler.h>
@@ -31,7 +32,7 @@ namespace FE::Graphics::Core
         static constexpr uint32_t kResourceDescriptorCount = kPersistentDescriptorCount + kTransientDescriptorCount;
         static constexpr uint32_t kSamplerDescriptorCount = 512;
 
-        //! Persistent descriptors are exclusively owned. Mutations happen between frames.
+        //! Persistent descriptor mutations are synchronized and become visible at the next BeginFrame snapshot.
         //! Updates preserve the index; replaced resources and freed indices retire after submitted uses complete.
         //! Do not explicitly replace or decommit physical storage while any descriptor version can be in use.
         [[nodiscard]] TextureSRVDescriptor CreateSRV(TextureView texture);
@@ -43,6 +44,7 @@ namespace FE::Graphics::Core
         void Update(BufferSRVDescriptor descriptor, BufferView buffer);
         void Update(BufferUAVDescriptor descriptor, BufferView buffer);
         void FreePersistentDescriptor(uint32_t descriptorIndex);
+        //! Render-side lookup; returns the frozen version while a frame is active.
         [[nodiscard]] const ResourceDescriptorInfo& GetPersistentResourceInfo(uint32_t descriptorIndex) const;
 
         //! Samplers are interned for the lifetime of the manager.
@@ -63,6 +65,8 @@ namespace FE::Graphics::Core
 
         festd::vector<ResourceDescriptorInfo> m_persistentDescriptors;
         festd::vector<SamplerState> m_samplers;
+        festd::vector<ResourceDescriptorInfo> m_framePersistentDescriptors;
+        festd::vector<SamplerState> m_frameSamplers;
 
     private:
         struct RetiredDescriptor final
@@ -77,6 +81,8 @@ namespace FE::Graphics::Core
         void RetireDescriptor(uint32_t descriptorIndex, bool releaseIndex);
         void CollectRetiredDescriptors();
 
+        Threading::SpinLock m_publicationLock;
+        festd::bit_vector m_snapshotDirtyDescriptors;
         festd::bit_vector m_freePersistentDescriptors;
         festd::vector<RetiredDescriptor> m_retiredDescriptors;
         festd::unordered_dense_map<SamplerState, uint32_t> m_samplerMap;

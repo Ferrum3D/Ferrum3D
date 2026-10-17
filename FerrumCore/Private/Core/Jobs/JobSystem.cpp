@@ -54,6 +54,10 @@ namespace FE::Jobs
                 globalQueueSet.m_readyFiberQueues[festd::to_underlying(ThreadPoolType::kForeground)].Enqueue(entry);
                 break;
 
+            case FiberAffinityMask::kForegroundWorkers:
+                globalQueueSet.m_readyFiberQueues[festd::to_underlying(ThreadPoolType::kForegroundWorkers)].Enqueue(entry);
+                break;
+
             case FiberAffinityMask::kAllBackground:
                 globalQueueSet.m_readyFiberQueues[festd::to_underlying(ThreadPoolType::kBackground)].Enqueue(entry);
                 break;
@@ -168,6 +172,8 @@ namespace FE::Jobs
     {
         Worker& worker = m_workers[workerIndex];
         const uint32_t poolIndex = festd::to_underlying(worker.m_threadPoolType);
+        const bool isForegroundWorker = workerIndex != 0 && worker.m_threadPoolType == ThreadPoolType::kForeground;
+        const uint32_t foregroundWorkersIndex = festd::to_underlying(ThreadPoolType::kForegroundWorkers);
         for (int32_t queueIndex = festd::to_underlying(Priority::kHigh); queueIndex >= 0; --queueIndex)
         {
             GlobalQueueSet& queues = m_globalQueues[queueIndex];
@@ -177,7 +183,8 @@ namespace FE::Jobs
             std::lock_guard lock(queues.m_lock);
             entry = TakeOldest(worker.m_readyFiberQueues[queueIndex],
                                queues.m_readyFiberQueues[0],
-                               queues.m_readyFiberQueues[poolIndex]);
+                               queues.m_readyFiberQueues[poolIndex],
+                               isForegroundWorker ? &queues.m_readyFiberQueues[foregroundWorkersIndex] : nullptr);
             if (entry)
             {
                 queues.m_count.store(queues.m_count.load(std::memory_order_relaxed) - 1, std::memory_order_release);
@@ -186,7 +193,10 @@ namespace FE::Jobs
                 return true;
             }
 
-            job = TakeOldest(worker.m_jobQueues[queueIndex], queues.m_jobQueues[0], queues.m_jobQueues[poolIndex]);
+            job = TakeOldest(worker.m_jobQueues[queueIndex],
+                             queues.m_jobQueues[0],
+                             queues.m_jobQueues[poolIndex],
+                             isForegroundWorker ? &queues.m_jobQueues[foregroundWorkersIndex] : nullptr);
             if (job)
             {
                 queues.m_count.store(queues.m_count.load(std::memory_order_relaxed) - 1, std::memory_order_release);
@@ -387,6 +397,10 @@ namespace FE::Jobs
 
             case FiberAffinityMask::kAllForeground:
                 globalQueueSet.m_jobQueues[festd::to_underlying(ThreadPoolType::kForeground)].Enqueue(job);
+                break;
+
+            case FiberAffinityMask::kForegroundWorkers:
+                globalQueueSet.m_jobQueues[festd::to_underlying(ThreadPoolType::kForegroundWorkers)].Enqueue(job);
                 break;
 
             case FiberAffinityMask::kAllBackground:

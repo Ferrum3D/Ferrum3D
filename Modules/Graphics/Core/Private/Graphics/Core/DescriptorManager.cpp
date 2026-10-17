@@ -25,6 +25,7 @@ namespace FE::Graphics::Core
     DescriptorManager::DescriptorManager()
     {
         m_freePersistentDescriptors.resize(kPersistentDescriptorCount, true);
+        m_snapshotDirtyDescriptors.resize(kPersistentDescriptorCount, false);
     }
 
 
@@ -78,7 +79,7 @@ namespace FE::Graphics::Core
 
     uint32_t DescriptorManager::AllocatePersistentDescriptor(ResourceDescriptorInfo info)
     {
-        FE_Assert(!m_frameActive, "Persistent descriptors are frozen for the current frame");
+        std::lock_guard guard(m_publicationLock);
         CollectRetiredDescriptors();
         const uint32_t index = m_freePersistentDescriptors.find_first();
         FE_Assert(index != kInvalidIndex, "Persistent descriptor heap exhausted");
@@ -87,6 +88,7 @@ namespace FE::Graphics::Core
             m_persistentDescriptors.push_back(std::move(info));
         else
             m_persistentDescriptors[index] = std::move(info);
+        m_snapshotDirtyDescriptors.set(index);
         InvalidatePersistentDescriptor(index);
         return index;
     }
@@ -94,40 +96,45 @@ namespace FE::Graphics::Core
 
     void DescriptorManager::UpdatePersistentDescriptor(const uint32_t index, ResourceDescriptorInfo info)
     {
-        FE_Assert(!m_frameActive, "Persistent descriptors are frozen for the current frame");
-        const ResourceDescriptorInfo& previous = GetPersistentResourceInfo(index);
+        std::lock_guard guard(m_publicationLock);
+        FE_Assert(index < m_persistentDescriptors.size() && m_persistentDescriptors[index].m_resource);
+        const ResourceDescriptorInfo& previous = m_persistentDescriptors[index];
         FE_Assert(previous.m_resource->GetType() == info.m_resource->GetType());
         FE_Assert(previous.m_descriptorType == info.m_descriptorType);
         RetireDescriptor(index, false);
         m_persistentDescriptors[index] = std::move(info);
+        m_snapshotDirtyDescriptors.set(index);
         InvalidatePersistentDescriptor(index);
     }
 
 
     void DescriptorManager::FreePersistentDescriptor(const uint32_t index)
     {
-        FE_Assert(!m_frameActive, "Persistent descriptors are frozen for the current frame");
-        FE_Assert(GetPersistentResourceInfo(index).m_resource);
+        std::lock_guard guard(m_publicationLock);
+        FE_Assert(index < m_persistentDescriptors.size() && m_persistentDescriptors[index].m_resource);
         RetireDescriptor(index, true);
         m_persistentDescriptors[index] = {};
+        m_snapshotDirtyDescriptors.set(index);
         InvalidatePersistentDescriptor(index);
     }
 
 
     const ResourceDescriptorInfo& DescriptorManager::GetPersistentResourceInfo(const uint32_t index) const
     {
-        FE_Assert(index < m_persistentDescriptors.size());
-        FE_Assert(m_persistentDescriptors[index].m_resource);
-        return m_persistentDescriptors[index];
+        const auto& descriptors = m_frameActive ? m_framePersistentDescriptors : m_persistentDescriptors;
+        FE_Assert(index < descriptors.size() && descriptors[index].m_resource);
+        return descriptors[index];
     }
 
 
     SamplerDescriptor DescriptorManager::GetSampler(const SamplerState sampler)
     {
-        FE_Assert(!m_descriptorsPrepared, "Descriptors have already been published for this frame");
+        std::lock_guard guard(m_publicationLock);
         const auto it = m_samplerMap.find(sampler);
         if (it != m_samplerMap.end())
             return { it->second };
+
+        FE_Assert(!m_descriptorsPrepared, "Descriptors have already been published for this frame");
         FE_Assert(m_samplers.size() < kSamplerDescriptorCount, "Sampler descriptor heap exhausted");
         const uint32_t index = m_samplers.size();
         m_samplers.push_back(sampler);
@@ -163,6 +170,7 @@ namespace FE::Graphics::Core
 
     void DescriptorManager::BeginFrame(const FenceSyncPoint& completion)
     {
+        std::lock_guard guard(m_publicationLock);
         FE_Assert(!m_frameActive);
         FE_Assert(completion.m_fence);
         if (m_lastFrameCompletion.m_fence)
@@ -171,6 +179,11 @@ namespace FE::Graphics::Core
             FE_Assert(completion.m_value > m_lastFrameCompletion.m_value);
         }
         CollectRetiredDescriptors();
+        m_framePersistentDescriptors.resize(m_persistentDescriptors.size());
+        Bit::Traverse(m_snapshotDirtyDescriptors.view(), [this](const uint32_t index) {
+            m_framePersistentDescriptors[index] = m_persistentDescriptors[index];
+        });
+        m_snapshotDirtyDescriptors.reset();
         BeginFrameInternal(completion);
         m_lastFrameCompletion = completion;
         m_frameActive = true;
@@ -182,13 +195,20 @@ namespace FE::Graphics::Core
     {
         FE_Assert(m_frameActive && !m_descriptorsPrepared);
         FE_Assert(descriptors.size() <= kTransientDescriptorCount);
+
+        {
+            std::lock_guard guard(m_publicationLock);
+            m_frameSamplers = m_samplers;
+            m_descriptorsPrepared = true;
+        }
+
         PrepareDescriptorsInternal(descriptors);
-        m_descriptorsPrepared = true;
     }
 
 
     void DescriptorManager::EndFrame()
     {
+        std::lock_guard guard(m_publicationLock);
         FE_Assert(m_frameActive && m_descriptorsPrepared);
         m_frameActive = false;
         m_descriptorsPrepared = false;

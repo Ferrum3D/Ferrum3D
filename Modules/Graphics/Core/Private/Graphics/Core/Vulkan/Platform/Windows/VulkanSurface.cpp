@@ -13,4 +13,15 @@ namespace FE::Graphics
         surfaceCI.hinstance = GetModuleHandleW(nullptr);
         return vkCreateWin32SurfaceKHR(instance, &surfaceCI, nullptr, surface);
     }
+
+
+    VkResult Vulkan::QuerySurfaceCapabilities(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface,
+                                              const uint64_t nativeWindow, VkSurfaceCapabilitiesKHR* capabilities)
+    {
+        const DPI_AWARENESS_CONTEXT windowContext = GetWindowDpiAwarenessContext(reinterpret_cast<HWND>(nativeWindow));
+        const DPI_AWARENESS_CONTEXT previousContext = SetThreadDpiAwarenessContext(windowContext);
+        const VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, capabilities);
+        SetThreadDpiAwarenessContext(previousContext);
+        return result;
+    }
 } // namespace FE::Graphics

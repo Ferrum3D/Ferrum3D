@@ -37,7 +37,9 @@ namespace FE::Graphics::Vulkan
     CommandBuffer* GraphicsQueue::GetCurrentCommandBuffer()
     {
         CommandBuffer* commandBuffer = m_graphicsCommandBuffers[m_frameIndex % kMaxInFlightFrames].Get();
-        // FE_Assert(commandBuffer->IsRecording());
+        if (!m_isRecording)
+            BeginRecording();
+
         return commandBuffer;
     }
 
@@ -46,14 +48,28 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
+        FE_Assert(!m_isActive && !m_isRecording);
+        m_trackedFenceValue = m_frameIndex.load();
+        m_isActive = true;
+        std::lock_guard guard(m_publicationLock);
+        m_frameShaderReadBuffers.swap(m_pendingShaderReadBuffers);
+        m_frameShaderReadTextures.swap(m_pendingShaderReadTextures);
+    }
+
+
+    void GraphicsQueue::BeginRecording()
+    {
+        FE_PROFILER_ZONE();
+        FE_Assert(m_isActive && !m_isRecording);
+
         if (m_frameIndex > kMaxInFlightFrames)
             m_fence->Wait(m_frameIndex - kMaxInFlightFrames);
 
-        CommandBuffer* commandBuffer = GetCurrentCommandBuffer();
+        CommandBuffer* commandBuffer = m_graphicsCommandBuffers[m_frameIndex % kMaxInFlightFrames].Get();
         commandBuffer->Begin();
-        m_isActive = true;
+        m_isRecording = true;
 
-        for (const Rc<Core::Buffer>& resource : m_pendingShaderReadBuffers)
+        for (const Rc<Core::Buffer>& resource : m_frameShaderReadBuffers)
         {
             auto* buffer = Common::ImplCast(resource.Get());
             const auto release = buffer->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics);
@@ -77,9 +93,9 @@ namespace FE::Graphics::Vulkan
             state.m_queueType = Core::DeviceQueueType::kGraphics;
             buffer->SetState(state);
         }
-        m_pendingShaderReadBuffers.clear();
+        m_frameShaderReadBuffers.clear();
 
-        for (const Rc<Core::Texture>& resource : m_pendingShaderReadTextures)
+        for (const Rc<Core::Texture>& resource : m_frameShaderReadTextures)
         {
             auto* texture = Common::ImplCast(resource.Get());
             const Core::TextureDesc desc = texture->GetDesc();
@@ -110,7 +126,7 @@ namespace FE::Graphics::Vulkan
                 texture->SetState(subresource, state);
             }
         }
-        m_pendingShaderReadTextures.clear();
+        m_frameShaderReadTextures.clear();
     }
 
 
@@ -123,14 +139,16 @@ namespace FE::Graphics::Vulkan
 
     void GraphicsQueue::PublishShaderRead(Core::Buffer* buffer)
     {
-        FE_Assert(buffer && !m_isActive);
+        FE_Assert(buffer);
+        std::lock_guard guard(m_publicationLock);
         m_pendingShaderReadBuffers.push_back(buffer);
     }
 
 
     void GraphicsQueue::PublishShaderRead(Core::Texture* texture)
     {
-        FE_Assert(texture && !m_isActive);
+        FE_Assert(texture);
+        std::lock_guard guard(m_publicationLock);
         m_pendingShaderReadTextures.push_back(texture);
     }
 
@@ -141,7 +159,16 @@ namespace FE::Graphics::Vulkan
         const Core::FenceSyncPoint syncPoint{ .m_fence = m_fence, .m_value = m_frameIndex };
         ++m_frameIndex;
         m_isActive = false;
+        m_isRecording = false;
         return syncPoint;
+    }
+
+
+    void GraphicsQueue::SubmitFrame()
+    {
+        CommandBuffer* commandBuffer = GetCurrentCommandBuffer();
+        commandBuffer->EnqueueFenceToSignal(CloseFrame());
+        commandBuffer->Submit();
     }
 
 

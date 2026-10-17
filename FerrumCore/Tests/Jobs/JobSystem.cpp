@@ -268,6 +268,36 @@ namespace FE::Tests
     }
 
 
+    TEST(JobSystem, ForegroundWorkersPreserveAffinityAcrossWaits)
+    {
+        constexpr uint32_t kJobCount = 32;
+        const Rc<WaitGroup> entered = WaitGroup::Create(kJobCount);
+        const Rc<WaitGroup> resume = WaitGroup::Create();
+        const Rc<WaitGroup> done = WaitGroup::Create(kJobCount);
+        std::atomic<uint64_t> observedWorkers = 0;
+        for (uint32_t index = 0; index < kJobCount; ++index)
+        {
+            Jobs::Dispatch(
+                Jobs::FiberAffinityMask::kForegroundWorkers,
+                festd::span<WaitGroup* const>{},
+                Jobs::Priority::kNormal,
+                [&, entered, resume] {
+                    observedWorkers.fetch_or(festd::to_underlying(Jobs::GetAffinityMaskForCurrentThread()));
+                    entered->Signal();
+                    resume->Wait();
+                    observedWorkers.fetch_or(festd::to_underlying(Jobs::GetAffinityMaskForCurrentThread()));
+                },
+                done.Get());
+        }
+
+        entered->Wait();
+        resume->Signal();
+        done->Wait();
+        EXPECT_NE(observedWorkers.load(), 0u);
+        EXPECT_EQ(observedWorkers.load() & ~festd::to_underlying(Jobs::FiberAffinityMask::kForegroundWorkers), 0u);
+    }
+
+
     TEST(JobSystem, CombinedWaitsHandleDuplicateAndAlreadySignaledGroups)
     {
         const Rc<WaitGroup> signaled = WaitGroup::Create(0);

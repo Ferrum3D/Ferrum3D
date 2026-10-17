@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/Memory/PoolAllocator.h>
+#include <Core/Threading/SpinLock.h>
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <Graphics/Core/Vulkan/Fence.h>
@@ -27,7 +28,7 @@ namespace FE::Graphics::Vulkan
 
         [[nodiscard]] uint64_t GetTrackedFenceValue() const
         {
-            return m_isActive ? m_frameIndex.load() : m_frameIndex.load() - 1;
+            return m_trackedFenceValue.load();
         }
 
         [[nodiscard]] uint64_t GetCompletedFenceValue() const
@@ -41,24 +42,32 @@ namespace FE::Graphics::Vulkan
         void PublishShaderRead(Core::Texture* texture) override;
 
         void BeginFrame() override;
+        void SubmitFrame() override;
         Core::FenceSyncPoint CloseFrame() override;
         void Drain() override;
 
     private:
+        void BeginRecording();
+
         void DestroyObject() override
         {
             Memory::DefaultDelete(this);
         }
 
         std::atomic<uint64_t> m_frameIndex = 1;
+        std::atomic<uint64_t> m_trackedFenceValue = 0;
         Rc<Fence> m_fence;
 
         bool m_isActive = false;
+        bool m_isRecording = false;
 
         VkQueue m_nativeQueue = VK_NULL_HANDLE;
 
         Memory::SpinLockedPoolAllocator m_sharedPagePool{ "Graphics/GraphicsCommandBufferPagePool", 8096 };
         festd::inline_vector<Rc<CommandBuffer>> m_graphicsCommandBuffers;
+        Threading::SpinLock m_publicationLock;
+        festd::vector<Rc<Core::Buffer>> m_frameShaderReadBuffers;
+        festd::vector<Rc<Core::Texture>> m_frameShaderReadTextures;
         festd::vector<Rc<Core::Buffer>> m_pendingShaderReadBuffers;
         festd::vector<Rc<Core::Texture>> m_pendingShaderReadTextures;
     };

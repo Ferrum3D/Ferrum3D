@@ -100,7 +100,7 @@ namespace FE::Graphics::Common
 
             PassStateFlags m_specifiedStatesMask = PassStateFlags::kNone;
 
-            const Core::PipelineBase* m_pipeline = nullptr;
+            Rc<Core::PipelineBase> m_pipeline;
 
             festd::span<const std::byte> m_pushConstants;
             Rtti::TypeID m_pushConstantsTypeID = Rtti::TypeID::kNull;

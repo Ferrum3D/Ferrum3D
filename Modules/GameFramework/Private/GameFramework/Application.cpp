@@ -141,6 +141,10 @@ namespace FE::GameFramework
     {
         FE_Assert(Threading::IsMainThread() && m_world);
 
+        const auto joinRender = festd::defer([] {
+            Renderer::Get().WaitForRender();
+        });
+
         uint32_t frames = 0;
         while (!m_platformApplication->IsCloseRequested())
         {
@@ -152,6 +156,9 @@ namespace FE::GameFramework
 
             FrameMark;
             GetWorld().BeginFrame();
+
+            // Streamers mutate live residency and material runtimes read during pass setup.
+            Renderer::Get().WaitForScene();
             IO::AssetManager::Tick();
             if (!UpdateWorldLoading())
                 return 1;
@@ -183,7 +190,7 @@ namespace FE::GameFramework
                     scene->GetView(viewIndex)->SetVisibilityDebugMode(m_visibilityDebugMode);
             }
 
-            Renderer::Get().Render(scene, m_viewport.Get());
+            Renderer::Get().RenderAsync(scene, m_viewport.Get());
 
             if (maxFrames && worldReady && ++frames == maxFrames)
                 break;
@@ -201,6 +208,7 @@ namespace FE::GameFramework
         if (!m_device)
             return;
 
+        Renderer::Get().WaitForRender();
         m_device->WaitIdle();
         m_world.reset();
         m_worldRequest.Reset();

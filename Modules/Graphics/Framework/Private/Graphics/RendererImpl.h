@@ -21,6 +21,9 @@ namespace FE::Graphics
         Scene* CreateScene() override;
         void DestroyScene(Scene* scene) override;
         void Render(Scene* scene, Core::Viewport* viewport) override;
+        void RenderAsync(Scene* scene, Core::Viewport* viewport) override;
+        void WaitForScene() override;
+        void WaitForRender() override;
 
         Core::GraphicsQueue* GetGraphicsQueue() const override;
         Core::AsyncCopyQueue* GetAsyncCopyQueue() const override;
@@ -34,12 +37,16 @@ namespace FE::Graphics
         }
 
     private:
+        void RenderFrame(Scene* scene, Core::Viewport* viewport, WaitGroup& sceneReady);
+        void PrepareFrameGraph(Scene* scene, Core::Viewport* viewport);
         void ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);
 
         void DoRelease() override;
 
+        Rc<WaitGroup> m_sceneReady;
+        Rc<WaitGroup> m_renderComplete;
         Rc<Core::Device> m_device;
         Rc<Core::ResourcePool> m_resourcePool;
         Rc<Core::GraphicsQueue> m_graphicsQueue;

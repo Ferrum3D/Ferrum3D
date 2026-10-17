@@ -95,7 +95,7 @@ namespace FE::Jobs
 
 
         template<class T>
-        static T* TakeOldest(RunQueue<T>& local, RunQueue<T>& generic, RunQueue<T>& pool)
+        static T* TakeOldest(RunQueue<T>& local, RunQueue<T>& generic, RunQueue<T>& pool, RunQueue<T>* foregroundWorkers)
         {
             RunQueue<T>* selected = &local;
             if (generic.m_head && (!selected->m_head || generic.m_head->m_orderHint < selected->m_head->m_orderHint))
@@ -103,6 +103,12 @@ namespace FE::Jobs
 
             if (pool.m_head && (!selected->m_head || pool.m_head->m_orderHint < selected->m_head->m_orderHint))
                 selected = &pool;
+
+            if (foregroundWorkers && foregroundWorkers->m_head)
+            {
+                if (!selected->m_head || foregroundWorkers->m_head->m_orderHint < selected->m_head->m_orderHint)
+                    selected = foregroundWorkers;
+            }
 
             return selected->m_head ? selected->Dequeue() : nullptr;
         }

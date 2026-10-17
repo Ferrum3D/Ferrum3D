@@ -1,4 +1,5 @@
 #include <Core/Env/Environment.h>
+#include <Core/Jobs/Jobs.h>
 #include <Core/Math/Colors.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/Device.h>
@@ -28,6 +29,9 @@ namespace FE::Graphics
 
     void Renderer::Shutdown()
     {
+        if (GRenderer)
+            GRenderer->WaitForRender();
+
         GRenderer.Reset();
     }
 
@@ -57,6 +61,7 @@ namespace FE::Graphics
     RendererImpl::~RendererImpl()
     {
         FE_PROFILER_ZONE();
+        WaitForRender();
         m_asyncCopyQueue->Drain();
         m_device->WaitIdle();
         m_scenes.clear();
@@ -79,6 +84,8 @@ namespace FE::Graphics
 
     Scene* RendererImpl::CreateScene()
     {
+        WaitForScene();
+
         Rc<Scene> scene = Memory::DefaultNew<SceneImpl>(this);
         m_scenes.push_back(scene);
         return scene.Get();
@@ -87,6 +94,8 @@ namespace FE::Graphics
 
     void RendererImpl::DestroyScene(Scene* scene)
     {
+        WaitForScene();
+
         const auto found = festd::find_if(m_scenes.begin(), m_scenes.end(), [scene](const Rc<Scene>& candidate) {
             return candidate.Get() == scene;
         });
@@ -97,6 +106,78 @@ namespace FE::Graphics
 
     void RendererImpl::Render(Scene* scene, Core::Viewport* viewport)
     {
+        RenderAsync(scene, viewport);
+        WaitForRender();
+    }
+
+
+    void RendererImpl::RenderAsync(Scene* scene, Core::Viewport* viewport)
+    {
+        FE_PROFILER_ZONE();
+        FE_Assert(viewport != nullptr);
+        WaitForRender();
+        m_sceneReady = WaitGroup::Create();
+        m_renderComplete = WaitGroup::Create();
+        Jobs::Dispatch(
+            Jobs::FiberAffinityMask::kForegroundWorkers,
+            festd::span<WaitGroup* const>{},
+            Jobs::Priority::kNormal,
+            [this, scene = Rc<Scene>(scene), viewport = Rc<Core::Viewport>(viewport), sceneReady = m_sceneReady] {
+                RenderFrame(scene.Get(), viewport.Get(), *sceneReady);
+            },
+            m_renderComplete.Get());
+    }
+
+
+    void RendererImpl::WaitForScene()
+    {
+        FE_PROFILER_ZONE();
+        if (m_sceneReady)
+            m_sceneReady->Wait();
+    }
+
+
+    void RendererImpl::WaitForRender()
+    {
+        FE_PROFILER_ZONE();
+        if (m_renderComplete)
+            m_renderComplete->Wait();
+    }
+
+
+    void RendererImpl::RenderFrame(Scene* scene, Core::Viewport* viewport, WaitGroup& sceneReady)
+    {
+        FE_PROFILER_ZONE();
+
+        PrepareFrameGraph(scene, viewport);
+
+        // Passes own copied upload data, resources and pipelines from this point onward.
+        sceneReady.Signal();
+
+        const bool acquired = viewport->AcquireNextImage();
+        if (acquired)
+        {
+            viewport->PrepareBlit();
+            Tools::Tonemap::AddPass(*m_frameGraph, m_mainColorTarget.Get(), viewport->GetCurrentColorTarget());
+        }
+
+        m_frameGraph->CompileAndExecute();
+        m_renderQueueUploader.CloseFrame(m_graphicsQueue->GetCurrentFence());
+
+        if (acquired)
+            viewport->Present();
+        else
+            m_graphicsQueue->SubmitFrame();
+
+        m_resourcePool->EndFrame();
+        m_device->EndFrame();
+    }
+
+
+    void RendererImpl::PrepareFrameGraph(Scene* scene, Core::Viewport* viewport)
+    {
+        FE_PROFILER_ZONE();
+
         bool hasEnabledView = false;
         if (scene)
         {
@@ -104,12 +185,8 @@ namespace FE::Graphics
                 hasEnabledView |= scene->GetView(i)->IsEnabled();
         }
 
-        FE_Assert(viewport != nullptr);
-
-        if (!viewport->AcquireNextImage())
-            return;
-
         m_graphicsQueue->BeginFrame();
+
         // Logical targets are frame-local; the graph infers usage and obtains their memory from its pool.
         const Vector2UInt resolution(viewport->GetDesc().m_width, viewport->GetDesc().m_height);
         m_mainColorTarget =
@@ -150,15 +227,6 @@ namespace FE::Graphics
         {
             ClearTargets(*m_frameGraph, *viewport);
         }
-
-        viewport->PrepareBlit();
-        Tools::Tonemap::AddPass(*m_frameGraph, m_mainColorTarget.Get(), viewport->GetCurrentColorTarget());
-
-        m_frameGraph->CompileAndExecute();
-        m_renderQueueUploader.CloseFrame(m_graphicsQueue->GetCurrentFence());
-        viewport->Present();
-        m_resourcePool->EndFrame();
-        m_device->EndFrame();
     }
 
 

@@ -26,6 +26,14 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void FrameGraph::CompileAndExecute()
+    {
+        // Transfer acquisitions must establish resource states before graph barriers are compiled.
+        ImplCast(m_commandQueue)->GetCurrentCommandBuffer();
+        Common::FrameGraph::CompileAndExecute();
+    }
+
+
     void FrameGraph::PrepareExecuteInternal()
     {
         FE_PROFILER_ZONE();

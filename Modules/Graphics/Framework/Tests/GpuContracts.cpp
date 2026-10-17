@@ -3,6 +3,8 @@
 #include "RasterProbe.h"
 #include "SurfaceProbe.h"
 #include <Core/Base/PlatformInclude.h>
+#include <Core/Jobs/Jobs.h>
+#include <Core/Threading/Thread.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/DeviceFactory.h>
@@ -10,14 +12,196 @@
 #include <Graphics/Core/PipelineFactory.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Viewport.h>
+#include <Graphics/Core/Vulkan/Device.h>
+#include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
+#include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/VisibilityPass.h>
+#include <Graphics/Renderer.h>
 #include <Graphics/Scene/ComputePassRegistry.h>
+#include <Graphics/Scene/Scene.h>
+#include <Graphics/Scene/View.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
 using namespace FE::Graphics;
+
+namespace
+{
+    void CheckDescriptorSnapshots(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
+                                  Core::DescriptorManager* descriptors, Core::FrameGraph* graph, Core::ComputePipeline* pipeline)
+    {
+        const Rc first = Core::Buffer::CreateByteAddress(device, "DescriptorSnapshotFirst", 12);
+        const Rc second = Core::Buffer::CreateByteAddress(device, "DescriptorSnapshotSecond", 12);
+        const Core::ResourceCommitParams commit{ .m_bindFlags = Core::BarrierAccessFlags::kShaderRead
+                                                     | Core::BarrierAccessFlags::kShaderWrite,
+                                                 .m_memory = Core::ResourceMemory::kHostRandomAccess };
+        pool->CommitBufferMemory(first.Get(), commit);
+        pool->CommitBufferMemory(second.Get(), commit);
+        const BufferUAVDescriptor descriptor = descriptors->CreateUAV(first.Get());
+        for (uint32_t frame = 0; frame < 6; ++frame)
+        {
+            uint32_t* firstWord = static_cast<uint32_t*>(first->Map());
+            uint32_t* secondWord = static_cast<uint32_t*>(second->Map());
+            *firstWord = 0;
+            *secondWord = 0;
+            first->FlushMappedRange(0, 12);
+            second->FlushMappedRange(0, 12);
+
+            queue->BeginFrame();
+            graph->BeginFrame();
+            auto* pass = graph->AllocatePassData<Stage1Probe::PassDesc>();
+            pass->m_pipeline = pipeline;
+            pass->m_constants.m_words = descriptor;
+            pass->m_constants.m_writeArguments = 0;
+            graph->AddDispatchPass("FrozenDescriptorProbe", pass, Core::ComputeWorkGroupCount(1));
+            descriptors->Update(descriptor, frame % 2 == 0 ? second.Get() : first.Get());
+            graph->CompileAndExecute();
+            const Core::FenceSyncPoint completion = queue->GetCurrentFence();
+            queue->SubmitFrame();
+            completion.Wait();
+            first->InvalidateMappedRange(0, 12);
+            second->InvalidateMappedRange(0, 12);
+            EXPECT_EQ(*firstWord, frame % 2 == 0 ? 100u : 0u);
+            EXPECT_EQ(*secondWord, frame % 2 == 0 ? 0u : 100u);
+            first->Unmap();
+            second->Unmap();
+        }
+
+        descriptors->FreePersistentDescriptor(descriptor.m_value);
+    }
+
+
+    struct SuspendedRenderViewport final : Core::Viewport
+    {
+        Rc<WaitGroup> m_acquiring = WaitGroup::Create();
+        Rc<WaitGroup> m_resume = WaitGroup::Create();
+        Core::FenceSyncPoint m_submissionWait;
+        bool m_acquiredOnMainThread = true;
+        uint64_t m_acquireWorker = 0;
+        uint32_t m_presents = 0;
+        Core::ViewportDesc m_desc{ 64, 64, 0 };
+
+        explicit SuspendedRenderViewport(Core::Device* device)
+        {
+            m_device = device;
+            SetImmediateDestroyPolicy();
+        }
+
+
+        void Init(const Core::ViewportDesc& desc) override
+        {
+            m_desc = desc;
+        }
+
+
+        const Core::ViewportDesc& GetDesc() const override
+        {
+            return m_desc;
+        }
+
+
+        Core::Texture* GetCurrentColorTarget() override
+        {
+            return nullptr;
+        }
+
+
+        bool AcquireNextImage() override
+        {
+            m_acquiredOnMainThread = Threading::IsMainThread();
+            m_acquireWorker = festd::to_underlying(Jobs::GetAffinityMaskForCurrentThread());
+            m_acquiring->Signal();
+            m_resume->Wait();
+            Vulkan::ImplCast(Renderer::Get().GetGraphicsQueue())->GetCurrentCommandBuffer()->EnqueueFenceToWait(m_submissionWait);
+            return false;
+        }
+
+
+        void PrepareBlit() override {}
+
+
+        void Present() override
+        {
+            ++m_presents;
+        }
+
+    private:
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+    };
+} // namespace
+
+
+TEST(AsyncRenderer, SceneHandoffPrecedesAcquisitionAndSuspendedFramesRetire)
+{
+    Core::DeviceFactory::Init(Core::GraphicsApi::kVulkan);
+    const auto shutdown = festd::defer([] {
+        Core::DeviceFactory::Shutdown();
+    });
+    {
+        const auto adapters = Core::DeviceFactory::Get().EnumerateAdapters();
+        ASSERT_FALSE(adapters.empty());
+        const Rc device = Core::DeviceFactory::Get().CreateDevice(adapters.front().m_name);
+        Renderer::Init(device.Get());
+        auto& renderer = Renderer::Get();
+        const Rc viewport = Memory::DefaultNew<SuspendedRenderViewport>(device.Get());
+        const Rc gpuHold = device->CreateFence(0);
+        viewport->m_submissionWait = { gpuHold, 1 };
+        Scene* scene = renderer.CreateScene();
+        Core::DescriptorManager* descriptors = renderer.GetDescriptorManager();
+        Rc first = Core::Buffer::CreateByteAddress(device.Get(), "AsyncDescriptorFirst", 16);
+        Rc second = Core::Buffer::CreateByteAddress(device.Get(), "AsyncDescriptorSecond", 16);
+        const Core::ResourceCommitParams commit{ .m_bindFlags = Core::BarrierAccessFlags::kShaderRead,
+                                                 .m_memory = Core::ResourceMemory::kDeviceLocal };
+        renderer.GetResourcePool()->CommitBufferMemory(first.Get(), commit);
+        renderer.GetResourcePool()->CommitBufferMemory(second.Get(), commit);
+        const BufferSRVDescriptor descriptor = descriptors->CreateSRV(first.Get());
+
+        for (uint32_t frame = 0; frame < 8; ++frame)
+        {
+            View* view = scene->CreateView();
+            view->SetEnabled(true);
+            renderer.RenderAsync(scene, viewport.Get());
+            viewport->m_acquiring->Wait();
+            renderer.WaitForScene();
+            EXPECT_FALSE(viewport->m_acquiredOnMainThread);
+            EXPECT_NE(viewport->m_acquireWorker, 0u);
+            EXPECT_EQ(viewport->m_acquireWorker & ~festd::to_underlying(Jobs::FiberAffinityMask::kForegroundWorkers), 0u);
+
+            // Mutate scene membership and publish a descriptor while acquisition is still blocked.
+            scene->DestroyView(view);
+            const auto* expected = frame == 0 ? first.Get() : second.Get();
+            EXPECT_EQ(descriptors->GetPersistentResourceInfo(descriptor.m_value).m_resource.Get(), expected);
+            descriptors->Update(descriptor, second.Get());
+            EXPECT_EQ(descriptors->GetPersistentResourceInfo(descriptor.m_value).m_resource.Get(), expected);
+            // The third scene handoff must also precede reuse waits for the first two GPU frames.
+            if (frame == 2)
+            {
+                EXPECT_FALSE(viewport->m_submissionWait.IsReady());
+                gpuHold->Signal(1);
+            }
+
+            viewport->m_resume->Signal();
+            renderer.WaitForRender();
+            EXPECT_EQ(viewport->m_presents, 0u);
+
+            viewport->m_acquiring = WaitGroup::Create();
+            viewport->m_resume = WaitGroup::Create();
+        }
+
+        descriptors->FreePersistentDescriptor(descriptor.m_value);
+        renderer.DestroyScene(scene);
+        first.Reset();
+        second.Reset();
+        Renderer::Shutdown();
+        device->WaitIdle();
+    }
+}
+
 
 #if FE_PLATFORM_WINDOWS
 namespace
@@ -30,6 +214,58 @@ namespace
             TranslateMessage(&message);
             DispatchMessageW(&message);
         }
+    }
+
+
+    void CheckWorkerSurfaceExtent(Core::Device* device)
+    {
+        const DPI_AWARENESS_CONTEXT previousContext = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        const HWND window = CreateWindowExW(0,
+                                            L"STATIC",
+                                            L"DPI extent probe",
+                                            WS_OVERLAPPEDWINDOW,
+                                            CW_USEDEFAULT,
+                                            CW_USEDEFAULT,
+                                            640,
+                                            480,
+                                            nullptr,
+                                            nullptr,
+                                            GetModuleHandleW(nullptr),
+                                            nullptr);
+        RECT clientRect{};
+        GetClientRect(window, &clientRect);
+        SetThreadDpiAwarenessContext(previousContext);
+        ASSERT_NE(window, nullptr);
+        const auto destroyWindow = festd::defer([&] {
+            DestroyWindow(window);
+        });
+
+        const VkInstance instance = Vulkan::NativeCast(&Core::DeviceFactory::Get());
+        VkSurfaceKHR surface = VK_NULL_HANDLE;
+        ASSERT_EQ(Vulkan::CreateSurface(instance, reinterpret_cast<uintptr_t>(window), &surface), VK_SUCCESS);
+        const auto destroySurface = festd::defer([&] {
+            vkDestroySurfaceKHR(instance, surface, nullptr);
+        });
+        const Rc<WaitGroup> done = WaitGroup::Create();
+        VkSurfaceCapabilitiesKHR capabilities{};
+        Jobs::Dispatch(
+            Jobs::FiberAffinityMask::kForegroundWorkers,
+            festd::span<WaitGroup* const>{},
+            Jobs::Priority::kNormal,
+            [&] {
+                const DPI_AWARENESS_CONTEXT previousWorkerContext = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
+                EXPECT_EQ(Vulkan::QuerySurfaceCapabilities(Vulkan::ImplCast(device)->GetNativeAdapter(),
+                                                           surface,
+                                                           reinterpret_cast<uintptr_t>(window),
+                                                           &capabilities),
+                          VK_SUCCESS);
+                EXPECT_TRUE(AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), DPI_AWARENESS_CONTEXT_UNAWARE));
+                SetThreadDpiAwarenessContext(previousWorkerContext);
+            },
+            done.Get());
+        done->Wait();
+        EXPECT_EQ(capabilities.currentExtent.width, static_cast<uint32_t>(clientRect.right));
+        EXPECT_EQ(capabilities.currentExtent.height, static_cast<uint32_t>(clientRect.bottom));
     }
 
 
@@ -150,6 +386,8 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             Core::ComputePipeline* pipeline = pipelines->CreateComputePipeline(request);
             pipeline->GetCompletionWaitGroup()->Wait();
             ASSERT_TRUE(pipeline->IsReady());
+            CheckDescriptorSnapshots(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), graph.Get(), pipeline);
+
             ComputePassRegistry evaluationPipelines;
             ComputePassRegistry shadingPipelines;
             EXPECT_EQ(evaluationPipelines.Register(nullptr), kInvalidIndex);
@@ -322,6 +560,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), true);
             DeferredProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
 #if FE_PLATFORM_WINDOWS
+            CheckWorkerSurfaceExtent(device.Get());
             CheckViewportSuspension(device.Get(), pool.Get(), queue.Get(), descriptors.Get());
 #endif
             graph.Reset();

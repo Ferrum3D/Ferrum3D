@@ -255,7 +255,7 @@ namespace FE::Graphics::Common
             FE_Assert(Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline),
                       "Push constants can only be used in passes with graphics or compute pipelines");
 
-            const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
+            const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline.Get());
             const Core::GraphicsPipelineDesc& pipelineDesc = graphicsPipeline->GetDesc();
 
             const bool hasMeshShader = HasShaderStage(pipelineDesc, Core::ShaderStage::kMesh);
@@ -406,14 +406,14 @@ namespace FE::Graphics::Common
             {
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline));
                 const Core::PassGraphicsPipeline pipeline = field.Get<Core::PassGraphicsPipeline>(binding.m_data);
-                pass.m_pipeline = pipeline.m_pipeline;
+                pass.m_pipeline = const_cast<Core::GraphicsPipeline*>(pipeline.m_pipeline);
                 pass.m_specifiedStatesMask |= PassStateFlags::kGraphicsPipeline;
             }
             else if (field.m_type == Rtti::GetTypeID<Core::PassComputePipeline>())
             {
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kComputePipeline));
                 const Core::PassComputePipeline pipeline = field.Get<Core::PassComputePipeline>(binding.m_data);
-                pass.m_pipeline = pipeline.m_pipeline;
+                pass.m_pipeline = const_cast<Core::ComputePipeline*>(pipeline.m_pipeline);
                 pass.m_specifiedStatesMask |= PassStateFlags::kComputePipeline;
             }
         }
@@ -512,7 +512,7 @@ namespace FE::Graphics::Common
                 bool isDepthWriteEnabled = true;
                 if (isGraphicsPipeline)
                 {
-                    const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
+                    const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline.Get());
                     isDepthWriteEnabled = graphicsPipeline->GetDesc().m_depthStencil.m_depthWriteEnabled;
                 }
 
@@ -914,10 +914,10 @@ namespace FE::Graphics::Common
                 m_currentContext->SetIndirectArgs(pass.m_indirectArgs);
 
             if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline))
-                m_currentContext->SetPipeline(Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline));
+                m_currentContext->SetPipeline(Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline.Get()));
 
             if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kComputePipeline))
-                m_currentContext->SetPipeline(Rtti::AssertCast<const Core::ComputePipeline*>(pass.m_pipeline));
+                m_currentContext->SetPipeline(Rtti::AssertCast<const Core::ComputePipeline*>(pass.m_pipeline.Get()));
 
             if (pass.m_functor)
                 pass.m_execute(pass.m_functor, *m_currentContext);

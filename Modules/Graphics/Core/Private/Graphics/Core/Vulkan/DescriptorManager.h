@@ -53,6 +53,8 @@ namespace FE::Graphics::Vulkan
         festd::vector<VkWriteDescriptorSet> m_writes;
         festd::array<DescriptorSetState, kMaxInFlightFrames> m_descriptorSets;
         uint32_t m_currentSetIndex = kInvalidIndex;
+        Core::FenceSyncPoint m_frameCompletion;
+        festd::bit_vector m_frameDirtyDescriptors;
     };
 
     FE_ENABLE_IMPL_CAST(DescriptorManager);

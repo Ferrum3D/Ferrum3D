@@ -47,7 +47,7 @@ namespace FE::Jobs
     //! all foreground threads.
     //!
     //! Note: currently it is only possible to specify affinity either for
-    //!   a single thread (e.g, main thread, worker5, etc.) or for an entire
+    //!   a single thread (e.g, main thread, worker5, etc.), foreground workers excluding the main thread, or an entire
     //!   thread pool (e.g., all foreground threads or all background threads).
     //!   Values like 0b11 are considered invalid.
     //!   So, we intentionally do not provide any bit operators as all
@@ -58,6 +58,7 @@ namespace FE::Jobs
         kNone = 0,
         kMainThread = 1,
         kAllForeground = 0x00000000ffffffff,
+        kForegroundWorkers = 0x00000000fffffffe,
         kAllBackground = 0xffffffff00000000,
         kAll = kMainThread | kAllForeground | kAllBackground,
     };
@@ -68,6 +69,7 @@ namespace FE::Jobs
         kGeneric,
         kForeground,
         kBackground,
+        kForegroundWorkers,
         kCount,
     };
 } // namespace FE::Jobs

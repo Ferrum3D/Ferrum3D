@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Jobs/WaitGroup.h>
 #include <Graphics/Base/Base.h>
 #include <Graphics/Base/BaseModuleList.h>
 #include <Graphics/Core/Viewport.h>
@@ -44,8 +45,14 @@ namespace FE::Graphics
         [[nodiscard]] virtual Scene* CreateScene() = 0;
         //! @brief Release renderer ownership of a scene after removing its entity membership.
         virtual void DestroyScene(Scene* scene) = 0;
-        //! @brief Present a cleared frame when the scene is null or has no enabled camera views.
+        //! @brief Render synchronously; present a cleared frame when the scene is null or has no enabled camera views.
         virtual void Render(Scene* scene, Core::Viewport* viewport) = 0;
+        //! @brief Queue one frame on a job fiber; joins the previous render before reusing renderer state.
+        virtual void RenderAsync(Scene* scene, Core::Viewport* viewport) = 0;
+        //! @brief Join scene/asset reads before mutation, lifecycle changes, or asset streamer publication.
+        virtual void WaitForScene() = 0;
+        //! @brief Join all CPU render work before viewport changes, shutdown, or external queue use.
+        virtual void WaitForRender() = 0;
 
         virtual Core::GraphicsQueue* GetGraphicsQueue() const = 0;
         virtual Core::AsyncCopyQueue* GetAsyncCopyQueue() const = 0;

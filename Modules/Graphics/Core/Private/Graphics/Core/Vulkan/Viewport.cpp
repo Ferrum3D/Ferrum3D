@@ -42,12 +42,13 @@ namespace FE::Graphics::Vulkan
         }
 
 
-        VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface)
+        VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface,
+                                                        const uint64_t nativeWindow)
         {
             FE_PROFILER_ZONE();
 
             VkSurfaceCapabilitiesKHR capabilities;
-            VerifyVk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities));
+            VerifyVk(QuerySurfaceCapabilities(physicalDevice, surface, nativeWindow, &capabilities));
             return capabilities;
         }
 
@@ -207,7 +208,7 @@ namespace FE::Graphics::Vulkan
 
         const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
         const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
-        // Acquisition precedes BeginFrame; wait until the previous use consumed this binary semaphore.
+        // Wait until the previous use consumed this binary semaphore; recording may not have started yet.
         const Core::FenceSyncPoint& completion = m_acquireCompletion[semaphoreIndex];
         if (completion.m_fence)
             completion.Wait();
@@ -257,7 +258,8 @@ namespace FE::Graphics::Vulkan
         const Device* device = ImplCast(m_device);
         const VkPhysicalDevice physicalDevice = device->GetNativeAdapter();
         const auto surfaceFormats = EnumerateSurfaceFormats(physicalDevice, m_surface);
-        const VkSurfaceCapabilitiesKHR capabilities = GetSurfaceCapabilities(physicalDevice, m_surface);
+        const VkSurfaceCapabilitiesKHR capabilities =
+            GetSurfaceCapabilities(physicalDevice, m_surface, m_desc.m_nativeWindowHandle);
         const VkExtent2D minExtent = capabilities.minImageExtent;
         const VkExtent2D maxExtent = capabilities.maxImageExtent;
 

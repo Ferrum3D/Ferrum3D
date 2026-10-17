@@ -106,8 +106,7 @@ namespace FE::Graphics::Vulkan
         for (uint32_t i = 0; i < bindings.size(); ++i)
         {
             const bool isBindlessBinding = bindings[i].binding < kStaticSamplerBindingBase;
-            descriptorBindingFlags.push_back(
-                isBindlessBinding ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0);
+            descriptorBindingFlags.push_back(isBindlessBinding ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0);
         }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCI = {};
@@ -169,10 +168,9 @@ namespace FE::Graphics::Vulkan
     {
         m_currentSetIndex = static_cast<uint32_t>(completion.m_value % kMaxInFlightFrames);
         DescriptorSetState& set = m_descriptorSets[m_currentSetIndex];
-        if (set.m_completion.m_fence)
-            set.m_completion.Wait();
-        set.m_transientResources.clear();
-        set.m_completion = completion;
+        m_frameCompletion = completion;
+        m_frameDirtyDescriptors = set.m_dirtyDescriptors;
+        set.m_dirtyDescriptors.reset();
     }
 
 
@@ -187,12 +185,17 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
         DescriptorSetState& set = m_descriptorSets[m_currentSetIndex];
-        Bit::Traverse(set.m_dirtyDescriptors.view(), [this](const uint32_t index) {
-            const Core::ResourceDescriptorInfo& descriptor = m_persistentDescriptors[index];
+        if (set.m_completion.m_fence)
+            set.m_completion.Wait();
+
+        set.m_transientResources.clear();
+        set.m_completion = m_frameCompletion;
+        Bit::Traverse(m_frameDirtyDescriptors.view(), [this](const uint32_t index) {
+            const Core::ResourceDescriptorInfo& descriptor = m_framePersistentDescriptors[index];
             if (descriptor.m_resource)
                 AppendResourceDescriptorWrite(index, descriptor);
         });
-        set.m_dirtyDescriptors.reset();
+        m_frameDirtyDescriptors.reset();
 
         for (uint32_t index = 0; index < descriptors.size(); ++index)
         {
@@ -203,14 +206,14 @@ namespace FE::Graphics::Vulkan
             set.m_transientResources.push_back(descriptor.m_resource);
         }
 
-        for (uint32_t index = set.m_samplerCount; index < m_samplers.size(); ++index)
+        for (uint32_t index = set.m_samplerCount; index < m_frameSamplers.size(); ++index)
         {
             auto* imageInfo = Memory::New<VkDescriptorImageInfo>(&m_linearAllocator);
             *imageInfo = {};
-            imageInfo->sampler = m_device->GetSampler(m_samplers[index]);
+            imageInfo->sampler = m_device->GetSampler(m_frameSamplers[index]);
             m_writes.push_back(CreateWrite(1, set.m_set, VK_DESCRIPTOR_TYPE_SAMPLER, index, 1, imageInfo));
         }
-        set.m_samplerCount = m_samplers.size();
+        set.m_samplerCount = m_frameSamplers.size();
 
         if (!m_writes.empty())
             vkUpdateDescriptorSets(NativeCast(m_device), m_writes.size(), m_writes.data(), 0, nullptr);

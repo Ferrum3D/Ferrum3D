@@ -52,6 +52,7 @@ namespace FE::Graphics
         Env::Name m_techniqueRole;
     };
 
+    //! Render callbacks run on a job fiber. Recorded passes must retain their inputs and must not access mutable scene state.
     struct SceneModuleBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("7729E683-8638-4712-81D3-B1C78B16BFE3");

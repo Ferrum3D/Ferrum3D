@@ -18,7 +18,10 @@ namespace FE::Graphics::Core
         virtual void PublishShaderRead(Buffer* buffer) = 0;
         virtual void PublishShaderRead(Texture* texture) = 0;
 
+        //! Reserve the frame timeline; command storage waits are deferred until recording starts.
         virtual void BeginFrame() = 0;
+        //! Submit a frame without a presentation image (for suspended/out-of-date viewports).
+        virtual void SubmitFrame() = 0;
         virtual FenceSyncPoint CloseFrame() = 0;
         virtual void Drain() = 0;
     };
