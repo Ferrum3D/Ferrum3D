@@ -9,6 +9,7 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
+#include <Graphics/Core/Vulkan/GpuProfiler.h>
 #include <festd/ring_buffer.h>
 
 namespace FE::Graphics::Vulkan
@@ -62,6 +63,7 @@ namespace FE::Graphics::Vulkan
         Threading::SharedSpinLock m_suspendLock;
 
         VkQueue m_queue = VK_NULL_HANDLE;
+        GpuProfiler m_gpuProfiler;
         Rc<Core::Buffer> m_uploadBuffer;
         VmaVirtualBlock m_uploadRingBuffer = VK_NULL_HANDLE;
         std::atomic<uint64_t> m_fenceValue = 0;

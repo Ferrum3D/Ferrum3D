@@ -8,6 +8,7 @@
 #include <Graphics/Core/Vulkan/Format.h>
 #include <Graphics/Core/Vulkan/ResourceInstance.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
+#include <shared_mutex>
 
 namespace FE::Graphics::Vulkan
 {
@@ -70,12 +71,15 @@ namespace FE::Graphics::Vulkan
         struct CommandBatcher final
         {
             VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+            GpuProfiler& m_profiler;
             festd::pmr::vector<VkBufferCopy> m_bufferRegions;
             VkBuffer m_srcBuffer = VK_NULL_HANDLE;
             VkBuffer m_dstBuffer = VK_NULL_HANDLE;
 
-            explicit CommandBatcher(std::pmr::memory_resource* allocator, const VkCommandBuffer commandBuffer)
+            explicit CommandBatcher(std::pmr::memory_resource* allocator, const VkCommandBuffer commandBuffer,
+                                    GpuProfiler& profiler)
                 : m_commandBuffer(commandBuffer)
+                , m_profiler(profiler)
                 , m_bufferRegions(allocator)
             {
                 m_bufferRegions.reserve(256);
@@ -85,7 +89,9 @@ namespace FE::Graphics::Vulkan
             {
                 if (!m_bufferRegions.empty())
                 {
+                    m_profiler.BeginZone(m_commandBuffer, "CopyBuffer");
                     vkCmdCopyBuffer(m_commandBuffer, m_srcBuffer, m_dstBuffer, m_bufferRegions.size(), m_bufferRegions.data());
+                    m_profiler.EndZone();
                     m_bufferRegions.clear();
                 }
             }
@@ -126,6 +132,8 @@ namespace FE::Graphics::Vulkan
             FE_PROFILER_ZONE_NAMED("AsyncCopyThread");
 
             FinalizeFinishedProcessors();
+            if (m_processingItems.empty())
+                m_gpuProfiler.CollectIdle();
 
             if (m_requestCache.empty())
             {
@@ -156,9 +164,8 @@ namespace FE::Graphics::Vulkan
                 if (m_processingItems.full())
                     m_processingItems.reserve(m_processingItems.capacity() * 2);
 
-                m_processingItems.push_back(processingItem);
-
                 ProcessCommandList(processingItem);
+                m_processingItems.push_back(processingItem);
             }
             else if (m_requestCache.empty() && m_processingItems.empty())
             {
@@ -166,6 +173,7 @@ namespace FE::Graphics::Vulkan
                 std::unique_lock lock{ m_suspendLock };
                 if (m_requestQueue.Empty())
                 {
+                    m_gpuProfiler.CollectIdle();
                     m_threadEvent.Reset();
                     m_suspendEvent.Send();
                 }
@@ -237,8 +245,10 @@ namespace FE::Graphics::Vulkan
         item->m_commandBuffer->Begin();
 
         const VkCommandBuffer commandBuffer = item->m_commandBuffer->GetNative();
+        m_gpuProfiler.Collect(commandBuffer);
+        m_gpuProfiler.BeginZone(commandBuffer, "AsyncCopyBatch");
 
-        CommandBatcher batcher{ &m_threadTempAllocator, commandBuffer };
+        CommandBatcher batcher{ &m_threadTempAllocator, commandBuffer, m_gpuProfiler };
 
         ScopedMapper mapper;
         mapper.m_buffer = m_uploadBuffer.Get();
@@ -346,7 +356,9 @@ namespace FE::Graphics::Vulkan
                         copy.srcOffset = allocationOffset;
                         copy.dstOffset = cmd.m_destinationOffset + uploadedBytes;
                         copy.size = allocationSize;
+                        m_gpuProfiler.BeginZone(commandBuffer, "UploadBuffer");
                         vkCmdCopyBuffer(commandBuffer, NativeCast(m_uploadBuffer.Get()), NativeCast(cmd.m_buffer), 1, &copy);
+                        m_gpuProfiler.EndZone();
 
                         uploadedBytes += allocationSize;
                     }
@@ -461,12 +473,14 @@ namespace FE::Graphics::Vulkan
 
                     FlushResourceBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, beforeBarrierBatcher);
 
+                    m_gpuProfiler.BeginZone(commandBuffer, "UploadTexture");
                     vkCmdCopyBufferToImage(commandBuffer,
                                            NativeCast(m_uploadBuffer.Get()),
                                            NativeCast(texture),
                                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                            bufferImageCopies.size(),
                                            bufferImageCopies.data());
+                    m_gpuProfiler.EndZone();
 
                     FlushTextureBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, releaseBarriers);
 
@@ -500,6 +514,7 @@ namespace FE::Graphics::Vulkan
             buffer->AddQueueReleaseBarrier(barrier, { m_fence, item->m_fenceValue });
         }
 
+        m_gpuProfiler.EndZone();
         item->m_commandBuffer->EnqueueFenceToSignal({ m_fence, item->m_fenceValue });
         item->m_commandBuffer->Submit();
     }
@@ -539,9 +554,11 @@ namespace FE::Graphics::Vulkan
                     break;
                 }
 
+                m_gpuProfiler.EndZone();
                 item->m_commandBuffer->EnqueueFenceToSignal({ m_fence, item->m_fenceValue });
                 item->m_commandBuffer->Submit();
                 m_fence->Wait(item->m_fenceValue);
+                m_gpuProfiler.CollectIdle();
 
                 for (const VmaVirtualAllocation stagingAllocation : item->m_stagingAllocations)
                     vmaVirtualFree(m_uploadRingBuffer, stagingAllocation);
@@ -552,6 +569,8 @@ namespace FE::Graphics::Vulkan
 
                 // We can use the same command buffer since we have waited for it to finish.
                 item->m_commandBuffer->Begin();
+                m_gpuProfiler.Collect(item->m_commandBuffer->GetNative());
+                m_gpuProfiler.BeginZone(item->m_commandBuffer->GetNative(), "AsyncCopyBatch");
             }
         }
 
@@ -610,6 +629,8 @@ namespace FE::Graphics::Vulkan
         const uint32_t transferQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kTransfer);
         vkGetDeviceQueue(vkDevice->GetNative(), transferQueueFamilyIndex, 0, &m_queue);
 
+        m_gpuProfiler.Init(device, Core::DeviceQueueType::kTransfer, m_queue, "Vulkan Async Copy");
+
         // The worker must not observe partially initialized events or queue resources.
         m_thread = Threading::CreateThread(
             "AsyncCopyThread",
@@ -630,6 +651,7 @@ namespace FE::Graphics::Vulkan
         }
 
         Threading::CloseThread(m_thread);
+        m_gpuProfiler.Shutdown();
 
         {
             const auto detached = Common::ImplCast(m_uploadBuffer.Get())->DetachInstance();

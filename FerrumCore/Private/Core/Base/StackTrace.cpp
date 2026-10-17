@@ -91,7 +91,10 @@ namespace FE::Trace
         GStorage->~StackTraceStorage();
         GStorage = nullptr;
 
+        // Tracy's symbol worker shares this process session and outlives stack trace storage.
+#    if !defined(TRACY_ENABLE)
         FE_Verify(SymCleanup(GetCurrentProcess()));
+#    endif
     }
 
 

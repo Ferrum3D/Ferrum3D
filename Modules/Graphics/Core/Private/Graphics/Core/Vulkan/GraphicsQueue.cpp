@@ -18,6 +18,8 @@ namespace FE::Graphics::Vulkan
         const uint32_t queueFamilyIndex = ImplCast(device)->GetQueueFamilyIndex(Core::DeviceQueueType::kGraphics);
         vkGetDeviceQueue(NativeCast(device), queueFamilyIndex, 0, &m_nativeQueue);
 
+        m_gpuProfiler.Init(device, Core::DeviceQueueType::kGraphics, m_nativeQueue, "Vulkan Graphics");
+
         for (uint32_t i = 0; i < kMaxInFlightFrames; ++i)
         {
             CommandBufferDesc desc;
@@ -31,6 +33,12 @@ namespace FE::Graphics::Vulkan
             commandBuffer->SetImmediateDestroyPolicy();
             m_graphicsCommandBuffers.push_back(commandBuffer);
         }
+    }
+
+
+    GraphicsQueue::~GraphicsQueue()
+    {
+        m_gpuProfiler.Shutdown();
     }
 
 
@@ -67,6 +75,7 @@ namespace FE::Graphics::Vulkan
 
         CommandBuffer* commandBuffer = m_graphicsCommandBuffers[m_frameIndex % kMaxInFlightFrames].Get();
         commandBuffer->Begin();
+        m_gpuProfiler.Collect(commandBuffer->GetNative());
         m_isRecording = true;
 
         for (const Rc<Core::Buffer>& resource : m_frameShaderReadBuffers)

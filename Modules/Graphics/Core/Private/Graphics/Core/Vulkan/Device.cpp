@@ -112,9 +112,12 @@ namespace FE::Graphics::Vulkan
 
         VkPhysicalDeviceVulkan13Features supported13{};
         supported13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        VkPhysicalDeviceVulkan12Features supported12{};
+        supported12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        supported12.pNext = &supported13;
         VkPhysicalDeviceFeatures2 supportedFeatures{};
         supportedFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        supportedFeatures.pNext = &supported13;
+        supportedFeatures.pNext = &supported12;
         vkGetPhysicalDeviceFeatures2(nativeAdapter, &supportedFeatures);
 
         const bool computeSubgroups = (subgroupProperties.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) != 0;
@@ -183,6 +186,9 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
         deviceFeatures12.pNext = &deviceFeatures13;
         deviceFeatures12.timelineSemaphore = true;
+#if defined(TRACY_ENABLE)
+        deviceFeatures12.hostQueryReset = supported12.hostQueryReset;
+#endif
         deviceFeatures12.scalarBlockLayout = true;
         deviceFeatures12.descriptorIndexing = true;
         deviceFeatures12.runtimeDescriptorArray = true;

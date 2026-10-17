@@ -605,10 +605,7 @@ namespace FE::Framework
 
     bool EntityWorld::ValidateSchedule()
     {
-        if (0)
-            return m_impl->m_schedule.ValidateSchedule();
-        else
-            return true;
+        return m_impl->m_schedule.ValidateSchedule();
     }
 
 

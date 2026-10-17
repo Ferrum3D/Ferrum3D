@@ -66,12 +66,14 @@ namespace FE::Graphics::Vulkan
         label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
         label.pLabelName = name.c_str();
         vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &label);
+        commandQueue->GetGpuProfiler().BeginZone(commandBuffer, name.c_str());
     }
 
 
     void FrameGraph::EndMarkerInternal()
     {
         auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
+        commandQueue->GetGpuProfiler().EndZone();
         vkCmdEndDebugUtilsLabelEXT(commandQueue->GetCurrentCommandBuffer()->GetNative());
     }
 

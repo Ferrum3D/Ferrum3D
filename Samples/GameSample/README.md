@@ -4,6 +4,8 @@ Visibility rasterization, GBuffer evaluation and deferred compute shading are th
 
 Validation is disabled by default. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Use neither flag for performance measurements and Nsight captures. The former `--no-api-validation` flag only hid validation messages and did not disable validation.
 
+With `TRACY_ENABLE`, Tracy shows `Vulkan Graphics` and `Vulkan Async Copy` GPU contexts. Each queue has one GPU track, independent of the CPU worker recording its commands. FrameGraph scopes and passes retain their names; copy batches contain buffer-copy, buffer-upload and texture-upload zones. Transfer-only queues require timestamp support and host query resets. During continuous uploads, timing zones are skipped if the query pool fills and resume after completed submissions are collected, without blocking uploads.
+
 Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These show GPU classification and surface evaluation. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).
 
 Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`). Add `--smoke` to render eight frames after world readiness and exit. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).

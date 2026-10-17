@@ -4,6 +4,7 @@
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <Graphics/Core/Vulkan/Fence.h>
+#include <Graphics/Core/Vulkan/GpuProfiler.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics::Vulkan
@@ -13,6 +14,13 @@ namespace FE::Graphics::Vulkan
         FE_RTTI("3830A626-8EEE-4FFE-8F17-0195DDE01262");
 
         explicit GraphicsQueue(Core::Device* device);
+        ~GraphicsQueue() override;
+
+        [[nodiscard]] GpuProfiler& GetGpuProfiler()
+        {
+            return m_gpuProfiler;
+        }
+
 
         CommandBuffer* GetCurrentCommandBuffer();
 
@@ -62,6 +70,7 @@ namespace FE::Graphics::Vulkan
         bool m_isRecording = false;
 
         VkQueue m_nativeQueue = VK_NULL_HANDLE;
+        GpuProfiler m_gpuProfiler;
 
         Memory::SpinLockedPoolAllocator m_sharedPagePool{ "Graphics/GraphicsCommandBufferPagePool", 8096 };
         festd::inline_vector<Rc<CommandBuffer>> m_graphicsCommandBuffers;

@@ -29,6 +29,34 @@ using namespace FE::Graphics;
 
 namespace
 {
+    void CheckSplitAsyncUpload(Core::Device* device, Core::ResourcePool* pool, Core::AsyncCopyQueue* copyQueue)
+    {
+        constexpr uint32_t kByteSize = 16 * 1024 * 1024 + 4096;
+        festd::vector<std::byte> source(kByteSize, std::byte{ 0x5a });
+        const Rc destination = Core::Buffer::CreateByteAddress(device, "SplitUploadProbe", kByteSize);
+        const Core::ResourceCommitParams commit{ .m_bindFlags = Core::BarrierAccessFlags::kCopyDest,
+                                                 .m_memory = Core::ResourceMemory::kHostRandomAccess,
+                                                 .m_queue = Core::DeviceQueueType::kTransfer };
+        pool->CommitBufferMemory(destination.Get(), commit);
+
+        Memory::LinearAllocator allocator;
+        Core::AsyncCopyCommandListBuilder builder(&allocator, 4096);
+        builder.UploadBuffer(destination.Get(), source.data());
+        const Rc<WaitGroup> done = WaitGroup::Create();
+        copyQueue->ExecuteCommandList(builder.Build(&allocator, done.Get()));
+        done->Wait();
+        copyQueue->Drain();
+
+        const auto* bytes = static_cast<const std::byte*>(destination->Map());
+        destination->InvalidateMappedRange(0, kByteSize);
+        EXPECT_EQ(bytes[0], std::byte{ 0x5a });
+        EXPECT_EQ(bytes[16 * 1024 * 1024 - 1], std::byte{ 0x5a });
+        EXPECT_EQ(bytes[16 * 1024 * 1024], std::byte{ 0x5a });
+        EXPECT_EQ(bytes[kByteSize - 1], std::byte{ 0x5a });
+        destination->Unmap();
+    }
+
+
     void CheckDescriptorSnapshots(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
                                   Core::DescriptorManager* descriptors, Core::FrameGraph* graph, Core::ComputePipeline* pipeline)
     {
@@ -372,6 +400,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
         Rc<Core::GraphicsQueue> queue = device->CreateGraphicsQueue();
         Rc<Core::AsyncCopyQueue> copyQueue = device->CreateAsyncCopyQueue();
         Rc<Core::ResourcePool> pool = device->CreateResourcePool(queue.Get(), copyQueue.Get());
+        CheckSplitAsyncUpload(device.Get(), pool.Get(), copyQueue.Get());
         {
             Rc<Core::DescriptorManager> descriptors = device->CreateDescriptorManager();
             Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors.Get(), pool.Get(), queue.Get());

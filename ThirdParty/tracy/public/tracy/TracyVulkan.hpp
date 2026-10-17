@@ -94,9 +94,9 @@ class VkCtx
 
 public:
 #if defined TRACY_VK_USE_SYMBOL_TABLE
-    VkCtx( VkInstance instance, VkPhysicalDevice physdev, VkDevice device, VkQueue queue, VkCommandBuffer cmdbuf, PFN_vkGetInstanceProcAddr instanceProcAddr, PFN_vkGetDeviceProcAddr deviceProcAddr, bool calibrated )
+    VkCtx( VkInstance instance, VkPhysicalDevice physdev, VkDevice device, VkQueue queue, VkCommandBuffer cmdbuf, PFN_vkGetInstanceProcAddr instanceProcAddr, PFN_vkGetDeviceProcAddr deviceProcAddr, bool calibrated, PFN_vkResetQueryPool hostQueryReset = nullptr )
 #else
-    VkCtx( VkPhysicalDevice physdev, VkDevice device, VkQueue queue, VkCommandBuffer cmdbuf, PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT vkGetPhysicalDeviceCalibrateableTimeDomainsEXT, PFN_vkGetCalibratedTimestampsEXT vkGetCalibratedTimestampsEXT)
+    VkCtx( VkPhysicalDevice physdev, VkDevice device, VkQueue queue, VkCommandBuffer cmdbuf, PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT vkGetPhysicalDeviceCalibrateableTimeDomainsEXT, PFN_vkGetCalibratedTimestampsEXT vkGetCalibratedTimestampsEXT, PFN_vkResetQueryPool hostQueryReset = nullptr )
 #endif
         : m_device( device )
         , m_timeDomain( VK_TIME_DOMAIN_DEVICE_EXT )
@@ -110,6 +110,7 @@ public:
 #endif
     {
         assert( m_context != 255 );
+        m_hostQueryReset = hostQueryReset;
 
 #if defined TRACY_VK_USE_SYMBOL_TABLE
         PopulateSymbolTable(instance, instanceProcAddr, deviceProcAddr);
@@ -137,7 +138,7 @@ public:
         submitInfo.pCommandBuffers = &cmdbuf;
 
         VK_FUNCTION_WRAPPER( vkBeginCommandBuffer( cmdbuf, &beginInfo ) );
-        VK_FUNCTION_WRAPPER( vkCmdResetQueryPool( cmdbuf, m_query, 0, m_queryCount ) );
+        ResetQueries( cmdbuf, 0, m_queryCount );
         VK_FUNCTION_WRAPPER( vkEndCommandBuffer( cmdbuf ) );
         VK_FUNCTION_WRAPPER( vkQueueSubmit( queue, 1, &submitInfo, VK_NULL_HANDLE ) );
         VK_FUNCTION_WRAPPER( vkQueueWaitIdle( queue ) );
@@ -155,7 +156,7 @@ public:
             VK_FUNCTION_WRAPPER( vkGetQueryPoolResults( device, m_query, 0, 1, sizeof( tgpu ), &tgpu, sizeof( tgpu ), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT ) );
 
             VK_FUNCTION_WRAPPER( vkBeginCommandBuffer( cmdbuf, &beginInfo ) );
-            VK_FUNCTION_WRAPPER( vkCmdResetQueryPool( cmdbuf, m_query, 0, 1 ) );
+            ResetQueries( cmdbuf, 0, 1 );
             VK_FUNCTION_WRAPPER( vkEndCommandBuffer( cmdbuf ) );
             VK_FUNCTION_WRAPPER( vkQueueSubmit( queue, 1, &submitInfo, VK_NULL_HANDLE ) );
             VK_FUNCTION_WRAPPER( vkQueueWaitIdle( queue ) );
@@ -169,7 +170,7 @@ public:
 
         WriteInitialItem( physdev, tcpu, tgpu );
 
-        m_res = (int64_t*)tracy_malloc( sizeof( int64_t ) * m_queryCount );
+        m_res = (int64_t*)tracy_malloc( sizeof( int64_t ) * m_queryCount * 2 );
     }
 
 #if defined VK_EXT_host_query_reset
@@ -254,9 +255,9 @@ public:
         if( m_tail == head ) return;
 
 #ifdef TRACY_ON_DEMAND
-        if( !GetProfiler().IsConnected() )
+        if( !GetProfiler().IsConnected() && !m_hostQueryReset )
         {
-            VK_FUNCTION_WRAPPER( vkCmdResetQueryPool( cmdbuf, m_query, 0, m_queryCount ) );
+            ResetQueries( cmdbuf, 0, m_queryCount );
             m_tail = head;
             m_oldCnt = 0;
             int64_t tgpu;
@@ -325,7 +326,7 @@ public:
             }
         }
 
-        VK_FUNCTION_WRAPPER( vkCmdResetQueryPool( cmdbuf, m_query, wrappedTail, cnt ) );
+        ResetQueries( cmdbuf, wrappedTail, cnt );
 
         m_tail += cnt;
     }
@@ -346,7 +347,23 @@ public:
          return m_query;
     }
 
+    tracy_force_inline unsigned int GetQueryCount() const
+    {
+        return m_queryCount;
+    }
+
 private:
+    // Host resets allow profiling transfer-only queues. The caller must complete
+    // every submission using these queries before collecting with this path.
+    tracy_force_inline void ResetQueries( VkCommandBuffer cmdbuf, uint32_t first, uint32_t count )
+    {
+        if( count == 0 ) return;
+        if( m_hostQueryReset )
+            m_hostQueryReset( m_device, m_query, first, count );
+        else
+            VK_FUNCTION_WRAPPER( vkCmdResetQueryPool( cmdbuf, m_query, first, count ) );
+    }
+
     tracy_force_inline void Calibrate( VkDevice device, int64_t& tCpu, int64_t& tGpu )
     {
         assert( m_timeDomain != VK_TIME_DOMAIN_DEVICE_EXT );
@@ -481,6 +498,7 @@ private:
     }
 #endif
 
+    PFN_vkResetQueryPool m_hostQueryReset = nullptr;
     VkDevice m_device;
     VkQueryPool m_query;
     VkTimeDomainEXT m_timeDomain;
@@ -506,13 +524,15 @@ private:
 
 class VkCtxScope
 {
+// Passing thread 0 groups serial queue zones independently of the recording CPU worker.
 public:
-    tracy_force_inline VkCtxScope( VkCtx* ctx, const SourceLocationData* srcloc, VkCommandBuffer cmdbuf, bool is_active )
+    tracy_force_inline VkCtxScope( VkCtx* ctx, const SourceLocationData* srcloc, VkCommandBuffer cmdbuf, bool is_active, uint32_t thread = GetThreadHandle() )
 #ifdef TRACY_ON_DEMAND
         : m_active( is_active && GetProfiler().IsConnected() )
 #else
         : m_active( is_active )
 #endif
+        , m_thread( thread )
     {
         if( !m_active ) return;
         m_cmdbuf = cmdbuf;
@@ -525,18 +545,19 @@ public:
         MemWrite( &item->hdr.type, QueueType::GpuZoneBeginSerial );
         MemWrite( &item->gpuZoneBegin.cpuTime, Profiler::GetTime() );
         MemWrite( &item->gpuZoneBegin.srcloc, (uint64_t)srcloc );
-        MemWrite( &item->gpuZoneBegin.thread, GetThreadHandle() );
+        MemWrite( &item->gpuZoneBegin.thread, m_thread );
         MemWrite( &item->gpuZoneBegin.queryId, uint16_t( queryId ) );
         MemWrite( &item->gpuZoneBegin.context, ctx->GetId() );
         Profiler::QueueSerialFinish();
     }
 
-    tracy_force_inline VkCtxScope( VkCtx* ctx, const SourceLocationData* srcloc, VkCommandBuffer cmdbuf, int32_t depth, bool is_active )
+    tracy_force_inline VkCtxScope( VkCtx* ctx, const SourceLocationData* srcloc, VkCommandBuffer cmdbuf, int32_t depth, bool is_active, uint32_t thread = GetThreadHandle() )
 #ifdef TRACY_ON_DEMAND
         : m_active( is_active && GetProfiler().IsConnected() )
 #else
         : m_active( is_active )
 #endif
+        , m_thread( thread )
     {
         if( !m_active ) return;
         m_cmdbuf = cmdbuf;
@@ -558,18 +579,19 @@ public:
         }
         MemWrite( &item->gpuZoneBegin.cpuTime, Profiler::GetTime() );
         MemWrite( &item->gpuZoneBegin.srcloc, (uint64_t)srcloc );
-        MemWrite( &item->gpuZoneBegin.thread, GetThreadHandle() );
+        MemWrite( &item->gpuZoneBegin.thread, m_thread );
         MemWrite( &item->gpuZoneBegin.queryId, uint16_t( queryId ) );
         MemWrite( &item->gpuZoneBegin.context, ctx->GetId() );
         Profiler::QueueSerialFinish();
     }
 
-    tracy_force_inline VkCtxScope( VkCtx* ctx, uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz, const char* name, size_t nameSz, VkCommandBuffer cmdbuf, bool is_active )
+    tracy_force_inline VkCtxScope( VkCtx* ctx, uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz, const char* name, size_t nameSz, VkCommandBuffer cmdbuf, bool is_active, uint32_t thread = GetThreadHandle() )
 #ifdef TRACY_ON_DEMAND
         : m_active( is_active && GetProfiler().IsConnected() )
 #else
         : m_active( is_active )
 #endif
+        , m_thread( thread )
     {
         if( !m_active ) return;
         m_cmdbuf = cmdbuf;
@@ -583,18 +605,19 @@ public:
         MemWrite( &item->hdr.type, QueueType::GpuZoneBeginAllocSrcLocSerial );
         MemWrite( &item->gpuZoneBegin.cpuTime, Profiler::GetTime() );
         MemWrite( &item->gpuZoneBegin.srcloc, srcloc );
-        MemWrite( &item->gpuZoneBegin.thread, GetThreadHandle() );
+        MemWrite( &item->gpuZoneBegin.thread, m_thread );
         MemWrite( &item->gpuZoneBegin.queryId, uint16_t( queryId ) );
         MemWrite( &item->gpuZoneBegin.context, ctx->GetId() );
         Profiler::QueueSerialFinish();
     }
 
-    tracy_force_inline VkCtxScope( VkCtx* ctx, uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz, const char* name, size_t nameSz, VkCommandBuffer cmdbuf, int32_t depth, bool is_active )
+    tracy_force_inline VkCtxScope( VkCtx* ctx, uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz, const char* name, size_t nameSz, VkCommandBuffer cmdbuf, int32_t depth, bool is_active, uint32_t thread = GetThreadHandle() )
 #ifdef TRACY_ON_DEMAND
         : m_active( is_active && GetProfiler().IsConnected() )
 #else
         : m_active( is_active )
 #endif
+        , m_thread( thread )
     {
         if( !m_active ) return;
         m_cmdbuf = cmdbuf;
@@ -617,7 +640,7 @@ public:
         }
         MemWrite( &item->gpuZoneBegin.cpuTime, Profiler::GetTime() );
         MemWrite( &item->gpuZoneBegin.srcloc, srcloc );
-        MemWrite( &item->gpuZoneBegin.thread, GetThreadHandle() );
+        MemWrite( &item->gpuZoneBegin.thread, m_thread );
         MemWrite( &item->gpuZoneBegin.queryId, uint16_t( queryId ) );
         MemWrite( &item->gpuZoneBegin.context, ctx->GetId() );
         Profiler::QueueSerialFinish();
@@ -633,7 +656,7 @@ public:
         auto item = Profiler::QueueSerial();
         MemWrite( &item->hdr.type, QueueType::GpuZoneEndSerial );
         MemWrite( &item->gpuZoneEnd.cpuTime, Profiler::GetTime() );
-        MemWrite( &item->gpuZoneEnd.thread, GetThreadHandle() );
+        MemWrite( &item->gpuZoneEnd.thread, m_thread );
         MemWrite( &item->gpuZoneEnd.queryId, uint16_t( queryId ) );
         MemWrite( &item->gpuZoneEnd.context, m_ctx->GetId() );
         Profiler::QueueSerialFinish();
@@ -641,6 +664,7 @@ public:
 
 private:
     const bool m_active;
+    const uint32_t m_thread;
 
     VkCommandBuffer m_cmdbuf;
     VkCtx* m_ctx;
@@ -649,14 +673,14 @@ private:
 #if defined TRACY_VK_USE_SYMBOL_TABLE
 static inline VkCtx* CreateVkContext( VkInstance instance, VkPhysicalDevice physdev, VkDevice device, VkQueue queue, VkCommandBuffer cmdbuf, PFN_vkGetInstanceProcAddr instanceProcAddr, PFN_vkGetDeviceProcAddr getDeviceProcAddr, bool calibrated = false )
 #else
-static inline VkCtx* CreateVkContext( VkPhysicalDevice physdev, VkDevice device, VkQueue queue, VkCommandBuffer cmdbuf, PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT gpdctd, PFN_vkGetCalibratedTimestampsEXT gct )
+static inline VkCtx* CreateVkContext( VkPhysicalDevice physdev, VkDevice device, VkQueue queue, VkCommandBuffer cmdbuf, PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT gpdctd, PFN_vkGetCalibratedTimestampsEXT gct, PFN_vkResetQueryPool hostQueryReset = nullptr )
 #endif
 {
     auto ctx = (VkCtx*)tracy_malloc( sizeof( VkCtx ) );
 #if defined TRACY_VK_USE_SYMBOL_TABLE
     new(ctx) VkCtx( instance, physdev, device, queue, cmdbuf, instanceProcAddr, getDeviceProcAddr, calibrated );
 #else
-    new(ctx) VkCtx( physdev, device, queue, cmdbuf, gpdctd, gct );
+    new(ctx) VkCtx( physdev, device, queue, cmdbuf, gpdctd, gct, hostQueryReset );
 #endif
     return ctx;
 }
