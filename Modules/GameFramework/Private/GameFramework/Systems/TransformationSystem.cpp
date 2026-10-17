@@ -1,6 +1,4 @@
-#include <EASTL/algorithm.h>
 #include <GameFramework/Systems/TransformationSystem.h>
-#include <cmath>
 
 namespace FE::GameFramework
 {

@@ -9,7 +9,8 @@ namespace FE::GameFramework
     void MeshSystem::Init(Framework::EntityWorld& world)
     {
         world.Components().Register<MeshComponent>();
-        m_changes = {};
+        m_modelChanges = {};
+        m_transformChanges = {};
     }
 
 
@@ -19,12 +20,26 @@ namespace FE::GameFramework
 
         auto* sceneService = context.m_world.FindService<WorldGraphicsSceneService>();
 
-        const auto traverse = [sceneService](MeshComponent& mesh, const WorldTransformComponent& transform) {
-            sceneService->GetMeshes().Update(mesh, transform.m_world);
+        const auto updateModel = [sceneService](MeshComponent& mesh) {
+            sceneService->GetMeshes().UpdateModel(mesh);
             return Framework::QueryWriteResult::kUnchanged;
         };
 
-        using Query = Framework::Query<MeshComponent, const WorldTransformComponent>;
-        Query::TraverseChanged(context, Phases::GraphicsExtraction, m_changes, traverse, Framework::ExecutionPolicy::kMainThread);
+        const auto models = Framework::Query<MeshComponent>::TraverseChanged(context,
+                                                                             Phases::GraphicsExtraction,
+                                                                             m_modelChanges,
+                                                                             updateModel,
+                                                                             Framework::ExecutionPolicy::kMainThread);
+        const auto updateTransform = [sceneService](const MeshComponent& mesh, const WorldTransformComponent& transform) {
+            sceneService->GetMeshes().UpdateTransform(mesh, transform.m_world);
+        };
+
+        using Query = Framework::Query<const MeshComponent, const WorldTransformComponent>;
+        Query::Traverse(context,
+                        Phases::GraphicsExtraction,
+                        { models },
+                        updateTransform,
+                        Framework::ExecutionPolicy::kParallel,
+                        &m_transformChanges);
     }
 } // namespace FE::GameFramework

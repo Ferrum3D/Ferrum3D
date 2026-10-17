@@ -13,6 +13,7 @@ namespace FE::GameFramework
         void Update(Framework::EntityUpdateContext& context) override;
 
     private:
-        Framework::ChangeCursor m_changes;
+        Framework::ChangeCursor m_modelChanges;
+        Framework::ChangeCursor m_transformChanges;
     };
 } // namespace FE::GameFramework

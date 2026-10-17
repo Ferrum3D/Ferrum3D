@@ -43,7 +43,21 @@ namespace FE::Graphics::Core
 
 
     bool RingUploader::UploadBytes(FrameGraph& graph, const BufferView destination, const void* source, const uint32_t byteSize,
-                              const Options options)
+                                   const Options options)
+    {
+        return UploadGenerated(
+            graph,
+            destination,
+            byteSize,
+            [source, byteSize](void* target) {
+                memcpy(target, source, byteSize);
+            },
+            options);
+    }
+
+
+    bool RingUploader::UploadGenerated(FrameGraph& graph, const BufferView destination, const uint32_t byteSize,
+                                       const festd::fixed_function<48, void(void*)>& writer, const Options options)
     {
         if (const auto allocation = m_ringBuffer.Allocate(byteSize, kAlignment))
         {
@@ -53,7 +67,7 @@ namespace FE::Graphics::Core
             //       copy operations in two when the ring buffer has to wrap around.
 
             void* hostDestination = m_mappedMemory + allocation.m_offset;
-            memcpy(hostDestination, source, byteSize);
+            writer(hostDestination);
             m_buffer->FlushMappedRange(allocation.m_offset, byteSize);
 
             const BufferView deviceDestination = destination.Slice(0, byteSize);

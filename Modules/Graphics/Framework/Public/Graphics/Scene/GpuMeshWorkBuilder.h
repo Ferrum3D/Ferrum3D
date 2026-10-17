@@ -1,6 +1,7 @@
 #pragma once
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <Shaders/Passes/MeshPass/GpuWork.h>
+#include <festd/fixed_function.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics
@@ -56,7 +57,8 @@ namespace FE::Graphics
 
     namespace GpuMeshWorkBuilder
     {
-        void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, festd::span<const MeshPass::CullDispatch> dispatches,
+        void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, uint32_t dispatchCount,
+                      const festd::fixed_function<48, void(festd::span<MeshPass::CullDispatch>)>& writeDispatches,
                       MeshPass::MeshViewData viewData, CulledMeshView& result);
         void Build(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPipelineRegistry& registry,
                    const CulledMeshView& culled, Vector2UInt drawTagMask, PreparedMeshPass& result);

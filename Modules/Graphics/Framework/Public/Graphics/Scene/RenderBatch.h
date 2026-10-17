@@ -2,6 +2,7 @@
 #include <Core/Containers/SegmentedVector.h>
 #include <Core/Env/Environment.h>
 #include <Core/Math/Aabb.h>
+#include <Core/Math/Frustum.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Core/Base.h>
@@ -46,7 +47,7 @@ namespace FE::Graphics
 
         void Collect(Scene& scene);
         [[nodiscard]] bool IsVisible(const Aabb& bounds) const;
-        [[nodiscard]] const Aabb& GetFrustumBounds() const;
+        [[nodiscard]] const Frustum& GetFrustum() const;
         [[nodiscard]] const Matrix4x4& GetViewProjection() const;
         RenderBatch& AddBatch(const Aabb& bounds);
 
@@ -57,7 +58,7 @@ namespace FE::Graphics
 
     private:
         Matrix4x4 m_viewProjection;
-        Aabb m_frustumBounds = Aabb::kInvalid;
+        Frustum m_frustum;
         SegmentedVector<RenderBatch> m_batches;
         std::pmr::memory_resource* m_allocator = nullptr;
     };

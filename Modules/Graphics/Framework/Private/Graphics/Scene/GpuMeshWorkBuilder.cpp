@@ -222,26 +222,33 @@ namespace FE::Graphics::GpuMeshWorkBuilder
     } // namespace
 
 
-    void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, festd::span<const MeshPass::CullDispatch> dispatches,
+    void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, const uint32_t dispatchCount,
+                  const festd::fixed_function<48, void(festd::span<MeshPass::CullDispatch>)>& writeDispatches,
                   MeshPass::MeshViewData viewData, CulledMeshView& result)
     {
+        FE_PROFILER_ZONE();
         FE_FG_SCOPE(graph, "CullMeshView");
-        if (dispatches.empty())
+        if (dispatchCount == 0)
             return;
 
         Core::Device* device = graph.GetDevice();
         const auto view = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "MeshCullView", 1);
         const auto dispatchBuffer =
-            Core::Buffer::CreateStructured<MeshPass::CullDispatch>(device, "MeshCullDispatches", dispatches.size());
+            Core::Buffer::CreateStructured<MeshPass::CullDispatch>(device, "MeshCullDispatches", dispatchCount);
         result.m_viewData = viewData;
-        result.m_dispatchCount = dispatches.size();
-        result.m_classification = Core::Buffer::CreateStructured<MeshPass::InstanceClassification>(
-            device,
-            "MeshClassification",
-            dispatches.size() * MeshPass::kInstancesPerCullGroup);
+        result.m_dispatchCount = dispatchCount;
+        result.m_classification =
+            Core::Buffer::CreateStructured<MeshPass::InstanceClassification>(device,
+                                                                             "MeshClassification",
+                                                                             dispatchCount * MeshPass::kInstancesPerCullGroup);
         graph.AddBufferDependency(view.Get(), viewData.m_scene);
         FE_Verify(uploader.Upload(graph, view.Get(), viewData));
-        FE_Verify(uploader.UploadArray(graph, dispatchBuffer.Get(), dispatches));
+        FE_Verify(uploader.UploadGenerated(graph,
+                                           dispatchBuffer.Get(),
+                                           dispatchCount * sizeof(MeshPass::CullDispatch),
+                                           [&](void* target) {
+                                               writeDispatches({ static_cast<MeshPass::CullDispatch*>(target), dispatchCount });
+                                           }));
 
         auto* desc = graph.AllocatePassData<MeshPass::CullMeshInstances::PassDesc>();
         desc->m_constants.m_view = graph.GetSRV(view.Get());
@@ -255,6 +262,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
     void Build(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPipelineRegistry& registry,
                const CulledMeshView& culled, const Vector2UInt drawTagMask, PreparedMeshPass& result)
     {
+        FE_PROFILER_ZONE();
         FE_FG_SCOPE(graph, "PrepareMeshPass");
         if (registry.m_slots.empty() || culled.m_dispatchCount == 0)
             return;

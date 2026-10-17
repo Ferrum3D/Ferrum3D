@@ -83,7 +83,9 @@ namespace
 
     struct TestMeshes final : MeshSceneBridge
     {
-        uint32_t m_created = 0, m_destroyed = 0, m_updates = 0;
+        uint32_t m_created = 0, m_destroyed = 0;
+        std::atomic<uint32_t> m_updates = 0;
+        Matrix4x4 m_matrices[1024];
         Matrix4x4 m_matrix = Matrix4x4::kIdentity;
         LifecycleResult Create(MeshComponent& component) override
         {
@@ -99,11 +101,19 @@ namespace
         }
 
 
-        void Update(MeshComponent&, const Matrix4x4& matrix) override
+        void UpdateModel(MeshComponent&) override
         {
             EXPECT_TRUE(Threading::IsMainThread());
+        }
+
+
+        void UpdateTransform(const MeshComponent& component, const Matrix4x4& matrix) override
+        {
             ++m_updates;
-            m_matrix = matrix;
+            const uint32_t handle = component.m_handles.front().m_value;
+            m_matrices[handle] = matrix;
+            if (handle == 1)
+                m_matrix = matrix;
         }
     };
 
@@ -238,9 +248,9 @@ TEST_F(GraphicsFixture, ExtractsChangedMatricesAndSkipsUnchangedChunks)
     EXPECT_EQ(Meshes().m_created, 1);
     EXPECT_FLOAT_EQ(Meshes().m_matrix.m_30, 1);
     EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_32, 8);
-    const auto updates = Meshes().m_updates;
+    const auto updates = Meshes().m_updates.load();
     Tick();
-    EXPECT_EQ(Meshes().m_updates, updates);
+    EXPECT_EQ(Meshes().m_updates.load(), updates);
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
     EntityCommandList commands(m_world);
     commands.ReplaceComponent(m_world.Find(m_meshUuid)->GetID(), TransformComponent{ Transform::Translation(Vector3(9, 0, 0)) });
@@ -437,7 +447,7 @@ TEST_F(GraphicsFixture, CamerasCreateDistinctViewsAndRetainThemWhileInactive)
 TEST_F(GraphicsFixture, ComponentRemovalAndWorldUnloadReleaseMembership)
 {
     Tick();
-    const auto updates = Meshes().m_updates;
+    const auto updates = Meshes().m_updates.load();
     EntityCommandList commands(m_world);
     commands.RemoveComponent<MeshComponent>(m_world.Find(m_meshUuid)->GetID());
     commands.RemoveComponent<CameraComponent>(m_world.Find(m_cameraUuid)->GetID());
@@ -445,7 +455,7 @@ TEST_F(GraphicsFixture, ComponentRemovalAndWorldUnloadReleaseMembership)
     Tick();
     EXPECT_EQ(Meshes().m_destroyed, 1);
     EXPECT_EQ(m_scene.GetScene().GetViewCount(), 0);
-    EXPECT_EQ(Meshes().m_updates, updates);
+    EXPECT_EQ(Meshes().m_updates.load(), updates);
 
     m_world.Clear();
     EXPECT_EQ(Meshes().m_destroyed, Meshes().m_created);
@@ -523,4 +533,38 @@ TEST_F(GraphicsFixture, MeshReplacementReleasesPreviousMembership)
     EXPECT_EQ(Meshes().m_created, 2);
     EXPECT_EQ(Meshes().m_destroyed, 1);
     EXPECT_NE(entity.FindComponent<const MeshComponent>()->m_handles.front(), previous);
+}
+
+
+TEST_F(GraphicsFixture, ExtractsHundredsOfTransformsAfterMainThreadMembership)
+{
+    auto& registry = m_world.CreateRegistry();
+    EntityCommandList commands(m_world);
+    for (uint32_t i = 0; i < 500; ++i)
+    {
+        const auto entity = commands.CreateEntity(registry);
+        commands.AddComponent(entity, TransformComponent{ Transform::Translation(Vector3(float(i), 7.0f, 13.0f)) });
+        commands.AddComponent<MeshComponent>(entity);
+    }
+
+    m_world.Submit(std::move(commands));
+    for (uint32_t frame = 0; frame < 20 && Meshes().m_created < 501; ++frame)
+    {
+        const uint32_t previousCount = Meshes().m_created;
+        Tick();
+        EXPECT_LE(Meshes().m_created - previousCount, 32);
+    }
+
+    ASSERT_EQ(Meshes().m_created, 501);
+    EXPECT_GT(m_world.GetScheduleDiagnostics().m_jobs, 4);
+    for (uint32_t i = 0; i < 500; ++i)
+    {
+        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].m_30, float(i));
+        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].m_31, 7.0f);
+        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].m_32, 13.0f);
+    }
+
+    const uint32_t updates = Meshes().m_updates.load();
+    Tick();
+    EXPECT_EQ(Meshes().m_updates.load(), updates);
 }

@@ -1,0 +1,41 @@
+--!strict
+
+local Material = require("@engine/material")
+local Pipeline = require("@engine/pipeline")
+
+local material = Material.new("Textured")
+local twoSided = material:specBool("TwoSided", false)
+
+material:parameter("Tint", "Vector", "Material", { 1, 1, 1, 1 })
+material:parameter("Albedo", "Texture2D", "Material")
+material:parameter("UvScale", "Vector", "Instance", { 1, 1, 0, 0 })
+
+local function setCull(t, ctx)
+    t.rasterization = Pipeline.RasterizationState.fillBackCull()
+    if ctx:getBool(twoSided) then
+        t.rasterization.cullMode = "None"
+    end
+end
+
+material:technique("DepthVisibility", function(t, ctx)
+    t.renderTargetFormats = { "R32G32_UINT" }
+    setCull(t, ctx)
+    t.depthTargetFormat = "D32_SFLOAT"
+    t.amplificationShader = "Shaders/Passes/MeshPass/MeshCull.as.hlsl"
+    t.meshShader = "Shaders/Passes/Visibility/DepthVisibility.ms.hlsl"
+    t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
+    t.pixelShader = "Shaders/Passes/Visibility/DepthVisibility.ps.hlsl"
+    return true
+end)
+
+material:technique("SurfaceEvaluate", function(t, ctx)
+    t.computeShader = "Shaders/Materials/EvaluateTextured.cs.hlsl"
+    return true
+end)
+
+material:technique("DeferredShade", function(t, ctx)
+    t.computeShader = "Shaders/Materials/ShadeSimpleLit.cs.hlsl"
+    return true
+end)
+
+return material

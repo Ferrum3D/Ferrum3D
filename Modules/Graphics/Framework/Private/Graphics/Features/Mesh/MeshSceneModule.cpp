@@ -1,3 +1,4 @@
+#include <Core/Jobs/Jobs.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
@@ -22,6 +23,45 @@ namespace FE::Graphics
 {
     namespace
     {
+        template<class TFunction>
+        void RunMeshJobs(const uint32_t count, const TFunction& function, const uint32_t grainSize = 32)
+        {
+            FE_PROFILER_ZONE();
+
+            const uint32_t jobCount = Math::Min(8u, Math::CeilDivide(count, grainSize));
+            if (jobCount <= 1)
+            {
+                for (uint32_t i = 0; i < count; ++i)
+                    function(i);
+
+                return;
+            }
+
+            const uint32_t batchSize = Math::CeilDivide(count, jobCount);
+            const Rc<WaitGroup> completion = WaitGroup::Create();
+            for (uint32_t job = 1; job < jobCount; ++job)
+            {
+                completion->Add(1);
+                Jobs::DispatchForeground(
+                    [&, job] {
+                        FE_PROFILER_ZONE_NAMED("MeshWorkRange");
+
+                        const uint32_t end = Math::Min(count, (job + 1) * batchSize);
+                        ZoneTextF("Items %u..%u", job * batchSize, end);
+                        for (uint32_t i = job * batchSize; i < end; ++i)
+                            function(i);
+                    },
+                    completion.Get());
+            }
+
+            for (uint32_t i = 0; i < batchSize; ++i)
+                function(i);
+
+            completion->Signal();
+            completion->Wait();
+        }
+
+
         FE_COMPUTE_PIPELINE_SET(CountMeshSurfacePipeline, "Shaders/Passes/MeshPass/CountMeshSurfacePixels.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(ScatterMeshSurfacePipeline, "Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(MeshVisibilityDebugPipeline, "Shaders/Passes/MeshPass/VisibilityDebug.cs.hlsl");
@@ -79,12 +119,13 @@ namespace FE::Graphics
 
     MeshBatch* MeshSceneModule::CreateBatch(const MeshBatchDesc& desc)
     {
+        FE_PROFILER_ZONE();
+
         FE_Assert(desc.m_bounds.IsValid());
         auto* batch = Memory::DefaultNew<MeshBatch>();
         batch->m_parent = this;
         batch->m_tableRef = m_batchTable->AllocateRow();
         batch->m_drawTagMask = desc.m_drawTagMask;
-        batch->m_octreeEntry.m_bounds = desc.m_bounds;
         const uint32_t batchIndex = batch->m_tableRef.m_rowIndex;
         if (batchIndex >= m_batches.size())
         {
@@ -97,7 +138,7 @@ namespace FE::Graphics
         m_membershipDirty.set(batchIndex);
 
         batch->m_octreeEntry.m_userIndex = batchIndex;
-        m_octree.InsertOrUpdate(batch->m_octreeEntry);
+        m_octree.InsertOrUpdate(batch->m_octreeEntry, desc.m_bounds);
         return batch;
     }
 
@@ -128,6 +169,8 @@ namespace FE::Graphics
 
     MeshHandle MeshSceneModule::CreateInstance(const MeshInstanceDesc& desc)
     {
+        FE_PROFILER_ZONE();
+
         FE_Assert(desc.m_asset.IsValid() && desc.m_asset.IsReady());
         FE_Assert(desc.m_material.IsValid() && desc.m_material.IsReady());
         FE_Assert(desc.m_batch != nullptr && desc.m_batch->m_parent == this);
@@ -161,6 +204,8 @@ namespace FE::Graphics
 
     void MeshSceneModule::DestroyInstance(const MeshHandle instance)
     {
+        FE_PROFILER_ZONE();
+
         if (!instance.IsValid() || instance.m_value >= m_instances.size())
             return;
 
@@ -197,14 +242,36 @@ namespace FE::Graphics
 
     void MeshSceneModule::Update()
     {
+        FE_PROFILER_ZONE();
+
         // Live groups still poll asset generations and streamed LOD residency.
         Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
             UpdateGroup(m_meshGroups[groupIndex]);
         });
 
+        // Workers own distinct rows. Publish shared database/batch dirty bits only after extraction joins.
+        for (InstanceRecord& instance : m_instances)
+        {
+            if (!instance.m_transformDirty)
+                continue;
+
+            FE_Assert(instance.m_tableRef.m_rowIndex != kInvalidIndex);
+            (void)m_meshInstanceTable->WriteRow(instance.m_tableRef);
+            m_boundsDirty.set(instance.m_batch->m_tableRef.m_rowIndex);
+            instance.m_transformDirty = false;
+        }
+
+        m_dirtyBatches.clear();
         Bit::Traverse(m_boundsDirty.view(), [&](const uint32_t batchIndex) {
-            UpdateBatchBounds(m_batches[batchIndex]);
+            m_dirtyBatches.push_back(batchIndex);
         });
+        m_dirtyBatchBounds.resize(m_dirtyBatches.size());
+        RunMeshJobs(m_dirtyBatches.size(), [&](const uint32_t index) {
+            m_dirtyBatchBounds[index] = CalculateBatchBounds(m_batches[m_dirtyBatches[index]]);
+        });
+        for (uint32_t i = 0; i < m_dirtyBatches.size(); ++i)
+            m_octree.InsertOrUpdate(m_batches[m_dirtyBatches[i]]->m_octreeEntry, m_dirtyBatchBounds[i]);
+
         m_boundsDirty.reset();
 
         Bit::Traverse(m_membershipDirty.view(), [&](const uint32_t batchIndex) {
@@ -214,33 +281,33 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::UpdateBatchBounds(MeshBatch* batch)
+    Aabb MeshSceneModule::CalculateBatchBounds(const MeshBatch* batch) const
     {
-        Aabb bounds = batch->m_octreeEntry.m_bounds;
-        for (const auto instanceRef : batch->m_meshInstances)
+        Aabb bounds = Aabb::kInvalid;
+        for (const MeshHandle handle : batch->m_handles)
         {
-            const MeshInstanceTable::Row instance = m_meshInstanceTable->ReadRow(instanceRef);
-            const MeshGroup* group = m_meshGroups[instance.m_meshGroup.Get().m_rowIndex];
-            const IO::AssetRead<MeshAsset> mesh = group->m_asset.Read();
-            if (!mesh || mesh->m_submeshes.empty())
+            const InstanceRecord& instance = m_instances[handle.m_value];
+            const Aabb& localBounds = instance.m_group->m_localBounds;
+            if (!localBounds.IsValid())
                 continue;
 
-            const Aabb localBounds = mesh->m_submeshes[0].m_bounds;
             for (uint32_t corner = 0; corner < 8; ++corner)
             {
                 const Vector3 localPosition = Math::Blend(localBounds.min, localBounds.max, corner);
-                const Vector4 worldPosition = Vector4(localPosition, 1.0f) * instance.m_transform.Get();
+                const Vector4 worldPosition = Vector4(localPosition, 1.0f) * *instance.m_transform;
                 bounds = Math::Union(bounds, Vector3(worldPosition.x, worldPosition.y, worldPosition.z));
             }
         }
 
-        batch->m_octreeEntry.m_bounds = bounds;
-        m_octree.InsertOrUpdate(batch->m_octreeEntry);
+        // Empty batches still have a valid index entry; no dispatch is emitted for zero members.
+        return bounds.IsValid() ? bounds : Aabb::kZero;
     }
 
 
     void MeshSceneModule::UpdateBatchMembership(MeshBatch* batch)
     {
+        FE_PROFILER_ZONE();
+
         // Resize persistent membership only when instances are added, removed, or moved.
         const uint32_t count = batch->m_meshInstances.size();
         if (!m_memberTable->TryReallocateRows(batch->m_members, count))
@@ -262,13 +329,16 @@ namespace FE::Graphics
     {
         const auto reference = TranslateHandle(instance);
         FE_Assert(reference.m_rowIndex != kInvalidIndex);
-        m_meshInstanceTable->WriteRow(reference).m_transform.Get() = transform;
-        m_boundsDirty.set(m_instances[instance.m_value].m_batch->m_tableRef.m_rowIndex);
+        InstanceRecord& record = m_instances[instance.m_value];
+        *record.m_transform = transform;
+        record.m_transformDirty = true;
     }
 
 
     void MeshSceneModule::MoveInstance(const MeshHandle instance, MeshBatch* batch)
     {
+        FE_PROFILER_ZONE();
+
         FE_Assert(batch != nullptr && batch->m_parent == this);
 
         const auto reference = TranslateHandle(instance);
@@ -298,6 +368,8 @@ namespace FE::Graphics
 
     void MeshSceneModule::UpdateMaterial(const MeshHandle handle, const IO::AssetLease<MaterialInstanceAsset>& materialLease)
     {
+        FE_PROFILER_ZONE();
+
         FE_Assert(materialLease.IsValid() && materialLease.IsReady());
 
         const auto reference = TranslateHandle(handle);
@@ -343,6 +415,8 @@ namespace FE::Graphics
     MeshPipelineRegistry& MeshSceneModule::UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader,
                                                                   const Env::Name role)
     {
+        FE_PROFILER_ZONE();
+
         MeshPipelineRegistry* registry = nullptr;
         for (auto& candidate : m_registries)
         {
@@ -418,6 +492,7 @@ namespace FE::Graphics
         registry->m_instanceCapacity = 0;
         registry->m_workCapacity = 0;
         registry->m_commandCapacity = 0;
+
         festd::inline_vector<MeshPass::BucketLayout, 16> layouts;
         for (const MeshPipelineSlot& slot : registry->m_slots)
         {
@@ -450,6 +525,8 @@ namespace FE::Graphics
 
     void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader)
     {
+        FE_PROFILER_ZONE();
+
         MeshPass::MeshSceneData sceneData{};
         sceneData.m_instances = m_meshInstanceTable->GetDeviceAddress();
         sceneData.m_groups = m_meshGroupTable->GetDeviceAddress();
@@ -511,45 +588,54 @@ namespace FE::Graphics
 
     void MeshSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::RingUploader& uploader)
     {
+        FE_PROFILER_ZONE_NAMED("BuildCpuMeshWork");
+
         auto& blackboard = graph.GetBlackboard();
         const auto& view = blackboard.Get<RendererViewData>();
         auto& culled = blackboard.Add<CulledMeshView>();
         const Matrix4x4 viewProjection = view.m_view->GetViewProjectionMatrix();
 
-        RenderBatchCollector visibility(graph.GetAllocator(), viewProjection);
+        const Frustum frustum(viewProjection);
+        for (auto& dispatches : m_cullDispatches)
+            dispatches.clear();
 
-        festd::pmr::vector<MeshPass::CullDispatch> accepted{ graph.GetAllocator() };
-        const auto collectBatch = [&](const MeshBatch* batch) {
-            if (batch == nullptr)
-                return;
-
-            if (!visibility.IsVisible(batch->m_octreeEntry.m_bounds))
-                return;
-
-            for (uint32_t firstMember = 0; firstMember < batch->m_members.m_count;
-                 firstMember += MeshPass::kInstancesPerCullGroup)
+        m_octree.TraverseParallel(frustum, [&](const uint32_t taskIndex, const festd::span<OctreeEntry* const> entries) {
+            auto& dispatches = m_cullDispatches[taskIndex];
+            for (const OctreeEntry* entry : entries)
             {
-                accepted.push_back({ batch->m_tableRef.m_rowIndex, firstMember });
+                const MeshBatch& batch = *m_batches[entry->m_userIndex];
+                for (uint32_t first = 0; first < batch.m_members.m_count; first += MeshPass::kInstancesPerCullGroup)
+                    dispatches.push_back({ batch.m_tableRef.m_rowIndex, first });
             }
-        };
+        });
 
-        if (!Math::Overlaps(visibility.GetFrustumBounds(), m_octree.GetBounds()))
+        uint32_t offsets[Octree::kMaxTraversalTasks];
+        uint32_t count = 0;
+        for (uint32_t i = 0; i < Octree::kMaxTraversalTasks; ++i)
         {
-            for (const MeshBatch* batch : m_batches)
-                collectBatch(batch);
-        }
-        else
-        {
-            m_octree.Traverse(visibility.GetFrustumBounds(), [&](const Aabb&, const festd::span<OctreeEntry*> entries) {
-                for (const OctreeEntry* entry : entries)
-                    collectBatch(m_batches[entry->m_userIndex]);
-            });
+            offsets[i] = count;
+            count += m_cullDispatches[i].size();
         }
 
         MeshPass::MeshViewData data{};
         data.m_view = blackboard.Get<ViewData>();
         data.m_scene = graph.GetSRV(m_sceneData.Get());
-        GpuMeshWorkBuilder::CullView(graph, uploader, accepted, data, culled);
+        GpuMeshWorkBuilder::CullView(
+            graph,
+            uploader,
+            count,
+            [&](const festd::span<MeshPass::CullDispatch> target) {
+                // Prefix offsets give workers disjoint mapped ranges; only the render fiber touches the uploader/graph.
+                RunMeshJobs(
+                    Octree::kMaxTraversalTasks,
+                    [&](const uint32_t i) {
+                        if (!m_cullDispatches[i].empty())
+                            festd::copy(m_cullDispatches[i], target.data() + offsets[i]);
+                    },
+                    count >= 1024 ? 8 : Octree::kMaxTraversalTasks);
+            },
+            data,
+            culled);
 
         SurfaceEvaluationBatch batch;
         batch.m_objectData = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(graph.GetDevice(), "MeshSurfaceView", 1);
@@ -570,6 +656,8 @@ namespace FE::Graphics
 
     void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass)
     {
+        FE_PROFILER_ZONE();
+
         const auto& culled = graph.GetBlackboard().Get<CulledMeshView>();
         if (!culled.m_classification)
             return;
@@ -635,6 +723,8 @@ namespace FE::Graphics
 
         InstanceRecord& record = m_instances[handleIndex];
         record.m_tableRef = sourceIndex;
+        record.m_transform = &m_meshInstanceTable->WriteRow(sourceIndex).m_transform.Get();
+        record.m_transformDirty = false;
         record.m_batch = batch;
         record.m_group = group;
         record.m_parameters = parameters;
@@ -651,6 +741,8 @@ namespace FE::Graphics
     {
         InstanceRecord& record = m_instances[handle.m_value];
         record.m_tableRef.Invalidate();
+        record.m_transform = nullptr;
+        record.m_transformDirty = false;
         record.m_batch = nullptr;
         record.m_group = nullptr;
         record.m_parameters = {};
@@ -683,6 +775,8 @@ namespace FE::Graphics
             }
         }
 
+        FE_PROFILER_ZONE_NAMED("MeshSceneModule::CreateMeshGroup");
+
         auto* meshGroup = Memory::DefaultNew<MeshGroup>();
         meshGroup->m_asset = meshAsset;
         meshGroup->m_material = material;
@@ -704,6 +798,8 @@ namespace FE::Graphics
 
     void MeshSceneModule::UpdateGroup(MeshGroup* group)
     {
+        FE_PROFILER_ZONE();
+
         const IO::AssetRead<MeshAsset> mesh = group->m_asset.Read();
         const IO::AssetRead<MaterialInstanceAsset> material = group->m_material.Read();
         if (!mesh || !material || !material->m_runtime || !mesh->m_buffer)
@@ -741,6 +837,10 @@ namespace FE::Graphics
         if (meshChanged)
         {
             FE_Assert(!mesh->m_submeshes.empty());
+
+            group->m_localBounds = Aabb::kInvalid;
+            for (const MeshSubmeshAssetInfo& meshSubmesh : mesh->m_submeshes)
+                group->m_localBounds = Math::Union(group->m_localBounds, meshSubmesh.m_bounds);
 
             const MeshSubmeshAssetInfo& submesh = mesh->m_submeshes[0];
             tableRow.m_bounds.Get().m_min = PackedVector3F(submesh.m_bounds.min);
@@ -849,6 +949,8 @@ namespace FE::Graphics
 
     void MeshSceneModule::DestroyGroup(MeshGroup* group)
     {
+        FE_PROFILER_ZONE();
+
         FE_Assert(group->m_instanceCount == 0);
         ++m_revision;
         m_meshGroups[group->m_tableRef.m_rowIndex] = nullptr;

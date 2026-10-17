@@ -359,7 +359,17 @@ TEST_F(CollectionFixture, LifecycleCanQueueMoreSpawnsWithoutInvalidatingCurrentO
     ASSERT_EQ(SpawnFromLoad::s_operations.size(), 16);
     for (const auto token : SpawnFromLoad::s_operations)
         EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kPending);
-    Tick();
+    for (uint32_t frame = 0; frame < 8; ++frame)
+    {
+        Tick();
+        bool ready = true;
+        for (const auto token : SpawnFromLoad::s_operations)
+            ready &= m_world.GetMaterializationStatus(token).m_state == MaterializationState::kReady;
+
+        if (ready)
+            break;
+    }
+
     for (const auto token : SpawnFromLoad::s_operations)
         EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kReady);
     EXPECT_EQ(m_world.GetEntityCount(), 50);
@@ -431,4 +441,94 @@ TEST_F(CollectionFixture, FailedReferenceDeserializationDoesNotRemap)
     EntityReference restored;
     EXPECT_NE(reader.Load(restored), Serialization::ResultCode::kSuccess);
     EXPECT_EQ(remaps, 0);
+}
+
+
+TEST_F(CollectionFixture, RuntimeMaterializationIsBoundedAcrossRepeatedCommitsAndCanBeCanceled)
+{
+    EntityCollection collection;
+    for (uint32_t i = 0; i < 100; ++i)
+    {
+        EntityRecord record;
+        record.m_uuid = Uuid::Random();
+        ASSERT_TRUE(record.AddComponent(Number{ static_cast<int32_t>(i) }));
+        collection.m_entities.push_back(std::move(record));
+    }
+
+    const auto token = m_world.LoadEntities(m_registry, collection);
+    m_world.BeginFrame();
+    m_world.BeginUpdate();
+    EXPECT_EQ(m_world.GetEntityCount(), 32);
+    ASSERT_TRUE(m_world.Commit());
+    EXPECT_EQ(m_world.GetEntityCount(), 32);
+    EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kPending);
+    ASSERT_TRUE(m_world.EndUpdate());
+    Tick();
+    EXPECT_EQ(m_world.GetEntityCount(), 32);
+    m_world.BeginFrame();
+    Tick();
+    EXPECT_EQ(m_world.GetEntityCount(), 64);
+    m_world.CancelMaterialization(token);
+    EXPECT_EQ(m_world.GetEntityCount(), 0);
+    EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kCanceled);
+    Tick();
+    EXPECT_EQ(m_world.GetEntityCount(), 0);
+}
+
+
+TEST_F(CollectionFixture, LargeSubtreeEventuallyPublishesAtomically)
+{
+    EntityCollection collection;
+    const Uuid rootId = Uuid::Random();
+    for (uint32_t i = 0; i < 80; ++i)
+    {
+        EntityRecord record;
+        record.m_uuid = i == 0 ? rootId : Uuid::Random();
+        record.m_parentUuid = i == 0 ? Uuid::kNull : rootId;
+        ASSERT_TRUE(record.AddComponent(Number{ static_cast<int32_t>(i) }));
+        collection.m_entities.push_back(std::move(record));
+    }
+
+    const auto token = m_world.SpawnCollection(m_registry, collection);
+    uint32_t previousCount = 0;
+    for (uint32_t frame = 0; frame < 24; ++frame)
+    {
+        Tick();
+        EXPECT_LE(m_world.GetEntityCount() - previousCount, 32);
+        previousCount = m_world.GetEntityCount();
+        const bool ready = m_world.GetMaterializationStatus(token).m_state == MaterializationState::kReady;
+        uint32_t active = 0;
+        for (const auto& binding : m_world.GetMaterializationBindings(token))
+            active += m_world.Find(binding.m_entityUuid, true) != nullptr;
+
+        EXPECT_EQ(active, ready ? 80u : 0u);
+        if (ready)
+            return;
+    }
+
+    FAIL() << "Budgeted subtree never finished";
+}
+
+
+TEST_F(CollectionFixture, DestroyingPartiallyConstructedMembershipFailsCleanly)
+{
+    EntityCollection collection;
+    for (uint32_t i = 0; i < 64; ++i)
+    {
+        EntityRecord record;
+        record.m_uuid = Uuid::Random();
+        ASSERT_TRUE(record.AddComponent(Number{ static_cast<int32_t>(i) }));
+        collection.m_entities.push_back(std::move(record));
+    }
+
+    const auto token = m_world.LoadEntities(m_registry, collection);
+    Tick();
+    ASSERT_EQ(m_world.GetEntityCount(), 32);
+    const auto uuid = m_world.GetMaterializationBindings(token).front().m_entityUuid;
+    EntityCommandList commands(m_world);
+    commands.Destroy(m_world.Find(uuid, false)->GetID());
+    m_world.Submit(std::move(commands));
+    Tick();
+    EXPECT_EQ(m_world.GetMaterializationStatus(token).m_state, MaterializationState::kFailed);
+    EXPECT_EQ(m_world.GetEntityCount(), 0);
 }

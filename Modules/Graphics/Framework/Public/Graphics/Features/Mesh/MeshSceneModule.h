@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Math/Octree.h>
 #include <Core/Math/Sphere.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
@@ -7,7 +8,6 @@
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Scene/ComputePassRegistry.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
-#include <Graphics/Scene/Octree.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Tables/Forwards.h>
 #include <Graphics/Tables/MeshBatchTable.h>
@@ -52,6 +52,7 @@ namespace FE::Graphics
 
     struct MeshGroup final
     {
+        Aabb m_localBounds = Aabb::kInvalid;
         uint32_t m_instanceCount = 0;
         DB::Ref<MeshGroupTable> m_tableRef = DB::Ref<MeshGroupTable>::CreateInvalid();
         DB::Ref<MaterialInstanceTable> m_materialRef = DB::Ref<MaterialInstanceTable>::CreateInvalid();
@@ -98,6 +99,7 @@ namespace FE::Graphics
 
         void Update() override;
 
+        //! Concurrent calls require distinct instances. Join callers before structural changes or Update().
         void UpdateTransform(MeshHandle instance, const Matrix4x4& transform);
         void MoveInstance(MeshHandle instance, MeshBatch* batch);
         void UpdateMaterial(MeshHandle handle, const IO::AssetLease<MaterialInstanceAsset>& materialLease);
@@ -151,6 +153,8 @@ namespace FE::Graphics
 
         struct InstanceRecord final
         {
+            Matrix4x4* m_transform = nullptr;
+            bool m_transformDirty = false;
             DB::Ref<MeshInstanceTable> m_tableRef = DB::Ref<MeshInstanceTable>::CreateInvalid();
             MeshBatch* m_batch = nullptr;
             MeshGroup* m_group = nullptr;
@@ -168,7 +172,7 @@ namespace FE::Graphics
         void ReleaseGroupPipelines(MeshGroup* group);
         void AddGeometryDependencies(Core::FrameGraph& graph, Core::Buffer* buffer) const;
         MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
-        void UpdateBatchBounds(MeshBatch* batch);
+        [[nodiscard]] Aabb CalculateBatchBounds(const MeshBatch* batch) const;
         void UpdateBatchMembership(MeshBatch* batch);
 
         MeshGroup* FindOrCreateMeshGroup(const IO::AssetLease<MeshAsset>& meshAsset,
@@ -184,6 +188,9 @@ namespace FE::Graphics
         festd::bit_vector m_activeMeshGroups;
         festd::bit_vector m_boundsDirty;
         festd::bit_vector m_membershipDirty;
+        festd::vector<uint32_t> m_dirtyBatches;
+        festd::vector<Aabb> m_dirtyBatchBounds;
+        festd::vector<MeshPass::CullDispatch> m_cullDispatches[Octree::kMaxTraversalTasks];
 
         Rc<MeshLodInfoTable> m_meshLodInfoTable;
         Rc<MeshGroupTable> m_meshGroupTable;

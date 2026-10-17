@@ -151,6 +151,7 @@ namespace FE::GameFramework
                 break;
 
             FrameMark;
+            GetWorld().BeginFrame();
             IO::AssetManager::Tick();
             if (!UpdateWorldLoading())
                 return 1;

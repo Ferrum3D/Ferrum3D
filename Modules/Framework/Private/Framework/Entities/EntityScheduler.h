@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Threading/FiberMutex.h>
 #include <Framework/Entities/EntityWorld.h>
 
 namespace FE::Framework
@@ -108,7 +109,17 @@ namespace FE::Framework
             mutable uint32_t m_changed = 0;
         };
 
+        struct TraversalWork
+        {
+            std::atomic<uint32_t> m_callbacks = 0;
+            uint32_t m_jobs = 0;
+            uint32_t m_treeBatches = 0;
+        };
+
         void PrepareTraversal(const Traversal& traversal, festd::vector<PreparedChunk>& chunks);
+        void PrepareCascadeOrder();
+        void ExecuteRowBatches(const Traversal& traversal, festd::span<PreparedChunk> chunks, TraversalWork& work);
+        void ExecuteCascadeBatches(const Traversal& traversal, festd::span<PreparedChunk> chunks, TraversalWork& work);
         bool InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk, festd::span<void*> values,
                           bool& changed);
         void ExecuteTraversal(uint32_t index);
@@ -121,6 +132,11 @@ namespace FE::Framework
         festd::vector<ScheduledPhase> m_phases;
         festd::vector<ScheduleConflict> m_conflicts;
         ScheduleDiagnostics m_diagnostics;
+        Threading::FiberMutex m_cascadeOrderLock;
+        festd::vector<Entity*> m_cascadeOrder;
+        festd::vector<uint32_t> m_cascadeLevels;
+        uint64_t m_cascadeHierarchyRevision = UINT64_MAX;
+        uint64_t m_cascadeStructureRevision = UINT64_MAX;
         bool m_validated = false;
     };
 } // namespace FE::Framework

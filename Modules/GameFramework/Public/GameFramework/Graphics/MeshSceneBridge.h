@@ -20,8 +20,10 @@ namespace FE::GameFramework
         virtual Framework::LifecycleResult Create(MeshComponent& component);
         //! @brief Remove every instance and its batch before dependency release.
         virtual void Destroy(MeshComponent& component);
-        //! @brief Submit changed transform/material/model state; retains no component addresses.
-        virtual void Update(MeshComponent& component, const Matrix4x4& world);
+        //! @brief Update model/material membership on the main thread before transform extraction.
+        virtual void UpdateModel(MeshComponent& component);
+        //! @brief Submit transforms concurrently for distinct components, with stable scene membership.
+        virtual void UpdateTransform(const MeshComponent& component, const Matrix4x4& world);
 
     private:
         Graphics::MeshSceneModule* m_module;

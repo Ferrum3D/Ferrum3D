@@ -49,7 +49,7 @@ namespace FE::Framework
         uint32_t m_jobs = 0;
         //! @brief Number of matched chunks processed.
         uint32_t m_chunks = 0;
-        //! @brief Number of dispatched hierarchy-tree batches.
+        //! @brief Number of dispatched hierarchy-level batches.
         uint32_t m_treeBatches = 0;
         //! @brief Number of invoked entity callbacks.
         uint32_t m_callbacks = 0;
@@ -254,6 +254,9 @@ namespace FE::Framework
         //! @brief Release callback captures and close the epoch; unfinished recorded work is a programmer error.
         bool EndUpdate();
 
+        //! @brief Reset materialization/lifecycle quotas once per rendered frame, shared by all its world updates.
+        //! Standalone worlds that omit this call receive a fresh quota per BeginUpdate.
+        void BeginFrame();
         [[nodiscard]] uint64_t GetEpoch() const;
         //! @brief Return a synchronized copy of counters for the most recent update plan.
         [[nodiscard]] ScheduleDiagnostics GetScheduleDiagnostics() const;

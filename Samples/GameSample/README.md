@@ -12,7 +12,9 @@ Build the `GameSample` and `FerrumCli` executables. GameSample owns its asset ca
 
 - `Assets/source/Helmet/`: model, textures, and material source files, copied from Renderer.
 - `Assets/Helmet/`: the corresponding authored `.asset` definitions.
-- `Assets/World.asset`: the source-less world definition with 100 helmets and one camera.
+- `Assets/World.asset`: the source-less world definition with 500 meshes and one camera.
+- `Assets/source/`: bunny model, texture and material scripts copied from Renderer.
+- `Assets/*.asset`: bunny model, texture and three material variants.
 - `Assets/Input/`: source-less movement, elevation, look actions and the world input mapping context.
 - `Assets/artifacts/`: cooked data and metadata produced by FerrumCli.
 
@@ -32,18 +34,28 @@ $assets = "Samples/GameSample/Assets"
 & $cli build --asset "$assets/Input/Elevate.asset" --output $assets
 & $cli build --asset "$assets/Input/Look.asset" --output $assets
 & $cli build --asset "$assets/Input/CameraMappings.asset" --output $assets
+& $cli build --asset "$assets/StanfordBunny.asset" --source-root "$assets/source" --output $assets
+& $cli build --asset "$assets/Textured.asset" --source-root "$assets/source" --output $assets
+& $cli build --asset "$assets/texture.asset" --source-root "$assets/source" --output $assets
+& $cli build --asset "$assets/BunnyVariants.asset" --source-root "$assets/source" --output $assets
+& $cli build --asset "$assets/BunnyMaterial.asset" --output $assets
+& $cli build --asset "$assets/BunnyWarm.asset" --output $assets
+& $cli build --asset "$assets/BunnyCool.asset" --output $assets
+& $cli import --asset-type AB1B29E1-D167-43AA-8718-B3F8693FE184 --output "$assets/World.asset"
 & $cli build --asset "$assets/World.asset" --output $assets
 cmake-build/windows-debug-msvc/Debug/GameSample.exe
 ```
 
 CMake builds executables only. The sample loads exclusively from its own `Assets` directory. `World.asset` is a normal source-less serialized asset with reflected component values. To create a new world asset, use `ferrum import --asset-type AB1B29E1-D167-43AA-8718-B3F8693FE184 --output <PATH>` and edit its authored values; reimport preserves those values and refreshes nested asset dependencies.
 
-The disk world contains 100 helmets (TransformComponent and MeshComponent) in a 10 by 10 grid with three-unit spacing, plus one camera (TransformComponent, CameraComponent and CameraMovementComponent). The movement component references its mapping table and three action assets through authored `IO::Link` fields. GameFramework::Application initializes the renderer and asset streamers, then constructs the world's reflected, default-constructible services and systems. WorldGraphicsSceneService creates the scene, and the camera creates its View during component initialization. It does not construct entities or supply model/camera settings at runtime.
+The disk world contains 500 meshes (333 helmets and 167 bunnies, each with TransformComponent and MeshComponent) in five stacked 10 by 10 grids with three-unit spacing vertically and horizontally, plus one camera (TransformComponent, CameraComponent and CameraMovementComponent). The movement component references its mapping table and three action assets through authored `IO::Link` fields. GameFramework::Application initializes the renderer and asset streamers, then constructs the world's reflected, default-constructible services and systems. WorldGraphicsSceneService creates the scene, and the camera creates its View during component initialization. It does not construct entities or supply model/camera settings at runtime.
 
 Move with WASD or arrows, elevate with E/Q, and hold RMB while moving the mouse to rotate. Movement uses elapsed world time; mouse rotation uses pixel deltas. The world registers WorldTimeService before WorldInputService and CameraMovementSystem before transform propagation. Cameras sharing a mapping table use one stack resolution per frame. Change action links or key/mouse bindings in the authored assets and rebuild them to customize controls.
 
-The shared application ticks assets, commits entity changes, evaluates transforms, extracts changed camera/mesh state on the main thread, then renders outside entity scheduling after the world update completes. Mesh and camera components own scene membership through non-serialized runtime fields; world teardown removes membership before releasing residency. TestRotationSystem rotates every mesh entity around its local parent Y axis at one radian per second before transform propagation. No effects are included.
+The shared application ticks assets, commits entity changes, evaluates transforms, extracts camera and mesh membership on the main thread, extracts mesh transforms in parallel, then renders outside entity scheduling after the world update completes. Mesh and camera components own scene membership through non-serialized runtime fields; world teardown removes membership before releasing residency. TestRotationSystem rotates every mesh entity around its local parent Y axis at one radian per second before transform propagation. No effects are included.
 
 GameSample only supplies the world/catalog settings and selects normal or smoke execution. `GameSample.exe --smoke` renders eight frames after world readiness and exits. World loading advances during normal frames; until a camera is ready, the renderer presents a cleared background.
+
+Application opens a shared materialization budget once per rendered frame: 32 construction/loading entity steps and 32 entities admitted to initialization/activation. Large worlds therefore become ready across several frames. Repeated commits or fixed updates in that frame share the quota. Octree culling combines small subtrees into batches targeting 64 entries; the profiler zone text reports the number of ranges and entries in each batch.
 
 Input contexts are authored in the input service descriptor in `World.asset`. Cameras reference movement, elevation, and look action assets; RMB look sensitivity is authored in the mouse-delta binding.

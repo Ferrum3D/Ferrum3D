@@ -3,6 +3,7 @@
 #include <Core/Memory/RingBufferAllocator.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Fence.h>
+#include <festd/fixed_function.h>
 #include <festd/ring_buffer.h>
 
 namespace FE::Graphics::Core
@@ -22,6 +23,12 @@ namespace FE::Graphics::Core
 
         [[nodiscard]] bool UploadBytes(FrameGraph& graph, BufferView destination, const void* source, uint32_t byteSize,
                                        Options options = Options::kNone);
+
+        //! Fill a single reserved upload range, optionally using workers. The writer must join before returning.
+        //! Reservation, flush and graph registration remain on the calling fiber.
+        [[nodiscard]] bool UploadGenerated(FrameGraph& graph, BufferView destination, uint32_t byteSize,
+                                           const festd::fixed_function<48, void(void*)>& writer,
+                                           Options options = Options::kNone);
 
         template<class T>
             requires(std::is_trivially_copyable_v<T>)

@@ -427,6 +427,8 @@ namespace FE::Framework
 
     void EntityScheduler::PrepareTraversal(const Traversal& traversal, festd::vector<PreparedChunk>& chunks)
     {
+        FE_PROFILER_ZONE();
+
         // Layout matching does not access versions or mutable component values.
         for (auto* chunk : m_world.m_storage.m_chunks)
         {
@@ -554,6 +556,202 @@ namespace FE::Framework
     }
 
 
+    void EntityScheduler::PrepareCascadeOrder()
+    {
+        FE_PROFILER_ZONE();
+
+        std::lock_guard guard(m_cascadeOrderLock);
+        const auto& storage = m_world.m_storage;
+        if (m_cascadeHierarchyRevision == storage.m_hierarchyRevision
+            && m_cascadeStructureRevision == storage.m_structureRevision)
+            return;
+
+        m_cascadeOrder.clear();
+        m_cascadeLevels.clear();
+        m_cascadeLevels.push_back(0);
+        for (const auto& slot : storage.m_slots)
+        {
+            if (slot.m_entity && !slot.m_entity->m_parent)
+                m_cascadeOrder.push_back(slot.m_entity);
+        }
+
+        uint32_t first = 0;
+        uint32_t end = m_cascadeOrder.size();
+        while (first < end)
+        {
+            m_cascadeLevels.push_back(end);
+            for (uint32_t i = first; i < end; ++i)
+            {
+                for (Entity* child = m_cascadeOrder[i]->m_firstChild; child; child = child->m_nextSibling)
+                    m_cascadeOrder.push_back(child);
+            }
+
+            first = end;
+            end = m_cascadeOrder.size();
+        }
+
+        m_cascadeHierarchyRevision = storage.m_hierarchyRevision;
+        m_cascadeStructureRevision = storage.m_structureRevision;
+    }
+
+
+    void EntityScheduler::ExecuteRowBatches(const Traversal& traversal, const festd::span<PreparedChunk> chunks,
+                                            TraversalWork& work)
+    {
+        constexpr uint32_t kRowsPerBatch = 32;
+        const bool parallel = traversal.m_policy == ExecutionPolicy::kParallel;
+        const festd::ascii_view systemName = traversal.m_system ? traversal.m_system->RTTI_GetDynamicType().m_name : "Query";
+        uint32_t batchCount = 0;
+        for (const auto& chunk : chunks)
+            batchCount += Math::CeilDivide(chunk.m_chunk->m_count, kRowsPerBatch);
+
+        const Rc<WaitGroup> completion = parallel && batchCount > 1 ? WaitGroup::Create() : nullptr;
+        for (auto& chunk : chunks)
+        {
+            const uint32_t rowCount = chunk.m_chunk->m_count;
+            const uint32_t grain = parallel ? kRowsPerBatch : Math::Max(1u, rowCount);
+            for (uint32_t first = 0; first < rowCount; first += grain)
+            {
+                const uint32_t end = Math::Min(rowCount, first + grain);
+                auto visitBatch = [&, entry = &chunk, first, end] {
+                    FE_PROFILER_ZONE_NAMED("QueryRows");
+                    ZoneTextF("%.*s | rows %u..%u", systemName.length(), systemName.data(), first, end);
+
+                    festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
+                    uint32_t count = 0;
+                    bool changed = false;
+                    for (uint32_t row = first; row < end; ++row)
+                    {
+                        if (InvokeEntity(traversal, *entry->m_chunk->m_entities[row], *entry, values, changed))
+                            ++count;
+                    }
+
+                    if (changed)
+                        std::atomic_ref(entry->m_changed).store(1, std::memory_order_relaxed);
+
+                    work.m_callbacks.fetch_add(count, std::memory_order_relaxed);
+                };
+                if (completion)
+                {
+                    completion->Add(1);
+                    ++work.m_jobs;
+                    Jobs::DispatchForeground(std::move(visitBatch), completion.Get());
+                }
+                else
+                {
+                    visitBatch();
+                }
+            }
+        }
+
+        if (completion)
+        {
+            FE_PROFILER_ZONE_NAMED("JoinQueryJobs");
+            completion->Signal();
+            completion->Wait();
+        }
+    }
+
+
+    void EntityScheduler::ExecuteCascadeBatches(const Traversal& traversal, const festd::span<PreparedChunk> chunks,
+                                                TraversalWork& work)
+    {
+        if (chunks.empty())
+            return;
+
+        PrepareCascadeOrder();
+
+        festd::unordered_dense_map<const ArchetypeChunk*, uint32_t> chunkLookup;
+        for (uint32_t i = 0; i < chunks.size(); ++i)
+            chunkLookup.emplace(chunks[i].m_chunk, i);
+
+        const auto visit = [&](Entity& entity, const festd::span<void*> values) {
+            const auto found = chunkLookup.find(entity.m_chunk);
+            if (found == chunkLookup.end())
+                return 0u;
+
+            PreparedChunk& chunk = chunks[found->second];
+            bool changed = false;
+            const bool invoked = InvokeEntity(traversal, entity, chunk, values, changed);
+            if (changed)
+                std::atomic_ref(chunk.m_changed).store(1, std::memory_order_relaxed);
+
+            return uint32_t(invoked);
+        };
+        if (traversal.m_policy != ExecutionPolicy::kParallel)
+        {
+            festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
+            const uint32_t rootCount = m_cascadeLevels.size() > 1 ? m_cascadeLevels[1] : 0;
+            uint32_t count = 0;
+            for (uint32_t i = 0; i < rootCount; ++i)
+            {
+                Entity* root = m_cascadeOrder[i];
+                Entity* entity = root;
+                while (entity)
+                {
+                    count += visit(*entity, values);
+                    if (entity->m_firstChild)
+                    {
+                        entity = entity->m_firstChild;
+                        continue;
+                    }
+
+                    while (entity != root && !entity->m_nextSibling)
+                        entity = entity->m_parent;
+
+                    entity = entity == root ? nullptr : entity->m_nextSibling.Get();
+                }
+            }
+
+            work.m_callbacks += count;
+            return;
+        }
+
+        constexpr uint32_t kEntitiesPerBatch = 16;
+        const festd::ascii_view systemName = traversal.m_system ? traversal.m_system->RTTI_GetDynamicType().m_name : "Query";
+        for (uint32_t level = 0; level + 1 < m_cascadeLevels.size(); ++level)
+        {
+            const uint32_t levelEnd = m_cascadeLevels[level + 1];
+            const uint32_t levelBegin = m_cascadeLevels[level];
+            const bool subdivide = levelEnd - levelBegin > kEntitiesPerBatch;
+            const Rc<WaitGroup> completion = subdivide ? WaitGroup::Create() : nullptr;
+            for (uint32_t first = levelBegin; first < levelEnd; first += kEntitiesPerBatch)
+            {
+                const uint32_t end = Math::Min(levelEnd, first + kEntitiesPerBatch);
+                auto visitBatch = [&, first, end, level] {
+                    FE_PROFILER_ZONE_NAMED("CascadeRows");
+                    ZoneTextF("%.*s | level %u | entities %u..%u", systemName.length(), systemName.data(), level, first, end);
+
+                    festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
+                    uint32_t count = 0;
+                    for (uint32_t i = first; i < end; ++i)
+                        count += visit(*m_cascadeOrder[i], values);
+
+                    work.m_callbacks.fetch_add(count, std::memory_order_relaxed);
+                };
+                if (completion)
+                {
+                    completion->Add(1);
+                    ++work.m_jobs;
+                    ++work.m_treeBatches;
+                    Jobs::DispatchForeground(std::move(visitBatch), completion.Get());
+                }
+                else
+                {
+                    visitBatch();
+                }
+            }
+
+            if (completion)
+            {
+                FE_PROFILER_ZONE_NAMED("JoinCascadeLevel");
+                completion->Signal();
+                completion->Wait();
+            }
+        }
+    }
+
+
     void EntityScheduler::ExecuteTraversal(const uint32_t index)
     {
         auto& traversal = m_traversals[index];
@@ -578,119 +776,11 @@ namespace FE::Framework
         festd::vector<PreparedChunk> chunks;
         PrepareTraversal(traversal, chunks);
 
-        // Ordinary row loops already know their mapping; hierarchy walks need one lookup per visited entity.
-        festd::unordered_dense_map<const ArchetypeChunk*, uint32_t> chunkLookup;
+        TraversalWork work;
         if (traversal.m_cascade)
-        {
-            for (uint32_t i = 0; i < chunks.size(); ++i)
-                chunkLookup.emplace(chunks[i].m_chunk, i);
-        }
-
-        std::atomic<uint32_t> callbacks = 0;
-        auto visitTree = [&](Entity* root, festd::span<void*> values) {
-            uint32_t count = 0;
-            Entity* entity = root;
-            while (entity)
-            {
-                const auto found = chunkLookup.find(entity->m_chunk);
-                bool changed = false;
-                if (found != chunkLookup.end() && InvokeEntity(traversal, *entity, chunks[found->second], values, changed))
-                    ++count;
-
-                if (changed)
-                    std::atomic_ref(chunks[found->second].m_changed).store(1, std::memory_order_relaxed);
-
-                if (entity->m_firstChild)
-                {
-                    entity = entity->m_firstChild;
-                    continue;
-                }
-
-                while (entity != root && !entity->m_nextSibling)
-                    entity = entity->m_parent;
-
-                entity = entity == root ? nullptr : entity->m_nextSibling.Get();
-            }
-
-            return count;
-        };
-
-        uint32_t jobs = 0;
-        uint32_t batches = 0;
-        Rc<WaitGroup> work;
-        const bool parallel = traversal.m_policy == ExecutionPolicy::kParallel;
-        if (parallel && !chunks.empty())
-            work = WaitGroup::Create();
-
-        festd::vector<Entity*> roots;
-        if (traversal.m_cascade && !chunks.empty())
-        {
-            for (const auto& slot : m_world.m_storage.m_slots)
-            {
-                if (slot.m_entity && !slot.m_entity->m_parent)
-                    roots.push_back(slot.m_entity);
-            }
-
-            constexpr uint32_t kTreesPerBatch = 16;
-            for (uint32_t begin = 0; begin < roots.size(); begin += kTreesPerBatch)
-            {
-                const uint32_t end = Math::Min(begin + kTreesPerBatch, roots.size());
-                auto visitBatch = [&, begin, end] {
-                    festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
-                    uint32_t count = 0;
-                    for (uint32_t i = begin; i < end; ++i)
-                        count += visitTree(roots[i], values);
-
-                    callbacks.fetch_add(count, std::memory_order_relaxed);
-                };
-                if (!parallel)
-                {
-                    visitBatch();
-                }
-                else
-                {
-                    work->Add(1);
-                    ++jobs;
-                    ++batches;
-                    Jobs::DispatchForeground(std::move(visitBatch), work.Get());
-                }
-            }
-        }
+            ExecuteCascadeBatches(traversal, chunks, work);
         else
-        {
-            for (const auto& chunk : chunks)
-            {
-                auto visitChunk = [&, entry = &chunk] {
-                    festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
-                    uint32_t count = 0;
-                    bool changed = false;
-                    for (uint32_t row = 0; row < entry->m_chunk->m_count; ++row)
-                    {
-                        if (InvokeEntity(traversal, *entry->m_chunk->m_entities[row], *entry, values, changed))
-                            ++count;
-                    }
-
-                    if (changed)
-                        entry->m_changed = 1;
-                    callbacks.fetch_add(count, std::memory_order_relaxed);
-                };
-                if (!parallel)
-                {
-                    visitChunk();
-                }
-                else
-                {
-                    work->Add(1);
-                    ++jobs;
-                    Jobs::DispatchForeground(std::move(visitChunk), work.Get());
-                }
-            }
-        }
-        if (work)
-        {
-            work->Signal();
-            work->Wait();
-        }
+            ExecuteRowBatches(traversal, chunks, work);
 
         {
             std::lock_guard guard(m_world.m_storage.m_versionLock);
@@ -725,9 +815,9 @@ namespace FE::Framework
                 traversal.m_cursor->m_structureRevision = m_world.m_storage.m_structureRevision;
             }
             m_diagnostics.m_chunks += chunks.size();
-            m_diagnostics.m_jobs += jobs;
-            m_diagnostics.m_treeBatches += batches;
-            m_diagnostics.m_callbacks += callbacks.load();
+            m_diagnostics.m_jobs += work.m_jobs;
+            m_diagnostics.m_treeBatches += work.m_treeBatches;
+            m_diagnostics.m_callbacks += work.m_callbacks.load();
         }
 
         traversal.m_executed = true;

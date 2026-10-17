@@ -45,6 +45,12 @@ namespace FE::Framework
         festd::ascii_view m_error;
         uint16_t m_token;
         bool m_started = false;
+        uint64_t m_materializationBudgetEpoch = UINT64_MAX;
+        uint64_t m_lifecycleBudgetEpoch = UINT64_MAX;
+        uint32_t m_materializationsRemaining = 32;
+        uint32_t m_lifecycleRemaining = 32;
+        uint64_t m_materializationFrame = 0;
+        bool m_explicitMaterializationFrames = false;
 
         Impl(EntityWorld& owner, EntityAssetServices* assets);
         ~Impl();
@@ -66,7 +72,7 @@ namespace FE::Framework
         bool CommitImpl(bool bootstrap);
         void AdvanceMaterializations(bool bootstrap);
 
-        bool Materialize(uint32_t operationIndex);
+        bool Materialize(uint32_t operationIndex, uint32_t* budget = nullptr);
         bool LoadDefinition(const EntityWorldAsset& definition, festd::vector<MaterializationToken>* operations);
         bool CaptureSnapshot(EntityWorldSnapshotAsset& snapshot);
         bool RestoreSnapshot(const EntityWorldSnapshotAsset& snapshot, festd::vector<MaterializationToken>* operations);
@@ -76,13 +82,14 @@ namespace FE::Framework
         Archetype* GetArchetype(festd::span<const EntityComponentInfo* const> columns);
         void Migrate(Entity& entity, Archetype& archetype, festd::span<void* const> values);
         void AdvanceLifecycle();
+        bool AdmitLifecycle(Entity& entity);
         void PublishSubtree(Entity& entity);
         void UnloadSubtree(Entity& entity);
         void MarkUnready(Entity& entity);
         void UnwindSubtree(Entity& entity);
 
         bool PrepareSubtree(Entity& entity);
-        bool ActivateSubtree(Entity& entity);
+        LifecycleResult ActivateSubtree(Entity& entity);
         void DeactivateSubtree(Entity& entity, bool keepAuthoredValues = true);
         void DeactivateEntity(Entity& entity, bool keepAuthoredValues);
         void TeardownComponent(Entity& entity, uint32_t column, bool destroy);

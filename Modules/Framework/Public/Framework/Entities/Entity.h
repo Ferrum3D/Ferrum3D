@@ -96,6 +96,8 @@ namespace FE::Framework
         bool m_wantsActive = true;
         bool m_failed = false;
         bool m_prepared = false;
+        bool m_activationPrepared = false;
+        uint64_t m_lifecycleEpoch = UINT64_MAX;
 
         Entity(EntityRegistry& registry, EntityID id, Uuid uuid, Env::Name name);
         ~Entity();

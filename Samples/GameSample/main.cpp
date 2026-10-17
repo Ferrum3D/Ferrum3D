@@ -31,7 +31,14 @@ int main(const int argc, const char** argv)
         {
             exitCode = application->Run(smoke ? 8 : 0);
             if (smoke && exitCode == 0)
-                Logger::LogInfo("GameSample rendered its disk world successfully");
+            {
+                const auto diagnostics = application->GetWorld().GetScheduleDiagnostics();
+                Logger::LogInfo(
+                    "GameSample rendered its disk world successfully: {} scheduler jobs, {} cascade batches, {} callbacks",
+                    diagnostics.m_jobs,
+                    diagnostics.m_treeBatches,
+                    diagnostics.m_callbacks);
+            }
         }
         else
         {

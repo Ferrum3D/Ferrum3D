@@ -111,7 +111,7 @@ namespace FE::Framework
     {
         //! @brief Process one traversal sequentially; exclude other work from the same system.
         kSequential,
-        //! @brief Process chunks, or parent-before-child hierarchy-tree batches for cascades, concurrently.
+        //! @brief Process row ranges concurrently; cascades join each hierarchy level before processing its children.
         kParallel,
         //! @brief Process one traversal sequentially on the main thread; exclude other work from the same system.
         kMainThread

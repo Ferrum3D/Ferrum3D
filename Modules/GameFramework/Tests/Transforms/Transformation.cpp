@@ -321,7 +321,7 @@ TEST_F(TransformationFixture, ManyShallowTreesPublishEveryDerivedTransform)
     m_world.Submit(std::move(commands));
     ASSERT_TRUE(m_world.CommitBootstrap());
     Tick();
-    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_treeBatches, 4);
+    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_treeBatches, 8);
     for (uint32_t tree = 0; tree < children.size(); ++tree)
         EXPECT_FLOAT_EQ(m_world.Find(children[tree])->FindComponent<const WorldTransformComponent>()->m_world.m_30,
                         float(tree + 1));

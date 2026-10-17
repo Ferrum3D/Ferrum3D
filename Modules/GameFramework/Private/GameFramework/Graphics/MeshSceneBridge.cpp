@@ -92,7 +92,7 @@ namespace FE::GameFramework
     }
 
 
-    void MeshSceneBridge::Update(MeshComponent& component, const Matrix4x4& world)
+    void MeshSceneBridge::UpdateModel(MeshComponent& component)
     {
         FE_PROFILER_ZONE();
 
@@ -123,7 +123,11 @@ namespace FE::GameFramework
 
             component.m_loadedMaterial = component.m_material.GetAssetID();
         }
+    }
 
+
+    void MeshSceneBridge::UpdateTransform(const MeshComponent& component, const Matrix4x4& world)
+    {
         for (const auto instance : component.m_handles)
             m_module->UpdateTransform(instance, world);
     }

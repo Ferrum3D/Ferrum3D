@@ -209,9 +209,9 @@ Every scheduled phase returns a completion group and depends on the preceding ap
 
 ### Parallel policies and fiber synchronization
 
-Initial policies are Sequential, ParallelChunks for ordinary queries, and ParallelHierarchyTrees for cascade queries. ParallelHierarchyTrees runs each root subtree parent-first in one sequential task and permits independent subtrees to overlap. Batch several small trees into one task to avoid a job per entity. A cascade with a filtered-out parent still respects topology and declared parent access; it does not schedule that parent's missing callback implicitly.
+ExecutionPolicy selects sequential, main-thread, or parallel execution. Parallel ordinary queries subdivide storage chunks into ranges of at most 32 rows, so one chunk can use several workers. Parallel cascades batch at most 16 entities within each hierarchy level and join the level before processing its children. A single broad tree can therefore use several workers; ancestor chains remain ordered. Hierarchy order is cached until topology or storage structure changes. A cascade with a filtered-out parent still respects topology and declared parent access; it does not schedule that parent's missing callback implicitly.
 
-Default sequential traversal also preserves parent-before-child callback completion. ParallelChunks is invalid for cascade queries unless later extended with explicit internal hierarchy dependencies.
+Sequential and main-thread cascades preserve their parent-before-child depth-first walk. Parallel ranges use atomic changed flags for shared chunk metadata and publish component versions only after their jobs join. Worker callback zones and join zones are profiled separately from the traversal coordinator.
 
 Implement a Core `FiberMutex` with engine allocation, race-safe waiter registration, and fiber suspension/wakeup. It must not sleep the OS worker or spin for the duration of contention. Callers must not hold it while waiting for work that needs the same mutex. Do not require external-resource declarations in the first scheduler.
 
@@ -394,7 +394,7 @@ Dependencies: Stage 5.
 Work:
 
 - Add read/write conflict edges and per-system default exclusion after explicit prerequisites.
-- Implement ParallelChunks and batched ParallelHierarchyTrees over existing Core jobs/wait groups.
+- Implement parallel row ranges and parent-before-child hierarchy-level batches over existing Core jobs/wait groups.
 - Implement read-only Parent terms and topology-aware cascade matching, including ancestors not matched by self terms.
 - Add FiberMutex to Core with deterministic contention/wakeup tests, rather than relying on timing-sensitive stress tests alone.
 - Add scheduling/profiling diagnostics for component conflicts, work counts, and internal job batching.
