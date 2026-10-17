@@ -13,20 +13,25 @@ namespace FE::Graphics
     };
 
 
-    struct MeshPipelineRegistry final
-    {
-        Env::Name m_techniqueRole;
-        uint32_t m_revision = 0;
-        festd::vector<MeshPipelineSlot> m_slots;
-        Rc<Core::Buffer> m_routing;
-    };
-
-
     struct MeshPipelineSubmission final
     {
         Rc<Core::GraphicsPipeline> m_pipeline;
         uint32_t m_firstCommand;
         uint32_t m_commandCount;
+    };
+
+
+    struct MeshPipelineRegistry final
+    {
+        Env::Name m_techniqueRole;
+        uint32_t m_revision = 0;
+        festd::vector<MeshPipelineSlot> m_slots;
+        festd::vector<MeshPipelineSubmission> m_submissions;
+        Rc<Core::Buffer> m_routing;
+        Rc<Core::Buffer> m_layouts;
+        uint32_t m_instanceCapacity = 0;
+        uint32_t m_workCapacity = 0;
+        uint32_t m_commandCapacity = 0;
     };
 
 

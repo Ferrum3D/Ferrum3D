@@ -12,8 +12,7 @@ namespace FE::Graphics
         Core::ComputePipeline* m_scatterPipeline = nullptr;
         Core::ComputePipeline* m_visibilityDebugPipeline = nullptr;
         Core::ComputePipeline* m_surfaceDebugPipeline = nullptr;
-        festd::vector<Visibility::SurfaceBinding> m_bindings;
-        uint32_t m_groupRowCount = 0;
+        Visibility::SurfaceRouting* m_routing = nullptr;
         uint32_t m_waveLaneCount = 32;
     };
 

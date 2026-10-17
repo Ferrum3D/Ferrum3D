@@ -15,10 +15,9 @@ namespace FE::Graphics::Visibility
         FE_COMPUTE_PIPELINE_SET(CommandsPipeline, "Shaders/Deferred/EmitSurfaceCommands.cs.hlsl");
 
 
-        Core::ComputeWorkGroupCount DispatchSize(const uint32_t threads)
+        uint32_t DispatchSize(const uint32_t threads)
         {
-            const uint32_t groups = Math::Max(Math::CeilDivide(threads, kSurfaceBlockSize), 1u);
-            return Vector2UInt(Math::Min(groups, 65535u), Math::CeilDivide(groups, 65535u));
+            return Math::Max(Math::CeilDivide(threads, kSurfaceBlockSize), 1u);
         }
 
 
@@ -32,32 +31,14 @@ namespace FE::Graphics::Visibility
     } // namespace
 
 
-    SurfaceWork CreateSurfaceWork(Core::Device* device, const Vector2UInt resolution,
-                                  const festd::span<const SurfaceBinding> bindings, const uint32_t groupRowCount,
-                                  const uint32_t shaderCount, const uint32_t waveLaneCount)
+    SurfaceRouting CreateSurfaceRouting(Core::Device* device, const festd::span<const SurfaceBinding> bindings,
+                                        const uint32_t groupRowCount, const uint32_t shaderCount)
     {
-        FE_Assert(waveLaneCount == 32 || waveLaneCount == 64);
-        FE_Assert(resolution.x > 0 && resolution.y > 0);
-
-        SurfaceWork work;
-        work.m_resolution = resolution;
-        work.m_shaderCount = shaderCount;
-        work.m_waveLaneCount = waveLaneCount;
-
-        const Vector2UInt tileCount = Math::CeilDivide(resolution, kTileSize);
-        const uint32_t tiles = tileCount.x * tileCount.y;
-        const uint32_t pixels = tiles * kTileSize * kTileSize;
-        const uint32_t buckets = tiles * bindings.size();
-
-        work.m_tileCount = tiles;
-        work.m_bucketCount = buckets;
-        // Each nonempty bucket may add one partial wave beyond the full-wave pixel bound.
-        work.m_waveCapacity = Math::Min(pixels, Math::CeilDivide(pixels, waveLaneCount) + Math::Min(pixels, buckets));
-        if (bindings.empty())
-            work.m_waveCapacity = 0;
-
-        work.m_lookupData.resize(Math::Max(groupRowCount, 1u), Vector2UInt(kInvalidIndex, 0));
-        work.m_shaderBindingData.resize(Math::Max(shaderCount, 1u), Vector2UInt(0, 0));
+        SurfaceRouting routing;
+        routing.m_bindingCount = bindings.size();
+        routing.m_shaderCount = shaderCount;
+        routing.m_lookupData.resize(Math::Max(groupRowCount, 1u), SurfaceRoute{ kInvalidIndex, 0, 0 });
+        routing.m_shaderBindingData.resize(Math::Max(shaderCount, 1u), Vector2UInt(0, 0));
 
         festd::vector<SurfaceBinding> sorted;
         sorted.assign(bindings.begin(), bindings.end());
@@ -65,7 +46,7 @@ namespace FE::Graphics::Visibility
             return lhs.m_shaderSlot != rhs.m_shaderSlot ? lhs.m_shaderSlot < rhs.m_shaderSlot : lhs.m_group < rhs.m_group;
         });
 
-        work.m_bindingData.resize(Math::Max(sorted.size(), 1u), kInvalidIndex);
+        routing.m_bindingData.resize(Math::Max(sorted.size(), 1u), kInvalidIndex);
 
         // Bucket order is shader, tile, then binding, keeping each shader's commands contiguous.
         uint32_t firstBinding = 0;
@@ -76,30 +57,56 @@ namespace FE::Graphics::Visibility
                 ++end;
 
             const uint32_t count = end - firstBinding;
-            work.m_shaderBindingData[slot] = Vector2UInt(firstBinding, count);
+            routing.m_shaderBindingData[slot] = Vector2UInt(firstBinding, count);
             for (uint32_t index = firstBinding; index < end; ++index)
             {
                 const uint32_t group = sorted[index].m_group;
-                FE_Assert(group < groupRowCount && work.m_lookupData[group].x == kInvalidIndex);
-                work.m_lookupData[group] = Vector2UInt(firstBinding * work.m_tileCount + index - firstBinding, count);
-                work.m_bindingData[index] = group;
+                FE_Assert(group < groupRowCount && routing.m_lookupData[group].m_firstBinding == kInvalidIndex);
+                routing.m_lookupData[group] = SurfaceRoute{ firstBinding, index - firstBinding, count };
+                routing.m_bindingData[index] = group;
             }
 
             firstBinding = end;
         }
 
         FE_Assert(firstBinding == sorted.size(), "Surface binding has an invalid shader slot");
-        work.m_lookup = Core::Buffer::CreateByteAddress(device, "SurfaceBindingLookup", 8 * work.m_lookupData.size());
-        work.m_bindings = Core::Buffer::CreateByteAddress(device, "SurfaceBindings", 4 * work.m_bindingData.size());
-        work.m_shaderBindings =
-            Core::Buffer::CreateByteAddress(device, "SurfaceShaderBindings", 8 * work.m_shaderBindingData.size());
+        routing.m_lookup =
+            Core::Buffer::CreateByteAddress(device, "SurfaceBindingLookup", sizeof(SurfaceRoute) * routing.m_lookupData.size());
+        routing.m_bindings = Core::Buffer::CreateByteAddress(device, "SurfaceBindings", 4 * routing.m_bindingData.size());
+        routing.m_shaderBindings =
+            Core::Buffer::CreateByteAddress(device, "SurfaceShaderBindings", 8 * routing.m_shaderBindingData.size());
+        return routing;
+    }
+
+
+    SurfaceWork CreateSurfaceWork(Core::Device* device, const Vector2UInt resolution, SurfaceRouting& routing,
+                                  const uint32_t waveLaneCount)
+    {
+        FE_Assert(waveLaneCount == 32 || waveLaneCount == 64);
+        FE_Assert(resolution.x > 0 && resolution.y > 0);
+
+        SurfaceWork work;
+        work.m_routing = &routing;
+        work.m_resolution = resolution;
+        work.m_shaderCount = routing.m_shaderCount;
+        work.m_waveLaneCount = waveLaneCount;
+        const Vector2UInt tileCount = Math::CeilDivide(resolution, kTileSize);
+        const uint32_t tiles = tileCount.x * tileCount.y;
+        const uint32_t pixels = tiles * kTileSize * kTileSize;
+        work.m_tileCount = tiles;
+        work.m_bucketCount = tiles * routing.m_bindingCount;
+        // Every nonempty bucket may contribute one partial wave.
+        work.m_waveCapacity = routing.m_bindingCount == 0
+            ? 0
+            : Math::Min(pixels, Math::CeilDivide(pixels, waveLaneCount) + Math::Min(pixels, work.m_bucketCount));
         work.m_counts = Core::Buffer::CreateByteAddress(device, "SurfaceCounts", 4 * Math::Max(work.m_bucketCount, 1u));
         work.m_cursors = Core::Buffer::CreateByteAddress(device, "SurfaceCursors", 4 * Math::Max(work.m_bucketCount, 1u));
-        work.m_pixels =
-            Core::Buffer::CreateByteAddress(device, "SurfacePixels", 4 * Math::Max(bindings.empty() ? 0u : pixels, 1u));
+        work.m_pixels = Core::Buffer::CreateByteAddress(device,
+                                                        "SurfacePixels",
+                                                        4 * Math::Max(routing.m_bindingCount == 0 ? 0u : pixels, 1u));
         work.m_waves = Core::Buffer::CreateByteAddress(device, "SurfaceWaves", 16 * Math::Max(work.m_waveCapacity, 1u));
-        work.m_ranges = Core::Buffer::CreateByteAddress(device, "SurfaceRanges", 8 * Math::Max(shaderCount, 1u));
-        work.m_arguments = Core::Buffer::CreateByteAddress(device, "SurfaceArguments", 12 * Math::Max(shaderCount, 1u));
+        work.m_ranges = Core::Buffer::CreateByteAddress(device, "SurfaceRanges", 8 * Math::Max(work.m_shaderCount, 1u));
+        work.m_arguments = Core::Buffer::CreateByteAddress(device, "SurfaceArguments", 12 * Math::Max(work.m_shaderCount, 1u));
 
         uint32_t count = Math::Max(work.m_bucketCount, 1u);
 
@@ -127,16 +134,21 @@ namespace FE::Graphics::Visibility
     {
         FE_Assert(g0->GetDesc().GetSize2D() == work.m_resolution);
 
-        FE_Verify(uploader.UploadArray(graph, work.m_lookup.Get(), festd::span(work.m_lookupData)));
-        FE_Verify(uploader.UploadArray(graph, work.m_bindings.Get(), festd::span(work.m_bindingData)));
-        FE_Verify(uploader.UploadArray(graph, work.m_shaderBindings.Get(), festd::span(work.m_shaderBindingData)));
+        SurfaceRouting& routing = *work.m_routing;
+        if (!routing.m_uploaded)
+        {
+            FE_Verify(uploader.UploadArray(graph, routing.m_lookup.Get(), festd::span(routing.m_lookupData)));
+            FE_Verify(uploader.UploadArray(graph, routing.m_bindings.Get(), festd::span(routing.m_bindingData)));
+            FE_Verify(uploader.UploadArray(graph, routing.m_shaderBindings.Get(), festd::span(routing.m_shaderBindingData)));
+            routing.m_uploaded = true;
+        }
 
         TilingConstants dimensions{};
         dimensions.m_resolution = work.m_resolution;
         dimensions.m_tilesPerRow = Math::CeilDivide(work.m_resolution.x, kTileSize);
         dimensions.m_tileCount = work.m_tileCount;
         dimensions.m_bucketCount = work.m_bucketCount;
-        dimensions.m_groupRowCount = work.m_lookupData.size();
+        dimensions.m_groupRowCount = routing.m_lookupData.size();
         dimensions.m_shaderCount = work.m_shaderCount;
         dimensions.m_waveLaneCount = work.m_waveLaneCount;
         dimensions.m_classifyShading = classifyShading;
@@ -159,7 +171,7 @@ namespace FE::Graphics::Visibility
             count->m_constants.m_visibility = graph.GetSRV(visibility);
         }
 
-        count->m_constants.m_lookup = graph.GetSRV(work.m_lookup.Get());
+        count->m_constants.m_lookup = graph.GetSRV(routing.m_lookup.Get());
         count->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
 
         const Core::ComputeWorkGroupCount screenGroups = Math::CeilDivide(work.m_resolution, 16u);
@@ -204,7 +216,7 @@ namespace FE::Graphics::Visibility
             scatter->m_constants.m_visibility = graph.GetSRV(visibility);
         }
 
-        scatter->m_constants.m_lookup = graph.GetSRV(work.m_lookup.Get());
+        scatter->m_constants.m_lookup = graph.GetSRV(routing.m_lookup.Get());
         scatter->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
         scatter->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
         scatter->m_constants.m_pixels = graph.GetUAV(work.m_pixels.Get());
@@ -215,8 +227,8 @@ namespace FE::Graphics::Visibility
         commands->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
         commands->m_constants.m_totals = graph.GetSRV(work.m_scanLevels.back().m_sums.Get());
         commands->m_constants.m_countsRead = graph.GetSRV(work.m_counts.Get());
-        commands->m_constants.m_bindings = graph.GetSRV(work.m_bindings.Get());
-        commands->m_constants.m_shaderBindings = graph.GetSRV(work.m_shaderBindings.Get());
+        commands->m_constants.m_bindings = graph.GetSRV(routing.m_bindings.Get());
+        commands->m_constants.m_shaderBindings = graph.GetSRV(routing.m_shaderBindings.Get());
         commands->m_constants.m_waves = graph.GetUAV(work.m_waves.Get());
         commands->m_constants.m_ranges = graph.GetUAV(work.m_ranges.Get());
         commands->m_constants.m_arguments = graph.GetUAV(work.m_arguments.Get());

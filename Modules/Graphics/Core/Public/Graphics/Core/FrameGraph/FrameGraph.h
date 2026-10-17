@@ -57,6 +57,11 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual BufferUAVDescriptor GetUAV(BufferView buffer) = 0;
         [[nodiscard]] virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
 
+        //! Declare shader reads reached through a buffer's nested descriptors or device addresses.
+        //! Register before adding consuming passes. Reads inherit the consumer's shader stages and retain resources.
+        virtual void AddBufferDependency(Buffer* buffer, Buffer* dependency) = 0;
+        virtual void AddBufferDependency(Buffer* buffer, BufferSRVDescriptor dependency) = 0;
+
         virtual void BeginScope(festd::string_view name) = 0;
         virtual void EndScope() = 0;
 

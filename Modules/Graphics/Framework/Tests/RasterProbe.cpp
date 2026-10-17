@@ -146,11 +146,6 @@ namespace FE::Graphics::RasterProbe
         graph->BeginFrame();
         FE_Verify(uploader.Upload(*graph, geometryBuffer.Get(), geometry));
         database.Update(*graph, queue->GetCurrentFence());
-        auto* geometryAccess = graph->AllocatePassData<Core::BufferAccessPassDesc>();
-        geometryAccess->m_access = { geometryBuffer.Get(),
-                                     Core::BarrierSyncFlags::kAllShading,
-                                     Core::BarrierAccessFlags::kShaderRead };
-        graph->AddPass("RasterProbeGeometryReady", geometryAccess);
         FE_Verify(uploader.Upload(*graph, visible.Get(), MeshPass::VisibleInstance{ instance.m_rowIndex, lod.m_rowIndex }));
         FE_Verify(uploader.Upload(*graph, work.Get(), MeshPass::MeshletWorkChunk{ 0, 0 }));
         FE_Verify(uploader.Upload(*graph, commands.Get(), MeshPass::MeshCommandRange{ 0, 1 }));
@@ -171,9 +166,11 @@ namespace FE::Graphics::RasterProbe
         view.m_commands = graph->GetSRV(commands.Get());
         view.m_scene = graph->GetSRV(sceneBuffer.Get());
         FE_Verify(uploader.Upload(*graph, sceneBuffer.Get(), scene));
-        auto* sceneAccess = graph->AllocatePassData<Core::BufferAccessPassDesc>();
-        sceneAccess->m_access = { sceneBuffer.Get(), Core::BarrierSyncFlags::kAllShading, Core::BarrierAccessFlags::kShaderRead };
-        graph->AddPass("ProbeSceneReady", sceneAccess);
+        graph->AddBufferDependency(sceneBuffer.Get(), geometryBuffer.Get());
+        graph->AddBufferDependency(viewBuffer.Get(), sceneBuffer.Get());
+        graph->AddBufferDependency(viewBuffer.Get(), visible.Get());
+        graph->AddBufferDependency(viewBuffer.Get(), work.Get());
+        graph->AddBufferDependency(viewBuffer.Get(), commands.Get());
         FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
         auto* targets = graph->AllocatePassData<Visibility::CoveragePassDesc>();
         targets->m_visibility = Core::TextureView::Create(visibility.Get());
@@ -185,21 +182,13 @@ namespace FE::Graphics::RasterProbe
             context.ClearRenderTargets();
         });
         auto* mesh = graph->AllocatePassData<MeshPass::PassDesc>();
-        constexpr auto shading = Core::BarrierSyncFlags::kAllShading;
-        mesh->m_view = { viewBuffer.Get(), shading, Core::BarrierAccessFlags::kShaderRead };
-        mesh->m_visibleInstances = { visible.Get(), shading, Core::BarrierAccessFlags::kShaderRead };
-        mesh->m_workChunks = { work.Get(), shading, Core::BarrierAccessFlags::kShaderRead };
-        mesh->m_commands = { commands.Get(), shading, Core::BarrierAccessFlags::kShaderRead };
-        mesh->m_arguments = Core::BufferView(arguments.Get());
         const BufferSRVDescriptor viewDescriptor = graph->GetSRV(viewBuffer.Get());
-        graph->AddPass("RasterProbeCoverage",
-                       mesh,
-                       graph->AddBasePassDesc(targets),
-                       [coverage, viewDescriptor](Core::FrameGraphContext& context) {
-                           context.SetPipeline(coverage);
-                           context.PushConstants(MeshPass::Constants{ viewDescriptor, 0 });
-                           context.DispatchMeshIndirect();
-                       });
+        mesh->m_pipeline = coverage;
+        mesh->m_constants = { viewDescriptor, 0 };
+        mesh->m_arguments = Core::BufferView(arguments.Get());
+        graph->AddPass("RasterProbeCoverage", mesh, graph->AddBasePassDesc(targets), [](Core::FrameGraphContext& context) {
+            context.DispatchMeshIndirect();
+        });
         Rc<Core::Texture> planes[4];
         for (uint32_t plane = 0; plane < 4; ++plane)
             planes[plane] = Core::Texture::Create(device,
@@ -218,12 +207,8 @@ namespace FE::Graphics::RasterProbe
         clear->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
         graph->AddDispatchPass("ClearRasterSurface", clear, Math::CeilDivide(clear->m_constants.m_resolution, 8u));
         const Visibility::SurfaceBinding binding{ group.m_rowIndex, 0 };
-        auto surfaceWork = Visibility::CreateSurfaceWork(device,
-                                                         Vector2UInt(64, 64),
-                                                         festd::span(&binding, 1),
-                                                         groups.GetReservedRowCount(),
-                                                         1,
-                                                         32);
+        auto routing = Visibility::CreateSurfaceRouting(device, festd::span(&binding, 1), groups.GetReservedRowCount(), 1);
+        auto surfaceWork = Visibility::CreateSurfaceWork(device, Vector2UInt(64, 64), routing, 32);
         Visibility::BuildSurfaceWork(*graph,
                                      uploader,
                                      viewBuffer.Get(),

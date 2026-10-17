@@ -1,20 +1,20 @@
 #include <Shaders/Tests/SurfaceProbe.h>
 [[vk::push_constant]] ProbeConstants GConstants;
 #ifndef VISIT_LANES
-#define VISIT_LANES 32
+#    define VISIT_LANES 32
 #endif
 #ifndef VISIT_SHADER_COUNT
-#define VISIT_SHADER_COUNT 3
+#    define VISIT_SHADER_COUNT 3
 #endif
 #ifndef VISIT_SHADER_STRIDE
-#define VISIT_SHADER_STRIDE 1
+#    define VISIT_SHADER_STRIDE 1
 #endif
 
 FE_NUM_THREADS(VISIT_LANES, 1, 1)
 void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
 {
     const ShaderRange range = GConstants.m_ranges.Load(GConstants.m_shaderSlot);
-    const uint wave = dispatch.x + dispatch.y * 65535;
+    const uint wave = dispatch.x;
     if (wave >= range.m_waveCount)
         return;
 
@@ -25,8 +25,8 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
     const uint offset = command.m_pixelOffset + lane;
     const uint local = GConstants.m_pixels.Load(offset);
     const uint tilesPerRow = (GConstants.m_resolution.x + 127) / 128;
-    const uint2 pixel = uint2(command.m_tile % tilesPerRow, command.m_tile / tilesPerRow) * 128
-        + uint2(local & 127, (local >> 7) & 127);
+    const uint2 pixel =
+        uint2(command.m_tile % tilesPerRow, command.m_tile / tilesPerRow) * 128 + uint2(local & 127, (local >> 7) & 127);
     if (any(pixel >= GConstants.m_resolution))
         return;
 
@@ -37,7 +37,8 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
 #else
     const bool wrongGroup = command.m_group != GConstants.m_groupBase + index % GConstants.m_groupCount;
 #endif
-    const bool wrongShader = ((index % GConstants.m_groupCount) % VISIT_SHADER_COUNT) * VISIT_SHADER_STRIDE != GConstants.m_shaderSlot;
+    const bool wrongShader =
+        ((index % GConstants.m_groupCount) % VISIT_SHADER_COUNT) * VISIT_SHADER_STRIDE != GConstants.m_shaderSlot;
     if (wrongGroup || wrongShader || (local & 0xffffc000u) != 0 || command.m_validCount > VISIT_LANES)
         GConstants.m_marks.Store(index * 2 + 1, 1);
 }

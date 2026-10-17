@@ -414,6 +414,35 @@ namespace FE::Graphics
             FE_Verify(uploader.UploadArray(graph, registry->m_routing.Get(), festd::span(routing)));
         }
 
+        registry->m_submissions.clear();
+        registry->m_instanceCapacity = 0;
+        registry->m_workCapacity = 0;
+        registry->m_commandCapacity = 0;
+        festd::inline_vector<MeshPass::BucketLayout, 16> layouts;
+        for (const MeshPipelineSlot& slot : registry->m_slots)
+        {
+            const uint32_t pageCount = Math::CeilDivide(slot.m_workCapacity, MeshPass::kWorkChunksPerCommand);
+            layouts.push_back({ registry->m_commandCapacity, pageCount });
+            if (pageCount != 0)
+                registry->m_submissions.push_back({ slot.m_pipeline, registry->m_commandCapacity, pageCount });
+
+            registry->m_instanceCapacity += slot.m_instanceCapacity;
+            registry->m_workCapacity += slot.m_workCapacity;
+            registry->m_commandCapacity += pageCount;
+        }
+
+        if (!layouts.empty())
+        {
+            registry->m_layouts =
+                Core::Buffer::CreateStructured<MeshPass::BucketLayout>(graph.GetDevice(), "MeshBucketLayouts", layouts.size());
+            FE_Verify(uploader.UploadArray(graph, registry->m_layouts.Get(), festd::span(layouts)));
+        }
+        else
+        {
+            registry->m_layouts.Reset();
+            registry->m_routing.Reset();
+        }
+
         registry->m_revision = m_revision;
         return *registry;
     }
@@ -430,25 +459,52 @@ namespace FE::Graphics
         sceneData.m_members = m_memberTable->GetDeviceAddress();
         sceneData.m_visibilityType = m_visibilityType;
 
-        m_sceneData = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(graph.GetDevice(), "MeshScene", 1);
-        FE_Verify(uploader.Upload(graph, m_sceneData.Get(), sceneData));
+        const festd::array<uint64_t, 6> tableAddresses{
+            sceneData.m_instances.GetDeviceAddress(), sceneData.m_groups.GetDeviceAddress(),
+            sceneData.m_lods.GetDeviceAddress(),      sceneData.m_materials.GetDeviceAddress(),
+            sceneData.m_batches.GetDeviceAddress(),   sceneData.m_members.GetDeviceAddress()
+        };
+        if (m_sceneData == nullptr || tableAddresses != m_sceneTableAddresses)
+        {
+            // Immutable versions preserve constants already referenced by submitted frames.
+            m_sceneData = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(graph.GetDevice(), "MeshScene", 1);
+            FE_Verify(uploader.Upload(graph, m_sceneData.Get(), sceneData));
+            m_sceneTableAddresses = tableAddresses;
+        }
 
-        // The descriptor is nested in MeshViewData, so declare the indirect shader read explicitly.
-        auto* sceneAccess = graph.AllocatePassData<Core::BufferAccessPassDesc>();
-        sceneAccess->m_access = { m_sceneData.Get(), Core::BarrierSyncFlags::kAllShading, Core::BarrierAccessFlags::kShaderRead };
-        graph.AddPass("MeshSceneReady", sceneAccess);
+        const auto& pipelines = m_scene->GetRenderData().m_evaluationPipelines;
+        const uint32_t groupRowCount = m_meshGroupTable->GetReservedRowCount();
+        const bool routesChanged = m_evaluationRoutingRevision != m_revision
+            || m_evaluationPipelineRevision != pipelines.GetRevision() || m_evaluationGroupRowCount != groupRowCount;
+        if (routesChanged)
+        {
+            festd::inline_vector<Visibility::SurfaceBinding, 16> bindings;
+            for (const MeshGroup* group : m_meshGroups)
+            {
+                if (group == nullptr || group->m_buffer == nullptr || group->m_instanceCount == 0)
+                    continue;
 
-        // Device-address geometry reads must be visible to the graph and retained through execution.
+                const auto material = m_materialInstanceTable->ReadRow(group->m_materialRef);
+                if (material.m_evaluationSlot.Get() != kInvalidIndex && material.m_shadingSlot.Get() < 254)
+                    bindings.push_back({ group->m_tableRef.m_rowIndex, material.m_evaluationSlot.Get() });
+            }
+
+            m_evaluationRouting =
+                Visibility::CreateSurfaceRouting(graph.GetDevice(), bindings, groupRowCount, pipelines.GetPipelines().size());
+            m_evaluationRoutingRevision = m_revision;
+            m_evaluationPipelineRevision = pipelines.GetRevision();
+            m_evaluationGroupRowCount = groupRowCount;
+        }
+    }
+
+
+    void MeshSceneModule::AddGeometryDependencies(Core::FrameGraph& graph, Core::Buffer* buffer) const
+    {
+        // Geometry is read by rasterization and reconstruction, independently of view culling.
         Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
             const MeshGroup* group = m_meshGroups[groupIndex];
-            if (!group->m_buffer)
-                return;
-
-            auto* desc = graph.AllocatePassData<Core::BufferAccessPassDesc>();
-            desc->m_access = { group->m_buffer.Get(),
-                               Core::BarrierSyncFlags::kAllShading,
-                               Core::BarrierAccessFlags::kShaderRead };
-            graph.AddPass("MeshGeometryReady", desc);
+            if (group->m_buffer != nullptr)
+                graph.AddBufferDependency(buffer, group->m_buffer.Get());
         });
     }
 
@@ -497,25 +553,16 @@ namespace FE::Graphics
 
         SurfaceEvaluationBatch batch;
         batch.m_objectData = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(graph.GetDevice(), "MeshSurfaceView", 1);
+        graph.AddBufferDependency(batch.m_objectData.Get(), m_sceneData.Get());
+        AddGeometryDependencies(graph, batch.m_objectData.Get());
         FE_Verify(uploader.Upload(graph, batch.m_objectData.Get(), data));
 
         batch.m_countPipeline = CountMeshSurfacePipeline::GetPipeline();
         batch.m_scatterPipeline = ScatterMeshSurfacePipeline::GetPipeline();
         batch.m_visibilityDebugPipeline = MeshVisibilityDebugPipeline::GetPipeline();
         batch.m_surfaceDebugPipeline = MeshSurfaceDebugPipeline::GetPipeline();
-        batch.m_groupRowCount = m_meshGroupTable->GetReservedRowCount();
+        batch.m_routing = &m_evaluationRouting;
         batch.m_waveLaneCount = m_evaluationWaveLaneCount;
-
-        for (const MeshGroup* group : m_meshGroups)
-        {
-            if (group == nullptr || group->m_buffer == nullptr || group->m_instanceCount == 0)
-                continue;
-
-            const auto material = m_materialInstanceTable->ReadRow(group->m_materialRef);
-            const uint32_t slot = material.m_evaluationSlot.Get();
-            if (slot != kInvalidIndex && material.m_shadingSlot.Get() < 254)
-                batch.m_bindings.push_back({ group->m_tableRef.m_rowIndex, slot });
-        }
 
         blackboard.Get<SurfaceEvaluationInputs>().push_back(std::move(batch));
     }
@@ -535,30 +582,32 @@ namespace FE::Graphics
         if (!prepared.m_view)
             return;
 
+        AddGeometryDependencies(graph, prepared.m_view.Get());
         auto* desc = graph.AllocatePassData<MeshPass::PassDesc>();
-        constexpr auto sync = Core::BarrierSyncFlags::kAmplificationShading | Core::BarrierSyncFlags::kMeshShading
-            | Core::BarrierSyncFlags::kPixelShading;
-        desc->m_view = { prepared.m_view.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
-        desc->m_visibleInstances = { prepared.m_instances.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
-        desc->m_workChunks = { prepared.m_work.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
-        desc->m_commands = { prepared.m_commands.Get(), sync, Core::BarrierAccessFlags::kShaderRead };
+        const BufferSRVDescriptor viewAddress = graph.GetSRV(prepared.m_view.Get());
+        desc->m_pipeline = prepared.m_submissions.front().m_pipeline.Get();
+        desc->m_constants = { viewAddress, prepared.m_submissions.front().m_firstCommand };
         desc->m_arguments = Core::BufferView(prepared.m_arguments.Get());
 
-        const BufferSRVDescriptor viewAddress = graph.GetSRV(prepared.m_view.Get());
         graph.AddPass(festd::string_view(pass.m_techniqueRole),
                       desc,
                       pass.m_passDescToken,
                       [submissions = std::move(prepared.m_submissions), viewAddress](Core::FrameGraphContext& context) {
                           context.BeginRenderPass();
+                          bool firstDispatch = true;
                           for (const auto& submission : submissions)
                           {
                               for (uint32_t page = 0; page < submission.m_commandCount; ++page)
                               {
-                                  context.SetPipeline(submission.m_pipeline.Get());
-
                                   const MeshPass::Constants constants{ .m_view = viewAddress,
                                                                        .m_commandIndex = submission.m_firstCommand + page };
-                                  context.PushConstants(constants);
+                                  if (!firstDispatch)
+                                  {
+                                      context.SetPipeline(submission.m_pipeline.Get());
+                                      context.PushConstants(constants);
+                                  }
+
+                                  firstDispatch = false;
                                   context.DispatchMeshIndirect(constants.m_commandIndex
                                                                * sizeof(MeshPass::MeshDispatchArguments));
                               }

@@ -87,6 +87,7 @@ namespace FE::Graphics::DB
 
         uint32_t m_rowsPerPage = 0;
         festd::inline_vector<StoragePage*> m_pages;
+        bool m_pageTableDirty = false;
     };
 
 

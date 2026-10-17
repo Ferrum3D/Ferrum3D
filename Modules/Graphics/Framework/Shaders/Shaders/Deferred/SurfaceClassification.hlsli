@@ -8,12 +8,6 @@
 
 [[vk::push_constant]] TilingConstants GConstants;
 
-uint ThreadIndex(uint3 dispatch)
-{
-    return dispatch.x + dispatch.y * 65535 * 256;
-}
-
-
 uint ClassifyPixel(uint2 pixel)
 {
     if (any(pixel >= GConstants.m_resolution))
@@ -27,8 +21,8 @@ uint ClassifyPixel(uint2 pixel)
         if (route == 0 || route == 255 || route > GConstants.m_shaderCount)
             return kInvalidIndex;
 
-        const uint2 binding = GConstants.m_lookup.Load(route - 1);
-        return binding.x + tile * binding.y;
+        const SurfaceRoute binding = GConstants.m_lookup.Load(route - 1);
+        return binding.m_firstBinding * GConstants.m_tileCount + tile * binding.m_bindingCount + binding.m_bindingIndex;
     }
 
 #ifdef SURFACE_GROUP_HEADER
@@ -40,11 +34,11 @@ uint ClassifyPixel(uint2 pixel)
     if (group >= GConstants.m_groupRowCount)
         return kInvalidIndex;
 
-    const uint2 route = GConstants.m_lookup.Load(group);
-    if (route.x == kInvalidIndex)
+    const SurfaceRoute route = GConstants.m_lookup.Load(group);
+    if (route.m_firstBinding == kInvalidIndex)
         return kInvalidIndex;
 
-    return route.x + tile * route.y;
+    return route.m_firstBinding * GConstants.m_tileCount + tile * route.m_bindingCount + route.m_bindingIndex;
 #else
     return kInvalidIndex;
 #endif

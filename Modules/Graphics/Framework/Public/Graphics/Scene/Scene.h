@@ -7,6 +7,7 @@
 #include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
+#include <Graphics/Passes/SurfaceWorkBuilder.h>
 #include <Graphics/Scene/ComputePassRegistry.h>
 
 namespace FE::Graphics
@@ -22,6 +23,8 @@ namespace FE::Graphics
     {
         ComputePassRegistry m_evaluationPipelines;
         ComputePassRegistry m_shadingPipelines;
+        Visibility::SurfaceRouting m_shadingRouting;
+        uint32_t m_shadingRoutingRevision = 0;
 
         [[nodiscard]] uint32_t RegisterVisibilityType()
         {

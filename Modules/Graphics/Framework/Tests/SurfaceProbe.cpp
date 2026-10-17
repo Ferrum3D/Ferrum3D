@@ -14,7 +14,7 @@
 namespace FE::Graphics::SurfaceProbe
 {
     void Check(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue, Core::DescriptorManager* descriptors,
-               Core::PipelineFactory* pipelines)
+               Core::PipelineFactory* pipelines, const bool largeDispatch)
     {
         Core::CompileGlobalPipelineSets(pipelines);
         Core::WaitForGlobalPipelineSets();
@@ -38,8 +38,8 @@ namespace FE::Graphics::SurfaceProbe
             material.m_shadingSlot.Get() = 0;
         }
 
-        const Vector2UInt kResolution(257, 129);
-        constexpr uint32_t kPixelCount = 257 * 129;
+        const Vector2UInt kResolution = largeDispatch ? Vector2UInt(2049, 1281) : Vector2UInt(257, 129);
+        const uint32_t kPixelCount = kResolution.x * kResolution.y;
         Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
         Core::RingUploader uploader;
         uploader.Setup("SurfaceProbeUploader", pool, 256 * 1024);
@@ -82,6 +82,9 @@ namespace FE::Graphics::SurfaceProbe
         Visibility::SurfaceWork work;
         for (const uint32_t testCase : { 32u, 64u, 1u, 32u, 0u, 2u, 3u, 4u })
         {
+            if (largeDispatch && testCase != 1)
+                continue;
+
             const bool shadingTest = testCase == 3 || testCase == 4;
             const uint32_t shaderCount = testCase == 1 ? 1 : testCase == 64 || shadingTest ? 17 : 5;
             const uint32_t activeShaders = Math::Min(shaderCount, 3u);
@@ -102,14 +105,11 @@ namespace FE::Graphics::SurfaceProbe
             }
 
             const uint32_t laneCount = testCase == 64 || testCase == 4 ? 64 : 32;
-            work = Visibility::CreateSurfaceWork(device,
-                                                 kResolution,
-                                                 bindings,
-                                                 groups.GetReservedRowCount(),
-                                                 shaderCount,
-                                                 laneCount);
-            EXPECT_EQ(work.m_tileCount, 6u);
-            EXPECT_EQ(work.m_bucketCount, testCase == 2 ? 0u : 6u * (shadingTest ? shaderCount : kGroupCount));
+            auto routing = Visibility::CreateSurfaceRouting(device, bindings, groups.GetReservedRowCount(), shaderCount);
+            work = Visibility::CreateSurfaceWork(device, kResolution, routing, laneCount);
+            const Vector2UInt tiles = Math::CeilDivide(kResolution, Visibility::kTileSize);
+            EXPECT_EQ(work.m_tileCount, tiles.x * tiles.y);
+            EXPECT_EQ(work.m_bucketCount, testCase == 2 ? 0u : work.m_tileCount * (shadingTest ? shaderCount : kGroupCount));
             if (testCase == 2)
                 EXPECT_EQ(work.m_waveCapacity, 0u);
             Core::ComputePipelineRequest visitRequest;
@@ -137,11 +137,7 @@ namespace FE::Graphics::SurfaceProbe
             scene.m_materials = materials.GetDeviceAddress();
             view.m_scene = graph->GetSRV(sceneBuffer.Get());
             FE_Verify(uploader.Upload(*graph, sceneBuffer.Get(), scene));
-            auto* sceneAccess = graph->AllocatePassData<Core::BufferAccessPassDesc>();
-            sceneAccess->m_access = { sceneBuffer.Get(),
-                                      Core::BarrierSyncFlags::kAllShading,
-                                      Core::BarrierAccessFlags::kShaderRead };
-            graph->AddPass("ProbeSceneReady", sceneAccess);
+            graph->AddBufferDependency(viewBuffer.Get(), sceneBuffer.Get());
             FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
             auto* seed = graph->AllocatePassData<ProbePassDesc>();
             seed->m_pipeline = generate;
@@ -215,6 +211,12 @@ namespace FE::Graphics::SurfaceProbe
                     EXPECT_GT(args[slot * 3], 0u);
                 else
                     EXPECT_EQ(args[slot * 3], 0u);
+            }
+
+            if (largeDispatch)
+            {
+                EXPECT_GT(args[0], 65535u);
+                EXPECT_EQ(args[1], 1u);
             }
 
             argsReadback->Unmap();

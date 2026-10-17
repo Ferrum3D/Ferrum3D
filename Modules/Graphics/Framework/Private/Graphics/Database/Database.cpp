@@ -181,6 +181,7 @@ namespace FE::Graphics::DB
         StoragePage* page = m_database->AllocatePage();
         page->Setup(m_rowsPerPage);
         m_pages.push_back(page);
+        m_pageTableDirty = true;
         FE_Assert(m_pages.size() == pageCount);
     }
 
@@ -330,6 +331,12 @@ namespace FE::Graphics::DB
         constexpr auto kUploadOptions = Core::RingUploader::Options::kDisableBarriers;
 
         m_pageTableDeviceAddress = m_pageTableDeviceStorage->GetDeviceAddress();
+        bool hasDirtyTable = false;
+        for (const TableBase* table : m_tables)
+            hasDirtyTable |= table != nullptr && table->m_pageTableDirty;
+
+        if (!hasDirtyTable)
+            return;
 
         // We place barriers manually here as we know that the page tables do not overlap in memory.
         // Currently, our FrameGraph cannot figure it out on its own.
@@ -342,9 +349,9 @@ namespace FE::Graphics::DB
             graph.AddPass("PrologueBarrier", passData);
         }
 
-        for (const TableBase* table : m_tables)
+        for (TableBase* table : m_tables)
         {
-            if (table == nullptr)
+            if (table == nullptr || !table->m_pageTableDirty)
                 continue;
 
             const uint32_t pageCount = table->m_pages.size();
@@ -365,6 +372,7 @@ namespace FE::Graphics::DB
             const Core::BufferView destination{ m_pageTableDeviceStorage.Get(), destinationRange };
             const BufferPointer* source = m_pageTableHostStorage.data() + offset;
             FE_Verify(m_uploader.UploadBytes(graph, destination, source, pageTableByteSize, kUploadOptions));
+            table->m_pageTableDirty = false;
         }
 
         {

@@ -42,6 +42,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::SurfaceProbe)
                Core::ResourcePool * pool,
                Core::GraphicsQueue * queue,
                Core::DescriptorManager * descriptors,
-               Core::PipelineFactory * pipelines);
+               Core::PipelineFactory * pipelines,
+               bool largeDispatch = false);
 #endif
 FE_HOST_END_NAMESPACE

@@ -113,15 +113,10 @@ namespace FE::Graphics::SurfaceEvaluation
         const auto pipelines = blackboard.Get<SceneData*>()->m_evaluationPipelines.GetPipelines();
         for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
         {
-            if (batch.m_bindings.empty())
+            if (batch.m_routing->m_bindingCount == 0)
                 continue;
 
-            auto work = CreateSurfaceWork(graph.GetDevice(),
-                                          resolution,
-                                          batch.m_bindings,
-                                          batch.m_groupRowCount,
-                                          pipelines.size(),
-                                          batch.m_waveLaneCount);
+            auto work = CreateSurfaceWork(graph.GetDevice(), resolution, *batch.m_routing, batch.m_waveLaneCount);
             {
                 FE_FG_SCOPE(graph, "SurfaceClassification");
                 BuildSurfaceWork(graph,
@@ -139,7 +134,7 @@ namespace FE::Graphics::SurfaceEvaluation
             const uint32_t tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
             for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
             {
-                if (work.m_shaderBindingData[slot].y == 0)
+                if (batch.m_routing->m_shaderBindingData[slot].y == 0)
                     continue;
 
                 auto* passDesc = graph.AllocatePassData<SurfacePassDesc>();

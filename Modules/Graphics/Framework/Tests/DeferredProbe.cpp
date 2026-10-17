@@ -52,6 +52,7 @@ namespace FE::Graphics::DeferredProbe
         view.m_backgroundColor = PackedVector4F(0.1f, 0.2f, 0.3f, 1);
         const Visibility::SurfaceBinding bindings[] = { { 0, 0 }, { 1, 1 }, { 2, 2 } };
         Visibility::SurfaceWork work;
+        auto routing = Visibility::CreateSurfaceRouting(device, bindings, 3, 3);
         for (uint32_t testCase = 0; testCase < 4; ++testCase)
         {
             SCOPED_TRACE(testCase);
@@ -73,7 +74,7 @@ namespace FE::Graphics::DeferredProbe
                                        cameraProbe   ? Env::Name("CAMERA_PROBE=1")
                                            : wideHDR ? Env::Name("WIDE_HDR=1")
                                                      : Env::Name::kEmpty);
-            work = Visibility::CreateSurfaceWork(device, resolution, bindings, 3, 3, lanes);
+            work = Visibility::CreateSurfaceWork(device, resolution, routing, lanes);
             Rc<Core::Texture> color = Core::Texture::Create(device, "DeferredProbeColor", format, resolution);
             Core::ComputePipeline* simple =
                 pipeline("Shaders/Materials/ShadeSimpleLit.cs.hlsl", Env::Name(Fmt::Format("EVALUATION_LANES={}", lanes)));

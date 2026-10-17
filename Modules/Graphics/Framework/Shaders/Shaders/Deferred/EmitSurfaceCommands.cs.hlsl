@@ -9,7 +9,7 @@ uint2 Offset(uint bucket)
 FE_NUM_THREADS(256, 1, 1)
 void main(uint3 dispatch : SV_DispatchThreadID)
 {
-    const uint index = ThreadIndex(dispatch);
+    const uint index = dispatch.x;
     if (index < GConstants.m_shaderCount)
     {
         const uint2 binding = GConstants.m_shaderBindings.Load(index);
@@ -18,8 +18,8 @@ void main(uint3 dispatch : SV_DispatchThreadID)
         range.m_waveCount = Offset((binding.x + binding.y) * GConstants.m_tileCount).y - range.m_firstWave;
         GConstants.m_ranges.Store(index, range);
         DispatchArguments arguments;
-        arguments.m_x = min(range.m_waveCount, 65535u);
-        arguments.m_y = range.m_waveCount == 0 ? 1 : (range.m_waveCount + 65534) / 65535;
+        arguments.m_x = range.m_waveCount;
+        arguments.m_y = 1;
         arguments.m_z = 1;
         GConstants.m_arguments.Store(index, arguments);
     }

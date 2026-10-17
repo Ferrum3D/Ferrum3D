@@ -12,7 +12,7 @@ bool LoadShadingPixel(uint3 dispatch, uint lane, out uint2 pixel)
 {
     pixel = 0;
     const ShaderRange range = GConstants.m_ranges.Load(GConstants.m_shaderSlot);
-    const uint index = dispatch.x + dispatch.y * 65535;
+    const uint index = dispatch.x;
     if (index >= range.m_waveCount)
         return false;
 

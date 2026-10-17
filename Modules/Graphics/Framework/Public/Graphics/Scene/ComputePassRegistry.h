@@ -25,12 +25,14 @@ namespace FE::Graphics
             {
                 if (m_pipelines[index] == nullptr)
                 {
+                    ++m_revision;
                     m_pipelines[index] = pipeline;
                     m_referenceCounts[index] = 1;
                     return index;
                 }
             }
 
+            ++m_revision;
             m_pipelines.push_back(Rc<Core::ComputePipeline>(pipeline));
             m_referenceCounts.push_back(1);
             return m_pipelines.size() - 1;
@@ -45,6 +47,7 @@ namespace FE::Graphics
             if (--m_referenceCounts[slot] != 0)
                 return;
 
+            ++m_revision;
             m_pipelines[slot].Reset();
             while (!m_pipelines.empty() && m_pipelines.back() == nullptr)
             {
@@ -58,7 +61,13 @@ namespace FE::Graphics
             return m_pipelines;
         }
 
+        [[nodiscard]] uint32_t GetRevision() const
+        {
+            return m_revision;
+        }
+
     private:
+        uint32_t m_revision = 1;
         festd::vector<Rc<Core::ComputePipeline>> m_pipelines;
         festd::vector<uint32_t> m_referenceCounts;
     };

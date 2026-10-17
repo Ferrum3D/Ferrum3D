@@ -13,6 +13,7 @@
 #include <Graphics/Tables/MeshBatchTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
 #include <Graphics/Tables/MeshMemberTable.h>
+#include <festd/base.h>
 #include <festd/unordered_map.h>
 
 namespace FE::Graphics
@@ -165,6 +166,7 @@ namespace FE::Graphics
         void DestroyGroup(MeshGroup* group);
         void UpdateGroup(MeshGroup* group);
         void ReleaseGroupPipelines(MeshGroup* group);
+        void AddGeometryDependencies(Core::FrameGraph& graph, Core::Buffer* buffer) const;
         MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
         void UpdateBatchBounds(MeshBatch* batch);
         void UpdateBatchMembership(MeshBatch* batch);
@@ -192,8 +194,13 @@ namespace FE::Graphics
         festd::vector<MeshPipelineRegistry> m_registries;
         uint32_t m_evaluationWaveLaneCount = 32;
         Rc<Core::Buffer> m_sceneData;
+        festd::array<uint64_t, 6> m_sceneTableAddresses{};
         uint32_t m_visibilityType = 0;
         uint32_t m_revision = 1;
+        Visibility::SurfaceRouting m_evaluationRouting;
+        uint32_t m_evaluationRoutingRevision = 0;
+        uint32_t m_evaluationPipelineRevision = 0;
+        uint32_t m_evaluationGroupRowCount = 0;
         Octree m_octree;
     };
 } // namespace FE::Graphics

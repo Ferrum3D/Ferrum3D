@@ -13,7 +13,7 @@ bool LoadEvaluationPixel(uint3 dispatch, uint lane, out uint2 pixel, out uint gr
     pixel = 0;
     groupIndex = kInvalidIndex;
     const ShaderRange range = GConstants.m_ranges.Load(GConstants.m_shaderSlot);
-    const uint wave = dispatch.x + dispatch.y * 65535;
+    const uint wave = dispatch.x;
     if (wave >= range.m_waveCount)
         return false;
 

@@ -65,14 +65,21 @@ namespace FE::Graphics::DeferredShading
             return;
 
         // Regroup evaluated pixels by shading shader; these routes are independent of evaluation bindings.
-        festd::vector<SurfaceBinding> bindings;
-        for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
+        SceneData& scene = *blackboard.Get<SceneData*>();
+        if (scene.m_shadingRoutingRevision != scene.m_shadingPipelines.GetRevision())
         {
-            if (pipelines[slot] != nullptr)
-                bindings.push_back({ slot, slot });
+            festd::inline_vector<SurfaceBinding, 16> bindings;
+            for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
+            {
+                if (pipelines[slot] != nullptr)
+                    bindings.push_back({ slot, slot });
+            }
+
+            scene.m_shadingRouting = CreateSurfaceRouting(graph.GetDevice(), bindings, shaderCount, shaderCount);
+            scene.m_shadingRoutingRevision = scene.m_shadingPipelines.GetRevision();
         }
 
-        auto work = CreateSurfaceWork(graph.GetDevice(), resolution, bindings, shaderCount, shaderCount, 32);
+        auto work = CreateSurfaceWork(graph.GetDevice(), resolution, scene.m_shadingRouting, 32);
         {
             FE_FG_SCOPE(graph, "ShadingClassification");
             BuildSurfaceWork(graph, *view.m_renderQueueUploader, nullptr, nullptr, gBufferTargets[0].Get(), work, true);

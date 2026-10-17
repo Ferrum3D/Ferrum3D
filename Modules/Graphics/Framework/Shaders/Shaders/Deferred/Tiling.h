@@ -12,11 +12,20 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     };
 
 
+    // Resolution-independent routing; tile offsets are computed by the classifier.
+    struct SurfaceRoute final
+    {
+        uint32_t m_firstBinding;
+        uint32_t m_bindingIndex;
+        uint32_t m_bindingCount;
+    };
+
+
     struct TilingConstants final
     {
         ByteAddressBufferDescriptor m_view;
         Texture2DDescriptor<uint2> m_visibility;
-        StructuredBufferDescriptor<uint2> m_lookup;
+        StructuredBufferDescriptor<SurfaceRoute> m_lookup;
         StructuredBufferDescriptor<uint32_t> m_bindings;
         StructuredBufferDescriptor<uint2> m_shaderBindings;
         RWStructuredBufferDescriptor<uint32_t> m_counts;

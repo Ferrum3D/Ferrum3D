@@ -51,6 +51,43 @@ namespace FE::Graphics::Common
         m_descriptorViews.clear();
         m_textureViews.clear();
         m_bufferViews.clear();
+        m_bufferDependencies.clear();
+    }
+
+
+    void FrameGraph::AddBufferDependency(Core::Buffer* buffer, Core::Buffer* dependency)
+    {
+        FE_Assert(buffer != nullptr && dependency != nullptr && buffer != dependency);
+        auto& entry = m_bufferDependencies[buffer->GetResourceID()];
+        entry.m_buffer = buffer;
+        for (const Rc<Core::Buffer>& existing : entry.m_reads)
+        {
+            if (existing.Get() == dependency)
+                return;
+        }
+
+        entry.m_reads.emplace_back(dependency);
+    }
+
+
+    void FrameGraph::AddBufferDependency(Core::Buffer* buffer, const BufferSRVDescriptor dependency)
+    {
+        const auto& info = GetResourceInfo(dependency.m_value, Core::DescriptorType::kSRV);
+        AddBufferDependency(buffer, Rtti::AssertCast<Core::Buffer*>(info.m_resource.Get()));
+    }
+
+
+    void FrameGraph::RegisterBufferDependencies(Core::Resource* resource, PassNode& pass, const Core::BarrierSyncFlags syncFlags)
+    {
+        const auto entry = m_bufferDependencies.find(resource->GetResourceID());
+        if (entry == m_bufferDependencies.end())
+            return;
+
+        BufferAccess read;
+        read.m_syncFlags = syncFlags;
+        read.m_accessFlags = Core::BarrierAccessFlags::kShaderRead;
+        for (const Rc<Core::Buffer>& dependency : entry->second.m_reads)
+            RegisterResource(dependency.Get(), pass, read);
     }
 
 
@@ -959,8 +996,14 @@ namespace FE::Graphics::Common
         {
             if (other.m_localResourceIndex != localResourceIndex)
                 continue;
+            const bool addsShaderRead = Bit::AnySet(access.m_accessFlags, Core::BarrierAccessFlags::kShaderRead)
+                && (!Bit::AnySet(other.m_accessFlags, Core::BarrierAccessFlags::kShaderRead)
+                    || !Bit::AllSet(other.m_syncFlags, access.m_syncFlags));
             other.m_syncFlags |= access.m_syncFlags;
             other.m_accessFlags |= access.m_accessFlags;
+            if (addsShaderRead)
+                RegisterBufferDependencies(resource, pass, access.m_syncFlags);
+
             return localResourceIndex;
         }
 
@@ -969,6 +1012,8 @@ namespace FE::Graphics::Common
 
         BufferAccess& bufferAccess = pass.m_accessedBuffers.emplace_back(access);
         bufferAccess.m_localResourceIndex = localResourceIndex;
+        if (Bit::AnySet(access.m_accessFlags, Core::BarrierAccessFlags::kShaderRead))
+            RegisterBufferDependencies(resource, pass, access.m_syncFlags);
 
         return localResourceIndex;
     }

@@ -51,6 +51,8 @@ namespace FE::Graphics::Common
         BufferSRVDescriptor GetSRV(Core::BufferView buffer) override;
         BufferUAVDescriptor GetUAV(Core::BufferView buffer) override;
         SamplerDescriptor GetSampler(Core::SamplerState sampler) override;
+        void AddBufferDependency(Core::Buffer* buffer, Core::Buffer* dependency) override;
+        void AddBufferDependency(Core::Buffer* buffer, BufferSRVDescriptor dependency) override;
 
         void AddCopyPass(const Core::BufferView& destination, const Core::BufferView& source) override;
 
@@ -157,6 +159,17 @@ namespace FE::Graphics::Common
 
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access);
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access);
+
+        void RegisterBufferDependencies(Core::Resource* resource, PassNode& pass, Core::BarrierSyncFlags syncFlags);
+
+        struct BufferDependencies final
+        {
+            Rc<Core::Buffer> m_buffer;
+            festd::inline_vector<Rc<Core::Buffer>, 4> m_reads;
+        };
+
+
+        festd::unordered_dense_map<uint32_t, BufferDependencies> m_bufferDependencies;
 
         struct TextureViewKey final
         {

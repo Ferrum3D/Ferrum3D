@@ -5,7 +5,7 @@ groupshared uint2 GScan[256];
 FE_NUM_THREADS(256, 1, 1)
 void main(uint3 dispatch : SV_DispatchThreadID, uint lane : SV_GroupIndex)
 {
-    const uint index = ThreadIndex(dispatch);
+    const uint index = dispatch.x;
     uint2 value = 0;
     if (index < GConstants.m_scanCount)
     {
