@@ -9,9 +9,13 @@ void main(uint3 pixel : SV_DispatchThreadID)
 
     const uint index = pixel.x + pixel.y * GConstants.m_resolution.x;
     const uint instance = GConstants.m_instanceBase + index % max(GConstants.m_groupCount, 1u);
-    GConstants.m_visibility.Store(pixel.xy, uint2(GConstants.m_groupCount == 0 || index % 7 == 0 ? 0 : instance + 1, 0));
+    bool covered = GConstants.m_groupCount != 0 && index % 7 != 0;
+#if GENERATE_SPARSE
+    covered = covered && index % 101 == 0;
+#endif
+    GConstants.m_visibility.Store(pixel.xy, uint2(covered ? instance + 1 : 0, 0));
 #if GENERATE_SHADING
-    uint route = (index % 257) % 3 * 8 + 1;
+    uint route = (index % max(GConstants.m_groupCount, 1u)) % 3 * 8 + 1;
     if (GConstants.m_groupCount == 0 || index % 7 == 0)
         route = 0;
     else if (index % 11 == 0)

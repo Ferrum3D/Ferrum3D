@@ -1,5 +1,6 @@
 #pragma once
 #include <Shaders/Deferred/GBuffer.hlsli>
+#include <Shaders/Deferred/PixelWork.hlsli>
 #include <Shaders/Deferred/Surface.h>
 
 #ifndef EVALUATION_LANES
@@ -10,24 +11,19 @@
 
 bool LoadEvaluationPixel(uint3 dispatch, uint lane, out uint2 pixel, out uint groupIndex)
 {
-    pixel = 0;
-    groupIndex = kInvalidIndex;
     const ShaderRange range = GConstants.m_ranges.Load(GConstants.m_shaderSlot);
-    const uint wave = dispatch.x;
-    if (wave >= range.m_waveCount)
-        return false;
-
-    const WaveCommand command = GConstants.m_waves.Load(range.m_firstWave + wave);
-    if (lane >= command.m_validCount)
-        return false;
-
-    const uint offset = command.m_pixelOffset + lane;
-    const uint local = GConstants.m_pixels.Load(offset);
-    const uint2 tile = uint2(command.m_tile % GConstants.m_tilesPerRow, command.m_tile / GConstants.m_tilesPerRow);
-    const uint2 localPixel = uint2(local & 127, (local >> 7) & 127);
-    pixel = tile * kTileSize + localPixel;
-    groupIndex = command.m_group;
-    return all(pixel < GConstants.m_resolution);
+    PixelWork work;
+    const bool valid = LoadPixelWork(range,
+                                     GConstants.m_waves,
+                                     GConstants.m_pixels,
+                                     GConstants.m_resolution,
+                                     GConstants.m_tilesPerRow,
+                                     dispatch.x,
+                                     lane,
+                                     work);
+    pixel = work.m_pixel;
+    groupIndex = work.m_command.m_group;
+    return valid;
 }
 
 

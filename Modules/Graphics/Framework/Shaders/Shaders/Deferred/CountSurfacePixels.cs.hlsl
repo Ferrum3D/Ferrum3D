@@ -1,3 +1,4 @@
+#define SURFACE_COUNT
 #include <Shaders/Deferred/SurfaceClassification.hlsli>
 
 FE_NUM_THREADS(16, 16, 1)

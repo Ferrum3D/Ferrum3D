@@ -26,6 +26,14 @@ namespace FE::Graphics::SurfaceEvaluation
             if (view.m_view->GetVisibilityDebugMode() == DebugMode::kDeferred)
                 return;
 
+            const bool debugGroups = view.m_view->GetVisibilityDebugMode() == DebugMode::kEvaluationGroup;
+            if (debugGroups)
+            {
+                InitializeDebugColor(graph, view.m_mainColorTarget);
+                if (blackboard.Get<SurfaceEvaluationInputs>().empty())
+                    return;
+            }
+
             auto* debug = graph.AllocatePassData<DebugPassDesc>();
             debug->m_pipeline = SurfaceDebugPipeline::GetPipeline();
             debug->m_constants.m_g0 = graph.GetSRV(targets[0].Get());
@@ -33,12 +41,11 @@ namespace FE::Graphics::SurfaceEvaluation
             debug->m_constants.m_g2 = graph.GetSRV(targets[2].Get());
             debug->m_constants.m_g3 = graph.GetSRV(targets[3].Get());
             debug->m_constants.m_visibility = graph.GetSRV(visibility);
-            debug->m_constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
             debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
             debug->m_constants.m_resolution = resolution;
             debug->m_constants.m_mode = festd::to_underlying(view.m_view->GetVisibilityDebugMode());
 
-            if (view.m_view->GetVisibilityDebugMode() == DebugMode::kEvaluationGroup)
+            if (debugGroups)
             {
                 for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
                 {
@@ -84,7 +91,7 @@ namespace FE::Graphics::SurfaceEvaluation
             return;
 
         const RendererViewData& view = blackboard.Get<RendererViewData>();
-        if (view.m_view->GetVisibilityDebugMode() < DebugMode::kEvaluationTile)
+        if (!NeedsSurfaceEvaluation(view.m_view->GetVisibilityDebugMode()))
             return;
 
         FE_FG_SCOPE(graph, "SurfaceEvaluation");
@@ -110,7 +117,7 @@ namespace FE::Graphics::SurfaceEvaluation
         clear->m_constants.m_visibility = graph.GetSRV(visibility);
         graph.AddDispatchPass("ClearSurfaceG0", clear, Math::CeilDivide(resolution, 8u));
 
-        const auto pipelines = blackboard.Get<SceneData*>()->m_evaluationPipelines.GetPipelines();
+        const auto pipelines = blackboard.Get<SceneData*>()->m_evaluationPipelines.GetSlots();
         for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
         {
             if (batch.m_routing->m_bindingCount == 0)
@@ -119,15 +126,11 @@ namespace FE::Graphics::SurfaceEvaluation
             auto work = CreateSurfaceWork(graph.GetDevice(), resolution, *batch.m_routing, batch.m_waveLaneCount);
             {
                 FE_FG_SCOPE(graph, "SurfaceClassification");
-                BuildSurfaceWork(graph,
-                                 *view.m_renderQueueUploader,
-                                 batch.m_objectData.Get(),
-                                 visibility,
-                                 targets[0].Get(),
-                                 work,
-                                 false,
-                                 batch.m_countPipeline,
-                                 batch.m_scatterPipeline);
+                const EvaluationWorkInput input{ batch.m_objectData.Get(),
+                                                 visibility,
+                                                 batch.m_countPipeline,
+                                                 batch.m_scatterPipeline };
+                BuildSurfaceWork(graph, *view.m_renderQueueUploader, input, work);
             }
 
             // Dispatch only shaders used by this producer, with its opaque reconstruction data.
@@ -138,7 +141,7 @@ namespace FE::Graphics::SurfaceEvaluation
                     continue;
 
                 auto* passDesc = graph.AllocatePassData<SurfacePassDesc>();
-                passDesc->m_pipeline = pipelines[slot].Get();
+                passDesc->m_pipeline = pipelines[slot].m_pipeline.Get();
                 passDesc->m_arguments =
                     Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
                 passDesc->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());

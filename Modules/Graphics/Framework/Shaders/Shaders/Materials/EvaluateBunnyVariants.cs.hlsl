@@ -11,8 +11,8 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
     const MeshViewData view = LoadMeshView(GConstants.m_view);
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel, 0));
 
-    ReconstructedAttributes attributes;
-    if (!ReconstructAttributes(view, id, float2(pixel) + 0.5f, float2(GConstants.m_resolution), attributes, false, false))
+    MeshEvaluationContext context;
+    if (!LoadMeshEvaluation(view, id, pixel, GConstants.m_resolution, context, false, false))
     {
         GConstants.m_g0.Store(pixel, 0xffff00ffu);
         return;
@@ -26,7 +26,7 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
 
     GBuffer::Unpacked surface = (GBuffer::Unpacked)0;
     surface.m_color = color;
-    surface.m_normal = attributes.m_normal;
-    surface.m_shadingRoute = SurfaceShadingRoute(view, groupIndex);
+    surface.m_normal = context.m_attributes.m_normal;
+    surface.m_shadingRoute = context.m_shadingRoute;
     StoreGBuffer(pixel, surface);
 }

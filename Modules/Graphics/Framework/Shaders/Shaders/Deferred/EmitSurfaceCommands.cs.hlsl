@@ -1,4 +1,6 @@
-#include <Shaders/Deferred/SurfaceClassification.hlsli>
+#include <Shaders/Deferred/Tiling.h>
+
+[[vk::push_constant]] SurfaceCommandsConstants GConstants;
 
 uint2 Offset(uint bucket)
 {

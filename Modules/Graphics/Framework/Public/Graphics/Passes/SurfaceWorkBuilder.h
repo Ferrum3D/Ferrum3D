@@ -43,6 +43,7 @@ namespace FE::Graphics::Visibility
         Rc<Core::Buffer> m_waves;
         Rc<Core::Buffer> m_ranges;
         Rc<Core::Buffer> m_arguments;
+        Rc<Core::Buffer> m_emissionArguments;
         festd::fixed_vector<SurfaceScanLevel, 4> m_scanLevels;
         Vector2UInt m_resolution{ 0, 0 };
         uint32_t m_tileCount = 0;
@@ -57,7 +58,23 @@ namespace FE::Graphics::Visibility
                                                       uint32_t groupRowCount, uint32_t shaderCount);
     [[nodiscard]] SurfaceWork CreateSurfaceWork(Core::Device* device, Vector2UInt resolution, SurfaceRouting& routing,
                                                 uint32_t waveLaneCount);
-    void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, Core::Buffer* view, Core::Texture* visibility,
-                          Core::Texture* g0, SurfaceWork& work, bool classifyShading = false,
-                          Core::ComputePipeline* countPipeline = nullptr, Core::ComputePipeline* scatterPipeline = nullptr);
+    struct EvaluationWorkInput final
+    {
+        Core::Buffer* m_objectData;
+        Core::Texture* m_visibility;
+        Core::ComputePipeline* m_countPipeline;
+        Core::ComputePipeline* m_scatterPipeline;
+    };
+
+
+    struct ShadingWorkInput final
+    {
+        Core::Texture* m_g0;
+    };
+
+
+    void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, const EvaluationWorkInput& input,
+                          SurfaceWork& work);
+    void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, const ShadingWorkInput& input,
+                          SurfaceWork& work);
 } // namespace FE::Graphics::Visibility

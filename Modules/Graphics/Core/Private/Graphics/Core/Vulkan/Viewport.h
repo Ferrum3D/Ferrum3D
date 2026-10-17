@@ -26,18 +26,17 @@ namespace FE::Graphics::Vulkan
         void Resize(uint32_t width, uint32_t height);
 
         Core::Texture* GetCurrentColorTarget() override;
-        void AcquireNextImage() override;
+        [[nodiscard]] bool AcquireNextImage() override;
         void PrepareBlit() override;
 
     private:
         void Present(CommandBuffer* commandBuffer);
 
         void CreateSurface();
-        void CreateSwapChain();
+        bool CreateSwapChain();
         void CreateResources();
 
         void ReleaseResources();
-        void RecreateSwapchain();
 
         void DestroyObject() override
         {
@@ -57,6 +56,8 @@ namespace FE::Graphics::Vulkan
         VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
         VkSurfaceFormatKHR m_colorFormat = {};
         VkSurfaceCapabilitiesKHR m_capabilities = {};
+        bool m_needsRecreation = true;
+        Core::FenceSyncPoint m_acquireCompletion[kMaxInFlightFrames];
 
         festd::inline_vector<Rc<Semaphore>> m_imageAvailableSemaphores;
         festd::inline_vector<Rc<Semaphore>> m_renderFinishedSemaphores;

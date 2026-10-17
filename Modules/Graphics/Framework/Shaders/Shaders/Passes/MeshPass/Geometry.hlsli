@@ -46,6 +46,8 @@ struct MeshDrawData
     BufferPointer m_geometry;
     float4x4 m_worldTransform;
     Core::MeshLodInfo m_lodInfo;
+    MeshInstanceTable::Row m_instance;
+    MeshGroupTable::Row m_group;
 };
 
 
@@ -64,6 +66,8 @@ MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanc
     result.m_geometry = group.m_geometry.Get();
     result.m_worldTransform = instance.m_transform.Get();
     result.m_lodInfo = lod.m_info.Get();
+    result.m_instance = instance;
+    result.m_group = group;
     return result;
 }
 

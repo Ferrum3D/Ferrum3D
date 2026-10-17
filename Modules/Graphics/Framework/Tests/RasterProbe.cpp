@@ -209,15 +209,8 @@ namespace FE::Graphics::RasterProbe
         const Visibility::SurfaceBinding binding{ group.m_rowIndex, 0 };
         auto routing = Visibility::CreateSurfaceRouting(device, festd::span(&binding, 1), groups.GetReservedRowCount(), 1);
         auto surfaceWork = Visibility::CreateSurfaceWork(device, Vector2UInt(64, 64), routing, 32);
-        Visibility::BuildSurfaceWork(*graph,
-                                     uploader,
-                                     viewBuffer.Get(),
-                                     visibility.Get(),
-                                     planes[0].Get(),
-                                     surfaceWork,
-                                     false,
-                                     countPipeline,
-                                     scatterPipeline);
+        const Visibility::EvaluationWorkInput input{ viewBuffer.Get(), visibility.Get(), countPipeline, scatterPipeline };
+        Visibility::BuildSurfaceWork(*graph, uploader, input, surfaceWork);
         Core::ComputePipelineRequest evaluateRequest;
         evaluateRequest.m_desc.SetComputeShader("Shaders/Materials/EvaluateBunnyVariants.cs.hlsl");
         evaluateRequest.m_defines = Env::Name("BUNNY_PALETTE=1");

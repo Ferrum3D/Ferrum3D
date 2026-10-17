@@ -106,8 +106,10 @@ namespace FE::Graphics
 
         FE_Assert(viewport != nullptr);
 
+        if (!viewport->AcquireNextImage())
+            return;
+
         m_graphicsQueue->BeginFrame();
-        viewport->AcquireNextImage();
         // Logical targets are frame-local; the graph infers usage and obtains their memory from its pool.
         const Vector2UInt resolution(viewport->GetDesc().m_width, viewport->GetDesc().m_height);
         m_mainColorTarget =
@@ -239,8 +241,8 @@ namespace FE::Graphics
         const bool hasSurface = blackboard.Contains<SurfaceEvaluation::ViewModule*>();
         const bool hasShading = blackboard.Contains<DeferredShading::ViewModule*>();
         const auto mode = view.GetVisibilityDebugMode();
-        const bool needsSurface = mode >= Visibility::DebugMode::kEvaluationTile;
-        const bool needsShading = mode == Visibility::DebugMode::kDeferred;
+        const bool needsSurface = Visibility::NeedsSurfaceEvaluation(mode);
+        const bool needsShading = Visibility::NeedsDeferredShading(mode);
         if (!hasVisibility || (needsSurface && !hasSurface) || (needsShading && !hasShading))
             ClearTargets(graph, viewport);
 

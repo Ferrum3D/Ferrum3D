@@ -6,36 +6,41 @@ namespace FE::Graphics
 {
     struct ComputePassRegistry final
     {
+        struct Slot final
+        {
+            Rc<Core::ComputePipeline> m_pipeline;
+            uint32_t m_referenceCount = 0;
+        };
+
         [[nodiscard]] uint32_t Register(Core::ComputePipeline* pipeline)
         {
             if (pipeline == nullptr)
                 return kInvalidIndex;
 
             FE_Assert(pipeline->IsReady());
-            for (uint32_t index = 0; index < m_pipelines.size(); ++index)
+            for (uint32_t index = 0; index < m_slots.size(); ++index)
             {
-                if (m_pipelines[index].Get() == pipeline)
+                if (m_slots[index].m_pipeline.Get() == pipeline)
                 {
-                    ++m_referenceCounts[index];
+                    ++m_slots[index].m_referenceCount;
                     return index;
                 }
             }
 
-            for (uint32_t index = 0; index < m_pipelines.size(); ++index)
+            for (uint32_t index = 0; index < m_slots.size(); ++index)
             {
-                if (m_pipelines[index] == nullptr)
+                if (m_slots[index].m_pipeline == nullptr)
                 {
                     ++m_revision;
-                    m_pipelines[index] = pipeline;
-                    m_referenceCounts[index] = 1;
+                    m_slots[index].m_pipeline = pipeline;
+                    m_slots[index].m_referenceCount = 1;
                     return index;
                 }
             }
 
             ++m_revision;
-            m_pipelines.push_back(Rc<Core::ComputePipeline>(pipeline));
-            m_referenceCounts.push_back(1);
-            return m_pipelines.size() - 1;
+            m_slots.push_back({ Rc<Core::ComputePipeline>(pipeline), 1 });
+            return m_slots.size() - 1;
         }
 
         void Release(const uint32_t slot)
@@ -43,22 +48,19 @@ namespace FE::Graphics
             if (slot == kInvalidIndex)
                 return;
 
-            FE_Assert(slot < m_pipelines.size() && m_referenceCounts[slot] != 0);
-            if (--m_referenceCounts[slot] != 0)
+            FE_Assert(slot < m_slots.size() && m_slots[slot].m_referenceCount != 0);
+            if (--m_slots[slot].m_referenceCount != 0)
                 return;
 
             ++m_revision;
-            m_pipelines[slot].Reset();
-            while (!m_pipelines.empty() && m_pipelines.back() == nullptr)
-            {
-                m_pipelines.pop_back();
-                m_referenceCounts.pop_back();
-            }
+            m_slots[slot].m_pipeline.Reset();
+            while (!m_slots.empty() && m_slots.back().m_pipeline == nullptr)
+                m_slots.pop_back();
         }
 
-        [[nodiscard]] festd::span<const Rc<Core::ComputePipeline>> GetPipelines() const
+        [[nodiscard]] festd::span<const Slot> GetSlots() const
         {
-            return m_pipelines;
+            return m_slots;
         }
 
         [[nodiscard]] uint32_t GetRevision() const
@@ -68,7 +70,6 @@ namespace FE::Graphics
 
     private:
         uint32_t m_revision = 1;
-        festd::vector<Rc<Core::ComputePipeline>> m_pipelines;
-        festd::vector<uint32_t> m_referenceCounts;
+        festd::vector<Slot> m_slots;
     };
 } // namespace FE::Graphics

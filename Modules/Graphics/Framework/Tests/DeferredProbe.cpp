@@ -5,14 +5,110 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
+#include <Graphics/Passes/RendererPassCommon.h>
+#include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/SurfaceWorkBuilder.h>
+#include <Graphics/Passes/VisibilityPass.h>
+#include <Graphics/Scene/SceneImpl.h>
+#include <Graphics/Scene/SurfaceEvaluation.h>
 #include <gtest/gtest.h>
 
 namespace FE::Graphics::DeferredProbe
 {
+    namespace
+    {
+        void CheckEmptyDebug(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
+                             Core::DescriptorManager* descriptors, Core::PipelineFactory* pipelines)
+        {
+            Rc<SceneImpl> scene = Memory::DefaultNew<SceneImpl>(nullptr);
+            View* view = scene->CreateView();
+            view->GetModules().Add<Visibility::ViewModule>();
+            view->GetModules().Add<SurfaceEvaluation::ViewModule>();
+            const Vector2UInt resolution(33, 17);
+            const uint32_t bytes = resolution.x * resolution.y * sizeof(uint32_t);
+            Rc<Core::Texture> color =
+                Core::Texture::Create(device, "EmptyDebugColor", Core::Format::kB10G11R11_UFLOAT, resolution);
+            Rc<Core::Texture> depth = Core::Texture::Create(device, "EmptyDebugDepth", Core::Format::kD32_SFLOAT, resolution);
+            Rc<Core::Buffer> stats = Core::Buffer::CreateByteAddress(device, "EmptyDebugStats", bytes);
+            Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "EmptyDebugReadback", bytes);
+            Core::ResourceCommitParams commit;
+            commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
+            commit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
+            pool->CommitBufferMemory(readback.Get(), commit);
+            Core::ComputePipelineRequest request;
+            request.m_desc.SetComputeShader("Shaders/Tests/EmptyDebugProbe.cs.hlsl");
+            Core::ComputePipeline* inspect = pipelines->CreateComputePipeline(request);
+            inspect->GetCompletionWaitGroup()->Wait();
+            ASSERT_TRUE(inspect->IsReady());
+            Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
+
+            for (const auto mode : { Visibility::DebugMode::kVisibility,
+                                     Visibility::DebugMode::kNormal,
+                                     Visibility::DebugMode::kDepthError,
+                                     Visibility::DebugMode::kEvaluationGroup })
+            {
+                SCOPED_TRACE(festd::to_underlying(mode));
+                view->SetVisibilityDebugMode(mode);
+                queue->BeginFrame();
+                graph->BeginFrame();
+                auto& blackboard = graph->GetBlackboard();
+                blackboard.Reset();
+                auto& data = blackboard.Add<RendererViewData>();
+                data.m_scene = scene.Get();
+                data.m_view = view;
+                data.m_mainColorTarget = color.Get();
+                data.m_mainDepthTarget = depth.Get();
+                data.m_viewportRect = RectF(0, 0, 33, 17);
+                blackboard.Add<SceneData*>(&scene->GetRenderData());
+                blackboard.Add<SurfaceEvaluationInputs>();
+                view->Update(blackboard);
+
+                // Poison pooled output before exercising the installed stages with no object producers.
+                auto* poison = graph->AllocatePassData<RendererTargetClearPassDesc>();
+                poison->m_colorTarget = Core::TextureView::Create(color.Get());
+                poison->m_depthTarget = Core::TextureView::Create(depth.Get());
+                poison->m_viewport = data.m_viewportRect;
+                graph->AddPass("PoisonDebugColor", poison, [](Core::FrameGraphContext& context) {
+                    context.ClearColorTarget(0, Core::ColorClearValue::Float(Color4F(1, 0, 1, 1)));
+                    context.ClearDepthStencilTarget(0, 0);
+                    context.ClearRenderTargets();
+                });
+                Visibility::AddPasses(*graph, blackboard);
+                SurfaceEvaluation::AddPasses(*graph, blackboard);
+
+                auto* check = graph->AllocatePassData<PassDesc>();
+                check->m_pipeline = inspect;
+                check->m_constants.m_color = graph->GetSRV(color.Get());
+                check->m_constants.m_stats = graph->GetUAV(stats.Get());
+                check->m_constants.m_resolution = resolution;
+                graph->AddDispatchPass("InspectEmptyDebugColor", check, Math::CeilDivide(resolution, 8u));
+                graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(stats.Get()));
+                graph->CompileAndExecute();
+                auto* commands = Vulkan::ImplCast(queue)->GetCurrentCommandBuffer();
+                const auto completion = queue->CloseFrame();
+                commands->EnqueueFenceToSignal(completion);
+                commands->Submit();
+                completion.Wait();
+                const uint32_t* mismatches = static_cast<const uint32_t*>(readback->Map());
+                readback->InvalidateMappedRange(0, bytes);
+                uint32_t wrong = 0;
+                for (uint32_t pixel = 0; pixel < resolution.x * resolution.y; ++pixel)
+                    wrong += mismatches[pixel];
+
+                EXPECT_EQ(wrong, 0u);
+                readback->Unmap();
+            }
+        }
+
+
+    } // namespace
+
+
     void Check(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue, Core::DescriptorManager* descriptors,
                Core::PipelineFactory* pipelines)
     {
+        CheckEmptyDebug(device, pool, queue, descriptors, pipelines);
+
         const Vector2UInt resolution(257, 129);
         Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
         Core::RingUploader uploader;
@@ -102,7 +198,7 @@ namespace FE::Graphics::DeferredProbe
             initialize->m_constants.m_resolution = resolution;
             initialize->m_constants.m_shaderCount = 3;
             graph->AddDispatchPass("InitializeDeferredProbe", initialize, Math::CeilDivide(resolution, 8u));
-            Visibility::BuildSurfaceWork(*graph, uploader, nullptr, nullptr, planes[0].Get(), work, true);
+            Visibility::BuildSurfaceWork(*graph, uploader, Visibility::ShadingWorkInput{ planes[0].Get() }, work);
             for (uint32_t slot = 0; slot < 3; ++slot)
             {
                 auto* shade = graph->AllocatePassData<Visibility::DeferredPassDesc>();

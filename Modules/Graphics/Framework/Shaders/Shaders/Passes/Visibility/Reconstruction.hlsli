@@ -58,16 +58,13 @@ struct ReconstructedAttributes
 
 
 bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, const float2 pixelCenter, const float2 resolution,
-                           out ReconstructedAttributes result, const bool needUV = true, const bool needTangent = true)
+                           const MeshDrawData draw, out ReconstructedAttributes result, const bool needUV = true,
+                           const bool needTangent = true)
 {
     result = (ReconstructedAttributes)0;
-    if (visibility.x == 0 || (visibility.x >> kObjectTypeShift) != view.m_scene.Load(0).m_visibilityType)
-        return false;
-
     const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;
     const uint meshletIndex = visibility.y >> kPrimitiveBits;
     const uint primitiveIndex = visibility.y & (kMaxPrimitiveCount - 1);
-    const MeshDrawData draw = ResolveMeshDrawData(view, instanceIndex);
     if (meshletIndex >= draw.m_lodInfo.m_meshletCount)
         return false;
 
@@ -103,9 +100,21 @@ bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, cons
     result.m_uvDdy = v0.m_uv * weights.m_ddy.x + v1.m_uv * weights.m_ddy.y + v2.m_uv * weights.m_ddy.z;
     const float4 clip = v0.m_pos * w.x + v1.m_pos * w.y + v2.m_pos * w.z;
     result.m_depth = clip.z / clip.w;
-    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(view.m_scene.Load(0).m_instances).ReadRow(instanceIndex);
-    result.m_group = instance.m_meshGroup.Get().m_rowIndex;
+    result.m_group = draw.m_instance.m_meshGroup.Get().m_rowIndex;
     return all(isfinite(result.m_normal)) && all(isfinite(result.m_uv));
+}
+
+
+bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, const float2 pixelCenter, const float2 resolution,
+                           out ReconstructedAttributes result, const bool needUV = true, const bool needTangent = true)
+{
+    result = (ReconstructedAttributes)0;
+    if (visibility.x == 0 || (visibility.x >> kObjectTypeShift) != view.m_scene.Load(0).m_visibilityType)
+        return false;
+
+    const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;
+    const MeshDrawData draw = ResolveMeshDrawData(view, instanceIndex);
+    return ReconstructAttributes(view, visibility, pixelCenter, resolution, draw, result, needUV, needTangent);
 }
 
 

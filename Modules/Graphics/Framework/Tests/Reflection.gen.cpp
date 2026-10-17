@@ -697,6 +697,73 @@ namespace FE::Graphics::DeferredProbe
 } // namespace FE::Graphics::DeferredProbe
 
 
+namespace FE::Graphics::SurfaceProbe
+{
+    const Rtti::TypeID EmissionDirectPassDesc::TypeID = Rtti::TypeID{
+        0xe4, 0x7a, 0x3f, 0xd5, 0xb1, 0x7c, 0x48, 0xdb, 0x89, 0x59, 0xf1, 0xb4, 0xec, 0x63, 0x93, 0x9e,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_e47a3fd5b17c48db8959f1b4ec63939e()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& EmissionDirectPassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_e47a3fd5b17c48db8959f1b4ec63939e();
+    }
+
+    void EmissionDirectPassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_e47a3fd5b17c48db8959f1b4ec63939e();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xe4, 0x7a, 0x3f, 0xd5, 0xb1, 0x7c, 0x48, 0xdb,
+            0x89, 0x59, 0xf1, 0xb4, 0xec, 0x63, 0x93, 0x9e, // FE::Graphics::SurfaceProbe::EmissionDirectPassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0x33, 0x9f, 0xd1, 0x8d, 0xea, 0x19, 0x42, 0xaa,
+            0x8f, 0x6f, 0x33, 0xb9, 0xae, 0x92, 0x14, 0x2e, // FE::Graphics::Visibility::SurfaceCommandsConstants m_constants
+            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
+            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &EmissionDirectPassDesc::m_constants,
+                                                        kAttributes_m_constants,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &EmissionDirectPassDesc::m_pipeline,
+                                                        kAttributes_m_pipeline,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<EmissionDirectPassDesc>(typeInstance,
+                                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                     "FE::Graphics::SurfaceProbe::EmissionDirectPassDesc",
+                                                     kBaseClassTypeIDs,
+                                                     kAttributes,
+                                                     kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_e47a3fd5b17c48db8959f1b4ec63939e(&EmissionDirectPassDesc::Reflect);
+} // namespace FE::Graphics::SurfaceProbe
+
+
 namespace FE::Graphics::Stage1Probe
 {
     const Rtti::TypeID IndirectPassDesc::TypeID = Rtti::TypeID{

@@ -3,6 +3,7 @@
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::SurfaceProbe)
 #if FE_HOST
     using Visibility::ShaderRange;
+    using Visibility::SurfaceCommandsConstants;
     using Visibility::WaveCommand;
 #endif
     struct ProbeConstants final
@@ -36,6 +37,14 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::SurfaceProbe)
         Core::PassComputePipeline m_pipeline;
         Core::PassIndirectArgs m_arguments;
         FE_RTTI_Reflect("4F199EED-7ABB-441F-863A-558556D1BCE1");
+    };
+
+
+    struct EmissionDirectPassDesc final
+    {
+        SurfaceCommandsConstants m_constants;
+        Core::PassComputePipeline m_pipeline;
+        FE_RTTI_Reflect("E47A3FD5-B17C-48DB-8959-F1B4EC63939E");
     };
 #if FE_HOST
     void Check(Core::Device * device,

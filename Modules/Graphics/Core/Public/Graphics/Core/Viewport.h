@@ -43,7 +43,8 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual const ViewportDesc& GetDesc() const = 0;
 
         virtual Texture* GetCurrentColorTarget() = 0;
-        virtual void AcquireNextImage() = 0;
+        // False means the surface is temporarily unavailable; retry after processing window events.
+        [[nodiscard]] virtual bool AcquireNextImage() = 0;
         virtual void PrepareBlit() = 0;
         virtual void Present() = 0;
     };

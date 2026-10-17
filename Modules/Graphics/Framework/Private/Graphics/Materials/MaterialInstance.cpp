@@ -213,13 +213,7 @@ namespace FE::Graphics
 
     bool MaterialInstanceRuntime::HasTechnique(const Env::Name role) const
     {
-        for (const MaterialTechniqueDesc& technique : m_material->m_techniques)
-        {
-            if (technique.m_role == role && technique.m_permutationKey == m_instance->m_permutationKey)
-                return true;
-        }
-
-        return false;
+        return FindTechnique(role) != nullptr;
     }
 
 
@@ -288,16 +282,7 @@ namespace FE::Graphics
                 return entry.m_pipeline;
         }
 
-        const MaterialTechniqueDesc* technique = nullptr;
-        for (const MaterialTechniqueDesc& candidate : m_material->m_techniques)
-        {
-            if (candidate.m_role == role && candidate.m_permutationKey == m_instance->m_permutationKey)
-            {
-                technique = &candidate;
-                break;
-            }
-        }
-
+        const MaterialTechniqueDesc* technique = FindTechnique(role);
         if (technique == nullptr)
         {
             Logger::LogError("Material '{}' lacks technique '{}' for permutation '{}'",

@@ -490,7 +490,7 @@ namespace FE::Graphics
             }
 
             m_evaluationRouting =
-                Visibility::CreateSurfaceRouting(graph.GetDevice(), bindings, groupRowCount, pipelines.GetPipelines().size());
+                Visibility::CreateSurfaceRouting(graph.GetDevice(), bindings, groupRowCount, pipelines.GetSlots().size());
             m_evaluationRoutingRevision = m_revision;
             m_evaluationPipelineRevision = pipelines.GetRevision();
             m_evaluationGroupRowCount = groupRowCount;

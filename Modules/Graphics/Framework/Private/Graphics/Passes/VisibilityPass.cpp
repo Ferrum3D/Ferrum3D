@@ -63,8 +63,10 @@ namespace FE::Graphics::Visibility
             module.AddRenderPasses(graph, *view.m_renderQueueUploader, pass);
         });
 
-        if (view.m_view->GetVisibilityDebugMode() > DebugMode::kDepthError)
+        if (!IsReconstructionDebug(view.m_view->GetVisibilityDebugMode()))
             return;
+
+        InitializeDebugColor(graph, view.m_mainColorTarget);
 
         // Reconstruction belongs to the object producer, which supplies its debug shader and data.
         for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())

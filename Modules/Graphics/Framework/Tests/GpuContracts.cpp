@@ -2,19 +2,125 @@
 #include "GpuProbe.h"
 #include "RasterProbe.h"
 #include "SurfaceProbe.h"
+#include <Core/Base/PlatformInclude.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/PipelineFactory.h>
 #include <Graphics/Core/ResourcePool.h>
+#include <Graphics/Core/Viewport.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Materials/MaterialInstance.h>
+#include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Scene/ComputePassRegistry.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
 using namespace FE::Graphics;
+
+#if FE_PLATFORM_WINDOWS
+namespace
+{
+    void PumpWindowEvents()
+    {
+        MSG message;
+        while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&message);
+            DispatchMessageW(&message);
+        }
+    }
+
+
+    void CheckViewportSuspension(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
+                                 Core::DescriptorManager* descriptors)
+    {
+        const HINSTANCE instance = GetModuleHandleW(nullptr);
+        WNDCLASSW windowClass{};
+        windowClass.lpfnWndProc = DefWindowProcW;
+        windowClass.hInstance = instance;
+        windowClass.lpszClassName = L"FerrumViewportProbe";
+        ASSERT_NE(RegisterClassW(&windowClass), 0);
+        const auto unregisterClass = festd::defer([&] {
+            UnregisterClassW(windowClass.lpszClassName, instance);
+        });
+        const HWND window = CreateWindowExW(0,
+                                            windowClass.lpszClassName,
+                                            L"Viewport probe",
+                                            WS_OVERLAPPEDWINDOW,
+                                            CW_USEDEFAULT,
+                                            CW_USEDEFAULT,
+                                            320,
+                                            200,
+                                            nullptr,
+                                            nullptr,
+                                            instance,
+                                            nullptr);
+        ASSERT_NE(window, nullptr);
+        const auto destroyWindow = festd::defer([&] {
+            DestroyWindow(window);
+        });
+        ShowWindow(window, SW_SHOWNOACTIVATE);
+        PumpWindowEvents();
+        Rc<Core::Viewport> viewport = device->CreateViewport(pool, queue);
+        viewport->Init({ 320, 200, reinterpret_cast<uintptr_t>(window) });
+        Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
+        const auto renderFrame = [&]() -> bool {
+            if (!viewport->AcquireNextImage())
+                return false;
+
+            queue->BeginFrame();
+            graph->BeginFrame();
+            const Vector2UInt resolution(viewport->GetDesc().m_width, viewport->GetDesc().m_height);
+            const Rc depth = Core::Texture::Create(device, "ViewportProbeDepth", Core::Format::kD32_SFLOAT, resolution);
+            auto* clear = graph->AllocatePassData<Visibility::CoveragePassDesc>();
+            clear->m_visibility = Core::TextureView::Create(viewport->GetCurrentColorTarget());
+            clear->m_depth = Core::TextureView::Create(depth.Get());
+            clear->m_viewport = viewport->GetDesc().GetRect();
+            graph->AddPass("ClearViewportProbe", clear, [](Core::FrameGraphContext& context) {
+                context.ClearColorTarget(0, Core::ColorClearValue::Float(Color4F(0, 0, 0, 1)));
+                context.ClearDepthStencilTarget(0, 0);
+                context.ClearRenderTargets();
+            });
+            viewport->PrepareBlit();
+            graph->CompileAndExecute();
+            viewport->Present();
+            pool->EndFrame();
+            device->EndFrame();
+            return true;
+        };
+
+        ASSERT_TRUE(renderFrame());
+        ShowWindow(window, SW_MINIMIZE);
+        PumpWindowEvents();
+        bool suspended = false;
+        for (uint32_t attempt = 0; attempt < 8 && !suspended; ++attempt)
+        {
+            PumpWindowEvents();
+            suspended = !renderFrame();
+        }
+
+        ASSERT_TRUE(suspended);
+        const uint64_t suspendedFrame = Vulkan::ImplCast(queue)->GetFrameIndex();
+        EXPECT_FALSE(renderFrame());
+        EXPECT_FALSE(renderFrame());
+        EXPECT_EQ(Vulkan::ImplCast(queue)->GetFrameIndex(), suspendedFrame);
+
+        ShowWindow(window, SW_RESTORE);
+        bool restored = false;
+        for (uint32_t attempt = 0; attempt < 8 && !restored; ++attempt)
+        {
+            PumpWindowEvents();
+            restored = renderFrame();
+        }
+
+        EXPECT_TRUE(restored);
+        device->WaitIdle();
+    }
+} // namespace
+#endif
+
 
 TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
 {
@@ -44,7 +150,9 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             ComputePassRegistry shadingPipelines;
             EXPECT_EQ(evaluationPipelines.Register(nullptr), kInvalidIndex);
             EXPECT_EQ(evaluationPipelines.Register(pipeline), 0u);
+            const uint32_t registrationRevision = evaluationPipelines.GetRevision();
             EXPECT_EQ(evaluationPipelines.Register(pipeline), 0u);
+            EXPECT_EQ(evaluationPipelines.GetRevision(), registrationRevision);
 
             Core::ComputePipelineRequest shadingRequest = request;
             shadingRequest.m_defines = Env::Name("SHADE_PASS=1");
@@ -55,17 +163,19 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_EQ(shadingPipelines.Register(shadingPipeline), 0u);
             EXPECT_EQ(shadingPipelines.Register(shadingPipeline), 0u);
             EXPECT_EQ(shadingPipelines.Register(pipeline), 1u);
-            EXPECT_EQ(evaluationPipelines.GetPipelines().size(), 1u);
-            EXPECT_EQ(shadingPipelines.GetPipelines().size(), 2u);
+            EXPECT_EQ(evaluationPipelines.GetSlots().size(), 1u);
+            EXPECT_EQ(shadingPipelines.GetSlots().size(), 2u);
 
             evaluationPipelines.Release(0);
-            EXPECT_EQ(evaluationPipelines.GetPipelines().size(), 1u);
+            EXPECT_EQ(evaluationPipelines.GetRevision(), registrationRevision);
+            EXPECT_EQ(evaluationPipelines.GetSlots().size(), 1u);
             evaluationPipelines.Release(0);
-            EXPECT_TRUE(evaluationPipelines.GetPipelines().empty());
+            EXPECT_EQ(evaluationPipelines.GetRevision(), registrationRevision + 1);
+            EXPECT_TRUE(evaluationPipelines.GetSlots().empty());
             EXPECT_EQ(evaluationPipelines.Register(shadingPipeline), 0u);
             EXPECT_EQ(evaluationPipelines.Register(pipeline), 1u);
             evaluationPipelines.Release(0);
-            EXPECT_EQ(evaluationPipelines.GetPipelines()[1].Get(), pipeline);
+            EXPECT_EQ(evaluationPipelines.GetSlots()[1].m_pipeline.Get(), pipeline);
             EXPECT_EQ(evaluationPipelines.Register(shadingPipeline), 0u);
 
             const auto compute = device->GetComputeCapabilities();
@@ -207,6 +317,9 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), true);
             DeferredProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+#if FE_PLATFORM_WINDOWS
+            CheckViewportSuspension(device.Get(), pool.Get(), queue.Get(), descriptors.Get());
+#endif
             graph.Reset();
             copyQueue->Drain();
             device->WaitIdle();

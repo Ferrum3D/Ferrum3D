@@ -182,8 +182,8 @@ namespace FE::Graphics::Vulkan
         }
 
         CreateSurface();
-        CreateSwapChain();
-        CreateResources();
+        if (CreateSwapChain())
+            CreateResources();
     }
 
 
@@ -193,35 +193,44 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Viewport::AcquireNextImage()
+    bool Viewport::AcquireNextImage()
     {
         FE_PROFILER_ZONE();
 
+        if (m_needsRecreation)
+        {
+            if (!CreateSwapChain())
+                return false;
+
+            CreateResources();
+        }
+
         const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
         const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
-        const Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
-        VkResult result = vkAcquireNextImageKHR(NativeCast(m_device),
-                                                m_swapchain,
-                                                Constants::kMaxU64,
-                                                semaphore->GetNative(),
-                                                VK_NULL_HANDLE,
-                                                &m_imageIndex);
+        // Acquisition precedes BeginFrame; wait until the previous use consumed this binary semaphore.
+        const Core::FenceSyncPoint& completion = m_acquireCompletion[semaphoreIndex];
+        if (completion.m_fence)
+            completion.Wait();
 
-        while (result == VK_ERROR_OUT_OF_DATE_KHR)
+        const Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
+        const VkResult result = vkAcquireNextImageKHR(NativeCast(m_device),
+                                                      m_swapchain,
+                                                      Constants::kMaxU64,
+                                                      semaphore->GetNative(),
+                                                      VK_NULL_HANDLE,
+                                                      &m_imageIndex);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            RecreateSwapchain();
-            result = vkAcquireNextImageKHR(NativeCast(m_device),
-                                           m_swapchain,
-                                           Constants::kMaxU64,
-                                           semaphore->GetNative(),
-                                           VK_NULL_HANDLE,
-                                           &m_imageIndex);
+            // Yield to the application loop so minimize/restore events can be processed.
+            m_needsRecreation = true;
+            return false;
         }
 
         if (result != VK_SUBOPTIMAL_KHR)
-        {
             VerifyVk(result);
-        }
+
+        return true;
     }
 
 
@@ -241,7 +250,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Viewport::CreateSwapChain()
+    bool Viewport::CreateSwapChain()
     {
         FE_PROFILER_ZONE();
 
@@ -252,19 +261,30 @@ namespace FE::Graphics::Vulkan
         const VkExtent2D minExtent = capabilities.minImageExtent;
         const VkExtent2D maxExtent = capabilities.maxImageExtent;
 
-        const VkSwapchainKHR oldSwapchain = m_swapchain;
-        m_swapchain = VK_NULL_HANDLE;
-
+        uint32_t width = m_desc.m_width;
+        uint32_t height = m_desc.m_height;
         if (capabilities.currentExtent.width != Constants::kMaxU32)
         {
-            m_desc.m_width = capabilities.currentExtent.width;
-            m_desc.m_height = capabilities.currentExtent.height;
+            width = capabilities.currentExtent.width;
+            height = capabilities.currentExtent.height;
         }
         else
         {
-            m_desc.m_width = Math::Clamp(m_desc.m_width, minExtent.width, maxExtent.width);
-            m_desc.m_height = Math::Clamp(m_desc.m_height, minExtent.height, maxExtent.height);
+            if (width == 0 || height == 0)
+                return false;
+
+            width = Math::Clamp(width, minExtent.width, maxExtent.width);
+            height = Math::Clamp(height, minExtent.height, maxExtent.height);
         }
+
+        // Keep the old swapchain intact while the surface has no drawable extent.
+        if (width == 0 || height == 0)
+            return false;
+
+        ReleaseResources();
+        const VkSwapchainKHR oldSwapchain = m_swapchain;
+        m_desc.m_width = width;
+        m_desc.m_height = height;
 
         VkSwapchainCreateInfoKHR swapchainCI = {};
         swapchainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -339,6 +359,9 @@ namespace FE::Graphics::Vulkan
         {
             vkDestroySwapchainKHR(vkDevice, oldSwapchain, nullptr);
         }
+
+        m_needsRecreation = false;
+        return true;
     }
 
 
@@ -433,18 +456,6 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Viewport::RecreateSwapchain()
-    {
-        FE_PROFILER_ZONE();
-
-        ReleaseResources();
-
-        // CreateSurface();
-        CreateSwapChain();
-        CreateResources();
-    }
-
-
     void Viewport::Resize(const uint32_t width, const uint32_t height)
     {
         FE_PROFILER_ZONE();
@@ -452,7 +463,7 @@ namespace FE::Graphics::Vulkan
         m_desc.m_width = width;
         m_desc.m_height = height;
 
-        RecreateSwapchain();
+        m_needsRecreation = true;
     }
 
 
@@ -539,7 +550,8 @@ namespace FE::Graphics::Vulkan
         const VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
         commandBuffer->EnqueueSemaphoreToWait(m_imageAvailableSemaphores[semaphoreIndex].Get(), stageFlags);
         commandBuffer->EnqueueSemaphoreToSignal(m_renderFinishedSemaphores[semaphoreIndex].Get());
-        commandBuffer->EnqueueFenceToSignal(m_commandQueue->CloseFrame());
+        m_acquireCompletion[semaphoreIndex] = m_commandQueue->CloseFrame();
+        commandBuffer->EnqueueFenceToSignal(m_acquireCompletion[semaphoreIndex]);
 
         commandBuffer->Submit();
 
@@ -557,7 +569,7 @@ namespace FE::Graphics::Vulkan
         const VkResult presentResult = vkQueuePresentKHR(queue, &presentInfo);
         if (presentResult == VK_SUBOPTIMAL_KHR || presentResult == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            RecreateSwapchain();
+            m_needsRecreation = true;
         }
         else
         {

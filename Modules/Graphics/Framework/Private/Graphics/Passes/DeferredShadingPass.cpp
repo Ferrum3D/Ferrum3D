@@ -42,7 +42,7 @@ namespace FE::Graphics::DeferredShading
             return;
 
         const RendererViewData& view = blackboard.Get<RendererViewData>();
-        if (view.m_view->GetVisibilityDebugMode() != DebugMode::kDeferred)
+        if (!NeedsDeferredShading(view.m_view->GetVisibilityDebugMode()))
             return;
 
         const auto& gBufferTargets = blackboard.Get<SurfaceEvaluation::Output>().m_gBufferTargets;
@@ -50,7 +50,7 @@ namespace FE::Graphics::DeferredShading
         FE_FG_SCOPE(graph, "DeferredShading");
         const Vector2UInt resolution = gBufferTargets[0]->GetDesc().GetSize2D();
         Core::Buffer* viewBuffer = view.m_constants.Get();
-        const auto pipelines = blackboard.Get<SceneData*>()->m_shadingPipelines.GetPipelines();
+        const auto pipelines = blackboard.Get<SceneData*>()->m_shadingPipelines.GetSlots();
         const uint32_t shaderCount = pipelines.size();
         // Initialize background and unsupported routes before shading only covered pixels.
         auto* initialize = graph.AllocatePassData<DeferredDirectPassDesc>();
@@ -71,7 +71,7 @@ namespace FE::Graphics::DeferredShading
             festd::inline_vector<SurfaceBinding, 16> bindings;
             for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
             {
-                if (pipelines[slot] != nullptr)
+                if (pipelines[slot].m_pipeline != nullptr)
                     bindings.push_back({ slot, slot });
             }
 
@@ -82,16 +82,16 @@ namespace FE::Graphics::DeferredShading
         auto work = CreateSurfaceWork(graph.GetDevice(), resolution, scene.m_shadingRouting, 32);
         {
             FE_FG_SCOPE(graph, "ShadingClassification");
-            BuildSurfaceWork(graph, *view.m_renderQueueUploader, nullptr, nullptr, gBufferTargets[0].Get(), work, true);
+            BuildSurfaceWork(graph, *view.m_renderQueueUploader, ShadingWorkInput{ gBufferTargets[0].Get() }, work);
         }
 
         for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
         {
-            if (pipelines[slot] == nullptr)
+            if (pipelines[slot].m_pipeline == nullptr)
                 continue;
 
             auto* shading = graph.AllocatePassData<DeferredPassDesc>();
-            shading->m_pipeline = pipelines[slot].Get();
+            shading->m_pipeline = pipelines[slot].m_pipeline.Get();
             shading->m_arguments =
                 Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
             shading->m_constants.m_view = graph.GetSRV(viewBuffer);

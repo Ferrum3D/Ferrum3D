@@ -1,4 +1,5 @@
 #pragma once
+#include <Shaders/Passes/Visibility/DebugModes.h>
 #include <Shaders/Scene/ViewData.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
