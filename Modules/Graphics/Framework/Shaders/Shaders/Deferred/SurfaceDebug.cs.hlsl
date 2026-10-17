@@ -1,6 +1,10 @@
 #include <Shaders/Deferred/GBuffer.hlsli>
 #include <Shaders/Passes/Visibility/Debug.h>
 
+#ifdef SURFACE_GROUP_HEADER
+#    include SURFACE_GROUP_HEADER
+#endif
+
 [[vk::push_constant]] DebugConstants GConstants;
 
 float3 DebugIDColor(uint id)
@@ -43,10 +47,14 @@ void main(uint3 pixel : SV_DispatchThreadID)
         }
         else if (GConstants.m_mode == 11)
         {
-            const uint instanceIndex = GConstants.m_visibility.Load(uint3(pixel.xy, 0)).x - 1;
-            const ViewData view = GConstants.m_view.Load(0);
-            const MeshInstanceTable::Row instance = MeshInstanceTable::Create(view.m_instances).ReadRow(instanceIndex);
-            color = DebugIDColor(instance.m_meshGroup.Get().m_rowIndex);
+#ifdef SURFACE_GROUP_HEADER
+            const uint2 id = GConstants.m_visibility.Load(uint3(pixel.xy, 0));
+            const uint group = SurfaceGroup(GConstants.m_view, id);
+            if (group == kInvalidIndex)
+                return;
+
+            color = DebugIDColor(group);
+#endif
         }
         else if (GConstants.m_mode == 12)
             color = surface.m_color;

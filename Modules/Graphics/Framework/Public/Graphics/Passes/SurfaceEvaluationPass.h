@@ -1,16 +1,9 @@
 #pragma once
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
-#include <Graphics/Passes/SurfaceWorkBuilder.h>
 #include <Graphics/Scene/View.h>
 
 namespace FE::Graphics::SurfaceEvaluation
 {
-    struct PassData final
-    {
-        Visibility::SurfaceWork* m_work = nullptr;
-    };
-
-
     struct Output final
     {
         Rc<Core::Texture> m_gBufferTargets[4];
@@ -27,8 +20,6 @@ namespace FE::Graphics::SurfaceEvaluation
 
     private:
         void DoRelease() override;
-
-        Visibility::SurfaceWork m_work;
     };
 
 

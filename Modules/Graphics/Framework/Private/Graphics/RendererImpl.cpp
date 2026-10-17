@@ -13,6 +13,7 @@
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/SceneImpl.h>
+#include <Graphics/Scene/SurfaceEvaluation.h>
 
 namespace FE::Graphics
 {
@@ -107,8 +108,11 @@ namespace FE::Graphics
 
         m_graphicsQueue->BeginFrame();
         viewport->AcquireNextImage();
-        EnsureMainColorTarget(viewport->GetDesc());
-        EnsureMainDepthTarget(viewport->GetDesc());
+        // Logical targets are frame-local; the graph infers usage and obtains their memory from its pool.
+        const Vector2UInt resolution(viewport->GetDesc().m_width, viewport->GetDesc().m_height);
+        m_mainColorTarget =
+            Core::Texture::Create(m_device.Get(), "RendererMainColor", Core::Format::kB10G11R11_UFLOAT, resolution);
+        m_mainDepthTarget = Core::Texture::Create(m_device.Get(), "RendererMainDepth", Core::Format::kD32_SFLOAT, resolution);
 
         m_frameGraph->BeginFrame();
 
@@ -117,10 +121,6 @@ namespace FE::Graphics
             scene->GetModules().ForEachActive([](SceneModuleBase& module) {
                 module.Update();
             });
-
-            scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
-                module.UpdateRenderData(*m_frameGraph, m_renderQueueUploader);
-            });
         }
 
         m_database->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
@@ -128,6 +128,11 @@ namespace FE::Graphics
 
         if (hasEnabledView)
         {
+            // Publish scene constants after database uploads establish the current table addresses.
+            scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
+                module.UpdateRenderData(*m_frameGraph, m_renderQueueUploader);
+            });
+
             for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
             {
                 View* view = scene->GetView(viewIndex);
@@ -185,48 +190,6 @@ namespace FE::Graphics
     }
 
 
-    void RendererImpl::EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc)
-    {
-        const bool sizeMismatch = m_mainColorTarget != nullptr
-            && (m_mainColorTarget->GetDesc().m_width != viewportDesc.m_width
-                || m_mainColorTarget->GetDesc().m_height != viewportDesc.m_height);
-        if (m_mainColorTarget != nullptr && !sizeMismatch)
-            return;
-
-        m_mainColorTarget = Core::Texture::Create(m_device.Get(),
-                                                  "RendererMainColor",
-                                                  Core::Format::kB10G11R11_UFLOAT,
-                                                  { viewportDesc.m_width, viewportDesc.m_height });
-
-        Core::ResourceCommitParams commitParams;
-        commitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
-            | Core::BarrierAccessFlags::kRenderTarget;
-        commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
-        m_resourcePool->CommitTextureMemory(m_mainColorTarget.Get(), commitParams);
-    }
-
-
-    void RendererImpl::EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc)
-    {
-        const bool sizeMismatch = m_mainDepthTarget != nullptr
-            && (m_mainDepthTarget->GetDesc().m_width != viewportDesc.m_width
-                || m_mainDepthTarget->GetDesc().m_height != viewportDesc.m_height);
-        if (m_mainDepthTarget != nullptr && !sizeMismatch)
-            return;
-
-        m_mainDepthTarget = Core::Texture::Create(m_device.Get(),
-                                                  "RendererMainDepth",
-                                                  Core::Format::kD32_SFLOAT,
-                                                  { viewportDesc.m_width, viewportDesc.m_height });
-
-        Core::ResourceCommitParams commitParams;
-        commitParams.m_bindFlags = Core::BarrierAccessFlags::kDepthStencilRead | Core::BarrierAccessFlags::kDepthStencilWrite
-            | Core::BarrierAccessFlags::kShaderRead;
-        commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
-        m_resourcePool->CommitTextureMemory(m_mainDepthTarget.Get(), commitParams);
-    }
-
-
     void RendererImpl::ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport)
     {
         auto* clearPass = graph.AllocatePassData<RendererTargetClearPassDesc>();
@@ -247,12 +210,24 @@ namespace FE::Graphics
         RendererViewData& viewData = blackboard.Add<RendererViewData>();
         viewData.m_scene = &scene;
         viewData.m_view = &view;
-        viewData.m_viewport = &viewport;
         viewData.m_mainColorTarget = m_mainColorTarget.Get();
         viewData.m_mainDepthTarget = m_mainDepthTarget.Get();
         viewData.m_viewportRect = viewport.GetDesc().GetRect();
-        viewData.m_database = m_database.get();
         viewData.m_renderQueueUploader = &m_renderQueueUploader;
+
+        ViewData& constants = blackboard.Add<ViewData>();
+        constants.m_viewProjection = view.GetViewProjectionMatrix();
+        constants.m_inverseViewProjection = view.GetInverseViewProjectionMatrix();
+        constants.m_cameraPosition = PackedVector4F(Vector4(view.GetCameraTransform().Translation(), 1.0f));
+
+        const RectF rect = viewData.m_viewportRect;
+        constants.m_viewport = PackedVector4F(rect.left, rect.top, rect.Width(), rect.Height());
+        constants.m_backgroundColor = PackedVector4F(Vector4(Colors::kDarkSlateBlue));
+        viewData.m_constants = Core::Buffer::CreateStructured<ViewData>(graph.GetDevice(), "View", 1);
+        FE_Verify(m_renderQueueUploader.Upload(graph, viewData.m_constants.Get(), constants));
+
+        blackboard.Add<SceneData*>(&scene.GetRenderData());
+        blackboard.Add<SurfaceEvaluationInputs>();
 
         view.Update(blackboard);
 
@@ -261,8 +236,8 @@ namespace FE::Graphics
         });
 
         const bool hasVisibility = blackboard.Contains<Visibility::PassData>();
-        const bool hasSurface = blackboard.Contains<SurfaceEvaluation::PassData>();
-        const bool hasShading = blackboard.Contains<DeferredShading::PassData>();
+        const bool hasSurface = blackboard.Contains<SurfaceEvaluation::ViewModule*>();
+        const bool hasShading = blackboard.Contains<DeferredShading::ViewModule*>();
         const auto mode = view.GetVisibilityDebugMode();
         const bool needsSurface = mode >= Visibility::DebugMode::kEvaluationTile;
         const bool needsShading = mode == Visibility::DebugMode::kDeferred;

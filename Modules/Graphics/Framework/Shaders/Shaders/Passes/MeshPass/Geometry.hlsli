@@ -49,11 +49,11 @@ struct MeshDrawData
 };
 
 
-MeshDrawData ResolveMeshDrawData(const ViewData view, const uint32_t instanceIndex, const uint32_t lodIndex = kInvalidIndex)
+MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanceIndex, const uint32_t lodIndex = kInvalidIndex)
 {
-    MeshInstanceTable instanceTable = MeshInstanceTable::Create(view.m_instances);
-    MeshGroupTable groupTable = MeshGroupTable::Create(view.m_groups);
-    MeshLodInfoTable lodTable = MeshLodInfoTable::Create(view.m_lods);
+    MeshInstanceTable instanceTable = MeshInstanceTable::Create(view.m_scene.Load(0).m_instances);
+    MeshGroupTable groupTable = MeshGroupTable::Create(view.m_scene.Load(0).m_groups);
+    MeshLodInfoTable lodTable = MeshLodInfoTable::Create(view.m_scene.Load(0).m_lods);
 
     const MeshInstanceTable::Row instance = instanceTable.ReadRow(instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());

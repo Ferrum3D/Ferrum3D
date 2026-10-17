@@ -25,7 +25,6 @@ namespace FE::Graphics::Visibility
     struct Output final
     {
         Rc<Core::Texture> m_target;
-        Rc<Core::Buffer> m_view;
     };
 
 

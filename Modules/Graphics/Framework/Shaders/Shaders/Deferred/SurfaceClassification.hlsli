@@ -2,6 +2,10 @@
 #include <Shaders/Deferred/GBuffer.hlsli>
 #include <Shaders/Deferred/Tiling.h>
 
+#ifdef SURFACE_GROUP_HEADER
+#    include SURFACE_GROUP_HEADER
+#endif
+
 [[vk::push_constant]] TilingConstants GConstants;
 
 uint ThreadIndex(uint3 dispatch)
@@ -27,13 +31,12 @@ uint ClassifyPixel(uint2 pixel)
         return binding.x + tile * binding.y;
     }
 
+#ifdef SURFACE_GROUP_HEADER
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel, 0));
     if (id.x == 0)
         return kInvalidIndex;
 
-    const ViewData view = GConstants.m_view.Load(0);
-    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(view.m_instances).ReadRow(id.x - 1);
-    const uint group = instance.m_meshGroup.Get().m_rowIndex;
+    const uint group = SurfaceGroup(GConstants.m_view, id);
     if (group >= GConstants.m_groupRowCount)
         return kInvalidIndex;
 
@@ -42,4 +45,7 @@ uint ClassifyPixel(uint2 pixel)
         return kInvalidIndex;
 
     return route.x + tile * route.y;
+#else
+    return kInvalidIndex;
+#endif
 }

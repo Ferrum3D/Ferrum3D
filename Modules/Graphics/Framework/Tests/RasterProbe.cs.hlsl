@@ -12,7 +12,10 @@ void main(uint3 group : SV_GroupID)
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel, 0));
     const float depth = GConstants.m_depth.Load(uint3(pixel, 0));
     ReconstructedAttributes attributes;
-    const bool valid = ReconstructAttributes(GConstants.m_view.Load(0), id, float2(pixel) + 0.5f, float2(64, 64), attributes);
+    ByteAddressBufferDescriptor objectData;
+    objectData.m_index = GConstants.m_view.m_index;
+    const MeshViewData view = LoadMeshView(objectData);
+    const bool valid = ReconstructAttributes(view, id, float2(pixel) + 0.5f, float2(64, 64), attributes);
     const uint offset = group.x * 16;
     GConstants.m_words.Store(offset, id.x);
     GConstants.m_words.Store(offset + 1, id.y);

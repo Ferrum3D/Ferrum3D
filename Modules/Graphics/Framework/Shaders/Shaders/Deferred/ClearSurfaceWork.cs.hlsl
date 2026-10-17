@@ -9,7 +9,4 @@ void main(uint3 dispatch : SV_DispatchThreadID)
         GConstants.m_counts.Store(index, 0);
         GConstants.m_cursors.Store(index, 0);
     }
-
-    if (GConstants.m_classifyShading == 0 && index < GConstants.m_resolution.x * GConstants.m_resolution.y)
-        GConstants.m_g0.Store(uint2(index % GConstants.m_resolution.x, index / GConstants.m_resolution.x), 0);
 }

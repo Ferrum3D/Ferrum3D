@@ -4,7 +4,7 @@
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::CullMeshInstances)
     struct Constants final
     {
-        StructuredBufferDescriptor<ViewData> m_view;
+        StructuredBufferDescriptor<MeshViewData> m_view;
         StructuredBufferDescriptor<CullDispatch> m_dispatches;
         RWStructuredBufferDescriptor<InstanceClassification> m_classification;
 

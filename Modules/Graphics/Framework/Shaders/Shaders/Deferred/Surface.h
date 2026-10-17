@@ -4,7 +4,7 @@
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     struct SurfaceConstants final
     {
-        StructuredBufferDescriptor<ViewData> m_view;
+        ByteAddressBufferDescriptor m_view;
         Texture2DDescriptor<uint2> m_visibility;
         StructuredBufferDescriptor<uint32_t> m_pixels;
         StructuredBufferDescriptor<WaveCommand> m_waves;

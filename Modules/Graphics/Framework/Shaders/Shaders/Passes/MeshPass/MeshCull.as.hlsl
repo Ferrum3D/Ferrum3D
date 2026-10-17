@@ -31,7 +31,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
                 + draw.m_lodInfo.m_indexCount * sizeof(uint) + draw.m_lodInfo.m_meshletCount * sizeof(Core::MeshletHeader)
                 + draw.m_lodInfo.m_primitiveCount * sizeof(Core::PackedTriangle);
             const float4 sphere = draw.m_geometry.Read<float4>(sphereOffset + meshletIndex * sizeof(float4));
-            if (VisibleSphere(sphere, mul(draw.m_worldTransform, GView.m_viewProjection)))
+            if (VisibleSphere(sphere, mul(draw.m_worldTransform, GView.m_view.m_viewProjection)))
             {
                 uint payloadIndex;
                 InterlockedAdd(GVisibleCount, 1, payloadIndex);

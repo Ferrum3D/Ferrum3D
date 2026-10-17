@@ -3,7 +3,7 @@
 #include <Shaders/Passes/MeshPass/MeshPass.h>
 
 [[vk::push_constant]] Constants GConstants;
-static const ViewData GView = GConstants.m_view.Load(0);
+static const MeshViewData GView = GConstants.m_view.Load(0);
 
 
 struct MeshPayload

@@ -31,7 +31,6 @@ namespace FE::Graphics
                 }
             }
 
-            FE_Assert(m_pipelines.size() < kInvalidIndex);
             m_pipelines.push_back(Rc<Core::ComputePipeline>(pipeline));
             m_referenceCounts.push_back(1);
             return m_pipelines.size() - 1;

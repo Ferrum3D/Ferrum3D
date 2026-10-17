@@ -2,11 +2,13 @@
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/GraphicsQueue.h>
+#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
 #include <Graphics/Scene/RenderBatch.h>
+#include <Graphics/Scene/SurfaceEvaluation.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
@@ -18,6 +20,15 @@
 
 namespace FE::Graphics
 {
+    namespace
+    {
+        FE_COMPUTE_PIPELINE_SET(CountMeshSurfacePipeline, "Shaders/Passes/MeshPass/CountMeshSurfacePixels.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(ScatterMeshSurfacePipeline, "Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(MeshVisibilityDebugPipeline, "Shaders/Passes/MeshPass/VisibilityDebug.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(MeshSurfaceDebugPipeline, "Shaders/Passes/MeshPass/MeshSurfaceDebug.cs.hlsl");
+    } // namespace
+
+
     static void FreeInstanceParameters(const IO::AssetLease<MaterialInstanceAsset>& materialLease, const uint32_t generation,
                                        const MaterialParameterAllocator::Allocation& parameters)
     {
@@ -38,6 +49,7 @@ namespace FE::Graphics
         RendererImpl* renderer = Rtti::AssertCast<RendererImpl*>(scene->GetRenderer());
         DB::Database* database = renderer->GetDatabase();
         FE_Assert(database != nullptr);
+        m_visibilityType = scene->GetRenderData().RegisterVisibilityType();
         const auto compute = renderer->GetGraphicsQueue()->GetDevice()->GetComputeCapabilities();
         m_evaluationWaveLaneCount = compute.m_waveLaneCount == 64 ? 64 : 32;
 
@@ -52,6 +64,7 @@ namespace FE::Graphics
 
     MeshSceneModule::~MeshSceneModule()
     {
+        m_scene->GetRenderData().ReleaseVisibilityType(m_visibilityType);
         for (MeshBatch* batch : m_batches)
         {
             if (batch != nullptr)
@@ -365,6 +378,7 @@ namespace FE::Graphics
                 m_meshLodInfoTable->ReadRow(group->m_lodsRef.m_rowIndex + group->m_residentLod).m_info.Get().m_meshletCount;
             if (meshletCount == 0)
                 return;
+
             Core::GraphicsPipeline* pipeline = material->m_runtime->GetPipeline(role);
             if (pipeline == nullptr)
                 return;
@@ -378,6 +392,7 @@ namespace FE::Graphics
                     break;
                 }
             }
+
             if (bucket == kInvalidIndex)
             {
                 bucket = registry->m_slots.size();
@@ -398,13 +413,31 @@ namespace FE::Graphics
                                                                                             routing.size());
             FE_Verify(uploader.UploadArray(graph, registry->m_routing.Get(), festd::span(routing)));
         }
+
         registry->m_revision = m_revision;
         return *registry;
     }
 
 
-    void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader&)
+    void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader)
     {
+        MeshPass::MeshSceneData sceneData{};
+        sceneData.m_instances = m_meshInstanceTable->GetDeviceAddress();
+        sceneData.m_groups = m_meshGroupTable->GetDeviceAddress();
+        sceneData.m_lods = m_meshLodInfoTable->GetDeviceAddress();
+        sceneData.m_materials = m_materialInstanceTable->GetDeviceAddress();
+        sceneData.m_batches = m_batchTable->GetDeviceAddress();
+        sceneData.m_members = m_memberTable->GetDeviceAddress();
+        sceneData.m_visibilityType = m_visibilityType;
+
+        m_sceneData = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(graph.GetDevice(), "MeshScene", 1);
+        FE_Verify(uploader.Upload(graph, m_sceneData.Get(), sceneData));
+
+        // The descriptor is nested in MeshViewData, so declare the indirect shader read explicitly.
+        auto* sceneAccess = graph.AllocatePassData<Core::BufferAccessPassDesc>();
+        sceneAccess->m_access = { m_sceneData.Get(), Core::BarrierSyncFlags::kAllShading, Core::BarrierAccessFlags::kShaderRead };
+        graph.AddPass("MeshSceneReady", sceneAccess);
+
         // Device-address geometry reads must be visible to the graph and retained through execution.
         Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
             const MeshGroup* group = m_meshGroups[groupIndex];
@@ -426,7 +459,9 @@ namespace FE::Graphics
         const auto& view = blackboard.Get<RendererViewData>();
         auto& culled = blackboard.Add<CulledMeshView>();
         const Matrix4x4 viewProjection = view.m_view->GetViewProjectionMatrix();
+
         RenderBatchCollector visibility(graph.GetAllocator(), viewProjection);
+
         festd::pmr::vector<MeshPass::CullDispatch> accepted{ graph.GetAllocator() };
         const auto collectBatch = [&](const MeshBatch* batch) {
             if (batch == nullptr)
@@ -455,16 +490,34 @@ namespace FE::Graphics
             });
         }
 
-        MeshPass::ViewData data{};
-        data.m_viewProjection = viewProjection;
-        data.m_cameraPosition = PackedVector4F(Vector4(view.m_view->GetCameraTransform().Translation(), 1.0f));
-        data.m_instances = m_meshInstanceTable->GetDeviceAddress();
-        data.m_groups = m_meshGroupTable->GetDeviceAddress();
-        data.m_lods = m_meshLodInfoTable->GetDeviceAddress();
-        data.m_materials = m_materialInstanceTable->GetDeviceAddress();
-        data.m_batches = m_batchTable->GetDeviceAddress();
-        data.m_members = m_memberTable->GetDeviceAddress();
+        MeshPass::MeshViewData data{};
+        data.m_view = blackboard.Get<ViewData>();
+        data.m_scene = graph.GetSRV(m_sceneData.Get());
         GpuMeshWorkBuilder::CullView(graph, uploader, accepted, data, culled);
+
+        SurfaceEvaluationBatch batch;
+        batch.m_objectData = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(graph.GetDevice(), "MeshSurfaceView", 1);
+        FE_Verify(uploader.Upload(graph, batch.m_objectData.Get(), data));
+
+        batch.m_countPipeline = CountMeshSurfacePipeline::GetPipeline();
+        batch.m_scatterPipeline = ScatterMeshSurfacePipeline::GetPipeline();
+        batch.m_visibilityDebugPipeline = MeshVisibilityDebugPipeline::GetPipeline();
+        batch.m_surfaceDebugPipeline = MeshSurfaceDebugPipeline::GetPipeline();
+        batch.m_groupRowCount = m_meshGroupTable->GetReservedRowCount();
+        batch.m_waveLaneCount = m_evaluationWaveLaneCount;
+
+        for (const MeshGroup* group : m_meshGroups)
+        {
+            if (group == nullptr || group->m_buffer == nullptr || group->m_instanceCount == 0)
+                continue;
+
+            const auto material = m_materialInstanceTable->ReadRow(group->m_materialRef);
+            const uint32_t slot = material.m_evaluationSlot.Get();
+            if (slot != kInvalidIndex && material.m_shadingSlot.Get() < 254)
+                batch.m_bindings.push_back({ group->m_tableRef.m_rowIndex, slot });
+        }
+
+        blackboard.Get<SurfaceEvaluationInputs>().push_back(std::move(batch));
     }
 
 
@@ -502,12 +555,15 @@ namespace FE::Graphics
                               for (uint32_t page = 0; page < submission.m_commandCount; ++page)
                               {
                                   context.SetPipeline(submission.m_pipeline.Get());
-                                  MeshPass::Constants constants{ viewAddress, submission.m_firstCommand + page };
+
+                                  const MeshPass::Constants constants{ .m_view = viewAddress,
+                                                                       .m_commandIndex = submission.m_firstCommand + page };
                                   context.PushConstants(constants);
                                   context.DispatchMeshIndirect(constants.m_commandIndex
                                                                * sizeof(MeshPass::MeshDispatchArguments));
                               }
                           }
+
                           context.EndRenderPass();
                       });
     }
@@ -583,9 +639,11 @@ namespace FE::Graphics
         meshGroup->m_material = material;
         meshGroup->m_tableRef = m_meshGroupTable->AllocateRow();
         meshGroup->m_materialRef = m_materialInstanceTable->AllocateRow();
+
         const auto materialRow = m_materialInstanceTable->WriteRow(meshGroup->m_materialRef);
         materialRow.m_evaluationSlot.Get() = kInvalidIndex;
         materialRow.m_shadingSlot.Get() = kInvalidIndex;
+
         m_meshGroups.resize(m_meshGroupTable->GetReservedRowCount());
         m_meshGroups[meshGroup->m_tableRef.m_rowIndex] = meshGroup;
         m_activeMeshGroups.resize(m_meshGroups.size(), false);
@@ -609,12 +667,14 @@ namespace FE::Graphics
                 m_meshGroupTable->WriteRow(group->m_tableRef).m_renderable.Get() = 0;
                 ++m_revision;
             }
+
             if (group->m_buffer)
             {
                 group->m_buffer.Reset();
                 group->m_meshGeneration = 0;
                 ++m_revision;
             }
+
             return;
         }
 
@@ -627,17 +687,21 @@ namespace FE::Graphics
             return;
 
         ++m_revision;
+
         const MeshGroupTable::RWRow tableRow = m_meshGroupTable->WriteRow(group->m_tableRef);
         if (meshChanged)
         {
             FE_Assert(!mesh->m_submeshes.empty());
+
             const MeshSubmeshAssetInfo& submesh = mesh->m_submeshes[0];
             tableRow.m_bounds.Get().m_min = PackedVector3F(submesh.m_bounds.min);
             tableRow.m_bounds.Get().m_max = PackedVector3F(submesh.m_bounds.max);
+
             for (const MeshHandle handle : group->m_instances)
                 m_boundsDirty.set(m_instances[handle.m_value].m_batch->m_tableRef.m_rowIndex);
 
             FE_Assert(!submesh.m_lods.empty());
+
             if (group->m_lodsRef.m_count != submesh.m_lods.size())
             {
                 if (group->m_lodsRef.m_count != 0)
@@ -648,6 +712,7 @@ namespace FE::Graphics
             Memory::FiberTempAllocator temp;
             festd::pmr::inline_vector<Core::MeshLodInfo> lodInfos{ &temp };
             lodInfos.reserve(submesh.m_lods.size());
+
             for (const MeshLodAssetInfo& assetLod : submesh.m_lods)
             {
                 FE_Assert(assetLod.m_meshletCount <= Visibility::kMaxMeshletCount);
@@ -658,24 +723,27 @@ namespace FE::Graphics
                 lod.m_meshletCount = assetLod.m_meshletCount;
                 lod.m_primitiveCount = assetLod.m_primitiveCount;
             }
+
             m_meshLodInfoTable->CopyColumn(group->m_lodsRef, lodInfos);
 
             const uint32_t lodIndex = mesh->m_residentLod;
             FE_Assert(lodIndex < submesh.m_lods.size());
-            uint64_t geometryOffset = 0;
+
+            uint32_t geometryOffset = 0;
             for (uint32_t previousLod = 0; previousLod < lodIndex; ++previousLod)
             {
                 for (const MeshSubmeshAssetInfo& previousSubmesh : mesh->m_submeshes)
                 {
                     FE_Assert(previousLod < previousSubmesh.m_lods.size());
                     const MeshLodAssetInfo& info = previousSubmesh.m_lods[previousLod];
-                    geometryOffset += static_cast<uint64_t>(info.m_vertexCount) * mesh->m_vertexStride;
-                    geometryOffset += static_cast<uint64_t>(info.m_indexCount) * sizeof(uint32_t);
-                    geometryOffset += static_cast<uint64_t>(info.m_meshletCount) * sizeof(Core::MeshletHeader);
-                    geometryOffset += static_cast<uint64_t>(info.m_primitiveCount) * sizeof(Core::PackedTriangle);
-                    geometryOffset += static_cast<uint64_t>(info.m_meshletCount) * sizeof(PackedVector4F);
+                    geometryOffset += info.m_vertexCount * mesh->m_vertexStride;
+                    geometryOffset += info.m_indexCount * sizeof(uint32_t);
+                    geometryOffset += info.m_meshletCount * sizeof(Core::MeshletHeader);
+                    geometryOffset += info.m_primitiveCount * sizeof(Core::PackedTriangle);
+                    geometryOffset += info.m_meshletCount * sizeof(PackedVector4F);
                 }
             }
+
             FE_Assert(geometryOffset < mesh->m_buffer->GetDesc().m_size);
 
             tableRow.m_geometry.Get() = BufferPointer{ mesh->m_buffer->GetDeviceAddress() + geometryOffset };
@@ -692,13 +760,15 @@ namespace FE::Graphics
 
             const MaterialInstanceTable::RWRow materialRow = m_materialInstanceTable->WriteRow(group->m_materialRef);
             materialRow.m_materialParameters.Get() = material->m_runtime->GetMaterialParameters();
-            materialRow.m_evaluationSlot.Get() = m_evaluationPipelines.Register(
+            materialRow.m_evaluationSlot.Get() = m_scene->GetRenderData().m_evaluationPipelines.Register(
                 material->m_runtime->GetComputePipeline(Env::Name("SurfaceEvaluate"), m_evaluationWaveLaneCount));
-            materialRow.m_shadingSlot.Get() =
-                m_shadingPipelines.Register(material->m_runtime->GetComputePipeline(Env::Name("DeferredShade")));
+            materialRow.m_shadingSlot.Get() = m_scene->GetRenderData().m_shadingPipelines.Register(
+                material->m_runtime->GetComputePipeline(Env::Name("DeferredShade")));
             if (materialRow.m_evaluationSlot.Get() == kInvalidIndex || materialRow.m_shadingSlot.Get() >= 254)
+            {
                 Logger::LogWarning("Material permutation '{}' has no supported deferred evaluation/shading combination",
                                    material->m_permutationKey);
+            }
 
             tableRow.m_materialInstance.Get() = group->m_materialRef;
             for (const MeshHandle handle : group->m_instances)
@@ -712,6 +782,7 @@ namespace FE::Graphics
 
             group->m_materialGeneration = materialGeneration;
         }
+
         tableRow.m_renderable.Get() = 1;
     }
 
@@ -719,8 +790,8 @@ namespace FE::Graphics
     void MeshSceneModule::ReleaseGroupPipelines(MeshGroup* group)
     {
         const auto row = m_materialInstanceTable->WriteRow(group->m_materialRef);
-        m_evaluationPipelines.Release(row.m_evaluationSlot.Get());
-        m_shadingPipelines.Release(row.m_shadingSlot.Get());
+        m_scene->GetRenderData().m_evaluationPipelines.Release(row.m_evaluationSlot.Get());
+        m_scene->GetRenderData().m_shadingPipelines.Release(row.m_shadingSlot.Get());
         row.m_evaluationSlot.Get() = kInvalidIndex;
         row.m_shadingSlot.Get() = kInvalidIndex;
         group->m_materialGeneration = 0;

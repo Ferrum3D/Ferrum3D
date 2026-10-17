@@ -1,18 +1,11 @@
-#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/VisibilityPass.h>
-#include <Graphics/Scene/GpuMeshWorkBuilder.h>
+#include <Graphics/Scene/SurfaceEvaluation.h>
 #include <Shaders/Passes/Visibility/Debug.h>
 
 namespace FE::Graphics::Visibility
 {
-    namespace
-    {
-        FE_COMPUTE_PIPELINE_SET(DebugPipeline, "Shaders/Passes/Visibility/Debug.cs.hlsl");
-    } // namespace
-
-
     ViewModule::ViewModule(View* view)
         : ViewModuleBase(view)
         , m_drawTag(DrawTags::Visibility)
@@ -60,6 +53,7 @@ namespace FE::Graphics::Visibility
             context.ClearRenderTargets();
         });
 
+        // All opaque object modules contribute coverage against the same depth and visibility targets.
         SceneRenderPass pass;
         pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
         pass.m_passDescToken = graph.AddBasePassDesc(coverage);
@@ -69,24 +63,21 @@ namespace FE::Graphics::Visibility
             module.AddRenderPasses(graph, *view.m_renderQueueUploader, pass);
         });
 
-        MeshPass::ViewData geometryView{};
-        if (blackboard.Contains<CulledMeshView>())
-            geometryView = blackboard.Get<CulledMeshView>().m_viewData;
-
-        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::ViewData>(graph.GetDevice(), "VisibilityView", 1);
-        FE_Verify(view.m_renderQueueUploader->UploadArray(graph, viewBuffer.Get(), festd::span(&geometryView, 1)));
-        output.m_view = viewBuffer;
         if (view.m_view->GetVisibilityDebugMode() > DebugMode::kDepthError)
             return;
 
-        auto* debug = graph.AllocatePassData<DebugPassDesc>();
-        debug->m_pipeline = DebugPipeline::GetPipeline();
-        debug->m_constants.m_view = graph.GetSRV(viewBuffer.Get());
-        debug->m_constants.m_visibility = graph.GetSRV(Core::TextureView::Create(output.m_target.Get()));
-        debug->m_constants.m_depth = graph.GetSRV(Core::TextureView::Create(view.m_mainDepthTarget));
-        debug->m_constants.m_output = graph.GetUAV(Core::TextureView::Create(view.m_mainColorTarget));
-        debug->m_constants.m_resolution = output.m_target->GetDesc().GetSize2D();
-        debug->m_constants.m_mode = festd::to_underlying(view.m_view->GetVisibilityDebugMode());
-        graph.AddDispatchPass("VisibilityReconstruction", debug, Math::CeilDivide(output.m_target->GetDesc().GetSize2D(), 8u));
+        // Reconstruction belongs to the object producer, which supplies its debug shader and data.
+        for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
+        {
+            auto* debug = graph.AllocatePassData<DebugPassDesc>();
+            debug->m_pipeline = batch.m_visibilityDebugPipeline;
+            debug->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
+            debug->m_constants.m_visibility = graph.GetSRV(output.m_target.Get());
+            debug->m_constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
+            debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
+            debug->m_constants.m_resolution = resolution;
+            debug->m_constants.m_mode = festd::to_underlying(view.m_view->GetVisibilityDebugMode());
+            graph.AddDispatchPass("VisibilityReconstruction", debug, Math::CeilDivide(resolution, 8u));
+        }
     }
 } // namespace FE::Graphics::Visibility

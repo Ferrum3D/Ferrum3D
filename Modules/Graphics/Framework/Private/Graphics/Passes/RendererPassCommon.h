@@ -3,9 +3,9 @@
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
-#include <Graphics/Database/Database.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
+#include <Shaders/Scene/ViewData.h>
 
 namespace FE::Graphics
 {
@@ -13,12 +13,11 @@ namespace FE::Graphics
     {
         Scene* m_scene = nullptr;
         View* m_view = nullptr;
-        Core::Viewport* m_viewport = nullptr;
         Core::Texture* m_mainColorTarget = nullptr;
         Core::Texture* m_mainDepthTarget = nullptr;
         RectF m_viewportRect{ kForceInit };
-        DB::Database* m_database = nullptr;
         Core::RingUploader* m_renderQueueUploader = nullptr;
+        Rc<Core::Buffer> m_constants;
     };
 
 

@@ -1,7 +1,6 @@
 #pragma once
 #include <Shaders/Deferred/GBuffer.hlsli>
 #include <Shaders/Deferred/Surface.h>
-#include <Shaders/Passes/Visibility/Reconstruction.hlsli>
 
 #ifndef EVALUATION_LANES
 #    define EVALUATION_LANES 32
@@ -29,16 +28,6 @@ bool LoadEvaluationPixel(uint3 dispatch, uint lane, out uint2 pixel, out uint gr
     pixel = tile * kTileSize + localPixel;
     groupIndex = command.m_group;
     return all(pixel < GConstants.m_resolution);
-}
-
-
-uint SurfaceShadingRoute(ViewData view, uint groupIndex)
-{
-    const MeshGroupTable::Row group = MeshGroupTable::Create(view.m_groups).ReadRow(groupIndex);
-    const MaterialInstanceTable::Row material =
-        MaterialInstanceTable::Create(view.m_materials).ReadRow(group.m_materialInstance.Get());
-    const uint slot = material.m_shadingSlot.Get();
-    return slot < 254 ? slot + 1 : kUnsupportedShadingRoute;
 }
 
 

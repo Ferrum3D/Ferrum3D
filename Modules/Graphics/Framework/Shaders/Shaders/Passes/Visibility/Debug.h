@@ -1,15 +1,12 @@
 #pragma once
-#include <Shaders/Passes/MeshPass/GpuWork.h>
+#include <Shaders/Scene/ViewData.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
 
-#if FE_HOST
-    using MeshPass::ViewData;
-#endif
 
     struct DebugConstants final
     {
-        StructuredBufferDescriptor<ViewData> m_view;
+        ByteAddressBufferDescriptor m_view;
         Texture2DDescriptor<uint2> m_visibility;
         Texture2DDescriptor<float> m_depth;
         Texture2DDescriptor<uint32_t> m_g0;

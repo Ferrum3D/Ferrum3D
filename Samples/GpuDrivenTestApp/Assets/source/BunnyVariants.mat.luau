@@ -30,7 +30,7 @@ material:technique("SurfaceEvaluate", function(t, ctx)
 end)
 
 material:technique("DeferredShade", function(t, ctx)
-    t.computeShader = "Shaders/Deferred/ShadeSimpleLit.cs.hlsl"
+    t.computeShader = "Shaders/Materials/ShadeSimpleLit.cs.hlsl"
     return true
 end)
 

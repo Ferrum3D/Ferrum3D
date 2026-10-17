@@ -12,7 +12,7 @@ void main(uint3 dispatch : SV_DispatchThreadID)
     const bool unsupported = route == kUnsupportedShadingRoute || route > GConstants.m_shaderCount;
     if (route == kBackgroundShadingRoute || unsupported)
     {
-        const DeferredViewData view = GConstants.m_view.Load(0);
+        const ViewData view = GConstants.m_view.Load(0);
         const float3 color = unsupported ? float3(1, 0, 1) : view.m_backgroundColor.rgb;
         GConstants.m_output.Store(pixel, color);
     }

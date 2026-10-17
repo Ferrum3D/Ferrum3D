@@ -16,7 +16,7 @@ namespace FE::Graphics
     struct MeshPipelineRegistry final
     {
         Env::Name m_techniqueRole;
-        uint64_t m_revision = 0;
+        uint32_t m_revision = 0;
         festd::vector<MeshPipelineSlot> m_slots;
         Rc<Core::Buffer> m_routing;
     };
@@ -32,7 +32,7 @@ namespace FE::Graphics
 
     struct CulledMeshView final
     {
-        MeshPass::ViewData m_viewData{};
+        MeshPass::MeshViewData m_viewData{};
         Rc<Core::Buffer> m_classification;
         uint32_t m_dispatchCount = 0;
     };
@@ -52,7 +52,7 @@ namespace FE::Graphics
     namespace GpuMeshWorkBuilder
     {
         void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, festd::span<const MeshPass::CullDispatch> dispatches,
-                      MeshPass::ViewData viewData, CulledMeshView& result);
+                      MeshPass::MeshViewData viewData, CulledMeshView& result);
         void Build(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPipelineRegistry& registry,
                    const CulledMeshView& culled, Vector2UInt drawTagMask, PreparedMeshPass& result);
     } // namespace GpuMeshWorkBuilder

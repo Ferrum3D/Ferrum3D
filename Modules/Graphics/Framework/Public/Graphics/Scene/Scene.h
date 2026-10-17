@@ -7,6 +7,7 @@
 #include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
+#include <Graphics/Scene/ComputePassRegistry.h>
 
 namespace FE::Graphics
 {
@@ -16,6 +17,29 @@ namespace FE::Graphics
         struct FrameGraph;
         struct RingUploader;
     } // namespace Core
+
+    struct SceneData final
+    {
+        ComputePassRegistry m_evaluationPipelines;
+        ComputePassRegistry m_shadingPipelines;
+
+        [[nodiscard]] uint32_t RegisterVisibilityType()
+        {
+            FE_Assert(m_freeVisibilityTypes != 0);
+            const uint32_t index = Bit::CountTrailingZeros(m_freeVisibilityTypes);
+            m_freeVisibilityTypes &= ~(1u << index);
+            return index;
+        }
+
+        void ReleaseVisibilityType(const uint32_t index)
+        {
+            m_freeVisibilityTypes |= 1u << index;
+        }
+
+    private:
+        uint32_t m_freeVisibilityTypes = 0xffff;
+    };
+
 
     struct SceneRenderPass final
     {
@@ -70,6 +94,11 @@ namespace FE::Graphics
             return m_moduleList;
         }
 
+        [[nodiscard]] SceneData& GetRenderData()
+        {
+            return m_renderData;
+        }
+
         [[nodiscard]] virtual View* CreateView() = 0;
         //! @brief Remove scene ownership of a camera View; callers release their retained reference separately.
         virtual void DestroyView(View* view) = 0;
@@ -84,6 +113,7 @@ namespace FE::Graphics
         }
 
         Renderer* m_renderer = nullptr;
+        SceneData m_renderData;
         SceneModuleList m_moduleList;
     };
 } // namespace FE::Graphics

@@ -20,7 +20,7 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
     material.m_ambientOcclusion = surface.m_ambientOcclusion;
     material.m_emissive = surface.m_emissive * Shading::kPreExposure;
 
-    const DeferredViewData view = GConstants.m_view.Load(0);
+    const ViewData view = GConstants.m_view.Load(0);
     const float2 viewportPosition = (float2(pixel) + 0.5f - view.m_viewport.xy) / view.m_viewport.zw;
     const float2 ndc = viewportPosition * float2(2, -2) + float2(-1, 1);
     const float depth = GConstants.m_depth.Load(uint3(pixel, 0));

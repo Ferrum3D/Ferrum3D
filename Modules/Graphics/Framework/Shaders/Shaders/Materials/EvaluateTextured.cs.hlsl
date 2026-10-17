@@ -1,4 +1,4 @@
-#include <Shaders/Deferred/EvaluateCommon.hlsli>
+#include <Shaders/Materials/EvaluateMesh.hlsli>
 
 struct MaterialParameters
 {
@@ -21,7 +21,7 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
     if (!LoadEvaluationPixel(dispatch, lane, pixel, groupIndex))
         return;
 
-    const ViewData view = GConstants.m_view.Load(0);
+    const MeshViewData view = LoadMeshView(GConstants.m_view);
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel, 0));
 
     ReconstructedAttributes attributes;
@@ -31,10 +31,11 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
         return;
     }
 
-    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(view.m_instances).ReadRow(id.x - 1);
-    const MeshGroupTable::Row group = MeshGroupTable::Create(view.m_groups).ReadRow(groupIndex);
+    const MeshInstanceTable::Row instance =
+        MeshInstanceTable::Create(view.m_scene.Load(0).m_instances).ReadRow((id.x & kObjectIndexMask) - 1);
+    const MeshGroupTable::Row group = MeshGroupTable::Create(view.m_scene.Load(0).m_groups).ReadRow(groupIndex);
     const MaterialInstanceTable::Row binding =
-        MaterialInstanceTable::Create(view.m_materials).ReadRow(group.m_materialInstance.Get());
+        MaterialInstanceTable::Create(view.m_scene.Load(0).m_materials).ReadRow(group.m_materialInstance.Get());
     const MaterialParameters material = binding.m_materialParameters.Get().Read<MaterialParameters>(0);
     const float2 scale = instance.m_instanceData.Get().Read<InstanceParameters>(0).UvScale.xy;
     const float2 uv = attributes.m_uv * scale;

@@ -22,18 +22,23 @@ void main(uint3 pixel : SV_DispatchThreadID)
         return;
 
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel.xy, 0));
+    const MeshViewData view = LoadMeshView(GConstants.m_view);
+    if (id.x != 0 && (id.x >> kObjectTypeShift) != view.m_scene.Load(0).m_visibilityType)
+        return;
+
     float3 color = float3(0.02f, 0.02f, 0.04f);
     if (id.x != 0)
     {
         if (GConstants.m_mode <= 4)
         {
-            const uint key = GConstants.m_mode == 2 ? id.x : GConstants.m_mode == 3 ? id.y >> kPrimitiveBits
-                : GConstants.m_mode == 4 ? id.y & (kMaxPrimitiveCount - 1) : id.x * 65537 + id.y;
+            const uint key = GConstants.m_mode == 2 ? id.x
+                : GConstants.m_mode == 3            ? id.y >> kPrimitiveBits
+                : GConstants.m_mode == 4            ? id.y & (kMaxPrimitiveCount - 1)
+                                                    : id.x * 65537 + id.y;
             color = IDColor(key);
         }
         else
         {
-            const ViewData view = GConstants.m_view.Load(0);
             ReconstructedAttributes attributes;
             if (ReconstructAttributes(view, id, float2(pixel.xy) + 0.5f, float2(GConstants.m_resolution), attributes))
             {

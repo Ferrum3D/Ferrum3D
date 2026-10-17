@@ -1,11 +1,8 @@
 #pragma once
 #include <Shaders/Deferred/Contracts.h>
-#include <Shaders/Passes/MeshPass/GpuWork.h>
+#include <Shaders/Scene/ViewData.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
-#if FE_HOST
-    using MeshPass::ViewData;
-#endif
     FE_CONSTEXPR uint32_t kSurfaceBlockSize = 256;
 
     struct ShaderRange final
@@ -17,7 +14,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
 
     struct TilingConstants final
     {
-        StructuredBufferDescriptor<ViewData> m_view;
+        ByteAddressBufferDescriptor m_view;
         Texture2DDescriptor<uint2> m_visibility;
         StructuredBufferDescriptor<uint2> m_lookup;
         StructuredBufferDescriptor<uint32_t> m_bindings;
@@ -47,6 +44,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         uint32_t m_scanCount;
         uint32_t m_scanBuckets;
         uint32_t m_classifyShading;
+
         FE_RTTI_Reflect("D2156239-F9FB-4508-A008-00EBB0F01084");
     };
 
@@ -55,6 +53,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     {
         TilingConstants m_constants;
         Core::PassComputePipeline m_pipeline;
+
         FE_RTTI_Reflect("59B99AFD-33B4-41E1-A7D3-78D4E65FFB3E");
     };
 FE_HOST_END_NAMESPACE

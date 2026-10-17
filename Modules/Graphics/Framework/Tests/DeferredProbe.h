@@ -1,9 +1,6 @@
 #pragma once
 #include <Shaders/Deferred/Deferred.h>
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::DeferredProbe)
-#if FE_HOST
-    using Visibility::DeferredViewData;
-#endif
     struct Constants final
     {
         RWTexture2DDescriptor<uint32_t> m_g0;
@@ -13,7 +10,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::DeferredProbe)
         RWTexture2DDescriptor<float> m_depth;
         Texture2DDescriptor<float3> m_color;
         RWStructuredBufferDescriptor<uint32_t> m_stats;
-        StructuredBufferDescriptor<DeferredViewData> m_view;
+        StructuredBufferDescriptor<ViewData> m_view;
         uint2 m_resolution;
         uint32_t m_empty;
         FE_RTTI_Reflect("446E9FDE-3F29-4ACD-9343-DFF9F07B87D1");

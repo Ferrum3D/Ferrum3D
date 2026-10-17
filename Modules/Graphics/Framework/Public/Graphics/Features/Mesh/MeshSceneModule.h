@@ -145,16 +145,6 @@ namespace FE::Graphics
             return m_evaluationWaveLaneCount;
         }
 
-        [[nodiscard]] const ComputePassRegistry& GetEvaluationPipelines() const
-        {
-            return m_evaluationPipelines;
-        }
-
-        [[nodiscard]] const ComputePassRegistry& GetShadingPipelines() const
-        {
-            return m_shadingPipelines;
-        }
-
     private:
         void DoRelease() override;
 
@@ -201,9 +191,9 @@ namespace FE::Graphics
         Rc<MeshMemberTable> m_memberTable;
         festd::vector<MeshPipelineRegistry> m_registries;
         uint32_t m_evaluationWaveLaneCount = 32;
-        ComputePassRegistry m_evaluationPipelines;
-        ComputePassRegistry m_shadingPipelines;
-        uint64_t m_revision = 1;
+        Rc<Core::Buffer> m_sceneData;
+        uint32_t m_visibilityType = 0;
+        uint32_t m_revision = 1;
         Octree m_octree;
     };
 } // namespace FE::Graphics

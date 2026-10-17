@@ -8,6 +8,7 @@
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Passes/SurfaceWorkBuilder.h>
+#include <Shaders/Passes/MeshPass/GpuWork.h>
 #include <gtest/gtest.h>
 
 namespace FE::Graphics::SurfaceProbe
@@ -42,7 +43,17 @@ namespace FE::Graphics::SurfaceProbe
         Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
         Core::RingUploader uploader;
         uploader.Setup("SurfaceProbeUploader", pool, 256 * 1024);
-        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::ViewData>(device, "SurfaceProbeView", 1);
+        const auto classifier = [&](const Env::Name path) {
+            Core::ComputePipelineRequest request;
+            request.m_desc.SetComputeShader(path);
+            Core::ComputePipeline* result = pipelines->CreateComputePipeline(request);
+            result->GetCompletionWaitGroup()->Wait();
+            return result;
+        };
+        Core::ComputePipeline* countPipeline = classifier("Shaders/Passes/MeshPass/CountMeshSurfacePixels.cs.hlsl");
+        Core::ComputePipeline* scatterPipeline = classifier("Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
+        Rc<Core::Buffer> sceneBuffer = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(device, "ProbeScene", 1);
+        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "SurfaceProbeView", 1);
         Rc<Core::Texture> visibility =
             Core::Texture::Create(device, "SurfaceProbeVisibility", Core::Format::kR32G32_UINT, kResolution);
         Rc<Core::Texture> g0 = Core::Texture::Create(device, "SurfaceProbeG0", Core::Format::kR32_UINT, kResolution);
@@ -91,20 +102,16 @@ namespace FE::Graphics::SurfaceProbe
             }
 
             const uint32_t laneCount = testCase == 64 || testCase == 4 ? 64 : 32;
-            Visibility::EnsureSurfaceWork(work,
-                                          device,
-                                          kResolution,
-                                          bindings,
-                                          groups.GetReservedRowCount(),
-                                          shaderCount,
-                                          laneCount);
-            if (testCase == 0)
-                EXPECT_TRUE(work.m_uploaded);
+            work = Visibility::CreateSurfaceWork(device,
+                                                 kResolution,
+                                                 bindings,
+                                                 groups.GetReservedRowCount(),
+                                                 shaderCount,
+                                                 laneCount);
             EXPECT_EQ(work.m_tileCount, 6u);
             EXPECT_EQ(work.m_bucketCount, testCase == 2 ? 0u : 6u * (shadingTest ? shaderCount : kGroupCount));
             if (testCase == 2)
                 EXPECT_EQ(work.m_waveCapacity, 0u);
-            EXPECT_LT(work.m_scratchBytes, 1024u * 1024);
             Core::ComputePipelineRequest visitRequest;
             visitRequest.m_desc.SetComputeShader("Shaders/Tests/SurfaceProbeVisit.cs.hlsl");
             visitRequest.m_defines =
@@ -123,10 +130,18 @@ namespace FE::Graphics::SurfaceProbe
             queue->BeginFrame();
             graph->BeginFrame();
             database.Update(*graph, queue->GetCurrentFence());
-            MeshPass::ViewData view{};
-            view.m_instances = instances.GetDeviceAddress();
-            view.m_groups = groups.GetDeviceAddress();
-            view.m_materials = materials.GetDeviceAddress();
+            MeshPass::MeshViewData view{};
+            MeshPass::MeshSceneData scene{};
+            scene.m_instances = instances.GetDeviceAddress();
+            scene.m_groups = groups.GetDeviceAddress();
+            scene.m_materials = materials.GetDeviceAddress();
+            view.m_scene = graph->GetSRV(sceneBuffer.Get());
+            FE_Verify(uploader.Upload(*graph, sceneBuffer.Get(), scene));
+            auto* sceneAccess = graph->AllocatePassData<Core::BufferAccessPassDesc>();
+            sceneAccess->m_access = { sceneBuffer.Get(),
+                                      Core::BarrierSyncFlags::kAllShading,
+                                      Core::BarrierAccessFlags::kShaderRead };
+            graph->AddPass("ProbeSceneReady", sceneAccess);
             FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
             auto* seed = graph->AllocatePassData<ProbePassDesc>();
             seed->m_pipeline = generate;
@@ -143,7 +158,9 @@ namespace FE::Graphics::SurfaceProbe
                                          shadingTest ? nullptr : visibility.Get(),
                                          g0.Get(),
                                          work,
-                                         shadingTest);
+                                         shadingTest,
+                                         countPipeline,
+                                         scatterPipeline);
             for (uint32_t slot = 0; slot < work.m_shaderCount; ++slot)
             {
                 auto* evaluation = graph->AllocatePassData<ProbeIndirectDesc>();

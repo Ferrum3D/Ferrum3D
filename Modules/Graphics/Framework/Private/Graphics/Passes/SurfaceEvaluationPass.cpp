@@ -1,9 +1,8 @@
 #include <Graphics/Core/PipelineVariantSet.h>
-#include <Graphics/Features/Mesh/MeshSceneModule.h>
-#include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/VisibilityPass.h>
+#include <Graphics/Scene/SurfaceEvaluation.h>
 #include <Shaders/Deferred/Surface.h>
 #include <Shaders/Passes/Visibility/Debug.h>
 
@@ -33,13 +32,27 @@ namespace FE::Graphics::SurfaceEvaluation
             debug->m_constants.m_g1 = graph.GetSRV(targets[1].Get());
             debug->m_constants.m_g2 = graph.GetSRV(targets[2].Get());
             debug->m_constants.m_g3 = graph.GetSRV(targets[3].Get());
-            debug->m_constants.m_view = graph.GetSRV(visibilityData.m_view.Get());
             debug->m_constants.m_visibility = graph.GetSRV(visibility);
             debug->m_constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
             debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
             debug->m_constants.m_resolution = resolution;
             debug->m_constants.m_mode = festd::to_underlying(view.m_view->GetVisibilityDebugMode());
-            graph.AddDispatchPass("GBufferDebug", debug, Math::CeilDivide(resolution, 8u));
+
+            if (view.m_view->GetVisibilityDebugMode() == DebugMode::kEvaluationGroup)
+            {
+                for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
+                {
+                    auto* groupDebug = graph.AllocatePassData<DebugPassDesc>();
+                    *groupDebug = *debug;
+                    groupDebug->m_pipeline = batch.m_surfaceDebugPipeline;
+                    groupDebug->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
+                    graph.AddDispatchPass("SurfaceGroupDebug", groupDebug, Math::CeilDivide(resolution, 8u));
+                }
+            }
+            else
+            {
+                graph.AddDispatchPass("GBufferDebug", debug, Math::CeilDivide(resolution, 8u));
+            }
         }
     } // namespace
 
@@ -61,13 +74,13 @@ namespace FE::Graphics::SurfaceEvaluation
 
     void ViewModule::Update(Core::FrameGraphBlackboard& blackboard)
     {
-        blackboard.Add<PassData>().m_work = &m_work;
+        blackboard.Add<ViewModule*>(this);
     }
 
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
     {
-        if (!blackboard.Contains<PassData>() || !blackboard.Contains<Visibility::Output>())
+        if (!blackboard.Contains<ViewModule*>() || !blackboard.Contains<Visibility::Output>())
             return;
 
         const RendererViewData& view = blackboard.Get<RendererViewData>();
@@ -75,7 +88,6 @@ namespace FE::Graphics::SurfaceEvaluation
             return;
 
         FE_FG_SCOPE(graph, "SurfaceEvaluation");
-        const PassData& data = blackboard.Get<PassData>();
         const Visibility::Output& visibilityData = blackboard.Get<Visibility::Output>();
         Core::Texture* visibility = visibilityData.m_target.Get();
         const Vector2UInt resolution = visibility->GetDesc().GetSize2D();
@@ -90,111 +102,66 @@ namespace FE::Graphics::SurfaceEvaluation
         }
 
         auto& targets = output.m_gBufferTargets;
-        if (!view.m_scene->GetModules().Contains<MeshSceneModule>())
-        {
-            auto* clear = graph.AllocatePassData<SurfaceDirectPassDesc>();
-            clear->m_pipeline = ClearSurfacePipeline::GetPipeline();
-            clear->m_constants.m_g0 = graph.GetUAV(Core::TextureView::Create(targets[0].Get()));
-            clear->m_constants.m_resolution = resolution;
-            graph.AddDispatchPass("ClearSurfaceG0", clear, Math::CeilDivide(resolution, 8u));
-            AddDebugPass(graph, blackboard);
-            return;
-        }
+        // Clear coverage once, then let each object producer classify only its own visibility IDs.
+        auto* clear = graph.AllocatePassData<SurfaceDirectPassDesc>();
+        clear->m_pipeline = ClearSurfacePipeline::GetPipeline();
+        clear->m_constants.m_g0 = graph.GetUAV(targets[0].Get());
+        clear->m_constants.m_resolution = resolution;
+        clear->m_constants.m_visibility = graph.GetSRV(visibility);
+        graph.AddDispatchPass("ClearSurfaceG0", clear, Math::CeilDivide(resolution, 8u));
 
-        const MeshSceneModule& meshes = view.m_scene->GetModules().Find<MeshSceneModule>();
-        const auto pipelines = meshes.GetEvaluationPipelines().GetPipelines();
-        festd::vector<SurfaceBinding> bindings;
-        for (const MeshGroup* group : meshes.GetGroups())
+        const auto pipelines = blackboard.Get<SceneData*>()->m_evaluationPipelines.GetPipelines();
+        for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
         {
-            if (group == nullptr || group->m_buffer == nullptr || group->m_instanceCount == 0)
+            if (batch.m_bindings.empty())
                 continue;
 
-            const auto material = meshes.GetMaterialInstanceTable()->ReadRow(group->m_materialRef);
-            const uint32_t slot = material.m_evaluationSlot.Get();
-            if (slot < pipelines.size() && material.m_shadingSlot.Get() < 254)
-                bindings.push_back({ group->m_tableRef.m_rowIndex, slot });
-        }
-
-        SurfaceWork& work = *data.m_work;
-        const uint64_t previousScratchBytes = work.m_scratchBytes;
-        const Vector2UInt previousResolution = work.m_resolution;
-        EnsureSurfaceWork(work,
-                          graph.GetDevice(),
-                          resolution,
-                          bindings,
-                          meshes.GetMeshGroupTable()->GetReservedRowCount(),
-                          pipelines.size(),
-                          meshes.GetEvaluationWaveLaneCount());
-
-        if (const auto* shading = blackboard.TryGet<DeferredShading::PassData>())
-        {
-            const auto shadingPipelines = meshes.GetShadingPipelines().GetPipelines();
-            festd::vector<SurfaceBinding> shadingBindings;
-            for (uint32_t slot = 0; slot < shadingPipelines.size(); ++slot)
+            auto work = CreateSurfaceWork(graph.GetDevice(),
+                                          resolution,
+                                          batch.m_bindings,
+                                          batch.m_groupRowCount,
+                                          pipelines.size(),
+                                          batch.m_waveLaneCount);
             {
-                if (shadingPipelines[slot] != nullptr)
-                    shadingBindings.push_back({ slot, slot });
+                FE_FG_SCOPE(graph, "SurfaceClassification");
+                BuildSurfaceWork(graph,
+                                 *view.m_renderQueueUploader,
+                                 batch.m_objectData.Get(),
+                                 visibility,
+                                 targets[0].Get(),
+                                 work,
+                                 false,
+                                 batch.m_countPipeline,
+                                 batch.m_scatterPipeline);
             }
 
-            EnsureSurfaceWork(*shading->m_work,
-                              graph.GetDevice(),
-                              resolution,
-                              shadingBindings,
-                              shadingPipelines.size(),
-                              shadingPipelines.size(),
-                              32);
-            ShareSurfaceStorage(graph.GetDevice(), work, *shading->m_work);
-        }
-
-        if (previousScratchBytes != work.m_scratchBytes || previousResolution != resolution)
-        {
-            uint64_t scratchBytes = work.m_scratchBytes;
-            if (const auto* shading = blackboard.TryGet<DeferredShading::PassData>())
+            // Dispatch only shaders used by this producer, with its opaque reconstruction data.
+            const uint32_t tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
+            for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
             {
-                scratchBytes += shading->m_work->m_scratchBytes;
-                scratchBytes -= work.m_pixels->GetDesc().m_size;
-                scratchBytes -= work.m_waves->GetDesc().m_size;
+                if (work.m_shaderBindingData[slot].y == 0)
+                    continue;
+
+                auto* passDesc = graph.AllocatePassData<SurfacePassDesc>();
+                passDesc->m_pipeline = pipelines[slot].Get();
+                passDesc->m_arguments =
+                    Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
+                passDesc->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
+                passDesc->m_constants.m_visibility = graph.GetSRV(visibility);
+                passDesc->m_constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
+                passDesc->m_constants.m_waves = graph.GetSRV(work.m_waves.Get());
+                passDesc->m_constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
+                passDesc->m_constants.m_g0 = graph.GetUAV(targets[0].Get());
+                passDesc->m_constants.m_g1 = graph.GetUAV(targets[1].Get());
+                passDesc->m_constants.m_g2 = graph.GetUAV(targets[2].Get());
+                passDesc->m_constants.m_g3 = graph.GetUAV(targets[3].Get());
+                passDesc->m_constants.m_resolution = resolution;
+                passDesc->m_constants.m_tilesPerRow = tilesPerRow;
+                passDesc->m_constants.m_shaderSlot = slot;
+                graph.AddDispatchIndirectPass("EvaluateSurface", passDesc);
             }
-
-            const uint64_t pixels = uint64_t(resolution.x) * resolution.y;
-            Logger::LogInfo(
-                "Deferred view {}x{}: {} bytes of visibility/GBuffer images, {} bytes of shared HDR/depth, {} bytes of classification scratch",
-                resolution.x,
-                resolution.y,
-                pixels * 24,
-                pixels * 8,
-                scratchBytes);
         }
 
-        {
-            FE_FG_SCOPE(graph, "SurfaceClassification");
-            BuildSurfaceWork(graph, *view.m_renderQueueUploader, visibilityData.m_view.Get(), visibility, targets[0].Get(), work);
-        }
-
-        const uint32_t tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
-        for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
-        {
-            if (pipelines[slot] == nullptr)
-                continue;
-
-            auto* passDesc = graph.AllocatePassData<SurfacePassDesc>();
-            passDesc->m_pipeline = pipelines[slot].Get();
-            passDesc->m_arguments =
-                Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
-            passDesc->m_constants.m_view = graph.GetSRV(visibilityData.m_view.Get());
-            passDesc->m_constants.m_visibility = graph.GetSRV(visibility);
-            passDesc->m_constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
-            passDesc->m_constants.m_waves = graph.GetSRV(work.m_waves.Get());
-            passDesc->m_constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
-            passDesc->m_constants.m_g0 = graph.GetUAV(targets[0].Get());
-            passDesc->m_constants.m_g1 = graph.GetUAV(targets[1].Get());
-            passDesc->m_constants.m_g2 = graph.GetUAV(targets[2].Get());
-            passDesc->m_constants.m_g3 = graph.GetUAV(targets[3].Get());
-            passDesc->m_constants.m_resolution = resolution;
-            passDesc->m_constants.m_tilesPerRow = tilesPerRow;
-            passDesc->m_constants.m_shaderSlot = slot;
-            graph.AddDispatchIndirectPass("EvaluateSurface", passDesc);
-        }
         AddDebugPass(graph, blackboard);
     }
 } // namespace FE::Graphics::SurfaceEvaluation

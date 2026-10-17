@@ -34,8 +34,6 @@ namespace FE::Graphics
         }
 
     private:
-        void EnsureMainColorTarget(const Core::ViewportDesc& viewportDesc);
-        void EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc);
         void ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);

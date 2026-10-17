@@ -15,7 +15,7 @@ TEST(VisibilityContracts, PersistentInstanceAndPrimitiveBoundaries)
     EXPECT_EQ(first.m_primitive, 0u);
 
     const Visibility::VisibilityID last =
-        Visibility::Encode(Visibility::kMaxInstanceRow, Visibility::kMaxMeshletCount - 1, Visibility::kMaxPrimitiveCount - 1);
+        Visibility::Encode(Visibility::kMaxInstanceRow, Visibility::kMaxMeshletCount - 1, Visibility::kMaxPrimitiveCount - 1, 15);
     EXPECT_EQ(last.m_instance, 0xffffffffu);
     EXPECT_EQ(last.m_primitive, 0xffffffffu);
     EXPECT_EQ(last.m_primitive >> Visibility::kPrimitiveBits, Visibility::kMaxMeshletCount - 1);

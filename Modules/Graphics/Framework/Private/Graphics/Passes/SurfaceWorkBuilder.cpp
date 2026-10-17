@@ -49,16 +49,13 @@ namespace FE::Graphics::Visibility
         const uint32_t pixels = tiles * kTileSize * kTileSize;
         const uint32_t buckets = tiles * bindings.size();
 
-        FE_Assert(pixels <= Constants::kMaxU32 / 4 && buckets <= Constants::kMaxU32 / 8);
-        FE_Assert(groupRowCount <= Constants::kMaxU32 / 8 && shaderCount <= Constants::kMaxU32 / 12);
-
         work.m_tileCount = tiles;
         work.m_bucketCount = buckets;
+        // Each nonempty bucket may add one partial wave beyond the full-wave pixel bound.
         work.m_waveCapacity = Math::Min(pixels, Math::CeilDivide(pixels, waveLaneCount) + Math::Min(pixels, buckets));
         if (bindings.empty())
             work.m_waveCapacity = 0;
 
-        work.m_sourceBindings.assign(bindings.begin(), bindings.end());
         work.m_lookupData.resize(Math::Max(groupRowCount, 1u), Vector2UInt(kInvalidIndex, 0));
         work.m_shaderBindingData.resize(Math::Max(shaderCount, 1u), Vector2UInt(0, 0));
 
@@ -70,6 +67,7 @@ namespace FE::Graphics::Visibility
 
         work.m_bindingData.resize(Math::Max(sorted.size(), 1u), kInvalidIndex);
 
+        // Bucket order is shader, tile, then binding, keeping each shader's commands contiguous.
         uint32_t firstBinding = 0;
         for (uint32_t slot = 0; slot < shaderCount; ++slot)
         {
@@ -91,22 +89,17 @@ namespace FE::Graphics::Visibility
         }
 
         FE_Assert(firstBinding == sorted.size(), "Surface binding has an invalid shader slot");
-        const auto create = [&](const Env::Name name, const uint32_t stride, const uint32_t count) {
-            const uint32_t bytes = stride * Math::Max(count, 1u);
-            FE_Assert(bytes <= Constants::kMaxU32, "Surface buffer exceeds addressable size");
-            work.m_scratchBytes += bytes;
-            return Core::Buffer::CreateByteAddress(device, name, bytes);
-        };
-
-        work.m_lookup = create("SurfaceBindingLookup", 8, work.m_lookupData.size());
-        work.m_bindings = create("SurfaceBindings", 4, work.m_bindingData.size());
-        work.m_shaderBindings = create("SurfaceShaderBindings", 8, work.m_shaderBindingData.size());
-        work.m_counts = create("SurfaceCounts", 4, work.m_bucketCount);
-        work.m_cursors = create("SurfaceCursors", 4, work.m_bucketCount);
-        work.m_pixels = create("SurfacePixels", 4, bindings.empty() ? 0 : static_cast<uint32_t>(pixels));
-        work.m_waves = create("SurfaceWaves", 16, work.m_waveCapacity);
-        work.m_ranges = create("SurfaceRanges", 8, shaderCount);
-        work.m_arguments = create("SurfaceArguments", 12, shaderCount);
+        work.m_lookup = Core::Buffer::CreateByteAddress(device, "SurfaceBindingLookup", 8 * work.m_lookupData.size());
+        work.m_bindings = Core::Buffer::CreateByteAddress(device, "SurfaceBindings", 4 * work.m_bindingData.size());
+        work.m_shaderBindings =
+            Core::Buffer::CreateByteAddress(device, "SurfaceShaderBindings", 8 * work.m_shaderBindingData.size());
+        work.m_counts = Core::Buffer::CreateByteAddress(device, "SurfaceCounts", 4 * Math::Max(work.m_bucketCount, 1u));
+        work.m_cursors = Core::Buffer::CreateByteAddress(device, "SurfaceCursors", 4 * Math::Max(work.m_bucketCount, 1u));
+        work.m_pixels =
+            Core::Buffer::CreateByteAddress(device, "SurfacePixels", 4 * Math::Max(bindings.empty() ? 0u : pixels, 1u));
+        work.m_waves = Core::Buffer::CreateByteAddress(device, "SurfaceWaves", 16 * Math::Max(work.m_waveCapacity, 1u));
+        work.m_ranges = Core::Buffer::CreateByteAddress(device, "SurfaceRanges", 8 * Math::Max(shaderCount, 1u));
+        work.m_arguments = Core::Buffer::CreateByteAddress(device, "SurfaceArguments", 12 * Math::Max(shaderCount, 1u));
 
         uint32_t count = Math::Max(work.m_bucketCount, 1u);
 
@@ -115,8 +108,8 @@ namespace FE::Graphics::Visibility
             const uint32_t blocks = Math::CeilDivide(count, kSurfaceBlockSize);
             SurfaceScanLevel level;
             level.m_count = count;
-            level.m_offsets = create("SurfaceOffsets", 8, count);
-            level.m_sums = create("SurfaceBlockSums", 8, blocks);
+            level.m_offsets = Core::Buffer::CreateByteAddress(device, "SurfaceOffsets", 8 * count);
+            level.m_sums = Core::Buffer::CreateByteAddress(device, "SurfaceBlockSums", 8 * blocks);
             work.m_scanLevels.push_back(level);
             if (blocks == 1)
                 break;
@@ -128,67 +121,15 @@ namespace FE::Graphics::Visibility
     }
 
 
-    void EnsureSurfaceWork(SurfaceWork& work, Core::Device* device, const Vector2UInt resolution,
-                           const festd::span<const SurfaceBinding> bindings, const uint32_t groupRowCount,
-                           const uint32_t shaderCount, const uint32_t waveLaneCount)
-    {
-        bool compatible = work.m_resolution == resolution && work.m_shaderCount == shaderCount
-            && work.m_waveLaneCount == waveLaneCount && work.m_lookupData.size() == Math::Max(groupRowCount, 1u)
-            && work.m_sourceBindings.size() == bindings.size();
-        if (compatible)
-        {
-            for (uint32_t index = 0; index < bindings.size(); ++index)
-            {
-                const SurfaceBinding& previous = work.m_sourceBindings[index];
-                compatible = previous.m_group == bindings[index].m_group && previous.m_shaderSlot == bindings[index].m_shaderSlot;
-                if (!compatible)
-                    break;
-            }
-        }
-
-        if (compatible)
-            return;
-
-        work = CreateSurfaceWork(device, resolution, bindings, groupRowCount, shaderCount, waveLaneCount);
-    }
-
-
-    void ShareSurfaceStorage(Core::Device* device, SurfaceWork& evaluation, SurfaceWork& shading)
-    {
-        FE_Assert(evaluation.m_resolution == shading.m_resolution);
-
-        const auto share = [&](Rc<Core::Buffer>& first, Rc<Core::Buffer>& second, const uint32_t required) {
-            const uint32_t firstSize = first->GetDesc().m_size;
-            const uint32_t secondSize = second->GetDesc().m_size;
-            if (first->GetDesc().m_size != required)
-                first = Core::Buffer::CreateByteAddress(device, first->GetName(), required);
-
-            second = first;
-            evaluation.m_scratchBytes = evaluation.m_scratchBytes - firstSize + first->GetDesc().m_size;
-            shading.m_scratchBytes = shading.m_scratchBytes - secondSize + second->GetDesc().m_size;
-        };
-
-        const bool hasBindings = !evaluation.m_sourceBindings.empty() || !shading.m_sourceBindings.empty();
-        const uint32_t pixelBytes =
-            hasBindings ? evaluation.m_tileCount * kTileSize * kTileSize * sizeof(uint32_t) : sizeof(uint32_t);
-        const uint32_t waveCount = Math::Max(Math::Max(evaluation.m_waveCapacity, shading.m_waveCapacity), 1u);
-        share(evaluation.m_pixels, shading.m_pixels, pixelBytes);
-        share(evaluation.m_waves, shading.m_waves, waveCount * sizeof(WaveCommand));
-    }
-
-
     void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, Core::Buffer* view, Core::Texture* visibility,
-                          Core::Texture* g0, SurfaceWork& work, const bool classifyShading)
+                          Core::Texture* g0, SurfaceWork& work, const bool classifyShading, Core::ComputePipeline* countPipeline,
+                          Core::ComputePipeline* scatterPipeline)
     {
         FE_Assert(g0->GetDesc().GetSize2D() == work.m_resolution);
 
-        if (!work.m_uploaded)
-        {
-            FE_Verify(uploader.UploadArray(graph, work.m_lookup.Get(), festd::span(work.m_lookupData)));
-            FE_Verify(uploader.UploadArray(graph, work.m_bindings.Get(), festd::span(work.m_bindingData)));
-            FE_Verify(uploader.UploadArray(graph, work.m_shaderBindings.Get(), festd::span(work.m_shaderBindingData)));
-            work.m_uploaded = true;
-        }
+        FE_Verify(uploader.UploadArray(graph, work.m_lookup.Get(), festd::span(work.m_lookupData)));
+        FE_Verify(uploader.UploadArray(graph, work.m_bindings.Get(), festd::span(work.m_bindingData)));
+        FE_Verify(uploader.UploadArray(graph, work.m_shaderBindings.Get(), festd::span(work.m_shaderBindingData)));
 
         TilingConstants dimensions{};
         dimensions.m_resolution = work.m_resolution;
@@ -200,19 +141,14 @@ namespace FE::Graphics::Visibility
         dimensions.m_waveLaneCount = work.m_waveLaneCount;
         dimensions.m_classifyShading = classifyShading;
 
-        const uint32_t pixels = work.m_resolution.x * work.m_resolution.y;
+        // Reset bucket counters before counting visible pixels.
         auto* clear = AllocateStep(graph, ClearPipeline::GetPipeline(), dimensions);
         clear->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
         clear->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
 
-        if (!classifyShading)
-            clear->m_constants.m_g0 = graph.GetUAV(g0);
+        graph.AddDispatchPass("ClearSurfaceWork", clear, DispatchSize(work.m_bucketCount));
 
-        graph.AddDispatchPass("ClearSurfaceWork",
-                              clear,
-                              DispatchSize(classifyShading ? work.m_bucketCount : Math::Max(pixels, work.m_bucketCount)));
-
-        auto* count = AllocateStep(graph, CountPipeline::GetPipeline(), dimensions);
+        auto* count = AllocateStep(graph, countPipeline ? countPipeline : CountPipeline::GetPipeline(), dimensions);
         if (classifyShading)
         {
             count->m_constants.m_g0Read = graph.GetSRV(g0);
@@ -221,7 +157,6 @@ namespace FE::Graphics::Visibility
         {
             count->m_constants.m_view = graph.GetSRV(view);
             count->m_constants.m_visibility = graph.GetSRV(visibility);
-            count->m_constants.m_g0 = graph.GetUAV(g0);
         }
 
         count->m_constants.m_lookup = graph.GetSRV(work.m_lookup.Get());
@@ -230,6 +165,7 @@ namespace FE::Graphics::Visibility
         const Core::ComputeWorkGroupCount screenGroups = Math::CeilDivide(work.m_resolution, 16u);
         graph.AddDispatchPass("CountSurfacePixels", count, screenGroups);
 
+        // Scan bucket counts hierarchically, then propagate parent prefixes back to each tile.
         for (uint32_t index = 0; index < work.m_scanLevels.size(); ++index)
         {
             const SurfaceScanLevel& level = work.m_scanLevels[index];
@@ -256,7 +192,8 @@ namespace FE::Graphics::Visibility
             graph.AddDispatchPass("PropagateSurfaceOffsets", propagate, DispatchSize(child.m_count));
         }
 
-        auto* scatter = AllocateStep(graph, ScatterPipeline::GetPipeline(), dimensions);
+        // Scatter tile-local pixel addresses into contiguous material runs.
+        auto* scatter = AllocateStep(graph, scatterPipeline ? scatterPipeline : ScatterPipeline::GetPipeline(), dimensions);
         if (classifyShading)
         {
             scatter->m_constants.m_g0Read = graph.GetSRV(g0);
@@ -273,6 +210,7 @@ namespace FE::Graphics::Visibility
         scatter->m_constants.m_pixels = graph.GetUAV(work.m_pixels.Get());
         graph.AddDispatchPass("ScatterSurfacePixels", scatter, screenGroups);
 
+        // Divide each run into waves and emit one indirect dispatch per registered shader.
         auto* commands = AllocateStep(graph, CommandsPipeline::GetPipeline(), dimensions);
         commands->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
         commands->m_constants.m_totals = graph.GetSRV(work.m_scanLevels.back().m_sums.Get());

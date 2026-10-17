@@ -57,14 +57,14 @@ struct ReconstructedAttributes
 };
 
 
-bool ReconstructAttributes(const ViewData view, const uint2 visibility, const float2 pixelCenter, const float2 resolution,
+bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, const float2 pixelCenter, const float2 resolution,
                            out ReconstructedAttributes result, const bool needUV = true, const bool needTangent = true)
 {
     result = (ReconstructedAttributes)0;
-    if (visibility.x == 0)
+    if (visibility.x == 0 || (visibility.x >> kObjectTypeShift) != view.m_scene.Load(0).m_visibilityType)
         return false;
 
-    const uint instanceIndex = visibility.x - 1;
+    const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;
     const uint meshletIndex = visibility.y >> kPrimitiveBits;
     const uint primitiveIndex = visibility.y & (kMaxPrimitiveCount - 1);
     const MeshDrawData draw = ResolveMeshDrawData(view, instanceIndex);
@@ -83,9 +83,9 @@ bool ReconstructAttributes(const ViewData view, const uint2 visibility, const fl
     const uint i0 = draw.m_geometry.Read<uint>(remapOffset + (header.m_vertexOffset + local.x) * sizeof(uint));
     const uint i1 = draw.m_geometry.Read<uint>(remapOffset + (header.m_vertexOffset + local.y) * sizeof(uint));
     const uint i2 = draw.m_geometry.Read<uint>(remapOffset + (header.m_vertexOffset + local.z) * sizeof(uint));
-    const PixelAttributes v0 = TransformAttributes(draw, i0, instanceIndex, view.m_viewProjection, needUV, needTangent);
-    const PixelAttributes v1 = TransformAttributes(draw, i1, instanceIndex, view.m_viewProjection, needUV, needTangent);
-    const PixelAttributes v2 = TransformAttributes(draw, i2, instanceIndex, view.m_viewProjection, needUV, needTangent);
+    const PixelAttributes v0 = TransformAttributes(draw, i0, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
+    const PixelAttributes v1 = TransformAttributes(draw, i1, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
+    const PixelAttributes v2 = TransformAttributes(draw, i2, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
     const float2 ndcPerPixel = float2(2.0f, -2.0f) / resolution;
     const float2 ndc = pixelCenter * ndcPerPixel + float2(-1.0f, 1.0f);
 
@@ -103,7 +103,7 @@ bool ReconstructAttributes(const ViewData view, const uint2 visibility, const fl
     result.m_uvDdy = v0.m_uv * weights.m_ddy.x + v1.m_uv * weights.m_ddy.y + v2.m_uv * weights.m_ddy.z;
     const float4 clip = v0.m_pos * w.x + v1.m_pos * w.y + v2.m_pos * w.z;
     result.m_depth = clip.z / clip.w;
-    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(view.m_instances).ReadRow(instanceIndex);
+    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(view.m_scene.Load(0).m_instances).ReadRow(instanceIndex);
     result.m_group = instance.m_meshGroup.Get().m_rowIndex;
     return all(isfinite(result.m_normal)) && all(isfinite(result.m_uv));
 }

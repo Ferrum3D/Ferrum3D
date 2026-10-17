@@ -1,5 +1,5 @@
 #pragma once
-#include <Shaders/Base/Base.h>
+#include <Shaders/Scene/ViewData.h>
 #if FE_HOST
 #    include <Graphics/Tables/MaterialInstanceTable.h>
 #    include <Graphics/Tables/MeshBatchTable.h>
@@ -77,18 +77,36 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
         uint32_t m_workChunkCount;
     };
 
-    struct ViewData final
+    // Scene tables are shared by all mesh views and passes.
+    struct MeshSceneData final
     {
-        float4x4 m_viewProjection;
-        float4 m_cameraPosition;
         MeshInstanceTable::Instance m_instances;
         MeshGroupTable::Instance m_groups;
         MeshLodInfoTable::Instance m_lods;
         MaterialInstanceTable::Instance m_materials;
         MeshBatchTable::Instance m_batches;
         MeshMemberTable::Instance m_members;
+        uint32_t m_visibilityType;
+    };
+
+
+    struct MeshViewData final
+    {
+        ViewData m_view;
+        StructuredBufferDescriptor<MeshSceneData> m_scene;
         StructuredBufferDescriptor<VisibleInstance> m_visibleInstances;
         StructuredBufferDescriptor<MeshletWorkChunk> m_workChunks;
         StructuredBufferDescriptor<MeshCommandRange> m_commands;
     };
+
+
+#if !FE_HOST
+    // Keep matrix layout identical to the structured-buffer reads used by rasterization.
+    MeshViewData LoadMeshView(ByteAddressBufferDescriptor objectData)
+    {
+        StructuredBufferDescriptor<MeshViewData> view;
+        view.m_index = objectData.m_index;
+        return view.Load(0);
+    }
+#endif
 FE_HOST_END_NAMESPACE

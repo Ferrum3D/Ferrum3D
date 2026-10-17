@@ -1,19 +1,11 @@
 #pragma once
 #include <Shaders/Deferred/Tiling.h>
+#include <Shaders/Scene/ViewData.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
-    struct DeferredViewData final
-    {
-        float4x4 m_inverseViewProjection;
-        float4 m_cameraPosition;
-        float4 m_viewport;
-        float4 m_backgroundColor;
-    };
-
-
     struct DeferredConstants final
     {
-        StructuredBufferDescriptor<DeferredViewData> m_view;
+        StructuredBufferDescriptor<ViewData> m_view;
         Texture2DDescriptor<uint32_t> m_g0;
         Texture2DDescriptor<uint32_t> m_g1;
         Texture2DDescriptor<uint32_t> m_g2;

@@ -157,14 +157,14 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
 
     void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, festd::span<const MeshPass::CullDispatch> dispatches,
-                  MeshPass::ViewData viewData, CulledMeshView& result)
+                  MeshPass::MeshViewData viewData, CulledMeshView& result)
     {
         FE_FG_SCOPE(graph, "CullMeshView");
         if (dispatches.empty())
             return;
 
         Core::Device* device = graph.GetDevice();
-        const auto view = Core::Buffer::CreateStructured<MeshPass::ViewData>(device, "MeshCullView", 1);
+        const auto view = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "MeshCullView", 1);
         const auto dispatchBuffer =
             Core::Buffer::CreateStructured<MeshPass::CullDispatch>(device, "MeshCullDispatches", dispatches.size());
         result.m_viewData = viewData;
@@ -227,7 +227,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             Core::Buffer::CreateStructured<MeshPass::MeshCommandRange>(device, "MeshCommandRanges", commandCapacity);
         work.m_output.m_arguments =
             Core::Buffer::CreateStructured<MeshPass::MeshDispatchArguments>(device, "MeshIndirectArguments", commandCapacity);
-        work.m_output.m_view = Core::Buffer::CreateStructured<MeshPass::ViewData>(device, "MeshView", 1);
+        work.m_output.m_view = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "MeshView", 1);
         work.m_layouts = Core::Buffer::CreateStructured<MeshPass::BucketLayout>(device, "MeshBucketLayouts", layouts.size());
         work.m_classification = culled.m_classification;
         work.m_instanceBuckets =
@@ -240,7 +240,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         work.m_routing = registry.m_routing;
         work.m_dispatchCount = culled.m_dispatchCount;
 
-        MeshPass::ViewData viewData = culled.m_viewData;
+        MeshPass::MeshViewData viewData = culled.m_viewData;
         viewData.m_visibleInstances = graph.GetSRV(work.m_output.m_instances.Get());
         viewData.m_workChunks = graph.GetSRV(work.m_output.m_work.Get());
         viewData.m_commands = graph.GetSRV(work.m_output.m_commands.Get());

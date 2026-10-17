@@ -10,6 +10,7 @@
 #include <Graphics/Passes/SurfaceWorkBuilder.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Shaders/Deferred/Surface.h>
+#include <Shaders/Passes/MeshPass/GpuWork.h>
 #include <Shaders/Passes/MeshPass/IndirectArguments.h>
 #include <Shaders/Passes/MeshPass/MeshPass.h>
 #include <gtest/gtest.h>
@@ -99,7 +100,17 @@ namespace FE::Graphics::RasterProbe
         Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
         Core::RingUploader uploader;
         uploader.Setup("RasterProbeUpload", pool, 256 * 1024);
-        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::ViewData>(device, "RasterProbeView", 1);
+        const auto classifier = [&](const Env::Name path) {
+            Core::ComputePipelineRequest request;
+            request.m_desc.SetComputeShader(path);
+            Core::ComputePipeline* result = pipelines->CreateComputePipeline(request);
+            result->GetCompletionWaitGroup()->Wait();
+            return result;
+        };
+        Core::ComputePipeline* countPipeline = classifier("Shaders/Passes/MeshPass/CountMeshSurfacePixels.cs.hlsl");
+        Core::ComputePipeline* scatterPipeline = classifier("Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
+        Rc<Core::Buffer> sceneBuffer = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(device, "ProbeScene", 1);
+        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "RasterProbeView", 1);
         Rc<Core::Buffer> visible = Core::Buffer::CreateStructured<MeshPass::VisibleInstance>(device, "RasterProbeInstance", 1);
         Rc<Core::Buffer> work = Core::Buffer::CreateStructured<MeshPass::MeshletWorkChunk>(device, "RasterProbeWork", 1);
         Rc<Core::Buffer> commands = Core::Buffer::CreateStructured<MeshPass::MeshCommandRange>(device, "RasterProbeCommands", 1);
@@ -144,15 +155,25 @@ namespace FE::Graphics::RasterProbe
         FE_Verify(uploader.Upload(*graph, work.Get(), MeshPass::MeshletWorkChunk{ 0, 0 }));
         FE_Verify(uploader.Upload(*graph, commands.Get(), MeshPass::MeshCommandRange{ 0, 1 }));
         FE_Verify(uploader.Upload(*graph, arguments.Get(), MeshPass::MeshDispatchArguments{ 1, 1, 1 }));
-        MeshPass::ViewData view{};
-        view.m_viewProjection = Matrix4x4::kIdentity;
-        view.m_instances = instances.GetDeviceAddress();
-        view.m_groups = groups.GetDeviceAddress();
-        view.m_lods = lods.GetDeviceAddress();
-        view.m_materials = materials.GetDeviceAddress();
+        MeshPass::MeshViewData view{};
+        MeshPass::MeshSceneData scene{};
+        view.m_view.m_viewProjection = Matrix4x4::kIdentity;
+        // A nonsymmetric projection that preserves this triangle's clip positions exposes transposed matrix loads.
+        view.m_view.m_viewProjection.m_rows[2].x = 0.4f;
+        view.m_view.m_viewProjection.m_rows[3].x = -0.2f;
+        scene.m_visibilityType = 7;
+        scene.m_instances = instances.GetDeviceAddress();
+        scene.m_groups = groups.GetDeviceAddress();
+        scene.m_lods = lods.GetDeviceAddress();
+        scene.m_materials = materials.GetDeviceAddress();
         view.m_visibleInstances = graph->GetSRV(visible.Get());
         view.m_workChunks = graph->GetSRV(work.Get());
         view.m_commands = graph->GetSRV(commands.Get());
+        view.m_scene = graph->GetSRV(sceneBuffer.Get());
+        FE_Verify(uploader.Upload(*graph, sceneBuffer.Get(), scene));
+        auto* sceneAccess = graph->AllocatePassData<Core::BufferAccessPassDesc>();
+        sceneAccess->m_access = { sceneBuffer.Get(), Core::BarrierSyncFlags::kAllShading, Core::BarrierAccessFlags::kShaderRead };
+        graph->AddPass("ProbeSceneReady", sceneAccess);
         FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
         auto* targets = graph->AllocatePassData<Visibility::CoveragePassDesc>();
         targets->m_visibility = Core::TextureView::Create(visibility.Get());
@@ -192,6 +213,7 @@ namespace FE::Graphics::RasterProbe
         clearPipeline->GetCompletionWaitGroup()->Wait();
         auto* clear = graph->AllocatePassData<Visibility::SurfaceDirectPassDesc>();
         clear->m_pipeline = clearPipeline;
+        clear->m_constants.m_visibility = graph->GetSRV(visibility.Get());
         clear->m_constants.m_resolution = Vector2UInt(64, 64);
         clear->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
         graph->AddDispatchPass("ClearRasterSurface", clear, Math::CeilDivide(clear->m_constants.m_resolution, 8u));
@@ -202,7 +224,15 @@ namespace FE::Graphics::RasterProbe
                                                          groups.GetReservedRowCount(),
                                                          1,
                                                          32);
-        Visibility::BuildSurfaceWork(*graph, uploader, viewBuffer.Get(), visibility.Get(), planes[0].Get(), surfaceWork);
+        Visibility::BuildSurfaceWork(*graph,
+                                     uploader,
+                                     viewBuffer.Get(),
+                                     visibility.Get(),
+                                     planes[0].Get(),
+                                     surfaceWork,
+                                     false,
+                                     countPipeline,
+                                     scatterPipeline);
         Core::ComputePipelineRequest evaluateRequest;
         evaluateRequest.m_desc.SetComputeShader("Shaders/Materials/EvaluateBunnyVariants.cs.hlsl");
         evaluateRequest.m_defines = Env::Name("BUNNY_PALETTE=1");
@@ -247,7 +277,7 @@ namespace FE::Graphics::RasterProbe
         device->WaitIdle();
         const uint32_t* words = static_cast<const uint32_t*>(readback->Map());
         readback->InvalidateMappedRange(0, 128);
-        EXPECT_EQ(words[0], instance.m_rowIndex + 1);
+        EXPECT_EQ(words[0], (7u << Visibility::kObjectTypeShift) | (instance.m_rowIndex + 1));
         EXPECT_EQ(words[1], 64u);
         EXPECT_NEAR(std::bit_cast<float>(words[2]), 0.5f, 1e-6f);
         EXPECT_EQ(words[3], 1u);

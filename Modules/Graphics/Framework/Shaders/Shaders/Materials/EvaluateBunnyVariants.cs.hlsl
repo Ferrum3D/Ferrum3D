@@ -1,4 +1,4 @@
-#include <Shaders/Deferred/EvaluateCommon.hlsli>
+#include <Shaders/Materials/EvaluateMesh.hlsli>
 
 FE_NUM_THREADS(EVALUATION_LANES, 1, 1)
 void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
@@ -8,7 +8,7 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
     if (!LoadEvaluationPixel(dispatch, lane, pixel, groupIndex))
         return;
 
-    const ViewData view = GConstants.m_view.Load(0);
+    const MeshViewData view = LoadMeshView(GConstants.m_view);
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel, 0));
 
     ReconstructedAttributes attributes;

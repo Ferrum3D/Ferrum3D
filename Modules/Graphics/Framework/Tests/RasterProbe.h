@@ -4,12 +4,12 @@
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::RasterProbe)
 
 #if FE_HOST
-    using MeshPass::ViewData;
+    using MeshPass::MeshViewData;
 #endif
 
     struct Constants final
     {
-        StructuredBufferDescriptor<ViewData> m_view;
+        StructuredBufferDescriptor<MeshViewData> m_view;
         Texture2DDescriptor<uint2> m_visibility;
         Texture2DDescriptor<float> m_depth;
         Texture2DDescriptor<uint32_t> m_g0;
