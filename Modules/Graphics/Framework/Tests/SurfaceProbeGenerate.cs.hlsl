@@ -13,6 +13,9 @@ void main(uint3 pixel : SV_DispatchThreadID)
 #if GENERATE_SPARSE
     covered = covered && index % 101 == 0;
 #endif
+#if GENERATE_TAIL
+    covered = covered && index < 5;
+#endif
     GConstants.m_visibility.Store(pixel.xy, uint2(covered ? instance + 1 : 0, 0));
 #if GENERATE_SHADING
     uint route = (index % max(GConstants.m_groupCount, 1u)) % 3 * 8 + 1;

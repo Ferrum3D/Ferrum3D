@@ -101,12 +101,33 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
 
 
 #if !FE_HOST
+    MeshSceneData LoadMeshScene(StructuredBufferDescriptor<MeshSceneData> descriptor)
+    {
+        MeshSceneData scene = descriptor.Load(0);
+        scene.m_instances.m_pageTableAddress.m_deviceAddress =
+            WaveReadLaneFirst(scene.m_instances.m_pageTableAddress.m_deviceAddress);
+        scene.m_groups.m_pageTableAddress.m_deviceAddress = WaveReadLaneFirst(scene.m_groups.m_pageTableAddress.m_deviceAddress);
+        scene.m_lods.m_pageTableAddress.m_deviceAddress = WaveReadLaneFirst(scene.m_lods.m_pageTableAddress.m_deviceAddress);
+        scene.m_materials.m_pageTableAddress.m_deviceAddress =
+            WaveReadLaneFirst(scene.m_materials.m_pageTableAddress.m_deviceAddress);
+        scene.m_batches.m_pageTableAddress.m_deviceAddress =
+            WaveReadLaneFirst(scene.m_batches.m_pageTableAddress.m_deviceAddress);
+        scene.m_members.m_pageTableAddress.m_deviceAddress =
+            WaveReadLaneFirst(scene.m_members.m_pageTableAddress.m_deviceAddress);
+        scene.m_visibilityType = WaveReadLaneFirst(scene.m_visibilityType);
+        return scene;
+    }
+
+
     // Keep matrix layout identical to the structured-buffer reads used by rasterization.
     MeshViewData LoadMeshView(ByteAddressBufferDescriptor objectData)
     {
         StructuredBufferDescriptor<MeshViewData> view;
         view.m_index = objectData.m_index;
-        return view.Load(0);
+        MeshViewData data = view.Load(0);
+        data.m_view = WaveUniformView(data.m_view);
+        data.m_scene.m_index = WaveReadLaneFirst(data.m_scene.m_index);
+        return data;
     }
 #endif
 FE_HOST_END_NAMESPACE

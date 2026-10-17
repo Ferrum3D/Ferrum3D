@@ -130,23 +130,3 @@ namespace Bit
     }
 } // namespace Bit
 #endif
-
-
-namespace Math
-{
-    static const float kPI = 3.14159265358979323f;
-
-
-    template<typename T>
-    T Min3(const T a, const T b, const T c)
-    {
-        return min(a, min(b, c));
-    }
-
-
-    template<typename T>
-    T Max3(const T a, const T b, const T c)
-    {
-        return max(a, max(b, c));
-    }
-} // namespace Math

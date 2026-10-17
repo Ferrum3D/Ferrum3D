@@ -13,8 +13,8 @@ void main(uint3 dispatch : SV_DispatchThreadID)
     const uint index = pixel.x + pixel.y * GConstants.m_resolution.x;
     const ViewData view = GConstants.m_view.Load(0);
     const float3 sourceColor = float3(0.4f, 0.6f, 0.8f);
-    const float3 encodedColor = round(Shading::LinearToSRGB(sourceColor) * 255) / 255.0f;
-    const float3 baseColor = Shading::SRGBToLinear(encodedColor);
+    const float3 encodedColor = round(pow(sourceColor, 1.0f / 2.2f) * 255) / 255.0f;
+    const float3 baseColor = pow(encodedColor, 2.2f);
     float3 expected = view.m_backgroundColor.rgb;
     if (GConstants.m_empty == 0 && index % 7 != 0)
     {

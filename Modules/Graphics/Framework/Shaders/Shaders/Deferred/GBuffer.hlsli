@@ -1,7 +1,7 @@
 #pragma once
+#include <Shaders/Base/Math.hlsli>
 #include <Shaders/Base/Packing.hlsli>
 #include <Shaders/Deferred/Contracts.h>
-#include <Shaders/Shading/Color.hlsli>
 
 namespace GBuffer
 {
@@ -40,7 +40,7 @@ namespace GBuffer
 
     Packed Encode(const Unpacked source)
     {
-        const float3 srgb = Shading::LinearToSRGB(saturate(source.m_color));
+        const float3 srgb = Math::LinearToSRGBApprox(saturate(source.m_color));
         const uint3 color = uint3(round(srgb * 255));
         const float3 properties = saturate(float3(source.m_roughness, source.m_metallic, source.m_ambientOcclusion));
         const uint3 propertyBytes = uint3(round(properties * 255));
@@ -62,7 +62,7 @@ namespace GBuffer
         const float3 properties = Math::Pack::RGBA8UnormToRGBA32Float(source.m_g2).rgb;
 
         Unpacked result;
-        result.m_color = Shading::SRGBToLinear(srgb);
+        result.m_color = Math::SRGBToLinearApprox(srgb);
         result.m_normal = Math::Pack::Octahedral16SnormToNormal(source.m_g1);
         result.m_roughness = properties.x;
         result.m_metallic = properties.y;

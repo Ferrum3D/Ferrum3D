@@ -34,7 +34,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::RasterProbe)
                Core::ResourcePool * pool,
                Core::GraphicsQueue * queue,
                Core::DescriptorManager * descriptors,
-               Core::PipelineFactory * pipelines);
+               Core::PipelineFactory * pipelines,
+               uint32_t waveLaneCount = 32);
 #endif
 
 FE_HOST_END_NAMESPACE

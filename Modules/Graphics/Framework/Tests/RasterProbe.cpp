@@ -46,7 +46,7 @@ namespace FE::Graphics::RasterProbe
 
 
     void Check(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue, Core::DescriptorManager* descriptors,
-               Core::PipelineFactory* pipelines)
+               Core::PipelineFactory* pipelines, const uint32_t waveLaneCount)
     {
         Core::CompileGlobalPipelineSets(pipelines);
         Core::WaitForGlobalPipelineSets();
@@ -208,12 +208,12 @@ namespace FE::Graphics::RasterProbe
         graph->AddDispatchPass("ClearRasterSurface", clear, Math::CeilDivide(clear->m_constants.m_resolution, 8u));
         const Visibility::SurfaceBinding binding{ group.m_rowIndex, 0 };
         auto routing = Visibility::CreateSurfaceRouting(device, festd::span(&binding, 1), groups.GetReservedRowCount(), 1);
-        auto surfaceWork = Visibility::CreateSurfaceWork(device, Vector2UInt(64, 64), routing, 32);
+        auto surfaceWork = Visibility::CreateSurfaceWork(device, Vector2UInt(64, 64), routing, waveLaneCount);
         const Visibility::EvaluationWorkInput input{ viewBuffer.Get(), visibility.Get(), countPipeline, scatterPipeline };
         Visibility::BuildSurfaceWork(*graph, uploader, input, surfaceWork);
         Core::ComputePipelineRequest evaluateRequest;
         evaluateRequest.m_desc.SetComputeShader("Shaders/Materials/EvaluateBunnyVariants.cs.hlsl");
-        evaluateRequest.m_defines = Env::Name("BUNNY_PALETTE=1");
+        evaluateRequest.m_defines = Env::Name(Fmt::Format("BUNNY_PALETTE=1 EVALUATION_LANES={}", waveLaneCount));
         Core::ComputePipeline* evaluate = pipelines->CreateComputePipeline(evaluateRequest);
         evaluate->GetCompletionWaitGroup()->Wait();
         ASSERT_TRUE(evaluate->IsReady());
@@ -268,7 +268,7 @@ namespace FE::Graphics::RasterProbe
         EXPECT_NEAR(std::bit_cast<float>(words[10]), -0.01953125f, 1e-5f);
         EXPECT_NEAR(std::bit_cast<float>(words[11]), 0.5f, 1e-6f);
         EXPECT_EQ(words[12], 1u);
-        EXPECT_EQ(words[13], 0x01f3da89u);
+        EXPECT_EQ(words[13], 0x01f3d988u);
         EXPECT_GT(std::bit_cast<float>(words[14]), 0.9999f);
         EXPECT_EQ(words[15], 0u);
         EXPECT_EQ(words[16], 0u);

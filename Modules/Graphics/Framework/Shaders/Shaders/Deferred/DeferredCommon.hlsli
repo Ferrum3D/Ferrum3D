@@ -3,23 +3,19 @@
 #include <Shaders/Deferred/GBuffer.hlsli>
 #include <Shaders/Deferred/PixelWork.hlsli>
 
-#ifndef EVALUATION_LANES
-#    define EVALUATION_LANES 32
-#endif
-
 [[vk::push_constant]] DeferredConstants GConstants;
 
 bool LoadShadingPixel(uint3 dispatch, uint lane, out uint2 pixel)
 {
-    const ShaderRange range = GConstants.m_ranges.Load(GConstants.m_shaderSlot);
+    const ShaderRange range = LoadSurfaceRange(GConstants.m_ranges, GConstants.m_shaderSlot);
     PixelWork work;
     const bool valid = LoadPixelWork(range,
                                      GConstants.m_waves,
                                      GConstants.m_pixels,
                                      GConstants.m_resolution,
                                      GConstants.m_tilesPerRow,
-                                     dispatch.x,
-                                     lane,
+                                     dispatch.x * kSurfaceWavesPerGroup + lane / EVALUATION_LANES,
+                                     lane % EVALUATION_LANES,
                                      work);
     pixel = work.m_pixel;
     return valid;

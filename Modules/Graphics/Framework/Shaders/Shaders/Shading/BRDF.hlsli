@@ -1,5 +1,5 @@
 #pragma once
-#include <Shaders/Base/BaseTypes.hlsli>
+#include <Shaders/Base/Math.hlsli>
 
 namespace Shading
 {

@@ -3,6 +3,8 @@
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     FE_CONSTEXPR uint32_t kTileSize = 128;
+    // Pack several logical pixel waves into each evaluation/shading work group.
+    FE_CONSTEXPR uint32_t kSurfaceWavesPerGroup = 4;
     FE_CONSTEXPR uint32_t kBackgroundShadingRoute = 0;
     FE_CONSTEXPR uint32_t kUnsupportedShadingRoute = 255;
     FE_CONSTEXPR uint32_t kExtendedPayloadValid = 1;

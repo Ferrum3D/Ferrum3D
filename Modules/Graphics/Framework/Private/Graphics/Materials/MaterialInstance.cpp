@@ -250,13 +250,13 @@ namespace FE::Graphics
         {
             FE_Assert(waveLaneCount == 64);
             request.m_defines = Env::Name(Fmt::Format("{} EVALUATION_LANES=64", technique->m_shaderDefines));
-            const Core::ComputeCapabilities capabilities = m_pipelineFactory->GetDevice()->GetComputeCapabilities();
-            if (capabilities.m_waveLaneCountControl && capabilities.m_minWaveLaneCount <= 64
-                && capabilities.m_maxWaveLaneCount >= 64)
-            {
-                request.m_desc.m_waveLaneCount = 64;
-            }
         }
+
+        const Core::ComputeCapabilities capabilities = m_pipelineFactory->GetDevice()->GetComputeCapabilities();
+        const bool supportsLaneCount =
+            waveLaneCount >= capabilities.m_minWaveLaneCount && waveLaneCount <= capabilities.m_maxWaveLaneCount;
+        if (capabilities.m_waveLaneCountControl && supportsLaneCount)
+            request.m_desc.m_waveLaneCount = waveLaneCount;
 
         Core::ComputePipeline* pipeline = m_pipelineFactory->CreateComputePipeline(request);
         pipeline->GetCompletionWaitGroup()->Wait();

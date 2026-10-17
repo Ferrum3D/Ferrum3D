@@ -1,6 +1,28 @@
 #pragma once
 #include <Shaders/Deferred/Tiling.h>
 
+#ifndef EVALUATION_LANES
+#    define EVALUATION_LANES 32
+#endif
+
+// A logical 64-lane command can span two NVIDIA waves. A larger hardware wave may
+// contain multiple 32-lane commands, in which case these values must remain varying.
+template<typename T>
+T SurfaceWaveUniform(T value)
+{
+    return WaveGetLaneCount() <= EVALUATION_LANES ? WaveReadLaneFirst(value) : value;
+}
+
+
+ShaderRange LoadSurfaceRange(StructuredBufferDescriptor<ShaderRange> ranges, uint shaderSlot)
+{
+    ShaderRange range = ranges.Load(shaderSlot);
+    range.m_firstWave = WaveReadLaneFirst(range.m_firstWave);
+    range.m_waveCount = WaveReadLaneFirst(range.m_waveCount);
+    return range;
+}
+
+
 struct PixelWork
 {
     uint2 m_pixel;
@@ -14,10 +36,15 @@ bool LoadPixelWork(const ShaderRange range, StructuredBufferDescriptor<WaveComma
                    const uint lane, out PixelWork result)
 {
     result = (PixelWork)0;
-    if (wave >= range.m_waveCount)
+    const uint waveIndex = SurfaceWaveUniform(wave);
+    if (waveIndex >= range.m_waveCount)
         return false;
 
-    result.m_command = waves.Load(range.m_firstWave + wave);
+    result.m_command = waves.Load(range.m_firstWave + waveIndex);
+    result.m_command.m_tile = SurfaceWaveUniform(result.m_command.m_tile);
+    result.m_command.m_group = SurfaceWaveUniform(result.m_command.m_group);
+    result.m_command.m_pixelOffset = SurfaceWaveUniform(result.m_command.m_pixelOffset);
+    result.m_command.m_validCount = SurfaceWaveUniform(result.m_command.m_validCount);
     if (lane >= result.m_command.m_validCount)
         return false;
 

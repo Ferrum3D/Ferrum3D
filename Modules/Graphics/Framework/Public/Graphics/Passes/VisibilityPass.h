@@ -11,6 +11,7 @@ namespace FE::Graphics::Visibility
         Core::PassColorTarget m_visibility;
         Core::PassDepthTarget m_depth;
         Core::PassViewport m_viewport;
+
         FE_RTTI_Reflect("6F735FDA-2C65-4F81-992E-B40E13F7FBBF");
     };
 

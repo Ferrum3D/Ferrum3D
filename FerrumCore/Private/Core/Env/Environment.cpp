@@ -56,6 +56,7 @@ namespace FE
             {
                 while (m_currentPageIndex != kInvalidIndex)
                 {
+                    TracyFreeN(m_pages[m_currentPageIndex], "EnvName");
                     Memory::FreeVirtual(m_pages[m_currentPageIndex], kNamePageByteSize);
                     --m_currentPageIndex;
                 }
@@ -79,7 +80,10 @@ namespace FE
                 const size_t recordSize = AlignUp<1 << kNameBlockShift>(recordHeaderSize + stringByteSize);
                 if (recordSize + m_offset > kNamePageByteSize)
                 {
-                    m_pages[++m_currentPageIndex] = Memory::AllocateVirtual(kNamePageByteSize);
+                    void* p = Memory::AllocateVirtual(kNamePageByteSize);
+                    TracyAllocN(p, kNamePageByteSize, "EnvName");
+
+                    m_pages[++m_currentPageIndex] = p;
                     FE_Assert(m_currentPageIndex < kMaxPageCount);
                     m_offset = 0;
                 }

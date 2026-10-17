@@ -143,6 +143,10 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
 
             Core::ComputePipelineRequest request;
             request.m_desc.SetComputeShader(Env::Name("Shaders/Tests/GpuProbe.cs.hlsl"));
+            const auto compute = device->GetComputeCapabilities();
+            if (compute.m_waveLaneCountControl && compute.m_minWaveLaneCount <= 32 && compute.m_maxWaveLaneCount >= 32)
+                request.m_desc.m_waveLaneCount = 32;
+
             Core::ComputePipeline* pipeline = pipelines->CreateComputePipeline(request);
             pipeline->GetCompletionWaitGroup()->Wait();
             ASSERT_TRUE(pipeline->IsReady());
@@ -178,11 +182,10 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_EQ(evaluationPipelines.GetSlots()[1].m_pipeline.Get(), pipeline);
             EXPECT_EQ(evaluationPipelines.Register(shadingPipeline), 0u);
 
-            const auto compute = device->GetComputeCapabilities();
             if (compute.m_waveLaneCountControl)
             {
                 Core::ComputePipelineRequest waveRequest = request;
-                waveRequest.m_desc.m_waveLaneCount = compute.m_waveLaneCount;
+                waveRequest.m_desc.m_waveLaneCount = request.m_desc.m_waveLaneCount != 0 ? 0 : compute.m_waveLaneCount;
                 Core::ComputePipeline* wavePipeline = pipelines->CreateComputePipeline(waveRequest);
                 wavePipeline->GetCompletionWaitGroup()->Wait();
                 EXPECT_TRUE(wavePipeline->IsReady());
@@ -314,6 +317,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_NEAR(std::bit_cast<float>(results[3]), 0.1f / 0.525f, 1e-6f);
             reconstructionReadback->Unmap();
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+            RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), 64);
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), true);
             DeferredProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());

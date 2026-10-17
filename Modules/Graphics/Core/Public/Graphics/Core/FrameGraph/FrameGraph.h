@@ -139,8 +139,9 @@ namespace FE::Graphics::Core
     BasePassDescToken FrameGraph::AddBasePassDesc(const TPassDesc* passDesc)
     {
         FE_Assert(passDesc);
+
         BasePassDescToken token;
-        token.m_value = static_cast<uint32_t>(m_basePassDescs.size());
+        token.m_value = m_basePassDescs.size();
         m_basePassDescs.push_back({ passDesc, Rtti::GetTypeID<TPassDesc>() });
         return token;
     }
@@ -180,6 +181,7 @@ namespace FE::Graphics::Core
                              TFunctor&& functor)
     {
         FE_Assert(passDesc);
+
         using FunctorType = std::decay_t<TFunctor>;
 
         PassNodeDesc desc;

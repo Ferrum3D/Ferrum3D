@@ -51,6 +51,19 @@ struct MeshDrawData
 };
 
 
+MeshDrawData CreateMeshDrawData(const MeshInstanceTable::Row instance, const MeshGroupTable::Row group,
+                                const MeshLodInfoTable::Row lod)
+{
+    MeshDrawData result;
+    result.m_geometry = group.m_geometry.Get();
+    result.m_worldTransform = instance.m_transform.Get();
+    result.m_lodInfo = lod.m_info.Get();
+    result.m_instance = instance;
+    result.m_group = group;
+    return result;
+}
+
+
 MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanceIndex, const uint32_t lodIndex = kInvalidIndex)
 {
     MeshInstanceTable instanceTable = MeshInstanceTable::Create(view.m_scene.Load(0).m_instances);
@@ -62,13 +75,7 @@ MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanc
     const DB::Slice<MeshLodInfoTable> lods = group.m_lods.Get();
     const MeshLodInfoTable::Row lod = lodTable.ReadRow(lodIndex == kInvalidIndex ? lods.m_rowIndex : lodIndex);
 
-    MeshDrawData result;
-    result.m_geometry = group.m_geometry.Get();
-    result.m_worldTransform = instance.m_transform.Get();
-    result.m_lodInfo = lod.m_info.Get();
-    result.m_instance = instance;
-    result.m_group = group;
-    return result;
+    return CreateMeshDrawData(instance, group, lod);
 }
 
 

@@ -20,7 +20,7 @@ void main(uint3 dispatch : SV_DispatchThreadID)
         range.m_waveCount = Offset((binding.x + binding.y) * GConstants.m_tileCount).y - range.m_firstWave;
         GConstants.m_ranges.Store(index, range);
         DispatchArguments arguments;
-        arguments.m_x = range.m_waveCount;
+        arguments.m_x = (range.m_waveCount + kSurfaceWavesPerGroup - 1) / kSurfaceWavesPerGroup;
         arguments.m_y = 1;
         arguments.m_z = 1;
         GConstants.m_arguments.Store(index, arguments);

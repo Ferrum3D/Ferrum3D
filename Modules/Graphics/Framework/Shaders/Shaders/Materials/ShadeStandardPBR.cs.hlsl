@@ -1,7 +1,7 @@
 #include <Shaders/Deferred/DeferredCommon.hlsli>
 #include <Shaders/Shading/PBR.hlsli>
 
-FE_NUM_THREADS(EVALUATION_LANES, 1, 1)
+FE_NUM_THREADS(EVALUATION_LANES * kSurfaceWavesPerGroup, 1, 1)
 void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
 {
     uint2 pixel;

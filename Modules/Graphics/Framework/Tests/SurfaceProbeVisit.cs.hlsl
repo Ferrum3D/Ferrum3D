@@ -1,5 +1,4 @@
 #include <Shaders/Tests/SurfaceProbe.h>
-[[vk::push_constant]] ProbeConstants GConstants;
 #ifndef VISIT_LANES
 #    define VISIT_LANES 32
 #endif
@@ -10,26 +9,35 @@
 #    define VISIT_SHADER_STRIDE 1
 #endif
 
-FE_NUM_THREADS(VISIT_LANES, 1, 1)
+#define EVALUATION_LANES VISIT_LANES
+#include <Shaders/Deferred/PixelWork.hlsli>
+
+[[vk::push_constant]] ProbeConstants GConstants;
+
+FE_NUM_THREADS(VISIT_LANES * kSurfaceWavesPerGroup, 1, 1)
 void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
 {
-    const ShaderRange range = GConstants.m_ranges.Load(GConstants.m_shaderSlot);
-    const uint wave = dispatch.x;
-    if (wave >= range.m_waveCount)
+    const ShaderRange range = LoadSurfaceRange(GConstants.m_ranges, GConstants.m_shaderSlot);
+    const uint wave = dispatch.x * kSurfaceWavesPerGroup + lane / VISIT_LANES;
+    const uint waveLane = lane % VISIT_LANES;
+    const uint tilesPerRow = (GConstants.m_resolution.x + kTileSize - 1) / kTileSize;
+    PixelWork work;
+    if (!LoadPixelWork(range,
+                       GConstants.m_waves,
+                       GConstants.m_pixels,
+                       GConstants.m_resolution,
+                       tilesPerRow,
+                       wave,
+                       waveLane,
+                       work))
+    {
         return;
+    }
 
-    const WaveCommand command = GConstants.m_waves.Load(range.m_firstWave + wave);
-    if (lane >= command.m_validCount)
-        return;
-
-    const uint offset = command.m_pixelOffset + lane;
+    const WaveCommand command = work.m_command;
+    const uint offset = command.m_pixelOffset + waveLane;
     const uint local = GConstants.m_pixels.Load(offset);
-    const uint tilesPerRow = (GConstants.m_resolution.x + 127) / 128;
-    const uint2 pixel =
-        uint2(command.m_tile % tilesPerRow, command.m_tile / tilesPerRow) * 128 + uint2(local & 127, (local >> 7) & 127);
-    if (any(pixel >= GConstants.m_resolution))
-        return;
-
+    const uint2 pixel = work.m_pixel;
     const uint index = pixel.x + pixel.y * GConstants.m_resolution.x;
     InterlockedAdd(GConstants.m_marks.Get()[index * 2], 1);
 #if VISIT_SHADING

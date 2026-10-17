@@ -16,7 +16,7 @@ struct InstanceParameters
 };
 
 
-FE_NUM_THREADS(EVALUATION_LANES, 1, 1)
+FE_NUM_THREADS(EVALUATION_LANES * kSurfaceWavesPerGroup, 1, 1)
 void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
 {
     uint2 pixel;
@@ -27,13 +27,17 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
     const MeshViewData view = LoadMeshView(GConstants.m_view);
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel, 0));
     MeshEvaluationContext context;
-    if (!LoadMeshEvaluation(view, id, pixel, GConstants.m_resolution, context))
+    if (!LoadMeshEvaluation(view, id, pixel, GConstants.m_resolution, groupIndex, context))
     {
         GConstants.m_g0.Store(pixel, 0xffff00ffu);
         return;
     }
 
-    const MaterialParameters material = context.m_materialParameters.Read<MaterialParameters>(0);
+    MaterialParameters material = context.m_materialParameters.Read<MaterialParameters>(0);
+    material.BaseColor.m_index = SurfaceWaveUniform(material.BaseColor.m_index);
+    material.AORoughnessMetallic.m_index = SurfaceWaveUniform(material.AORoughnessMetallic.m_index);
+    material.Normal.m_index = SurfaceWaveUniform(material.Normal.m_index);
+    material.Emissive.m_index = SurfaceWaveUniform(material.Emissive.m_index);
 
     const float2 scale = context.m_instanceParameters.Read<InstanceParameters>(0).UvScale.xy;
     const float2 uv = context.m_attributes.m_uv * scale;

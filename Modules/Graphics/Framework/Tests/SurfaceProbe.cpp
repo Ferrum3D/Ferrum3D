@@ -146,7 +146,7 @@ namespace FE::Graphics::SurfaceProbe
             material.m_shadingSlot.Get() = 0;
         }
 
-        const Vector2UInt kResolution = largeDispatch ? Vector2UInt(2049, 1281) : Vector2UInt(257, 129);
+        const Vector2UInt kResolution = largeDispatch ? Vector2UInt(4097, 2049) : Vector2UInt(257, 129);
         const uint32_t kPixelCount = kResolution.x * kResolution.y;
         Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
         Core::RingUploader uploader;
@@ -205,7 +205,7 @@ namespace FE::Graphics::SurfaceProbe
         });
 
         Visibility::SurfaceWork work;
-        for (const uint32_t testCase : { 32u, 64u, 1u, 32u, 0u, 2u, 3u, 4u, 5u })
+        for (const uint32_t testCase : { 32u, 64u, 1u, 32u, 0u, 2u, 3u, 4u, 5u, 6u })
         {
             if (testCase == 5 && !benchmark)
                 continue;
@@ -251,7 +251,8 @@ namespace FE::Graphics::SurfaceProbe
             Core::ComputePipeline* visit = pipelines->CreateComputePipeline(visitRequest);
             visit->GetCompletionWaitGroup()->Wait();
             ASSERT_TRUE(visit->IsReady());
-            generateRequest.m_defines = testCase == 5 ? Env::Name("GENERATE_SPARSE=1")
+            generateRequest.m_defines = testCase == 6 ? Env::Name("GENERATE_TAIL=1")
+                : testCase == 5                       ? Env::Name("GENERATE_SPARSE=1")
                 : shadingTest                         ? Env::Name("GENERATE_SHADING=1")
                                                       : Env::Name::kEmpty;
             generate = pipelines->CreateComputePipeline(generateRequest);
@@ -312,6 +313,10 @@ namespace FE::Graphics::SurfaceProbe
                                Core::BufferView(work.m_arguments.Get()).Slice(0, shaderCount * 12));
             graph->AddCopyPass(Core::BufferView(argsReadback.Get()).Slice(shaderCount * 12, 12),
                                Core::BufferView(work.m_emissionArguments.Get()));
+            const uint32_t rangesOffset = shaderCount * 12 + 12;
+            graph->AddCopyPass(
+                Core::BufferView(argsReadback.Get()).Slice(rangesOffset, shaderCount * sizeof(Visibility::ShaderRange)),
+                Core::BufferView(work.m_ranges.Get()));
 
             auto* pack = graph->AllocatePassData<Stage1Probe::PassDesc>();
             pack->m_pipeline = codecPipeline;
@@ -336,7 +341,7 @@ namespace FE::Graphics::SurfaceProbe
             for (uint32_t pixel = 0; pixel < kPixelCount; ++pixel)
                 wrong += results[pixel * 2]
                         != (testCase == 0 || testCase == 2 || pixel % 7 == 0 || (testCase == 5 && pixel % 101 != 0)
-                                    || (shadingTest && pixel % 11 == 0)
+                                    || (shadingTest && pixel % 11 == 0) || (testCase == 6 && pixel >= 5)
                                 ? 0u
                                 : 1u)
                     || results[pixel * 2 + 1] != 0;
@@ -344,11 +349,15 @@ namespace FE::Graphics::SurfaceProbe
             EXPECT_EQ(wrong, 0u);
             readback->Unmap();
             const uint32_t* args = static_cast<const uint32_t*>(argsReadback->Map());
-            argsReadback->InvalidateMappedRange(0, shaderCount * 12 + 12);
+            argsReadback->InvalidateMappedRange(0, rangesOffset + shaderCount * sizeof(Visibility::ShaderRange));
+            const auto* ranges = reinterpret_cast<const Visibility::ShaderRange*>(args + rangesOffset / sizeof(uint32_t));
             uint32_t totalWaves = 0;
             for (uint32_t slot = 0; slot < work.m_shaderCount; ++slot)
             {
-                totalWaves += args[slot * 3];
+                totalWaves += ranges[slot].m_waveCount;
+                EXPECT_EQ(args[slot * 3], Math::CeilDivide(ranges[slot].m_waveCount, Visibility::kSurfaceWavesPerGroup));
+                EXPECT_EQ(args[slot * 3 + 1], 1u);
+                EXPECT_EQ(args[slot * 3 + 2], 1u);
                 const bool active =
                     testCase != 0 && testCase != 2 && slot % shaderStride == 0 && slot / shaderStride < activeShaders;
                 if (active)

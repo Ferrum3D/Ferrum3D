@@ -32,14 +32,15 @@ namespace FE::Graphics::Visibility
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
     {
-        const PassData* settings = blackboard.TryGet<PassData>();
-        if (settings == nullptr)
+        const PassData* data = blackboard.TryGet<PassData>();
+        if (data == nullptr)
             return;
 
         FE_FG_SCOPE(graph, "DepthVisibility");
-        const PassData& data = *settings;
+
         const RendererViewData& view = blackboard.Get<RendererViewData>();
         const Vector2UInt resolution = view.m_mainColorTarget->GetDesc().GetSize2D();
+
         auto& output = blackboard.Add<Output>();
         output.m_target = Core::Texture::Create(graph.GetDevice(), "Visibility", Core::Format::kR32G32_UINT, resolution);
 
@@ -57,8 +58,8 @@ namespace FE::Graphics::Visibility
         SceneRenderPass pass;
         pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
         pass.m_passDescToken = graph.AddBasePassDesc(coverage);
-        pass.m_drawTag = data.m_drawTag;
-        pass.m_techniqueRole = data.m_techniqueRole;
+        pass.m_drawTag = data->m_drawTag;
+        pass.m_techniqueRole = data->m_techniqueRole;
         view.m_scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
             module.AddRenderPasses(graph, *view.m_renderQueueUploader, pass);
         });
