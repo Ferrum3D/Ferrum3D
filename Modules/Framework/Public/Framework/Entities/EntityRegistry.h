@@ -3,7 +3,6 @@
 
 namespace FE::Framework
 {
-    // Runtime ownership/residency group, never a simulation boundary. World owns its lifetime.
     //! @brief World-owned ownership and asset residency group, not a simulation boundary.
     struct EntityRegistry final
     {
@@ -38,7 +37,7 @@ namespace FE::Framework
         const Uuid m_key;
         EntityResidencySet m_residency;
 
-        EntityRegistry(EntityWorld& world, EntityAssetServices& services, uint32_t id, Uuid key)
+        EntityRegistry(EntityWorld& world, EntityAssetServices& services, const uint32_t id, const Uuid key)
             : m_world(&world)
             , m_id(id)
             , m_key(key)

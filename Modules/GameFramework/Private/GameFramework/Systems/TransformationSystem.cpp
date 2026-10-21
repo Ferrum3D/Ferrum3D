@@ -132,7 +132,7 @@ namespace FE::GameFramework
     {
         world.Components().Register<TransformComponent>();
         world.Components().Register<NonUniformScaleComponent>();
-        world.Components().Register<WorldTransformComponent>({}, { true });
+        world.Components().Register<WorldTransformComponent>({ true });
         world.Components().AddRuntimeCompanion<TransformComponent, WorldTransformComponent>();
         world.SetReparentHandler(PrepareReparent);
         m_changes = {};
@@ -166,6 +166,9 @@ namespace FE::GameFramework
                                    Parent<const WorldTransformComponent*>,
                                    WorldTransformComponent>;
 
-        m_completion = Query::TraverseChanged(context, Phases::Transformation, m_changes, traverse, ExecutionPolicy::kParallel);
+        m_completion = Query::Create()
+                           .SetChangeCursor(m_changes)
+                           .SetExecutionPolicy(ExecutionPolicy::kParallel)
+                           .Traverse(context, Phases::Transformation, traverse);
     }
 } // namespace FE::GameFramework

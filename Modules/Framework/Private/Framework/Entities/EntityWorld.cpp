@@ -5,7 +5,6 @@
 #include <Framework/Entities/EntitySerialization.h>
 #include <Framework/Entities/EntityWorldAsset.h>
 #include <Framework/Entities/EntityWorldInternal.h>
-#include <algorithm>
 
 namespace FE::Framework
 {
@@ -20,11 +19,11 @@ namespace FE::Framework
         : m_owner(owner)
         , m_schedule(*this)
     {
-        FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+        FE_AssertDebug(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
 
-        const uint32_t token = GNextWorld.fetch_add(1);
-        FE_Assert(token <= 0xffff, "World incarnation space exhausted");
-        m_token = static_cast<uint16_t>(token);
+        const uint32_t id = GNextWorld.fetch_add(1);
+        FE_Assert(id <= UINT16_MAX, "World ID space exhausted");
+        m_id = static_cast<uint16_t>(id);
         m_assets = assets ? assets : &GDefaultAssets;
     }
 
@@ -70,7 +69,7 @@ namespace FE::Framework
 
     Entity* EntityWorld::Find(const EntityID id) const
     {
-        if (id.m_value == 0 || id.World() != m_impl->m_token || id.Slot() >= m_impl->m_storage.m_slots.size())
+        if (id.m_value == 0 || id.World() != m_impl->m_id || id.Slot() >= m_impl->m_storage.m_slots.size())
             return nullptr;
 
         const auto& slot = m_impl->m_storage.m_slots[id.Slot()];
@@ -90,8 +89,8 @@ namespace FE::Framework
 
     EntityRegistry& EntityWorld::Impl::CreateRegistry(Uuid key)
     {
-        FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
-        FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
+        FE_AssertDebug(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+        FE_AssertDebug(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
 
         if (!key.IsValid())
             key = Uuid::Random();
@@ -106,8 +105,8 @@ namespace FE::Framework
 
     void EntityWorld::Impl::RemoveRegistry(EntityRegistry& registry)
     {
-        FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
-        FE_Assert(!m_schedule.IsExecuting() && !m_schedule.IsCollecting());
+        FE_AssertDebug(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+        FE_AssertDebug(!m_schedule.IsExecuting() && !m_schedule.IsCollecting());
 
         const auto registryIt = festd::find(m_storage.m_registries, &registry);
         if (registryIt == m_storage.m_registries.end())
@@ -118,7 +117,7 @@ namespace FE::Framework
         {
             const auto& operation = *m_materializations[index];
             if (operation.m_registry == &registry && operation.m_state <= MaterializationState::kReady)
-                CancelMaterialization({ m_token, index });
+                CancelMaterialization({ m_id, index });
         }
 
         for (auto& slot : m_storage.m_slots)
@@ -213,7 +212,7 @@ namespace FE::Framework
         }
 
         auto& slot = m_storage.m_slots[index];
-        const EntityID entityId = EntityID::Pack(m_token, index, slot.m_generation);
+        const EntityID entityId = EntityID::Pack(m_id, index, slot.m_generation);
         Entity* entity = ::new (m_storage.m_entities.AllocateMemory()) Entity(registry, entityId, uuid, name);
         slot.m_entity = entity;
         m_storage.m_uuidLookup.emplace(uuid, entity);
@@ -269,9 +268,8 @@ namespace FE::Framework
             DestroyEntity(*entity.m_firstChild);
         DeactivateSubtree(entity, false);
 
-        const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
-        for (uint32_t i = order.size(); i > 0; --i)
-            TeardownComponent(entity, order[i - 1], true);
+        for (uint32_t i = entity.m_chunk->m_archetype.m_columns.size(); i > 0; --i)
+            TeardownComponent(entity, i - 1, true);
 
         auto* chunk = entity.m_chunk;
         m_storage.FreeRow(*chunk, entity.m_row);
@@ -306,12 +304,6 @@ namespace FE::Framework
         }
 
         auto* archetype = Memory::DefaultNew<Archetype>(columns);
-        if (archetype->m_lifecycleOrder.size() != columns.size())
-        {
-            Memory::DefaultDelete(archetype);
-            return nullptr;
-        }
-
         m_storage.m_archetypes.push_back(archetype);
         return archetype;
     }
@@ -323,7 +315,7 @@ namespace FE::Framework
 
         Archetype* archetype = &layout;
         const auto& columns = layout.m_columns;
-        FE_Assert(columns.size() == values.size());
+        FE_AssertDebug(columns.size() == values.size());
 
         auto* source = entity.m_chunk;
         const uint32_t oldRow = entity.m_row;
@@ -375,10 +367,9 @@ namespace FE::Framework
         // Teardown removed/replaced components before moving their siblings.
         if (source)
         {
-            const auto& order = source->m_archetype.m_lifecycleOrder;
-            for (uint32_t i = order.size(); i > 0; --i)
+            for (uint32_t i = source->m_archetype.m_columns.size(); i > 0; --i)
             {
-                const uint32_t oldColumn = order[i - 1];
+                const uint32_t oldColumn = i - 1;
                 const auto* info = source->m_archetype.m_columns[oldColumn];
 
                 const auto found = festd::find(columns, info);
@@ -406,10 +397,11 @@ namespace FE::Framework
                 type.m_moveConstructor(destination->Get(row, i), source->Get(oldRow, oldColumn));
                 type.m_destructor(source->Get(oldRow, oldColumn));
                 destination->Stage(row, i) = source->Stage(oldRow, oldColumn);
+                destination->AddedVersion(row, i) = source->AddedVersion(oldRow, oldColumn);
             }
             else
             {
-                FE_Assert(type.m_defaultConstructor);
+                FE_AssertDebug(type.m_defaultConstructor);
                 type.m_defaultConstructor(destination->Get(row, i));
             }
         }
@@ -428,7 +420,7 @@ namespace FE::Framework
 
     void EntityWorld::SetReparentHandler(const ReparentHandler handler)
     {
-        FE_Assert(Threading::IsMainThread() && !m_impl->m_schedule.IsExecuting() && !m_impl->m_schedule.IsCollecting());
+        FE_AssertDebug(Threading::IsMainThread() && !m_impl->m_schedule.IsExecuting() && !m_impl->m_schedule.IsCollecting());
         FE_Assert(!handler || !m_impl->m_reparentHandler || handler == m_impl->m_reparentHandler);
         m_impl->m_reparentHandler = handler;
     }
@@ -468,14 +460,14 @@ namespace FE::Framework
 
     void* EntityWorld::Impl::LookupComponent(const Entity& entity, const Rtti::TypeID type, const bool write) const
     {
-        FE_Assert(!m_schedule.IsCollecting(), "System collection cannot inspect live component data");
+        FE_AssertDebug(!m_schedule.IsCollecting(), "System collection cannot inspect live component data");
 
         const auto* callback = m_schedule.IsExecuting()
             ? static_cast<const CallbackContext*>(Threading::FiberRuntimeInfo::Get().m_executionContext)
             : nullptr;
 
         const auto* traversal = callback && callback->m_world == &m_owner ? callback->m_traversal : nullptr;
-        if (traversal)
+        if (traversal && m_schedule.IsValidationEnabled())
         {
             bool declared = false;
             for (const auto& access : traversal->m_accesses)
@@ -485,7 +477,7 @@ namespace FE::Framework
                     declared = true;
             }
 
-            FE_AssertDebug(declared, "Entity component lookup exceeds traversal access declarations");
+            FE_Assert(declared, "Entity component lookup exceeds traversal access declarations");
         }
 
         if (!entity.m_chunk)
@@ -522,7 +514,7 @@ namespace FE::Framework
 
     void EntityWorld::AddService(WorldService& service)
     {
-        FE_Assert(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating());
+        FE_AssertDebug(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating());
         FE_Assert(festd::find(m_impl->m_services, &service) == m_impl->m_services.end());
         m_impl->m_services.push_back(&service);
         service.Init(*this);
@@ -531,7 +523,7 @@ namespace FE::Framework
 
     void EntityWorld::RemoveService(WorldService& service)
     {
-        FE_Assert(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating() && GetEntityCount() == 0);
+        FE_AssertDebug(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating() && GetEntityCount() == 0);
         const auto found = festd::find(m_impl->m_services, &service);
         if (found == m_impl->m_services.end())
             return;
@@ -555,7 +547,7 @@ namespace FE::Framework
 
     void EntityWorld::BeginFrame()
     {
-        FE_Assert(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating());
+        FE_AssertDebug(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating());
         m_impl->m_materializationFrame = Math::Max(m_impl->m_materializationFrame, m_impl->m_schedule.m_epoch) + 1;
         m_impl->m_explicitMaterializationFrames = true;
     }
@@ -564,6 +556,45 @@ namespace FE::Framework
     void EntityWorld::BeginUpdate()
     {
         m_impl->m_schedule.BeginUpdate();
+    }
+
+
+    void EntityWorld::BeginFixedUpdate(const float deltaSeconds)
+    {
+        FE_AssertDebug(deltaSeconds > 0);
+        m_impl->m_schedule.BeginUpdate(deltaSeconds);
+    }
+
+
+    bool EntityWorld::RunFixedUpdates(const double deltaSeconds, const float fixedDeltaSeconds, const uint32_t maxSteps,
+                                      void (*schedule)(void*, EntityWorld&), void* callable)
+    {
+        FE_AssertDebug(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating());
+        if (deltaSeconds < 0 || fixedDeltaSeconds <= 0 || maxSteps == 0)
+        {
+            return false;
+        }
+
+        const double stepSeconds = fixedDeltaSeconds;
+        m_impl->m_fixedAccumulator += Math::Min(deltaSeconds, stepSeconds * maxSteps);
+        uint32_t steps = 0;
+        while (m_impl->m_fixedAccumulator >= stepSeconds && steps < maxSteps)
+        {
+            BeginFixedUpdate(fixedDeltaSeconds);
+            schedule(callable, *this);
+            const bool executed = ExecuteSchedule();
+            const bool ended = EndUpdate();
+            if (!executed || !ended)
+                return false;
+
+            m_impl->m_fixedAccumulator -= stepSeconds;
+            ++steps;
+        }
+
+        if (m_impl->m_fixedAccumulator >= stepSeconds)
+            m_impl->m_fixedAccumulator = std::fmod(m_impl->m_fixedAccumulator, stepSeconds);
+
+        return true;
     }
 
 
@@ -708,7 +739,7 @@ namespace FE::Framework
 
     MaterializationStatus EntityWorld::GetMaterializationStatus(const MaterializationToken token) const
     {
-        if (token.m_world != m_impl->m_token || token.m_index >= m_impl->m_materializations.size())
+        if (token.m_world != m_impl->m_id || token.m_index >= m_impl->m_materializations.size())
             return {};
 
         const auto& operation = *m_impl->m_materializations[token.m_index];
@@ -718,7 +749,7 @@ namespace FE::Framework
 
     festd::span<const EntityUuidBinding> EntityWorld::GetMaterializationBindings(const MaterializationToken token) const
     {
-        if (token.m_world != m_impl->m_token || token.m_index >= m_impl->m_materializations.size())
+        if (token.m_world != m_impl->m_id || token.m_index >= m_impl->m_materializations.size())
             return {};
 
         return m_impl->m_materializations[token.m_index]->m_bindings;
@@ -727,7 +758,7 @@ namespace FE::Framework
 
     MaterializationToken EntityWorld::Impl::SpawnCollection(EntityRegistry& registry, const EntityCollection& collection)
     {
-        FE_Assert(Threading::IsMainThread());
+        FE_AssertDebug(Threading::IsMainThread());
         FE_Assert(&registry.GetWorld() == &m_owner);
         FE_Assert(m_materializations.size() < UINT32_MAX, "Materialization token space exhausted");
 
@@ -754,7 +785,7 @@ namespace FE::Framework
 
         operation.m_hasDefinition = true;
 
-        const MaterializationToken token{ m_token, (m_materializations.size()) };
+        const MaterializationToken token{ m_id, (m_materializations.size()) };
         m_materializations.push_back(Memory::DefaultNew<EntityMaterialization>(std::move(operation)));
         if (m_materializations.back()->m_state == MaterializationState::kPending)
             m_activeMaterializations.push_back(token.m_index);
@@ -778,11 +809,11 @@ namespace FE::Framework
 
     MaterializationToken EntityWorld::Impl::LoadPlacement(EntityRegistry& registry, const IO::AssetID placement)
     {
-        FE_Assert(Threading::IsMainThread());
+        FE_AssertDebug(Threading::IsMainThread());
 
         const auto existing = m_placements.find(placement);
         if (existing != m_placements.end())
-            return { m_token, existing->second };
+            return { m_id, existing->second };
 
         auto token = SpawnCollection(registry, EntityCollection{});
         auto& operation = *m_materializations[token.m_index];
@@ -804,11 +835,11 @@ namespace FE::Framework
                                                           const EntityCollectionInstanceAsset& definition,
                                                           const EntityCollection& collection)
     {
-        FE_Assert(Threading::IsMainThread());
+        FE_AssertDebug(Threading::IsMainThread());
 
         const auto existing = m_placements.find(placement);
         if (existing != m_placements.end())
-            return { m_token, existing->second };
+            return { m_id, existing->second };
 
         auto token = SpawnCollection(registry, collection);
         auto& operation = *m_materializations[token.m_index];
@@ -835,10 +866,10 @@ namespace FE::Framework
 
     void EntityWorld::Impl::CancelMaterialization(const MaterializationToken token)
     {
-        FE_Assert(Threading::IsMainThread());
-        FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
+        FE_AssertDebug(Threading::IsMainThread());
+        FE_AssertDebug(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
 
-        if (token.m_world != m_token || token.m_index >= m_materializations.size())
+        if (token.m_world != m_id || token.m_index >= m_materializations.size())
             return;
 
         auto& operation = *m_materializations[token.m_index];
@@ -928,6 +959,7 @@ namespace FE::Framework
                 const EntityRecord* source = row == 0 && !operation.m_concrete
                     ? (operation.m_placement ? &operation.m_definition.m_root.m_entities.front() : &emptyRoot)
                     : &collection.m_entities[sourceIndex];
+
                 festd::vector<const EntityComponentInfo*> columns;
                 for (const auto& component : source->m_components)
                 {
@@ -944,8 +976,6 @@ namespace FE::Framework
                     for (const auto companion : columns[column]->m_runtimeCompanions)
                     {
                         const auto* info = m_components.Find(companion);
-                        FE_Assert(info && info->m_policy.m_transient && info->m_type->m_defaultConstructor);
-
                         if (festd::find(columns, info) == columns.end())
                             columns.push_back(info);
                     }
@@ -968,6 +998,7 @@ namespace FE::Framework
         const uint32_t recordCount = collection.m_entities.size() + (operation.m_concrete ? 0 : 1);
         EntityRecord emptyRoot;
         emptyRoot.m_uuid = operation.m_rootUuid;
+
         const auto recordAt = [&](uint32_t row) -> const EntityRecord& {
             if (!operation.m_concrete)
             {
@@ -1018,6 +1049,7 @@ namespace FE::Framework
                                                                               : remap(&operation.m_bindings, record.m_uuid));
             if (!entity)
                 return reject("Concrete entity UUID is already owned");
+
             entity->m_wantsActive = false;
             entity->m_residencyScope = record.m_residency;
 
@@ -1128,7 +1160,7 @@ namespace FE::Framework
             const uint32_t index = m_activeMaterializations[active];
             auto& operation = *m_materializations[index];
             if (operation.m_state == MaterializationState::kReady && !operation.m_concrete && !m_owner.Find(operation.m_root))
-                m_owner.CancelMaterialization({ m_token, index });
+                m_owner.CancelMaterialization({ m_id, index });
 
             if (operation.m_state != MaterializationState::kPending
                 || (!bootstrap && operation.m_eligibleEpoch > m_schedule.m_epoch))
@@ -1140,7 +1172,7 @@ namespace FE::Framework
                 festd::find(m_storage.m_registries, operation.m_registry) != m_storage.m_registries.end();
             if (!registryPresent || operation.m_registry->GetID() != operation.m_registryId)
             {
-                m_owner.CancelMaterialization({ m_token, index });
+                m_owner.CancelMaterialization({ m_id, index });
                 continue;
             }
 
@@ -1148,7 +1180,7 @@ namespace FE::Framework
                 // Copy Core's owned diagnostic before cancellation releases the request.
                 const auto error = operation.m_request.GetError();
                 operation.m_error = error.empty() ? festd::string_view("Entity asset unavailable") : error;
-                m_owner.CancelMaterialization({ m_token, index });
+                m_owner.CancelMaterialization({ m_id, index });
                 operation.m_state = MaterializationState::kFailed;
             };
 
@@ -1217,7 +1249,7 @@ namespace FE::Framework
 
                 if (!Materialize(index, bootstrap ? nullptr : &m_materializationsRemaining))
                 {
-                    m_owner.CancelMaterialization({ m_token, index });
+                    m_owner.CancelMaterialization({ m_id, index });
                     operation.m_state = MaterializationState::kFailed;
                     continue;
                 }
@@ -1255,7 +1287,7 @@ namespace FE::Framework
 
             if (failed)
             {
-                m_owner.CancelMaterialization({ m_token, index });
+                m_owner.CancelMaterialization({ m_id, index });
                 operation.m_state = MaterializationState::kFailed;
                 operation.m_error = "Component lifecycle failed";
             }
@@ -1277,7 +1309,7 @@ namespace FE::Framework
                                        m_activeMaterializations.end());
 
         if (!bootstrap && m_materializationsRemaining == 0 && m_activeMaterializations.size() > 1)
-            std::rotate(m_activeMaterializations.begin(), m_activeMaterializations.begin() + 1, m_activeMaterializations.end());
+            eastl::rotate(m_activeMaterializations.begin(), m_activeMaterializations.begin() + 1, m_activeMaterializations.end());
     }
 
 
@@ -1369,10 +1401,11 @@ namespace FE::Framework
             TeardownValue(entity, *it->m_info, it->m_data, it->m_stage, it->m_transition);
             if (keepAuthoredValues)
             {
-                FE_Assert(!entity.m_active);
+                FE_AssertDebug(!entity.m_active);
 
                 const uint32_t column = entity.m_chunk->m_archetype.Find(it->m_info->m_type->m_id);
-                FE_Assert(column != kInvalidIndex);
+                FE_AssertDebug(column != kInvalidIndex);
+
                 TeardownComponent(entity, column, true);
                 it->m_info->m_type->m_moveConstructor(entity.m_chunk->Get(entity.m_row, column), it->m_data);
                 entity.m_chunk->Stage(entity.m_row, column) = ComponentStage::kNone;
@@ -1433,11 +1466,10 @@ namespace FE::Framework
 
     void EntityWorld::Impl::DeactivateEntity(Entity& entity, const bool keepAuthoredValues)
     {
-        const auto& order = entity.m_chunk->m_archetype.m_lifecycleOrder;
         ComponentContext context{ entity, m_owner };
-        for (uint32_t i = order.size(); i > 0; --i)
+        for (uint32_t i = entity.m_chunk->m_archetype.m_columns.size(); i > 0; --i)
         {
-            const uint32_t column = order[i - 1];
+            const uint32_t column = i - 1;
             auto& stage = entity.m_chunk->Stage(entity.m_row, column);
             if ((stage & ComponentStage::kActive) == ComponentStage::kNone)
                 continue;
@@ -1597,7 +1629,7 @@ namespace FE::Framework
         };
 
         ComponentContext context{ entity, m_owner };
-        for (const uint32_t column : chunk.m_archetype.m_lifecycleOrder)
+        for (uint32_t column = 0; column < chunk.m_archetype.m_columns.size(); ++column)
         {
             auto& stage = chunk.Stage(entity.m_row, column);
             const auto& info = *chunk.m_archetype.m_columns[column];
@@ -1641,17 +1673,17 @@ namespace FE::Framework
         if (entity.m_failed || (!entity.m_active && subtreeLoading))
             return false;
 
-        const bool needsInit = eastl::any_of(chunk.m_archetype.m_lifecycleOrder.begin(),
-                                             chunk.m_archetype.m_lifecycleOrder.end(),
-                                             [&](const uint32_t column) {
-                                                 return (chunk.Stage(entity.m_row, column)
-                                                         & (ComponentStage::kInitialized | ComponentStage::kFailed))
-                                                     == ComponentStage::kNone;
-                                             });
+        bool needsInit = false;
+        for (uint32_t column = 0; column < chunk.m_archetype.m_columns.size(); ++column)
+        {
+            needsInit |= (chunk.Stage(entity.m_row, column) & (ComponentStage::kInitialized | ComponentStage::kFailed))
+                == ComponentStage::kNone;
+        }
+
         if (needsInit && !AdmitLifecycle(entity))
             return false;
 
-        for (const uint32_t column : chunk.m_archetype.m_lifecycleOrder)
+        for (uint32_t column = 0; column < chunk.m_archetype.m_columns.size(); ++column)
         {
             auto& stage = chunk.Stage(entity.m_row, column);
             if ((stage & (ComponentStage::kInitialized | ComponentStage::kFailed)) != ComponentStage::kNone)
@@ -1661,23 +1693,6 @@ namespace FE::Framework
                 continue;
 
             const auto& info = *chunk.m_archetype.m_columns[column];
-            bool dependenciesInitialized = true;
-            for (const auto dependency : info.m_initAfter)
-            {
-                const uint32_t dependencyColumn = chunk.m_archetype.Find(dependency);
-                const ComponentStage dependencyStage = chunk.Stage(entity.m_row, dependencyColumn);
-                if ((dependencyStage & ComponentStage::kFailed) != ComponentStage::kNone)
-                {
-                    failComponent(column);
-                    return false;
-                }
-
-                dependenciesInitialized &= (dependencyStage & ComponentStage::kInitialized) != ComponentStage::kNone;
-            }
-
-            if (!dependenciesInitialized)
-                continue;
-
             // Undo is required even when a synchronous transition reports failure after partial work.
             stage |= ComponentStage::kInitialized;
             if (info.m_init && info.m_init(chunk.Get(entity.m_row, column), context) != LifecycleResult::kSucceeded)
@@ -1709,7 +1724,7 @@ namespace FE::Framework
 
         auto& chunk = *entity.m_chunk;
         ComponentContext context{ entity, m_owner };
-        for (const uint32_t column : chunk.m_archetype.m_lifecycleOrder)
+        for (uint32_t column = 0; column < chunk.m_archetype.m_columns.size(); ++column)
         {
             auto& stage = chunk.Stage(entity.m_row, column);
             if ((stage & ComponentStage::kInitialized) == ComponentStage::kNone)
@@ -1735,6 +1750,9 @@ namespace FE::Framework
 
                 return LifecycleResult::kFailed;
             }
+
+            if (entity.m_active)
+                PublishAdditions(entity);
         }
 
         entity.m_activationPrepared = true;
@@ -1847,9 +1865,8 @@ namespace FE::Framework
         // Complete one children-first deactivation pass before tearing down any component.
         DeactivateSubtree(entity, false);
         VisitSubtreePostOrder(entity, [&](Entity& current) {
-            const auto& order = current.m_chunk->m_archetype.m_lifecycleOrder;
-            for (uint32_t i = order.size(); i > 0; --i)
-                TeardownComponent(current, order[i - 1], false);
+            for (uint32_t i = current.m_chunk->m_archetype.m_columns.size(); i > 0; --i)
+                TeardownComponent(current, i - 1, false);
 
             current.m_failed = true;
             current.m_prepared = false;
@@ -1857,9 +1874,37 @@ namespace FE::Framework
     }
 
 
+    void EntityWorld::Impl::PublishAdditions(Entity& entity)
+    {
+        uint64_t version = 0;
+        auto nextVersion = [&] {
+            if (version == 0)
+            {
+                FE_Assert(m_storage.m_additionVersion != UINT64_MAX, "Addition publication serial exhausted");
+                version = ++m_storage.m_additionVersion;
+            }
+
+            return version;
+        };
+        if (entity.m_addedVersion == 0)
+            entity.m_addedVersion = nextVersion();
+
+        auto& chunk = *entity.m_chunk;
+        for (uint32_t column = 0; column < chunk.m_archetype.m_columns.size(); ++column)
+        {
+            if ((chunk.Stage(entity.m_row, column) & ComponentStage::kActive) != ComponentStage::kNone
+                && chunk.AddedVersion(entity.m_row, column) == 0)
+            {
+                chunk.AddedVersion(entity.m_row, column) = nextVersion();
+            }
+        }
+    }
+
+
     void EntityWorld::Impl::PublishSubtree(Entity& entity)
     {
         entity.m_active = true;
+        PublishAdditions(entity);
         MarkChanged(entity);
 
         for (Entity* child = entity.m_firstChild; child; child = child->m_nextSibling)
@@ -1873,9 +1918,8 @@ namespace FE::Framework
     void EntityWorld::Impl::UnloadSubtree(Entity& entity)
     {
         VisitSubtreePostOrder(entity, [&](Entity& current) {
-            const auto& order = current.m_chunk->m_archetype.m_lifecycleOrder;
-            for (uint32_t i = order.size(); i > 0; --i)
-                TeardownComponent(current, order[i - 1], false);
+            for (uint32_t i = current.m_chunk->m_archetype.m_columns.size(); i > 0; --i)
+                TeardownComponent(current, i - 1, false);
 
             current.m_prepared = false;
             current.m_wantsActive = false;
@@ -1972,7 +2016,7 @@ namespace FE::Framework
     bool EntityWorld::Impl::LoadDefinition(const EntityWorldAsset& definition, festd::vector<MaterializationToken>* operations)
     {
         FE_PROFILER_ZONE();
-        FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
+        FE_AssertDebug(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
         FE_Assert(m_storage.m_registries.empty(), "Definitions require an empty world");
 
         if (!definition.Validate())
@@ -2006,7 +2050,7 @@ namespace FE::Framework
     bool EntityWorld::Impl::CaptureSnapshot(EntityWorldSnapshotAsset& snapshot)
     {
         FE_PROFILER_ZONE();
-        FE_Assert(Threading::IsMainThread());
+        FE_AssertDebug(Threading::IsMainThread());
         FE_Assert(!m_schedule.IsUpdating(), "Snapshot capture requires a closed update epoch");
 
         std::lock_guard lock{ m_pendingCommands.m_lock };
@@ -2116,8 +2160,8 @@ namespace FE::Framework
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(Threading::IsMainThread());
-        FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
+        FE_AssertDebug(Threading::IsMainThread());
+        FE_AssertDebug(!m_schedule.IsCollecting() && !m_schedule.IsExecuting());
         FE_Assert(m_storage.m_registries.empty(), "Snapshots require an empty world");
 
         if (!snapshot.Validate())

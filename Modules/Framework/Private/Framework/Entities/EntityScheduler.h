@@ -9,22 +9,22 @@ namespace FE::Framework
         struct Traversal
         {
             Phase m_phase;
-            festd::vector<QueryAccess> m_accesses;
+            festd::inline_vector<QueryAccess, 4> m_accesses;
             void* m_callable = nullptr;
             TraversalInvoke m_invoke = nullptr;
             bool m_hasWrites = false;
             CallableDestroy m_destroy = nullptr;
             Rc<WaitGroup> m_completion;
-            festd::vector<Rc<WaitGroup>> m_prerequisites;
+            festd::inline_vector<Rc<WaitGroup>, 2> m_prerequisites;
             WorldSystem* m_system = nullptr;
             StageInvoke m_stageInvoke = nullptr;
             ChangeCursor* m_cursor = nullptr;
-            festd::vector<uint32_t> m_dependencies;
-            festd::vector<Rc<WaitGroup>> m_externalPrerequisites;
+            festd::inline_vector<uint32_t, 4> m_dependencies;
+            festd::inline_vector<Rc<WaitGroup>, 2> m_externalPrerequisites;
 
             ExecutionPolicy m_policy = ExecutionPolicy::kSequential;
-            bool m_executed = false;
             bool m_cascade = false;
+            QueryFilter m_filter = QueryFilter::kAll;
         };
 
 
@@ -40,7 +40,7 @@ namespace FE::Framework
         {
             Phase m_phase;
             festd::vector<Rc<WaitGroup>> m_prerequisites;
-            festd::vector<uint32_t> m_traversals;
+            festd::inline_vector<uint32_t, 8> m_traversals;
         };
     } // namespace Internal
 
@@ -48,17 +48,13 @@ namespace FE::Framework
     using Internal::ScheduledPhase;
     using Internal::Traversal;
 
-    // Embedded epoch owner: plan validation and dispatch share one state lifetime without a separate allocation.
     struct EntityScheduler final
     {
-        explicit EntityScheduler(EntityWorld::Impl& world)
-            : m_world(world)
-        {
-        }
+        explicit EntityScheduler(EntityWorld::Impl& world);
 
         void AddSystem(WorldSystem& system);
         void RemoveSystem(WorldSystem& system);
-        void BeginUpdate();
+        void BeginUpdate(float fixedDeltaSeconds = 0);
         bool EndUpdate();
         void ClearEpoch();
         void Shutdown();
@@ -89,6 +85,16 @@ namespace FE::Framework
         bool IsExecuting() const
         {
             return m_state == State::kExecuting;
+        }
+
+
+        bool IsValidationEnabled() const
+        {
+#if FE_DEBUG
+            return true;
+#else
+            return m_validationEnabled || m_validated;
+#endif
         }
 
     private:
@@ -123,6 +129,7 @@ namespace FE::Framework
         bool InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk, festd::span<void*> values,
                           bool& changed);
         void ExecuteTraversal(uint32_t index);
+        bool CompileSchedule(bool validate);
 
         EntityWorld::Impl& m_world;
         Memory::LinearAllocator m_epochArena;
@@ -138,5 +145,8 @@ namespace FE::Framework
         uint64_t m_cascadeHierarchyRevision = UINT64_MAX;
         uint64_t m_cascadeStructureRevision = UINT64_MAX;
         bool m_validated = false;
+        bool m_compiled = false;
+        bool m_executed = false;
+        bool m_validationEnabled;
     };
 } // namespace FE::Framework

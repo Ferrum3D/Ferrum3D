@@ -105,7 +105,7 @@ TEST(EntityCommandLists, GlobalIdentitiesRejectTokensFromOtherWorlds)
     const auto firstToken = first.CreateEntity(firstRegistry, {}, kEntityUuid);
     const auto secondToken = second.CreateEntity(secondRegistry, {}, kEntityUuid);
     EXPECT_NE(firstToken.m_list, secondToken.m_list);
-    EXPECT_DEATH(second.Rename(firstToken, "invalid"), "");
+    EXPECT_DEBUG_DEATH(second.Rename(firstToken, "invalid"), "");
 }
 
 

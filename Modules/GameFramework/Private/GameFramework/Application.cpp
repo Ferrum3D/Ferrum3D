@@ -2,12 +2,14 @@
 #include <Core/IO/AssetManager.h>
 #include <Core/Reflection.gen.h>
 #include <Core/Threading/Thread.h>
+#include <Core/Time/BaseTime.h>
 #include <Framework/Entities/WorldTimeService.h>
 #include <Framework/Input/WorldInputService.h>
 #include <Framework/Reflection.gen.h>
 #include <GameFramework/Application.h>
 #include <GameFramework/Reflection.gen.h>
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
+#include <GameFramework/Services/WorldPhysicsService.h>
 #include <GameFramework/Services/WorldStreamingService.h>
 #include <GameFramework/Systems/CameraSystem.h>
 #include <GameFramework/Systems/MeshSystem.h>
@@ -89,6 +91,7 @@ namespace FE::GameFramework
         Core::WaitForGlobalPipelineSets();
 
         m_world.reset(Memory::DefaultNew<Framework::EntityWorldInstance>());
+        m_previousUpdateTicks = Platform::GetTicks();
         if (!settings.m_world.IsValid())
         {
             // An empty application world still has its engine services for explicit system/entity registration.
@@ -96,6 +99,7 @@ namespace FE::GameFramework
             definition.m_services = { Rtti::GetTypeID<Framework::WorldTimeService>(),
                                       Rtti::GetTypeID<Input::WorldInputService>(),
                                       Rtti::GetTypeID<WorldGraphicsSceneService>(),
+                                      Rtti::GetTypeID<WorldPhysicsService>(),
                                       Rtti::GetTypeID<WorldStreamingService>() };
             m_worldDefinitionLoaded = m_world->Load(definition);
             return m_worldDefinitionLoaded;
@@ -246,19 +250,36 @@ namespace FE::GameFramework
     }
 
 
+    void Application::ScheduleWorldFixedUpdate(Framework::EntityWorld& world)
+    {
+        world.SchedulePhase(Framework::Phases::PreUpdate);
+        world.SchedulePhase(Framework::Phases::Update);
+        world.SchedulePhase(Framework::Phases::PostUpdate);
+    }
+
+
     Rc<WaitGroup> Application::ScheduleUpdate()
     {
         FE_PROFILER_ZONE();
 
         auto& world = GetWorld();
+        const uint64_t ticks = Platform::GetTicks();
+        const double elapsed = static_cast<double>(ticks - m_previousUpdateTicks) * Platform::GetSecondsPerTick();
+        m_previousUpdateTicks = ticks;
+
+        [[maybe_unused]] const bool fixedUpdated = world.RunFixedUpdates(elapsed, [this](Framework::EntityWorld& fixedWorld) {
+            ScheduleWorldFixedUpdate(fixedWorld);
+        });
+        FE_AssertDebug(fixedUpdated);
+
         world.BeginUpdate();
         ScheduleWorldUpdate(world);
 
-        const bool executed = world.ExecuteSchedule();
-        FE_Assert(executed);
+        [[maybe_unused]] const bool executed = world.ExecuteSchedule();
+        FE_AssertDebug(executed);
 
-        const bool ended = world.EndUpdate();
-        FE_Assert(ended);
+        [[maybe_unused]] const bool ended = world.EndUpdate();
+        FE_AssertDebug(ended);
 
         return nullptr;
     }

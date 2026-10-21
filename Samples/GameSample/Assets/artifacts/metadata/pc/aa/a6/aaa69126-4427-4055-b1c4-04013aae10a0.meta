@@ -4,7 +4,7 @@
     "$version": 0,
     "$schema": "0x4d3ae890a4a739c5",
     "$value": {
-        "m_artifactId": "8F250A96-B4F2-4459-9DCA-A0F0E7AE1B9E",
+        "m_artifactId": "A604E811-C385-4934-AF59-6F2173D7538C",
         "m_assetId": "AAA69126-4427-4055-B1C4-04013AAE10A0",
         "m_assetTypeId": "AB1B29E1-D167-43AA-8718-B3F8693FE184",
         "m_payloads": [
@@ -12,25 +12,16 @@
                 "m_resolvedDataSource": {
                     "m_filePath": "",
                     "m_byteOffset": 0,
-                    "m_byteSize": 14331
+                    "m_byteSize": 3202
                 },
                 "m_chunks": [
                     {
                         "m_offsetInPayload": 0,
-                        "m_compressedSize": 13136,
-                        "m_uncompressedSize": 262144,
+                        "m_compressedSize": 3202,
+                        "m_uncompressedSize": 63567,
                         "m_compressionMethod": 2,
                         "m_checksum": {
-                            "m_current": 3290267684
-                        }
-                    },
-                    {
-                        "m_offsetInPayload": 13136,
-                        "m_compressedSize": 1195,
-                        "m_uncompressedSize": 10794,
-                        "m_compressionMethod": 2,
-                        "m_checksum": {
-                            "m_current": 1078636029
+                            "m_current": 2521555836
                         }
                     }
                 ]
@@ -53,6 +44,11 @@
                 "m_kind": 0
             },
             {
+                "m_assetId": "AE082959-7CF2-4D02-8FC6-E27EE0E7F7F0",
+                "m_expectedTypeId": "3A4A6717-42D0-4393-9C32-A84949024167",
+                "m_kind": 0
+            },
+            {
                 "m_assetId": "968E3679-1025-43A2-AB3E-967494F90D35",
                 "m_expectedTypeId": "2D0926A6-8312-4D3C-8675-F67BB9A62B67",
                 "m_kind": 0
@@ -70,6 +66,11 @@
             {
                 "m_assetId": "FBD2877D-D6CB-4A11-A8A6-569E066A68EF",
                 "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "734E272B-F64D-4421-8767-DC4ECBD9EA3B",
+                "m_expectedTypeId": "2D0926A6-8312-4D3C-8675-F67BB9A62B67",
                 "m_kind": 0
             },
             {

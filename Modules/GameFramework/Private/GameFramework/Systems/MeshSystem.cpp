@@ -25,21 +25,19 @@ namespace FE::GameFramework
             return Framework::QueryWriteResult::kUnchanged;
         };
 
-        const auto models = Framework::Query<MeshComponent>::TraverseChanged(context,
-                                                                             Phases::GraphicsExtraction,
-                                                                             m_modelChanges,
-                                                                             updateModel,
-                                                                             Framework::ExecutionPolicy::kMainThread);
+        const auto models = Framework::Query<MeshComponent>::Create()
+                                .SetChangeCursor(m_modelChanges)
+                                .SetExecutionPolicy(Framework::ExecutionPolicy::kMainThread)
+                                .Traverse(context, Phases::GraphicsExtraction, updateModel);
         const auto updateTransform = [sceneService](const MeshComponent& mesh, const WorldTransformComponent& transform) {
             sceneService->GetMeshes().UpdateTransform(mesh, transform.m_world);
         };
 
         using Query = Framework::Query<const MeshComponent, const WorldTransformComponent>;
-        Query::Traverse(context,
-                        Phases::GraphicsExtraction,
-                        { models },
-                        updateTransform,
-                        Framework::ExecutionPolicy::kParallel,
-                        &m_transformChanges);
+        Query::Create()
+            .SetPrerequisites({ models })
+            .SetExecutionPolicy(Framework::ExecutionPolicy::kParallel)
+            .SetChangeCursor(m_transformChanges)
+            .Traverse(context, Phases::GraphicsExtraction, updateTransform);
     }
 } // namespace FE::GameFramework

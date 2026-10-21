@@ -1,5 +1,6 @@
 #pragma once
 #include <Framework/Entities/EntityWorld.h>
+#include <array>
 #include <tuple>
 
 namespace FE::Framework
@@ -95,74 +96,62 @@ namespace FE::Framework
 
 
     //! @brief Typed query using required references, optional pointers, read-only parent terms, and exclusion filters.
-    template<bool Cascade, class... Terms>
+    template<bool TCascade, class... TTerms>
     struct BasicQuery
     {
-        static_assert(sizeof...(Terms) > 0, "Query needs at least one component term");
-        static_assert(Internal::UniqueTerms<Terms...>::kValue, "Duplicate component terms in the same source");
+        static_assert(Internal::UniqueTerms<TTerms...>::kValue, "Duplicate component terms in the same source");
 
-        //! @brief Record typed access. QueryWriteResult explicitly opts into conditional write publication.
-        template<class Callable>
-        static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, Callable&& callable)
+        template<class TFunctor>
+        Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, TFunctor&& functor)
         {
-            return Traverse(context, phase, std::initializer_list<Rc<WaitGroup>>{}, std::forward<Callable>(callable));
+            return TraverseImpl(context, phase, std::forward<TFunctor>(functor));
         }
 
-        template<class Callable>
-        static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase, ExecutionPolicy policy, Callable&& callable)
+        static BasicQuery Create()
         {
-            return Traverse(context, phase, std::initializer_list<Rc<WaitGroup>>{}, std::forward<Callable>(callable), policy);
+            return BasicQuery{};
         }
 
-        template<class Callable>
-        static Rc<WaitGroup> Traverse(EntityUpdateContext& context, Phase phase,
-                                      std::initializer_list<Rc<WaitGroup>> prerequisites, Callable&& callable,
-                                      ExecutionPolicy policy = ExecutionPolicy::kSequential, ChangeCursor* cursor = nullptr)
+        [[nodiscard]] BasicQuery& SetChangeCursor(ChangeCursor& cursor)
         {
-            using Function = std::decay_t<Callable>;
-            static_assert(AcceptsCallback<Function>(ValueIndices{}),
-                          "Callback must accept query values, optionally preceded by Entity&; Without has no argument");
-            (context.m_world.Components().Register<typename Internal::QueryTerm<Terms>::Component>(), ...);
-
-            const QueryAccess accesses[] = { { Rtti::GetTypeID<typename Internal::QueryTerm<Terms>::Component>(),
-                                               Internal::QueryTerm<Terms>::kOptional,
-                                               Internal::QueryTerm<Terms>::kWrite,
-                                               Internal::QueryTerm<Terms>::kParent,
-                                               Internal::QueryTerm<Terms>::kExcluded }... };
-
-            void* storage = context.m_world.AllocateTraversal(sizeof(Function), alignof(Function));
-            ::new (storage) Function(std::forward<Callable>(callable));
-
-            return context.m_world.RecordTraversal(
-                context,
-                { phase,
-                  accesses,
-                  storage,
-                  [](void* function, Entity& entity, void** values) {
-                      return Invoke(*static_cast<Function*>(function), entity, values, ValueIndices{});
-                  },
-                  [](void* function) {
-                      static_cast<Function*>(function)->~Function();
-                  },
-                  festd::span<const Rc<WaitGroup>>(prerequisites.begin(), static_cast<uint32_t>(prerequisites.size())),
-                  cursor,
-                  policy,
-                  Cascade });
+            m_changeCursor = &cursor;
+            return *this;
         }
 
-        //! @brief Record work using a persistent cursor; one cursor may be consumed only once per epoch.
-        template<class Callable>
-        static Rc<WaitGroup> TraverseChanged(EntityUpdateContext& context, Phase phase, ChangeCursor& cursor, Callable&& callable,
-                                             ExecutionPolicy policy = ExecutionPolicy::kSequential)
+        [[nodiscard]] BasicQuery& SetExecutionPolicy(const ExecutionPolicy policy)
         {
-            return Traverse(context, phase, {}, std::forward<Callable>(callable), policy, &cursor);
+            m_executionPolicy = policy;
+            return *this;
+        }
+
+        [[nodiscard]] BasicQuery& SetPrerequisites(const festd::span<const Rc<WaitGroup>> prerequisites)
+        {
+            m_prerequisites.assign(prerequisites.begin(), prerequisites.end());
+            return *this;
+        }
+
+        [[nodiscard]] BasicQuery& SetPrerequisites(std::initializer_list<Rc<WaitGroup>> prerequisites)
+        {
+            return SetPrerequisites(festd::span<const Rc<WaitGroup>>(prerequisites.begin(), prerequisites.end()));
+        }
+
+        //! @brief Addition filters require a persistent cursor and consume only published additions.
+        [[nodiscard]] BasicQuery& SetFilter(const QueryFilter filter)
+        {
+            m_filter = filter;
+            return *this;
         }
 
     private:
-        using ValueIndices = typename Internal::QueryValueIndices<0, Terms...>::Type;
+        using ValueIndices = typename Internal::QueryValueIndices<0, TTerms...>::Type;
 
-        template<size_t Index>
-        using ValueTerm = Internal::QueryTerm<std::tuple_element_t<Index, std::tuple<Terms...>>>;
+        template<size_t TIndex>
+        using ValueTerm = Internal::QueryTerm<std::tuple_element_t<TIndex, std::tuple<TTerms...>>>;
+
+        ChangeCursor* m_changeCursor = nullptr;
+        ExecutionPolicy m_executionPolicy = ExecutionPolicy::kSequential;
+        QueryFilter m_filter = QueryFilter::kAll;
+        festd::inline_vector<Rc<WaitGroup>> m_prerequisites;
 
         template<class Function, size_t... Indices>
         static constexpr bool AcceptsCallback(std::index_sequence<Indices...>)
@@ -171,32 +160,72 @@ namespace FE::Framework
                 || std::is_invocable_v<Function&, typename ValueTerm<Indices>::Argument...>;
         }
 
-
-        template<class Function, size_t... Indices>
-        static bool Invoke(Function& function, Entity& entity, void** values, std::index_sequence<Indices...>)
+        template<class TFunction, size_t... TIndices>
+        static bool Invoke(TFunction& function, Entity& entity, void** values, std::index_sequence<TIndices...>)
         {
-            if constexpr (std::is_invocable_v<Function&, Entity&, typename ValueTerm<Indices>::Argument...>)
+            if constexpr (std::is_invocable_v<TFunction&, Entity&, typename ValueTerm<TIndices>::Argument...>)
             {
-                if constexpr (std::same_as<std::invoke_result_t<Function&, Entity&, typename ValueTerm<Indices>::Argument...>,
+                if constexpr (std::same_as<std::invoke_result_t<TFunction&, Entity&, typename ValueTerm<TIndices>::Argument...>,
                                            QueryWriteResult>)
-                    return function(entity, ValueTerm<Indices>::Get(values[Indices])...) == QueryWriteResult::kChanged;
+                {
+                    return function(entity, ValueTerm<TIndices>::Get(values[TIndices])...) == QueryWriteResult::kChanged;
+                }
                 else
                 {
-                    function(entity, ValueTerm<Indices>::Get(values[Indices])...);
+                    function(entity, ValueTerm<TIndices>::Get(values[TIndices])...);
                     return true;
                 }
             }
             else
             {
-                if constexpr (std::same_as<std::invoke_result_t<Function&, typename ValueTerm<Indices>::Argument...>,
+                if constexpr (std::same_as<std::invoke_result_t<TFunction&, typename ValueTerm<TIndices>::Argument...>,
                                            QueryWriteResult>)
-                    return function(ValueTerm<Indices>::Get(values[Indices])...) == QueryWriteResult::kChanged;
+                {
+                    return function(ValueTerm<TIndices>::Get(values[TIndices])...) == QueryWriteResult::kChanged;
+                }
                 else
                 {
-                    function(ValueTerm<Indices>::Get(values[Indices])...);
+                    function(ValueTerm<TIndices>::Get(values[TIndices])...);
                     return true;
                 }
             }
+        }
+
+        template<class TFunctor>
+        Rc<WaitGroup> TraverseImpl(EntityUpdateContext& context, const Phase phase, TFunctor&& callable)
+        {
+            using Function = std::decay_t<TFunctor>;
+            static_assert(AcceptsCallback<Function>(ValueIndices{}),
+                          "Callback must accept query values, optionally preceded by Entity&; Without has no argument");
+            (context.m_world.Components().Register<typename Internal::QueryTerm<TTerms>::Component>(), ...);
+
+            const std::array<QueryAccess, sizeof...(TTerms)> accesses = {
+                { { Rtti::GetTypeID<typename Internal::QueryTerm<TTerms>::Component>(),
+                    Internal::QueryTerm<TTerms>::kOptional,
+                    Internal::QueryTerm<TTerms>::kWrite,
+                    Internal::QueryTerm<TTerms>::kParent,
+                    Internal::QueryTerm<TTerms>::kExcluded }... }
+            };
+
+            void* storage = context.m_world.AllocateTraversal(sizeof(Function), alignof(Function));
+            ::new (storage) Function(std::forward<TFunctor>(callable));
+
+            return context.m_world.RecordTraversal(
+                context,
+                { phase,
+                  { accesses.data(), static_cast<uint32_t>(accesses.size()) },
+                  storage,
+                  [](void* function, Entity& entity, void** values) {
+                      return Invoke(*static_cast<Function*>(function), entity, values, ValueIndices{});
+                  },
+                  [](void* function) {
+                      static_cast<Function*>(function)->~Function();
+                  },
+                  m_prerequisites,
+                  m_changeCursor,
+                  m_executionPolicy,
+                  TCascade,
+                  m_filter });
         }
     };
 

@@ -1,0 +1,35 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "PhysicsShapeAsset",
+                "m_assetId": "AE082959-7CF2-4D02-8FC6-E27EE0E7F7F0",
+                "m_assetTypeId": "3A4A6717-42D0-4393-9C32-A84949024167",
+                "m_buildSettings": {
+                    "m_typeId": "3A4A6717-42D0-4393-9C32-A84949024167",
+                    "m_value": {
+                        "m_type": 0,
+                        "m_halfExtent": {
+                            "x": "0000003f",
+                            "y": "0000003f",
+                            "z": "0000003f"
+                        },
+                        "m_radius": "3333933f",
+                        "m_halfHeight": "0000003f"
+                    }
+                },
+                "m_dependencies": [],
+                "m_lastBuildKey": "72A87C9E-E3F3-4140-B145-91C3DFEC2699",
+                "m_builtArtifactId": "33B68FA7-C8EC-416C-BDF2-DE13AF792E55",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

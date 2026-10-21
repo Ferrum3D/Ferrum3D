@@ -22,7 +22,7 @@ namespace FE::Framework
             return;
 
         const auto found = m_availableChunks.find({ &chunk.m_archetype, &chunk.m_registry });
-        FE_Assert(found != m_availableChunks.end() && found->second.back() == &chunk);
+        FE_AssertDebug(found != m_availableChunks.end() && found->second.back() == &chunk);
         found->second.pop_back();
         if (found->second.empty())
             m_availableChunks.erase(found);
@@ -45,7 +45,7 @@ namespace FE::Framework
         if (!wasFull)
         {
             const auto found = m_availableChunks.find(key);
-            FE_Assert(found != m_availableChunks.end());
+            FE_AssertDebug(found != m_availableChunks.end());
             auto& available = found->second;
             available.erase(festd::find(available, &chunk));
             if (available.empty())

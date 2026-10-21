@@ -22,9 +22,7 @@ namespace FE::Framework
         //! @brief Undo the corresponding initialized or activated state.
         using Undo = void (*)(void*, ComponentContext&);
 
-        //! @brief Reflected component identity or stable RTTI metadata.
         const Rtti::Type* m_type = nullptr;
-        //! @brief Component storage or traversal execution policy.
         ComponentPolicy m_policy;
 
         //! @brief Loading hook that may contribute asset dependencies and remain pending.
@@ -37,24 +35,21 @@ namespace FE::Framework
         //! @brief Release state acquired by the loading adapter.
         Unload m_unload = nullptr;
 
-        //! @brief Prepare initialized runtime state after required dependencies are ready.
+        //! @brief Prepare this component's runtime state after required assets are ready; sibling hook order is unspecified.
         Stage m_init = nullptr;
-        //! @brief Undo initialization in reverse dependency order.
+        //! @brief Undo initialization; component hook order is unspecified.
         Undo m_shutdown = nullptr;
         //! @brief Prepare publication; failure leaves the subtree unpublished.
         Stage m_activate = nullptr;
         //! @brief Undo activation before unloading or destruction.
         Undo m_deactivate = nullptr;
 
-        //! @brief Component types that must initialize before this type.
-        festd::vector<Rtti::TypeID> m_initAfter;
         //! @brief Transient default-constructed columns added to authored layouts.
         festd::vector<Rtti::TypeID> m_runtimeCompanions;
     };
 
 
-    // World-owned registration. Generic construction/relocation/serialization always comes from RTTI.
-    //! @brief Synchronized world-local registry; relocation is reflected and must not throw.
+    //! @brief World-owned component registry; construction, relocation, and serialization use RTTI.
     struct EntityComponentRegistry final
     {
         ~EntityComponentRegistry();
@@ -80,7 +75,7 @@ namespace FE::Framework
 
         //! @brief Register reflected relocation and paired lifecycle hooks; repeated registration preserves the original policy.
         template<class T>
-        bool Register(festd::span<const Rtti::TypeID> initAfter = {}, ComponentPolicy policy = {})
+        bool Register(ComponentPolicy policy = {})
         {
             std::lock_guard lock{ m_lock };
 
@@ -124,7 +119,6 @@ namespace FE::Framework
             auto* entry = Memory::DefaultNew<EntityComponentInfo>();
             entry->m_type = &type;
             entry->m_policy = policy;
-            entry->m_initAfter.assign(initAfter.begin(), initAfter.end());
 
             if constexpr (hasLoad)
             {

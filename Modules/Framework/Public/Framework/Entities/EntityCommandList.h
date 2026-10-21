@@ -18,7 +18,6 @@ namespace FE::Framework
     //! @brief Command target containing either a runtime ID or a list-local creation token.
     struct EntityTarget final
     {
-        //! @brief Stable identity key.
         EntityID m_id;
         //! @brief List-local target identity when no runtime ID is present.
         EntityToken m_token;
@@ -39,9 +38,9 @@ namespace FE::Framework
 
     //! @brief Single-recorder transactional batch; independent conflicting batches are rejected.
     //!
-    //! One recorder owns a list. Submit transfers ownership; tokens cannot refer to a different list.
+    //! Submit transfers ownership; tokens cannot refer to a different list.
     //! Within a list rename, parent and component replacement use the final recorded value.
-    //! Destroy discards later operations on its target. Independent conflicting lists are rejected.
+    //! Destroy discards later operations on its target.
     struct EntityCommandList final
     {
         explicit EntityCommandList(EntityWorld& world);

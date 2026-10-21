@@ -14,16 +14,15 @@ Entity addresses, IDs and UUIDs are immutable until destruction. IDs pack a proc
 
 ## Components and lifecycle
 
-Reflect component types with `FE_RTTI_Reflect`, and use `FE_RTTI_Serialize` for authored fields. Framework registration uses RTTI identity, size, alignment, default/move construction, destruction and serialization. Registration asserts that component types support move construction and destruction; lifecycle hook signatures are checked at compile time. Register initialization dependencies and transient policy before creating the first instance:
+Reflect component types with `FE_RTTI_Reflect`, and use `FE_RTTI_Serialize` for authored fields. Framework registration uses RTTI identity, size, alignment, default/move construction, destruction and serialization. Registration asserts that component types support move construction and destruction; lifecycle hook signatures are checked at compile time. Register transient policy before creating the first instance:
 
 ```cpp
-Rtti::TypeID dependencies[] = { Rtti::GetTypeID<ResourceComponent>() };
-world.Components().Register<ConsumerComponent>(dependencies, { .m_transient = true });
+world.Components().Register<ConsumerComponent>({ .m_transient = true });
 ```
 
 Optional hook pairs are `Load/Unload`, `Init/Shutdown`, and `Activate/Deactivate`. Load takes `ComponentLoadingContext&` and returns `LifecycleResult` (succeeded, pending or failed). Its paired Unload returns void. Init/Activate take `ComponentContext&` and return a result; pending is rejected at these synchronous stages. Shutdown/Deactivate return void. A failure invokes the paired undo hook to roll back partially performed work. Load can be polled repeatedly, so it must retain its own in-progress operation state. Unload must synchronously cancel outstanding uses before returning.
 
-All objects are constructed before hooks run. Initial initialization is children first, and activation is parents first. A whole initial subtree becomes queryable only after activation succeeds. Teardown visits descendants before parents, and reverses component initialization order. Retained components preserve lifecycle flags during storage migration. Active entities retain their existing query membership while new components or children load. A failed addition unwinds that addition; a failed replacement retains the old active value.
+All objects are constructed before hooks run. Component hook order is unspecified: hooks must not depend on another component's initialized or activated runtime state. Use scheduled queries with addition filters and explicit traversal prerequisites for initialization involving several components. Initial initialization is children first, and activation is parents first. A whole initial subtree becomes queryable only after activation succeeds. Teardown visits descendants before parents. Retained components preserve lifecycle flags during storage migration. Active entities retain their existing query membership while new components or children load. A failed addition unwinds that addition; a failed replacement retains the old active value.
 
 Runtime-created values enumerate authored hard references through Core's dependency visitor. Materialization collects the same references while copying serialized fields into runtime storage, then installs component-owned contributions after the copy succeeds. Acquisitions own transitive closures through `IO::AssetRequest`; soft and optional links do not acquire residency. Ad hoc creations use lazy entity-owned residency. Use `ResidencyScope::kRegistry` on creation to share acquisitions within an ownership group. Every component contribution retains its expected-type constraint and is released after teardown. Residency shares requests by asset ID and expected type; incompatible typed consumers cannot fail a valid consumer's acquisition. Call `AssetManager::Tick` separately to advance real asset loading; Framework does not tick the global manager.
 
@@ -40,7 +39,7 @@ world.Submit(std::move(commands));
 world.CommitBootstrap(); // Available only before the first BeginUpdate.
 ```
 
-Creation tokens occupy four bytes: a globally reserved 16-bit list ID and a 16-bit creation index. ID zero and index 65,535 are invalid. A synchronized fixed bitset pool supports 65,535 simultaneously live list identities; a second bitset retains IDs shared by the immediate and deferred submission fragments until both are destroyed. Each list can create at most 65,535 entities. Tokens belong to one list and must not be used after it is consumed or destroyed. Existing targets use `EntityID`. Lists own aligned payloads in engine arenas and support move-only values. Each entity's component changes are coalesced into one final archetype migration. Rename, parenting and value replacement use the final recorded value within a list. Destroy discards later edits to the target and its attached descendants; detach children before destruction to retain them. Independent lists that edit the same target are rejected, rather than ordered by worker completion. Invalid content identities, stale targets, missing initialization dependencies and hierarchy cycles reject the batch before publication. Foreign recorder tokens and world ownership violations assert.
+Creation tokens occupy four bytes: a globally reserved 16-bit list ID and a 16-bit creation index. ID zero and index 65,535 are invalid. A synchronized fixed bitset pool supports 65,535 simultaneously live list identities; a second bitset retains IDs shared by the immediate and deferred submission fragments until both are destroyed. Each list can create at most 65,535 entities. Tokens belong to one list and must not be used after it is consumed or destroyed. Existing targets use `EntityID`. Lists own aligned payloads in engine arenas and support move-only values. Each entity's component changes are coalesced into one final archetype migration. Rename, parenting and value replacement use the final recorded value within a list. Destroy discards later edits to the target and its attached descendants; detach children before destruction to retain them. Independent lists that edit the same target are rejected, rather than ordered by worker completion. Invalid content identities, stale targets and hierarchy cycles reject the batch before publication. Foreign recorder tokens and world ownership violations assert.
 
 After startup, new entities and components submitted in epoch N become eligible in N+1. `BeginUpdate` commits eligible commands and polls lifecycle work before collecting systems. Calling Commit repeatedly in N does not bypass publication eligibility. Existing-target edits independent of creation work can commit at the next safe point; operations that depend on list-local tokens stay with their creation batch. Lists containing hierarchy edits remain intact whenever publication is deferred, preserving detach/destroy recording order. Pending replacements retain the old value and residency until the candidate is ready. Explicit deactivation retains initialized state and residency for unchanged components. Pending replacement loading is canceled, but its committed authored value replaces the inactive old value and loads afresh on reactivation. Deliberately inactive children do not block parent readiness. Unload shuts down components and releases residency while retaining allocated identity. Registry unload cancels queued creation and pending transitions before destroying its entities and storage.
 
@@ -49,11 +48,11 @@ After startup, new entities and components submitted in epoch N become eligible 
 ```cpp
 void MovementSystem::Update(EntityUpdateContext& context)
 {
-    auto reset = Query<Velocity>::Traverse(context, Phases::PreUpdate,
+    auto reset = Query<Velocity>::Create().Traverse(context, Phases::PreUpdate,
         [](Velocity& velocity) { /* reset */ });
 
-    Query<const Velocity, Position, const Acceleration*>::Traverse(
-        context, Phases::PostUpdate, { reset },
+    Query<const Velocity, Position, const Acceleration*>::Create().SetPrerequisites({ reset }).Traverse(
+        context, Phases::PostUpdate,
         [](Entity& entity, const Velocity& velocity, Position& position,
            const Acceleration* acceleration) { /* optional component may be null */ });
 }
@@ -85,11 +84,25 @@ The scheduler validates explicit prerequisites first, then adds acyclic componen
 
 ```cpp
 ChangeCursor renderChanges; // Retain independently for each consumer.
-Query<const Position>::TraverseChanged(context, Phases::PostUpdate, renderChanges,
+Query<const Position>::Create().SetChangeCursor(renderChanges).Traverse(context, Phases::PostUpdate,
     [](const Position& position) { /* process changed chunks */ });
 ```
 
 A cursor is caller-owned and must outlive the epoch. Use a separate cursor for each consumer/query; consuming one cursor twice in an epoch is rejected. Submission does not advance it. Completion publishes writable chunk-column versions and advances the successful consumer. Changed queries operate at chunk granularity and may conservatively invoke callbacks for untouched rows. Migration forces conservative reprocessing so pending changes cannot disappear; activation and reparenting mark affected storage changed. Cascade filtering also observes hierarchy revisions and parent-column writes, and conservatively includes all matching descendants when input changes. Direct safe-point component edits must go through replacement commands to publish changes.
+
+Addition filters use the same persistent cursor with exact per-row publication history:
+
+```cpp
+ChangeCursor newBodies; // A persistent member of the consuming system.
+Query<const BodyDefinition, BodyRuntime>::Create()
+    .SetChangeCursor(newBodies)
+    .SetFilter(QueryFilter::kAddedComponents)
+    .SetExecutionPolicy(ExecutionPolicy::kParallel)
+    .Traverse(context, Phases::PreUpdate,
+        [](const BodyDefinition& definition, BodyRuntime& runtime) { /* initialize runtime */ });
+```
+
+`kNewEntities` includes entities first published since the cursor was consumed, including entities without components. `kAddedComponents` includes entities with at least one newly published queried local component; present optional terms count, while `Parent` and `Without` terms only constrain matching. An initially empty cursor includes all existing matching publications. Each filter requires a cursor and consumes it after execution, even when no rows match. Keep its query and filter stable across updates. Pending loads and failed activation are excluded until successful publication; migration, compaction, value replacement and reactivation do not create additions. Removing and subsequently adding a component does. Independent cursors let multiple systems process the same additions. Both filters support cascade ordering, prerequisites and all execution policies.
 
 `SetParent` defaults to PreserveWorld. A registered `ReparentHandler` operates on a transactional view of authored component values and hierarchy after preceding commands in the list. Its writable values are private clones until full validation succeeds. Framework owns command validation and storage publication; GameFramework owns the affine calculation. Without a transform handler/participating components, parenting changes topology. PreserveLocal bypasses the transform handler. Change-version rollover advances a separate era and invalidates older consumer cursors; exhausted era/hierarchy/structure counters fail explicitly.
 

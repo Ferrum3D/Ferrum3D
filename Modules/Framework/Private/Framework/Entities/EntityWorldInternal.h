@@ -43,7 +43,9 @@ namespace FE::Framework
         festd::vector<WorldService*> m_services;
         ReparentHandler m_reparentHandler = nullptr;
         festd::ascii_view m_error;
-        uint16_t m_token;
+        // IDs are not recycled: stale EntityIDs and materialization tokens do not retain their world.
+        uint16_t m_id;
+        double m_fixedAccumulator = 0;
         bool m_started = false;
         uint64_t m_materializationBudgetEpoch = UINT64_MAX;
         uint64_t m_lifecycleBudgetEpoch = UINT64_MAX;
@@ -84,6 +86,7 @@ namespace FE::Framework
         void AdvanceLifecycle();
         bool AdmitLifecycle(Entity& entity);
         void PublishSubtree(Entity& entity);
+        void PublishAdditions(Entity& entity);
         void UnloadSubtree(Entity& entity);
         void MarkUnready(Entity& entity);
         void UnwindSubtree(Entity& entity);

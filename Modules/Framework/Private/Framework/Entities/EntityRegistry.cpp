@@ -34,7 +34,7 @@ namespace FE::Framework::Internal
     void RegistryIDPool::Retain(const uint32_t id)
     {
         std::lock_guard lock{ m_lock };
-        FE_Assert(id != 0 && id < m_references.size() && m_references[id] != 0);
+        FE_AssertDebug(id != 0 && id < m_references.size() && m_references[id] != 0);
         FE_Assert(m_references[id] != UINT32_MAX);
         ++m_references[id];
     }
@@ -43,7 +43,7 @@ namespace FE::Framework::Internal
     void RegistryIDPool::Release(const uint32_t id)
     {
         std::lock_guard lock{ m_lock };
-        FE_Assert(id != 0 && id < m_references.size() && m_references[id] != 0);
+        FE_AssertDebug(id != 0 && id < m_references.size() && m_references[id] != 0);
         if (--m_references[id] == 0)
             m_available.set(id);
     }

@@ -109,6 +109,12 @@ namespace FE
     };
 
 
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator==(const Transform& lhs, const Transform& rhs)
+    {
+        return lhs.m_rotation == rhs.m_rotation && lhs.m_translationScale == rhs.m_translationScale;
+    }
+
+
     namespace Math
     {
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Transform FE_VECTORCALL Invert(const Transform& source)

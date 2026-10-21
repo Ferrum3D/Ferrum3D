@@ -56,6 +56,8 @@ namespace FE::GameFramework
     protected:
         //! @brief Order default transform/extraction phases; override to insert application phases or stages.
         virtual void ScheduleWorldUpdate(Framework::EntityWorld& world);
+        //! @brief Order phases for each fixed step, independently of the per-frame schedule.
+        virtual void ScheduleWorldFixedUpdate(Framework::EntityWorld& world);
         //! @brief Collect systems and execute the application's world schedule for one frame.
         Rc<WaitGroup> ScheduleUpdate() override;
 
@@ -69,6 +71,7 @@ namespace FE::GameFramework
         festd::unique_ptr<Framework::EntityWorldInstance> m_world;
         IO::AssetRequest m_worldRequest;
         bool m_worldDefinitionLoaded = false;
+        uint64_t m_previousUpdateTicks = 0;
         Graphics::Visibility::DebugMode m_visibilityDebugMode = Graphics::Visibility::DebugMode::kDeferred;
         Graphics::MaterialStreamer* m_materialStreamer = nullptr;
         Graphics::MeshStreamer* m_meshStreamer = nullptr;

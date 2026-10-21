@@ -207,7 +207,7 @@ namespace FE::Framework::Tests
         {
             world.Components().Register<Number>();
             world.Components().Register<ReferenceComponent>();
-            world.Components().Register<Extra>({}, { true });
+            world.Components().Register<Extra>({ true });
             world.Components().AddRuntimeCompanion<Number, Extra>();
         }
 

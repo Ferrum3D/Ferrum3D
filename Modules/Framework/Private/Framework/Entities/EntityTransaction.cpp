@@ -86,7 +86,7 @@ namespace FE::Framework
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(commands.m_impl && commands.m_impl->m_world == &m_owner);
+        FE_AssertDebug(commands.m_impl && commands.m_impl->m_world == &m_owner);
 
         auto& list = *commands.m_impl;
         list.m_eligibleEpoch = m_schedule.m_epoch;
@@ -637,8 +637,6 @@ namespace FE::Framework
                     columns.push_back(value.m_info);
 
                 edit.m_archetype = m_world.GetArchetype(columns);
-                if (!edit.m_archetype)
-                    valid = m_world.Fail("Missing or cyclic component initialization dependency");
             }
 
             return valid;
@@ -731,8 +729,8 @@ namespace FE::Framework
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
-        FE_Assert(!m_schedule.IsCollecting() && !m_schedule.IsExecuting(), "Structural commit requires a safe boundary");
+        FE_AssertDebug(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
+        FE_AssertDebug(!m_schedule.IsCollecting() && !m_schedule.IsExecuting(), "Structural commit requires a safe boundary");
 
         m_error = {};
 

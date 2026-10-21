@@ -31,34 +31,6 @@ namespace FE::Framework
             if (offset <= m_byteSize)
                 break;
         }
-
-        // Stable RTTI-ID order breaks ties in the explicitly declared initialization dependency graph.
-        while (m_lifecycleOrder.size() < columns.size())
-        {
-            bool progress = false;
-            for (uint32_t i = 0; i < columns.size(); ++i)
-            {
-                if (festd::find(m_lifecycleOrder, i) != m_lifecycleOrder.end())
-                    continue;
-
-                bool ready = true;
-                for (const auto dependency : columns[i]->m_initAfter)
-                {
-                    const uint32_t index = Find(dependency);
-                    if (index == kInvalidIndex || festd::find(m_lifecycleOrder, index) == m_lifecycleOrder.end())
-                        ready = false;
-                }
-
-                if (!ready)
-                    continue;
-
-                m_lifecycleOrder.push_back(i);
-                progress = true;
-            }
-
-            if (!progress)
-                break;
-        }
     }
 
 
@@ -82,12 +54,13 @@ namespace FE::Framework
         m_entities.resize(archetype.m_capacity, nullptr);
         m_versions.resize(archetype.m_columns.size(), 0);
         m_stages.resize(archetype.m_capacity * archetype.m_columns.size(), ComponentStage::kNone);
+        m_addedVersions.resize(archetype.m_capacity * archetype.m_columns.size(), 0);
     }
 
 
     ArchetypeChunk::~ArchetypeChunk()
     {
-        FE_Assert(m_count == 0);
+        FE_AssertDebug(m_count == 0);
         Memory::DefaultFree(m_data);
     }
 
@@ -104,14 +77,23 @@ namespace FE::Framework
     }
 
 
+    uint64_t& ArchetypeChunk::AddedVersion(const uint32_t row, const uint32_t column)
+    {
+        return m_addedVersions[column * m_archetype.m_capacity + row];
+    }
+
+
     uint32_t ArchetypeChunk::Allocate(Entity& entity)
     {
-        FE_Assert(m_count < m_archetype.m_capacity);
+        FE_AssertDebug(m_count < m_archetype.m_capacity);
 
         const uint32_t row = m_count++;
         m_entities[row] = &entity;
         for (uint32_t column = 0; column < m_archetype.m_columns.size(); ++column)
+        {
             Stage(row, column) = ComponentStage::kNone;
+            AddedVersion(row, column) = 0;
+        }
 
         return row;
     }
@@ -119,7 +101,7 @@ namespace FE::Framework
 
     void ArchetypeChunk::Free(const uint32_t row)
     {
-        FE_Assert(row < m_count);
+        FE_AssertDebug(row < m_count);
 
         const uint32_t last = --m_count;
         if (row != last)
@@ -130,6 +112,7 @@ namespace FE::Framework
                 type.m_moveConstructor(Get(row, i), Get(last, i));
                 type.m_destructor(Get(last, i));
                 Stage(row, i) = Stage(last, i);
+                AddedVersion(row, i) = AddedVersion(last, i);
             }
 
             m_entities[row] = m_entities[last];

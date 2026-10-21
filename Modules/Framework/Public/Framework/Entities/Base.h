@@ -5,15 +5,11 @@
 
 namespace FE::Framework
 {
-    //! @brief Stable runtime metadata; component addresses remain valid only until structural commit.
     struct Entity;
-    //! @brief Own entities, storage, and a shared schedule across all registries; safe points require the main thread.
     struct EntityWorld;
-    //! @brief World-owned ownership and asset residency group, not a simulation boundary.
     struct EntityRegistry;
     struct Archetype;
     struct ArchetypeChunk;
-    //! @brief Single-recorder transactional batch; independent conflicting batches are rejected.
     struct EntityCommandList;
     struct EntityUpdateContext;
     struct WorldSystem;
@@ -68,7 +64,6 @@ namespace FE::Framework
         kInitialized = 1 << 3,
         //! @brief Activation completed; group publication may still be pending.
         kActive = 1 << 4,
-        //! @brief The operation failed and runtime state must be unwound.
         kFailed = 1 << 5
     };
     FE_ENUM_OPERATORS(ComponentStage);
@@ -77,11 +72,8 @@ namespace FE::Framework
     //! @brief Result of a nonblocking lifecycle hook; Pending is retried at later safe points.
     enum class LifecycleResult : uint8_t
     {
-        //! @brief The operation completed successfully.
         kSucceeded,
-        //! @brief The operation is not ready; poll it at a later safe point.
         kPending,
-        //! @brief The operation failed and runtime state must be unwound.
         kFailed
     };
 
@@ -118,7 +110,7 @@ namespace FE::Framework
     };
 
 
-    //! @brief Stable schedule key plus a borrowed diagnostic name; phases execute in explicit application order.
+    //! @brief Schedule key; phases execute in explicit application order at either update frequency.
     struct Phase final
     {
         //! @brief Stable identity key.
@@ -127,7 +119,7 @@ namespace FE::Framework
         bool operator==(const Phase&) const = default;
     };
 
-//! @brief Declare an inline phase key from its identifier, with a static diagnostic name.
+//! @brief Declare a phase key by hashing its identifier.
 #define FE_DECLARE_ENTITY_PHASE(name)                                                                                            \
     inline constexpr ::FE::Framework::Phase name                                                                                 \
     {                                                                                                                            \
@@ -144,7 +136,7 @@ namespace FE::Framework
 
     //! @brief Read-only query term for the immediate active parent; required terms skip roots.
     //!
-    //! Parent terms read the active immediate parent; cascade queries additionally enforce topological order.
+    //! Cascade queries additionally enforce topological order.
     template<class T>
     struct Parent
     {

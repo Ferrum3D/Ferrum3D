@@ -26,6 +26,6 @@ namespace FE::GameFramework
         };
 
         using Query = Framework::Query<const MeshComponent, TransformComponent>;
-        Query::Traverse(context, Phases::Input, Framework::ExecutionPolicy::kParallel, traverse);
+        Query::Create().SetExecutionPolicy(Framework::ExecutionPolicy::kParallel).Traverse(context, Phases::Input, traverse);
     }
 } // namespace FE::GameFramework

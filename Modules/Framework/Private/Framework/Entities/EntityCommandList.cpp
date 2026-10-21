@@ -35,7 +35,7 @@ namespace FE::Framework
             uint16_t Share(const uint16_t id)
             {
                 std::lock_guard lock{ m_lock };
-                FE_Assert(id != 0 && !m_available.test(id));
+                FE_AssertDebug(id != 0 && !m_available.test(id));
                 FE_Assert(!m_shared.test(id), "A command list can split only once");
                 m_shared.set(id);
                 return id;
@@ -45,7 +45,7 @@ namespace FE::Framework
             void Release(const uint16_t id)
             {
                 std::lock_guard lock{ m_lock };
-                FE_Assert(id != 0 && !m_available.test(id));
+                FE_AssertDebug(id != 0 && !m_available.test(id));
                 if (m_shared.test(id))
                 {
                     m_shared.reset(id);
@@ -91,9 +91,9 @@ namespace FE::Framework
 
     void EntityCommandList::Impl::Record(const Command& command)
     {
-        const auto validateToken = [&](const EntityToken token) {
-            FE_Assert(!token.m_list || token.m_list == m_id, "Creation tokens cannot cross command lists");
-            FE_Assert(!token.m_list || token.m_index < m_created, "Creation token was not recorded by this list");
+        const auto validateToken = [&]([[maybe_unused]] const EntityToken token) {
+            FE_AssertDebug(!token.m_list || token.m_list == m_id, "Creation tokens cannot cross command lists");
+            FE_AssertDebug(!token.m_list || token.m_index < m_created, "Creation token was not recorded by this list");
         };
         validateToken(command.GetTarget().m_token);
         validateToken(command.GetParent().m_token);
@@ -180,7 +180,7 @@ namespace FE::Framework
     EntityToken EntityCommandList::CreateEntity(EntityRegistry& registry, const Env::Name name, const Uuid uuid,
                                                 const ResidencyScope residency)
     {
-        FE_Assert(m_impl && &registry.GetWorld() == m_impl->m_world);
+        FE_AssertDebug(m_impl && &registry.GetWorld() == m_impl->m_world);
         FE_Assert(m_impl->m_created < UINT16_MAX, "Too many entity creations in one command list");
 
         EntityToken token{ m_impl->m_id, m_impl->m_created++ };
@@ -234,7 +234,7 @@ namespace FE::Framework
 
     void EntityCommandList::UnloadRegistry(EntityRegistry& registry)
     {
-        FE_Assert(m_impl && &registry.GetWorld() == m_impl->m_world);
+        FE_AssertDebug(m_impl && &registry.GetWorld() == m_impl->m_world);
 
         Command command{ CommandKind::kUnloadRegistry, {} };
         command.m_payload.m_registry = { &registry, registry.GetID() };

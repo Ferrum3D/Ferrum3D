@@ -30,6 +30,7 @@ namespace FE::Framework
         uint64_t m_structureRevision = 0;
         uint64_t m_changeVersion = 1;
         uint64_t m_changeEra = 1;
+        uint64_t m_additionVersion = 0;
         Threading::SpinLock m_versionLock;
 
     private:

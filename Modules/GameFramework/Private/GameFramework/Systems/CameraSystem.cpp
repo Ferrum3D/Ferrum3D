@@ -27,6 +27,9 @@ namespace FE::GameFramework
         };
 
         using Query = Framework::Query<const CameraComponent, const WorldTransformComponent>;
-        Query::TraverseChanged(context, Phases::GraphicsExtraction, m_changes, traverse, Framework::ExecutionPolicy::kMainThread);
+        Query::Create()
+            .SetChangeCursor(m_changes)
+            .SetExecutionPolicy(Framework::ExecutionPolicy::kMainThread)
+            .Traverse(context, Phases::GraphicsExtraction, traverse);
     }
 } // namespace FE::GameFramework

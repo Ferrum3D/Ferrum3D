@@ -27,7 +27,7 @@ namespace FE::Framework
         IO::Link<EntityCollection> m_collection;
         //! @brief Concrete UUID mapping for each collection source.
         festd::vector<EntityUuidBinding> m_bindings;
-        //! @brief Authored placement root components or runtime membership root ID.
+        //! @brief Authored placement root components.
         EntityCollection m_root;
 
         FE_RTTI_Reflect("DEE5027D-8FFF-433B-B9AF-E220068F94D5");
@@ -61,9 +61,7 @@ namespace FE::Framework
     //! @brief World-local operation identity retained until world destruction.
     struct MaterializationToken final
     {
-        //! @brief Owning world or its incarnation; borrowed where represented as a reference.
         uint16_t m_world = 0;
-        //! @brief World operation or list-local creation index.
         uint32_t m_index = UINT32_MAX;
 
         bool operator==(const MaterializationToken&) const = default;
@@ -73,9 +71,7 @@ namespace FE::Framework
     //! @brief Current publication result; pending operations may have an allocated but inactive root.
     struct MaterializationStatus final
     {
-        //! @brief Current publication result.
         MaterializationState m_state = MaterializationState::kFailed;
-        //! @brief Authored placement root components or runtime membership root ID.
         EntityID m_root;
         //! @brief Borrowed recoverable diagnostic text.
         festd::string_view m_error;

@@ -13,7 +13,7 @@ namespace FE::Framework
     //! @brief Persistent traversal snapshot; initially zero to request a first complete traversal.
     struct ChangeCursor final
     {
-        //! @brief Cooked serialization version or last consumed change version.
+        //! @brief Last consumed change version.
         uint64_t m_version = 0;
         //! @brief Distinguish change-version rollover from an unchanged snapshot.
         uint64_t m_versionEra = 0;
@@ -21,13 +21,26 @@ namespace FE::Framework
         uint64_t m_hierarchyRevision = 0;
         //! @brief Last consumed component-layout revision.
         uint64_t m_structureRevision = 0;
+        //! @brief Last consumed entity/component publication serial, independent of ordinary writes.
+        uint64_t m_additionVersion = 0;
+    };
+
+
+    //! @brief Select published additions since a traversal's persistent cursor was last consumed.
+    enum class QueryFilter : uint8_t
+    {
+        kAll,
+        //! @brief Entities published for the first time; reactivation does not count.
+        kNewEntities,
+        //! @brief Any queried local component published for the first time, including optional terms.
+        //! Replacements and retained components do not count; parent and Without terms only constrain matching.
+        kAddedComponents
     };
 
 
     //! @brief Component exclusion edge between traversal indices in the current epoch.
     struct ScheduleConflict final
     {
-        //! @brief Accessor for a borrowed or writable transactional component value.
         Rtti::TypeID m_component;
         //! @brief Traversal index that must complete first.
         uint32_t m_beforeTraversal;
@@ -59,7 +72,6 @@ namespace FE::Framework
     //! @brief Type-erased component access declaration used for matching and race exclusion.
     struct QueryAccess final
     {
-        //! @brief Reflected component identity or stable RTTI metadata.
         Rtti::TypeID m_type;
         //! @brief Permit a missing component and pass null to the callback.
         bool m_optional = false;
@@ -104,10 +116,10 @@ namespace FE::Framework
         festd::span<const Rc<WaitGroup>> m_prerequisites;
         //! @brief Optional persistent change cursor; must outlive the epoch.
         ChangeCursor* m_cursor = nullptr;
-        //! @brief Component storage or traversal execution policy.
         ExecutionPolicy m_policy = ExecutionPolicy::kSequential;
         //! @brief Visit active parents before descendants.
         bool m_cascade = false;
+        QueryFilter m_filter = QueryFilter::kAll;
     };
 
 
@@ -128,11 +140,10 @@ namespace FE::Framework
 
 
     //! @brief Own entities, storage, and a shared schedule across all registries; safe points require the main thread.
-    //
     //! Borrowed asset services must outlive the world.
     //! World mutation, lifecycle hooks and collection occur at main-thread safe points. Queries use job fibers;
     //! kMainThread keeps query callbacks on main-thread fibers.
-    //! Application stages may pass external completion groups. Validate the full phase plan before executing any callbacks.
+    //! Application stages may pass external completion groups. Use --ecs-validation to check the full schedule before execution.
     struct EntityWorld final
     {
         explicit EntityWorld(EntityAssetServices* assets = nullptr);
@@ -183,14 +194,35 @@ namespace FE::Framework
         //! @brief Cancel definition loads and destroy generated membership at a main-thread safe point.
         void CancelMaterialization(MaterializationToken token);
 
-        // Bootstrap ends permanently with the first BeginUpdate. Normal lists never bypass their next-frame eligibility.
-        //! @brief Commit startup work immediately; calling after BeginUpdate is a programmer error.
+        //! @brief Commit startup work immediately, before the first update; normal command lists retain next-frame eligibility.
         bool CommitBootstrap();
         //! @brief Commit eligible batches at a safe point; return false if a transaction is rejected.
         bool Commit();
 
         //! @brief Advance the epoch, commit eligible changes, and let systems record work on the main thread.
         void BeginUpdate();
+        //! @brief Collect system FixedUpdate hooks without ticking frame services; schedule phases independently of frequency.
+        void BeginFixedUpdate(float deltaSeconds);
+        //! @brief Accumulate frame time and execute fixed steps; preserve fractional time and limit catch-up work.
+        template<class Callable>
+        bool RunFixedUpdates(double deltaSeconds, Callable&& schedule, float fixedDeltaSeconds = 1.0f / 60.0f,
+                             uint32_t maxSteps = 8)
+        {
+            static_assert(std::is_invocable_r_v<void, Callable&, EntityWorld&>);
+
+            auto callback = [&schedule](EntityWorld& world) {
+                schedule(world);
+            };
+
+            return RunFixedUpdates(
+                deltaSeconds,
+                fixedDeltaSeconds,
+                maxSteps,
+                [](void* callable, EntityWorld& world) {
+                    (*static_cast<decltype(callback)*>(callable))(world);
+                },
+                &callback);
+        }
         //! @brief Borrow a system and initialize it; registration requires a closed update epoch.
         void AddSystem(WorldSystem& system);
         //! @brief Install one transactional reparent handler; clearing it requires a safe point.
@@ -247,9 +279,9 @@ namespace FE::Framework
 
         //! @brief Order a recorded completion after another group; completion must belong to the open epoch.
         bool AddPrerequisite(WaitGroup& completion, const Rc<WaitGroup>& prerequisite);
-        //! @brief Validate all phases, policies, and dependency edges before callbacks; invalid plans assert.
+        //! @brief Explicitly validate phases, query policies, and dependencies; invalid plans assert even in Release.
         bool ValidateSchedule();
-        //! @brief Dispatch and wait for the complete validated plan; application stages execute on the main thread.
+        //! @brief Compile and execute the plan, validating first when --ecs-validation is enabled.
         bool ExecuteSchedule();
         //! @brief Release callback captures and close the epoch; unfinished recorded work is a programmer error.
         bool EndUpdate();
@@ -270,8 +302,8 @@ namespace FE::Framework
         [[nodiscard]] uint32_t GetEntityCount() const;
         [[nodiscard]] uint32_t GetChunkCount() const;
 
-        // Query callbacks are arena-owned until EndUpdate. Captured references must outlive the epoch.
         //! @brief Own the described callback until EndUpdate; spans are copied and the context must name the open epoch.
+        //! Captured references must outlive the epoch.
         Rc<WaitGroup> RecordTraversal(EntityUpdateContext& context, const TraversalDesc& desc);
 
         //! @brief Allocate callback storage for the open epoch; storage remains valid until EndUpdate.
@@ -291,5 +323,7 @@ namespace FE::Framework
 
         Rc<WaitGroup> RecordStage(const StageDesc& desc);
         void* FindService(Rtti::TypeID type) const;
+        bool RunFixedUpdates(double deltaSeconds, float fixedDeltaSeconds, uint32_t maxSteps,
+                             void (*schedule)(void*, EntityWorld&), void* callable);
     };
 } // namespace FE::Framework

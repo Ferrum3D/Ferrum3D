@@ -6,15 +6,19 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <GameFramework/Application.h>
+#include <GameFramework/Assets/PhysicsShapeAsset.h>
 #include <GameFramework/Components/CameraComponent.h>
 #include <GameFramework/Components/CameraMovementComponent.h>
 #include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Components/PhysicsBodyComponent.h>
 #include <GameFramework/Components/TransformComponents.h>
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
+#include <GameFramework/Services/WorldPhysicsService.h>
 #include <GameFramework/Services/WorldStreamingService.h>
 #include <GameFramework/Systems/CameraMovementSystem.h>
 #include <GameFramework/Systems/CameraSystem.h>
 #include <GameFramework/Systems/MeshSystem.h>
+#include <GameFramework/Systems/PhysicsSystem.h>
 #include <GameFramework/Systems/TestRotationSystem.h>
 #include <GameFramework/Systems/TransformationSystem.h>
 
@@ -334,6 +338,146 @@ namespace FE::GameFramework
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_3596aa48d7bd4e798535657a7b44e37a(&TestRotationSystem::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID PhysicsShapeAsset::TypeID = Rtti::TypeID{
+        0x3a, 0x4a, 0x67, 0x17, 0x42, 0xd0, 0x43, 0x93, 0x9c, 0x32, 0xa8, 0x49, 0x49, 0x02, 0x41, 0x67,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_3a4a671742d043939c32a84949024167()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PhysicsShapeAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_3a4a671742d043939c32a84949024167();
+    }
+
+    void PhysicsShapeAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_3a4a671742d043939c32a84949024167();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x3a, 0x4a, 0x67, 0x17, 0x42, 0xd0, 0x43, 0x93,
+            0x9c, 0x32, 0xa8, 0x49, 0x49, 0x02, 0x41, 0x67, // FE::GameFramework::PhysicsShapeAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_type
+            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1,
+            0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 m_halfExtent
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_radius
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_halfHeight
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_type = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_halfExtent = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_radius = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_halfHeight = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_type",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PhysicsShapeAsset::m_type,
+                                                        kAttributes_m_type,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_halfExtent",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &PhysicsShapeAsset::m_halfExtent,
+                                                        kAttributes_m_halfExtent,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_radius",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &PhysicsShapeAsset::m_radius,
+                                                        kAttributes_m_radius,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_halfHeight",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &PhysicsShapeAsset::m_halfHeight,
+                                                        kAttributes_m_halfHeight,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<PhysicsShapeAsset>(typeInstance,
+                                                Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                "FE::GameFramework::PhysicsShapeAsset",
+                                                kBaseClassTypeIDs,
+                                                kAttributes,
+                                                kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_3a4a671742d043939c32a84949024167(&PhysicsShapeAsset::Reflect);
+
+    FE::Serialization::ResultCode PhysicsShapeAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_type", m_type);
+            object.Field("m_halfExtent", m_halfExtent);
+            object.Field("m_radius", m_radius);
+            object.Field("m_halfHeight", m_halfHeight);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode PhysicsShapeAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_type", m_type);
+            object.Field("m_halfExtent", m_halfExtent);
+            object.Field("m_radius", m_radius);
+            object.Field("m_halfHeight", m_halfHeight);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t PhysicsShapeAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x3a, 0x4a, 0x67, 0x17, 0x42, 0xd0, 0x43, 0x93, 0x9c, 0x32, 0xa8, 0x49, 0x49, 0x02, 0x41, 0x67,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_type", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_type)>());
+            hasher.Update("m_halfExtent", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_halfExtent)>());
+            hasher.Update("m_radius", 8);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_radius)>());
+            hasher.Update("m_halfHeight", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_halfHeight)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t PhysicsShapeAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::GameFramework
 
 
@@ -945,6 +1089,203 @@ namespace FE::GameFramework
 
 namespace FE::GameFramework
 {
+    const Rtti::TypeID PhysicsBodyComponent::TypeID = Rtti::TypeID{
+        0xa4, 0x8c, 0xd6, 0xfb, 0x33, 0x7b, 0x44, 0xf2, 0x8c, 0xf4, 0x91, 0xfc, 0xa0, 0x6f, 0xcb, 0x86,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_a48cd6fb337b44f28cf491fca06fcb86()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PhysicsBodyComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_a48cd6fb337b44f28cf491fca06fcb86();
+    }
+
+    void PhysicsBodyComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_a48cd6fb337b44f28cf491fca06fcb86();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xa4, 0x8c, 0xd6, 0xfb, 0x33, 0x7b, 0x44, 0xf2,
+            0x8c, 0xf4, 0x91, 0xfc, 0xa0, 0x6f, 0xcb, 0x86, // FE::GameFramework::PhysicsBodyComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[9 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_shapes
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_motionType
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mass
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_friction
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_restitution
+            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1,
+            0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 m_linearVelocity
+            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1,
+            0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 m_angularVelocity
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_body
+            0x27, 0xc5, 0x20, 0xa6, 0x96, 0x08, 0x45, 0x3d,
+            0xbe, 0x4e, 0xdc, 0xa5, 0x51, 0x25, 0x13, 0x25, // FE::Transform m_lastTransform
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shapes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_motionType = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mass = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_friction = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_restitution = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_linearVelocity = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_angularVelocity = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_body = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lastTransform = {};
+
+        static const festd::array<Rtti::FieldInfo, 9> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shapes",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_shapes,
+                                                        kAttributes_m_shapes,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_motionType",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_motionType,
+                                                        kAttributes_m_motionType,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mass",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_mass,
+                                                        kAttributes_m_mass,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_friction",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_friction,
+                                                        kAttributes_m_friction,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_restitution",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_restitution,
+                                                        kAttributes_m_restitution,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_linearVelocity",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_linearVelocity,
+                                                        kAttributes_m_linearVelocity,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_angularVelocity",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_angularVelocity,
+                                                        kAttributes_m_angularVelocity,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_body",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_body,
+                                                        kAttributes_m_body,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lastTransform",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        &PhysicsBodyComponent::m_lastTransform,
+                                                        kAttributes_m_lastTransform,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<PhysicsBodyComponent>(typeInstance,
+                                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                   "FE::GameFramework::PhysicsBodyComponent",
+                                                   kBaseClassTypeIDs,
+                                                   kAttributes,
+                                                   kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_a48cd6fb337b44f28cf491fca06fcb86(&PhysicsBodyComponent::Reflect);
+
+    FE::Serialization::ResultCode PhysicsBodyComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_shapes", m_shapes);
+            object.Field("m_motionType", m_motionType);
+            object.Field("m_mass", m_mass);
+            object.Field("m_friction", m_friction);
+            object.Field("m_restitution", m_restitution);
+            object.Field("m_linearVelocity", m_linearVelocity);
+            object.Field("m_angularVelocity", m_angularVelocity);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode PhysicsBodyComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_shapes", m_shapes);
+            object.Field("m_motionType", m_motionType);
+            object.Field("m_mass", m_mass);
+            object.Field("m_friction", m_friction);
+            object.Field("m_restitution", m_restitution);
+            object.Field("m_linearVelocity", m_linearVelocity);
+            object.Field("m_angularVelocity", m_angularVelocity);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t PhysicsBodyComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xa4, 0x8c, 0xd6, 0xfb, 0x33, 0x7b, 0x44, 0xf2, 0x8c, 0xf4, 0x91, 0xfc, 0xa0, 0x6f, 0xcb, 0x86,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_shapes", 8);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_shapes)>());
+            hasher.Update("m_motionType", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_motionType)>());
+            hasher.Update("m_mass", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mass)>());
+            hasher.Update("m_friction", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_friction)>());
+            hasher.Update("m_restitution", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_restitution)>());
+            hasher.Update("m_linearVelocity", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_linearVelocity)>());
+            hasher.Update("m_angularVelocity", 17);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_angularVelocity)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t PhysicsBodyComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
     const Rtti::TypeID MeshSystem::TypeID = Rtti::TypeID{
         0xaa, 0x87, 0x5e, 0xa6, 0xb1, 0x01, 0x43, 0x2b, 0x9d, 0x55, 0xbc, 0x6a, 0x84, 0xcd, 0xef, 0xe8,
     };
@@ -1022,6 +1363,88 @@ namespace FE::GameFramework
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_aa875ea6b101432b9d55bc6a84cdefe8(&MeshSystem::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID WorldPhysicsService::TypeID = Rtti::TypeID{
+        0xb3, 0x7e, 0x58, 0xc0, 0xd8, 0xe1, 0x41, 0xf8, 0x96, 0x8a, 0x5e, 0x5f, 0x9f, 0x03, 0xee, 0x86,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b37e58c0d8e141f8968a5e5f9f03ee86(WorldPhysicsService* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xb3, 0x7e, 0x58, 0xc0, 0xd8, 0xe1, 0x41, 0xf8,
+                0x96, 0x8a, 0x5e, 0x5f, 0x9f, 0x03, 0xee, 0x86, // FE::GameFramework::WorldPhysicsService (this type)
+                0xbb, 0x0b, 0xdf, 0xfe, 0xf2, 0x6a, 0x4e, 0x94,
+                0x8a, 0x9c, 0xb8, 0x58, 0x84, 0x75, 0xd1, 0x96, // FE::Framework::WorldService
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldService*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_b37e58c0d8e141f8968a5e5f9f03ee86()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& WorldPhysicsService::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_b37e58c0d8e141f8968a5e5f9f03ee86();
+    }
+
+    void* FE_VECTORCALL WorldPhysicsService::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_b37e58c0d8e141f8968a5e5f9f03ee86(this, typeID);
+    }
+
+    const void* FE_VECTORCALL WorldPhysicsService::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_b37e58c0d8e141f8968a5e5f9f03ee86(const_cast<WorldPhysicsService*>(this), typeID);
+    }
+    void WorldPhysicsService::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_b37e58c0d8e141f8968a5e5f9f03ee86();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xb3, 0x7e, 0x58, 0xc0, 0xd8, 0xe1, 0x41, 0xf8,
+            0x96, 0x8a, 0x5e, 0x5f, 0x9f, 0x03, 0xee, 0x86, // FE::GameFramework::WorldPhysicsService
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xbb, 0x0b, 0xdf, 0xfe, 0xf2, 0x6a, 0x4e, 0x94,
+            0x8a, 0x9c, 0xb8, 0x58, 0x84, 0x75, 0xd1, 0x96, // FE::Framework::WorldService
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<WorldPhysicsService>(typeInstance,
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                  "FE::GameFramework::WorldPhysicsService",
+                                                  kBaseClassTypeIDs,
+                                                  kAttributes,
+                                                  kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<WorldPhysicsService*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_b37e58c0d8e141f8968a5e5f9f03ee86(&WorldPhysicsService::Reflect);
 } // namespace FE::GameFramework
 
 
@@ -1310,6 +1733,88 @@ namespace FE::GameFramework
 
 namespace FE::GameFramework
 {
+    const Rtti::TypeID PhysicsSystem::TypeID = Rtti::TypeID{
+        0xef, 0x92, 0xdc, 0x49, 0x16, 0xfd, 0x4d, 0xf7, 0x98, 0xde, 0xac, 0x50, 0xd7, 0x18, 0xf2, 0xc0,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_ef92dc4916fd4df798deac50d718f2c0(PhysicsSystem* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xef, 0x92, 0xdc, 0x49, 0x16, 0xfd, 0x4d, 0xf7,
+                0x98, 0xde, 0xac, 0x50, 0xd7, 0x18, 0xf2, 0xc0, // FE::GameFramework::PhysicsSystem (this type)
+                0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+                0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_ef92dc4916fd4df798deac50d718f2c0()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PhysicsSystem::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_ef92dc4916fd4df798deac50d718f2c0();
+    }
+
+    void* FE_VECTORCALL PhysicsSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_ef92dc4916fd4df798deac50d718f2c0(this, typeID);
+    }
+
+    const void* FE_VECTORCALL PhysicsSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_ef92dc4916fd4df798deac50d718f2c0(const_cast<PhysicsSystem*>(this), typeID);
+    }
+    void PhysicsSystem::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_ef92dc4916fd4df798deac50d718f2c0();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xef, 0x92, 0xdc, 0x49, 0x16, 0xfd, 0x4d, 0xf7,
+            0x98, 0xde, 0xac, 0x50, 0xd7, 0x18, 0xf2, 0xc0, // FE::GameFramework::PhysicsSystem
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+            0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<PhysicsSystem>(typeInstance,
+                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                            "FE::GameFramework::PhysicsSystem",
+                                            kBaseClassTypeIDs,
+                                            kAttributes,
+                                            kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<PhysicsSystem*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_ef92dc4916fd4df798deac50d718f2c0(&PhysicsSystem::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
     const Rtti::TypeID WorldStreamingService::TypeID = Rtti::TypeID{
         0xf3, 0x8c, 0x1d, 0xbe, 0x58, 0xdf, 0x4c, 0x53, 0x83, 0x35, 0x3f, 0xfa, 0xdb, 0x6d, 0xde, 0x2d,
     };
@@ -1387,4 +1892,144 @@ namespace FE::GameFramework
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f38c1dbe58df4c5383353ffadb6dde2d(&WorldStreamingService::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID PhysicsBodyShape::TypeID = Rtti::TypeID{
+        0xf6, 0xea, 0x42, 0x2d, 0x76, 0x67, 0x42, 0xe3, 0x96, 0xd8, 0xb8, 0xa5, 0xee, 0xf7, 0xca, 0xff,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_f6ea422d766742e396d8b8a5eef7caff()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PhysicsBodyShape::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_f6ea422d766742e396d8b8a5eef7caff();
+    }
+
+    void PhysicsBodyShape::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_f6ea422d766742e396d8b8a5eef7caff();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xf6, 0xea, 0x42, 0x2d, 0x76, 0x67, 0x42, 0xe3,
+            0x96, 0xd8, 0xb8, 0xa5, 0xee, 0xf7, 0xca, 0xff, // FE::GameFramework::PhysicsBodyShape
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_asset
+            0x3a, 0x4a, 0x67, 0x17, 0x42, 0xd0, 0x43, 0x93,
+            0x9c, 0x32, 0xa8, 0x49, 0x49, 0x02, 0x41, 0x67, // FE::GameFramework::PhysicsShapeAsset m_shape
+            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1,
+            0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 m_position
+            0xe9, 0xa0, 0xd3, 0xb6, 0xe0, 0x43, 0x47, 0xe6,
+            0x86, 0x07, 0x7b, 0x36, 0x2c, 0xed, 0x07, 0x7e, // FE::Quaternion m_rotation
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_asset = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shape = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_position = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_rotation = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_asset",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PhysicsBodyShape::m_asset,
+                                                        kAttributes_m_asset,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shape",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &PhysicsBodyShape::m_shape,
+                                                        kAttributes_m_shape,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_position",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &PhysicsBodyShape::m_position,
+                                                        kAttributes_m_position,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_rotation",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &PhysicsBodyShape::m_rotation,
+                                                        kAttributes_m_rotation,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<PhysicsBodyShape>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::GameFramework::PhysicsBodyShape",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_f6ea422d766742e396d8b8a5eef7caff(&PhysicsBodyShape::Reflect);
+
+    FE::Serialization::ResultCode PhysicsBodyShape::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_asset", m_asset);
+            object.Field("m_shape", m_shape);
+            object.Field("m_position", m_position);
+            object.Field("m_rotation", m_rotation);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode PhysicsBodyShape::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_asset", m_asset);
+            object.Field("m_shape", m_shape);
+            object.Field("m_position", m_position);
+            object.Field("m_rotation", m_rotation);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t PhysicsBodyShape::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xf6, 0xea, 0x42, 0x2d, 0x76, 0x67, 0x42, 0xe3, 0x96, 0xd8, 0xb8, 0xa5, 0xee, 0xf7, 0xca, 0xff,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_asset", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_asset)>());
+            hasher.Update("m_shape", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_shape)>());
+            hasher.Update("m_position", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_position)>());
+            hasher.Update("m_rotation", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_rotation)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t PhysicsBodyShape::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::GameFramework

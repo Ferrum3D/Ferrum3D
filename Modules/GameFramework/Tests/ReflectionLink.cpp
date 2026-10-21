@@ -14,7 +14,11 @@ int main(int argc, const char** argv)
                             "FE::GameFramework::MeshSystem",
                             "FE::GameFramework::MeshComponent",
                             "FE::GameFramework::WorldStreamingService",
-                            "FE::GameFramework::WorldGraphicsSceneService" };
+                            "FE::GameFramework::WorldGraphicsSceneService",
+                            "FE::GameFramework::PhysicsSystem",
+                            "FE::GameFramework::PhysicsBodyComponent",
+                            "FE::GameFramework::PhysicsShapeAsset",
+                            "FE::GameFramework::WorldPhysicsService" };
     int32_t exitCode = 0;
     for (const char* name : names)
     {

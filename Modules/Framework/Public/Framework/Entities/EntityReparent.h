@@ -3,7 +3,6 @@
 
 namespace FE::Framework
 {
-    // A transactional view of authored values and hierarchy after preceding commands in the same list.
     //! @brief Transactional hierarchy and authored component view after preceding commands in the same batch.
     struct ReparentContext final
     {
