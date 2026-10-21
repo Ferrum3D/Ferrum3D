@@ -40,6 +40,7 @@ namespace FE::Framework
         virtual void Update(EntityWorld&) {}
 
     private:
+        // FindService resolves registered services through the private RTTI cast.
         friend struct EntityWorld;
     };
 } // namespace FE::Framework

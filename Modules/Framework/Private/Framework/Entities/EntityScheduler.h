@@ -6,28 +6,50 @@ namespace FE::Framework
 {
     namespace Internal
     {
+        //! @brief One recorded query traversal or main-thread application stage of the open epoch.
+        //! Spans point into the scheduler's epoch arena and are released by ClearEpoch.
         struct Traversal
         {
             Phase m_phase;
-            festd::inline_vector<QueryAccess, 4> m_accesses;
+            festd::span<const QueryAccess> m_accesses;
             void* m_callable = nullptr;
+            //! @brief Query row callback; null for stages.
             TraversalInvoke m_invoke = nullptr;
-            bool m_hasWrites = false;
+            //! @brief Stage callback; null for queries.
+            StageInvoke m_stageInvoke = nullptr;
             CallableDestroy m_destroy = nullptr;
             Rc<WaitGroup> m_completion;
+            //! @brief Recorded prerequisites; also keep external wait groups alive for execution.
             festd::inline_vector<Rc<WaitGroup>, 2> m_prerequisites;
+            //! @brief Recording system, or null for application work.
             WorldSystem* m_system = nullptr;
-            StageInvoke m_stageInvoke = nullptr;
             ChangeCursor* m_cursor = nullptr;
-            festd::inline_vector<uint32_t, 4> m_dependencies;
-            festd::inline_vector<Rc<WaitGroup>, 2> m_externalPrerequisites;
+
+            //! @brief Compiled producer traversal indices, including exclusion edges.
+            festd::span<const uint32_t> m_dependencies;
+            //! @brief Compiled prerequisites that do not belong to this epoch.
+            festd::span<WaitGroup* const> m_externalPrerequisites;
+            uint32_t m_phaseIndex = kInvalidIndex;
 
             ExecutionPolicy m_policy = ExecutionPolicy::kSequential;
-            bool m_cascade = false;
             QueryFilter m_filter = QueryFilter::kAll;
+            bool m_cascade = false;
+            //! @brief Writes a local component, so successful callbacks publish change versions.
+            bool m_hasWrites = false;
+
+            [[nodiscard]] bool IsStage() const
+            {
+                return m_stageInvoke != nullptr;
+            }
+
+            [[nodiscard]] bool RunsOnMainThread() const
+            {
+                return IsStage() || m_policy == ExecutionPolicy::kMainThread;
+            }
         };
 
 
+        //! @brief Fiber-local callback state used to check component lookups against the traversal's declared access.
         struct CallbackContext
         {
             const EntityWorld* m_world;
@@ -39,8 +61,9 @@ namespace FE::Framework
         struct ScheduledPhase
         {
             Phase m_phase;
-            festd::vector<Rc<WaitGroup>> m_prerequisites;
-            festd::inline_vector<uint32_t, 8> m_traversals;
+            festd::inline_vector<Rc<WaitGroup>, 2> m_prerequisites;
+            //! @brief Compiled execution order of this phase's traversals.
+            festd::span<uint32_t> m_traversals;
         };
     } // namespace Internal
 
@@ -48,6 +71,11 @@ namespace FE::Framework
     using Internal::ScheduledPhase;
     using Internal::Traversal;
 
+    //! @brief Record, compile and execute one epoch of traversals.
+    //!
+    //! An epoch moves through collection (systems record traversals), recording (the application schedules phases),
+    //! compilation (dependency and exclusion edges) and execution. Every per-epoch allocation lives in the epoch arena or
+    //! in fiber-local temporary memory.
     struct EntityScheduler final
     {
         explicit EntityScheduler(EntityWorld::Impl& world);
@@ -70,25 +98,25 @@ namespace FE::Framework
 
         uint64_t m_epoch = 0;
 
-        bool IsCollecting() const
+        [[nodiscard]] bool IsCollecting() const
         {
             return m_state == State::kCollecting;
         }
 
 
-        bool IsUpdating() const
+        [[nodiscard]] bool IsUpdating() const
         {
             return m_state != State::kIdle;
         }
 
 
-        bool IsExecuting() const
+        [[nodiscard]] bool IsExecuting() const
         {
             return m_state == State::kExecuting;
         }
 
 
-        bool IsValidationEnabled() const
+        [[nodiscard]] bool IsValidationEnabled() const
         {
 #if FE_DEBUG
             return true;
@@ -101,17 +129,27 @@ namespace FE::Framework
         enum class State : uint8_t
         {
             kIdle,
-            kUpdating,
+            //! @brief Systems are recording traversals and must not touch component data.
             kCollecting,
+            //! @brief The epoch is open for application scheduling, compilation or a completed execution.
+            kRecording,
             kExecuting,
+            //! @brief A main-thread stage is running and may commit structural changes.
             kStructuralStage
         };
-        State m_state = State::kIdle;
 
+        //! @brief A producer-before-consumer edge between traversal indices.
+        struct Edge
+        {
+            uint32_t m_producer;
+            uint32_t m_consumer;
+        };
+
+        //! @brief A matched chunk and the column of each query access, or kInvalidIndex.
         struct PreparedChunk
         {
             ArchetypeChunk* m_chunk;
-            festd::inline_vector<uint32_t> m_columns;
+            const uint32_t* m_columns;
             mutable uint32_t m_changed = 0;
         };
 
@@ -122,16 +160,45 @@ namespace FE::Framework
             uint32_t m_treeBatches = 0;
         };
 
-        void PrepareTraversal(const Traversal& traversal, festd::vector<PreparedChunk>& chunks);
+        using TempVector = festd::pmr::vector<uint32_t>;
+
+        // Compilation steps, in order.
+        bool CompileSchedule(bool validate);
+        bool ResolvePhases(bool validate);
+        bool ValidateTraversals(bool validate) const;
+        bool ResolvePrerequisites(bool validate, std::pmr::memory_resource& temp, festd::pmr::vector<Edge>& edges);
+        bool OrderTraversals(bool validate, std::pmr::memory_resource& temp, festd::span<const Edge> edges,
+                             TempVector& order) const;
+        void AddExclusionEdges(festd::pmr::vector<Edge>& edges);
+        void StoreDependencies(festd::pmr::vector<Edge>& edges);
+
+        void ExecuteTraversal(uint32_t index);
+        void PrepareChunks(const Traversal& traversal, std::pmr::memory_resource& temp,
+                           festd::pmr::vector<PreparedChunk>& chunks);
         void PrepareCascadeOrder();
-        void ExecuteRowBatches(const Traversal& traversal, festd::span<PreparedChunk> chunks, TraversalWork& work);
-        void ExecuteCascadeBatches(const Traversal& traversal, festd::span<PreparedChunk> chunks, TraversalWork& work);
+        void ExecuteRows(const Traversal& traversal, std::pmr::memory_resource& temp, festd::span<PreparedChunk> chunks,
+                         TraversalWork& work);
+        void ExecuteCascade(const Traversal& traversal, std::pmr::memory_resource& temp, festd::span<PreparedChunk> chunks,
+                            TraversalWork& work);
         bool InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk, festd::span<void*> values,
                           bool& changed);
-        void ExecuteTraversal(uint32_t index);
-        bool CompileSchedule(bool validate);
+        void PublishChanges(const Traversal& traversal, festd::span<const PreparedChunk> chunks, const TraversalWork& work);
+
+        //! @brief Allocate storage released by ClearEpoch; valid at any point of the open epoch on the main thread.
+        void* AllocateEpoch(size_t size, size_t alignment);
+
+        template<class T>
+        festd::span<T> AllocateEpochArray(const uint32_t count)
+        {
+            static_assert(std::is_trivially_destructible_v<T>);
+            if (count == 0)
+                return {};
+
+            return { static_cast<T*>(AllocateEpoch(sizeof(T) * count, alignof(T))), count };
+        }
 
         EntityWorld::Impl& m_world;
+        State m_state = State::kIdle;
         Memory::LinearAllocator m_epochArena;
         festd::vector<void*> m_largeCaptures;
         festd::vector<WorldSystem*> m_systems;
@@ -141,6 +208,7 @@ namespace FE::Framework
         ScheduleDiagnostics m_diagnostics;
         Threading::FiberMutex m_cascadeOrderLock;
         festd::vector<Entity*> m_cascadeOrder;
+        //! @brief Start offsets of every hierarchy level in m_cascadeOrder, followed by its total size.
         festd::vector<uint32_t> m_cascadeLevels;
         uint64_t m_cascadeHierarchyRevision = UINT64_MAX;
         uint64_t m_cascadeStructureRevision = UINT64_MAX;

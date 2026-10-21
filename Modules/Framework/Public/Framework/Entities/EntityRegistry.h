@@ -31,6 +31,9 @@ namespace FE::Framework
 
     private:
         friend EntityWorld;
+        friend struct EntityLifecycle;
+        friend struct EntityMaterializer;
+
         EntityWorld* m_world;
         const uint32_t m_id;
         bool m_unloading = false;

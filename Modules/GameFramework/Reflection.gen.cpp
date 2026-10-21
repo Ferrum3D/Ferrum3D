@@ -19,7 +19,6 @@
 #include <GameFramework/Systems/CameraSystem.h>
 #include <GameFramework/Systems/MeshSystem.h>
 #include <GameFramework/Systems/PhysicsSystem.h>
-#include <GameFramework/Systems/TestRotationSystem.h>
 #include <GameFramework/Systems/TransformationSystem.h>
 
 
@@ -256,88 +255,6 @@ namespace FE::GameFramework
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2f63d347123d4124a0cb2aacee290dc3(&Application::Reflect);
-} // namespace FE::GameFramework
-
-
-namespace FE::GameFramework
-{
-    const Rtti::TypeID TestRotationSystem::TypeID = Rtti::TypeID{
-        0x35, 0x96, 0xaa, 0x48, 0xd7, 0xbd, 0x4e, 0x79, 0x85, 0x35, 0x65, 0x7a, 0x7b, 0x44, 0xe3, 0x7a,
-    };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_3596aa48d7bd4e798535657a7b44e37a(TestRotationSystem* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0x35, 0x96, 0xaa, 0x48, 0xd7, 0xbd, 0x4e, 0x79,
-                0x85, 0x35, 0x65, 0x7a, 0x7b, 0x44, 0xe3, 0x7a, // FE::GameFramework::TestRotationSystem (this type)
-                0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
-                0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_3596aa48d7bd4e798535657a7b44e37a()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& TestRotationSystem::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_3596aa48d7bd4e798535657a7b44e37a();
-    }
-
-    void* FE_VECTORCALL TestRotationSystem::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_3596aa48d7bd4e798535657a7b44e37a(this, typeID);
-    }
-
-    const void* FE_VECTORCALL TestRotationSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_3596aa48d7bd4e798535657a7b44e37a(const_cast<TestRotationSystem*>(this), typeID);
-    }
-    void TestRotationSystem::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_3596aa48d7bd4e798535657a7b44e37a();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0x35, 0x96, 0xaa, 0x48, 0xd7, 0xbd, 0x4e, 0x79,
-            0x85, 0x35, 0x65, 0x7a, 0x7b, 0x44, 0xe3, 0x7a, // FE::GameFramework::TestRotationSystem
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
-            0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<TestRotationSystem>(typeInstance,
-                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                 "FE::GameFramework::TestRotationSystem",
-                                                 kBaseClassTypeIDs,
-                                                 kAttributes,
-                                                 kFields);
-        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
-            return static_cast<TestRotationSystem*>(instance)->RTTI_TryCast(target);
-        };
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_3596aa48d7bd4e798535657a7b44e37a(&TestRotationSystem::Reflect);
 } // namespace FE::GameFramework
 
 

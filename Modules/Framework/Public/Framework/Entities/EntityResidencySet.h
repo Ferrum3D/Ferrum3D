@@ -21,8 +21,8 @@ namespace FE::Framework
         virtual ~EntityAssetServices() = default;
         //! @brief Acquire one logical residency reference; the returned request may still be pending.
         virtual EntityAssetRequest Acquire(IO::AssetID id, Rtti::TypeID expectedType);
-        //! @brief Check discovery/loading and expected type without waiting; failures are content errors.
-        virtual LifecycleResult Poll(const EntityAssetRequest& request, Rtti::TypeID expectedType);
+        //! @brief Check loading without waiting; the acquisition already enforces the expected type, so failures are content errors.
+        virtual LifecycleResult Poll(const EntityAssetRequest& request);
         //! @brief Release one request acquired by these services.
         virtual void Release(EntityAssetRequest& request);
     };

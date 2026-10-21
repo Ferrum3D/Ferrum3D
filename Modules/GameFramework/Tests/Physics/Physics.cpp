@@ -72,7 +72,7 @@ namespace
         }
 
 
-        void AddFloor()
+        Uuid AddFloor()
         {
             PhysicsBodyComponent floor;
             floor.m_motionType = PhysicsMotionType::kStatic;
@@ -80,7 +80,25 @@ namespace
             shape.m_shape.m_type = PhysicsShapeType::kBox;
             shape.m_shape.m_halfExtent = Vector3(20, 0.5f, 20);
             floor.m_shapes.push_back(shape);
-            Add(Vector3(0, -0.5f, 0), floor);
+            return Add(Vector3(0, -0.5f, 0), floor);
+        }
+
+
+        uint32_t CountChangedTransforms(ChangeCursor& cursor)
+        {
+            m_world.BeginUpdate();
+            EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
+            uint32_t count = 0;
+            Query<const TransformComponent>::Create().SetChangeCursor(cursor).Traverse(context,
+                                                                                       FE::Framework::Phases::Update,
+                                                                                       [&count](const TransformComponent&) {
+                                                                                           ++count;
+                                                                                       });
+            EXPECT_TRUE(m_world.SchedulePhase(FE::GameFramework::Phases::Transformation));
+            EXPECT_TRUE(m_world.SchedulePhase(FE::Framework::Phases::Update));
+            EXPECT_TRUE(m_world.ExecuteSchedule());
+            EXPECT_TRUE(m_world.EndUpdate());
+            return count;
         }
     };
 } // namespace
@@ -104,6 +122,29 @@ TEST_F(PhysicsFixture, DynamicSphereFallsAndRestsOnStaticBox)
     ASSERT_TRUE(m_world.ExecuteSchedule());
     ASSERT_TRUE(m_world.EndUpdate());
     EXPECT_NEAR(m_world.Find(id)->FindComponent<const WorldTransformComponent>()->m_world.m_31, 0.5f, 0.03f);
+}
+
+
+TEST_F(PhysicsFixture, RestingBodiesPublishNoChangesAndStaticEditsReachSimulation)
+{
+    const Uuid floor = AddFloor();
+    PhysicsBodyComponent sphere;
+    sphere.m_shapes.push_back({});
+    Add(Vector3(0, 1, 0), sphere);
+    ASSERT_TRUE(m_world.CommitBootstrap());
+    Step(300);
+
+    ChangeCursor changes;
+    EXPECT_EQ(CountChangedTransforms(changes), 2u);
+    Step(30);
+    EXPECT_EQ(CountChangedTransforms(changes), 0u);
+
+    EntityCommandList commands(m_world);
+    commands.ReplaceComponent(m_world.Find(floor)->GetID(), TransformComponent{ Transform::Translation(Vector3(0, -10.5f, 0)) });
+    m_world.Submit(std::move(commands));
+    Step();
+    const auto* body = m_world.Find(floor)->FindComponent<const PhysicsBodyComponent>();
+    EXPECT_NEAR(m_physics.GetTransform(body->m_body, 1).Translation().y, -10.5f, 0.001f);
 }
 
 

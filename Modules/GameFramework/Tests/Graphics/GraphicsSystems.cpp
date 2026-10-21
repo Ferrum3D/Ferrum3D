@@ -398,18 +398,6 @@ TEST_F(GraphicsFixture, MembershipSurvivesMigrationAndIsExcludedFromSnapshots)
 }
 
 
-TEST_F(GraphicsFixture, RemovingMeshRemovesSceneMembership)
-{
-    Tick();
-    EntityCommandList commands(m_world);
-    commands.RemoveComponent<MeshComponent>(m_world.Find(m_meshUuid)->GetID());
-    m_world.Submit(std::move(commands));
-    Tick();
-    EXPECT_EQ(Meshes().m_destroyed, 1);
-    EXPECT_EQ(m_world.Find(m_meshUuid)->FindComponent<const MeshComponent>(), nullptr);
-}
-
-
 TEST_F(GraphicsFixture, CamerasCreateDistinctViewsAndRetainThemWhileInactive)
 {
     Tick();

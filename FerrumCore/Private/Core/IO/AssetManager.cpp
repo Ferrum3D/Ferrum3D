@@ -598,10 +598,22 @@ namespace FE::IO
                         result = context.Load(*operation.m_type, operation.m_candidate);
                     }
 
+                    // Types with a Validate() hook are checked once here, so consumers can trust published content.
+                    const bool invalid = result == Serialization::ResultCode::kSuccess && operation.m_type->m_validate
+                        && !operation.m_type->m_validate(operation.m_candidate);
                     if (result != Serialization::ResultCode::kSuccess)
                     {
                         operation.m_error =
                             Fmt::FixedFormat("primary payload deserialization failed ({})", festd::to_underlying(result));
+                    }
+                    else if (invalid)
+                    {
+                        operation.m_error =
+                            Fmt::FixedFormat("primary payload failed {} validation", operation.m_type->m_qualifiedName);
+                    }
+
+                    if (!operation.m_error.empty())
+                    {
                         DestroyObject(operation, operation.m_candidate);
                         operation.m_candidate = nullptr;
                     }

@@ -673,7 +673,7 @@ namespace FE::Framework
                 }
 
                 if (entity.m_wantsActive != edit.m_wantsActive)
-                    m_world.MarkUnready(entity);
+                    m_world.m_lifecycle.MarkUnready(entity);
 
                 entity.m_wantsActive = edit.m_wantsActive;
             }
@@ -704,12 +704,12 @@ namespace FE::Framework
                 }
 
                 if (!edit.m_wantsActive)
-                    m_world.DeactivateSubtree(*entity);
+                    m_world.m_lifecycle.DeactivateSubtree(*entity);
 
                 if (edit.m_unload)
                 {
                     // Unload keeps allocated identity but resets runtime state, descendants first.
-                    m_world.UnloadSubtree(*entity);
+                    m_world.m_lifecycle.UnloadSubtree(*entity);
                 }
             }
 
@@ -782,9 +782,9 @@ namespace FE::Framework
             success &= transaction.Execute();
         }
 
-        AdvanceMaterializations(bootstrap);
+        m_materializer.Advance(bootstrap);
+        m_lifecycle.Advance();
+        m_materializer.UpdateStatus(bootstrap);
         return success;
     }
-
-
 } // namespace FE::Framework

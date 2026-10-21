@@ -207,4 +207,71 @@ namespace FE::IO
             Memory::DefaultDelete(this);
         }
     };
+
+
+    //! @brief Append writes to a caller-owned byte vector; use for small payloads where page-backed streams are too heavy.
+    struct WriteOnlyVectorStream final : public StreamBase
+    {
+        explicit WriteOnlyVectorStream(festd::pmr::vector<std::byte>& output)
+            : m_output(&output)
+        {
+        }
+
+        [[nodiscard]] bool SeekAllowed() const override
+        {
+            return false;
+        }
+
+        [[nodiscard]] bool IsOpen() const override
+        {
+            return true;
+        }
+
+        ResultCode Seek(intptr_t, SeekMode) override
+        {
+            return ResultCode::kNotSupported;
+        }
+
+        [[nodiscard]] uintptr_t Tell() const override
+        {
+            return m_output->size();
+        }
+
+        [[nodiscard]] size_t Length() const override
+        {
+            return m_output->size();
+        }
+
+        size_t ReadToBuffer(void*, size_t) override
+        {
+            return 0;
+        }
+
+        size_t WriteFromBuffer(const void* buffer, const size_t byteSize) override
+        {
+            const auto* bytes = static_cast<const std::byte*>(buffer);
+            m_output->insert(m_output->end(), bytes, bytes + byteSize);
+            return byteSize;
+        }
+
+        [[nodiscard]] festd::string_view GetName() override
+        {
+            return "WriteOnlyVectorStream";
+        }
+
+        [[nodiscard]] OpenMode GetOpenMode() const override
+        {
+            return OpenMode::kWriteOnly;
+        }
+
+        void Close() override {}
+
+    private:
+        festd::pmr::vector<std::byte>* m_output;
+
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+    };
 } // namespace FE::IO

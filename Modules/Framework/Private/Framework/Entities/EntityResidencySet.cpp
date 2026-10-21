@@ -9,7 +9,7 @@ namespace FE::Framework
     }
 
 
-    LifecycleResult EntityAssetServices::Poll(const EntityAssetRequest& request, const Rtti::TypeID)
+    LifecycleResult EntityAssetServices::Poll(const EntityAssetRequest& request)
     {
         const auto result = request.m_request.GetResult();
         if (result == IO::AssetLoadResult::kPending)
@@ -76,7 +76,7 @@ namespace FE::Framework
         for (const auto& entry : m_entries)
         {
             if (entry.m_id == id && entry.m_expectedType == expectedType)
-                return m_services->Poll(entry.m_request, expectedType);
+                return m_services->Poll(entry.m_request);
         }
 
         return LifecycleResult::kFailed;

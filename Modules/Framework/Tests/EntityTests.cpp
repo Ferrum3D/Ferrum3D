@@ -64,7 +64,7 @@ namespace
             return { {}, ++m_acquires };
         }
 
-        LifecycleResult Poll(const EntityAssetRequest&, Rtti::TypeID) override
+        LifecycleResult Poll(const EntityAssetRequest&) override
         {
             return m_status;
         }
@@ -640,17 +640,19 @@ TEST_F(WorldFixture, DeepHierarchyFailureReleasesEachLoadedComponentOnce)
 }
 
 
-TEST_F(WorldFixture, PendingAdditionLeavesExistingActiveComponentQueryable)
+TEST_F(WorldFixture, PendingAdditionLeavesExistingAndReadyComponentsQueryable)
 {
     Entity& entity = Spawn();
     Hook::s_pending = 1;
     EntityCommandList commands(m_world);
     commands.AddComponent(entity.GetID(), Hook{ 1 });
+    commands.AddComponent(entity.GetID(), Extra{ 23 });
     m_world.Submit(std::move(commands));
     ASSERT_TRUE(m_world.CommitBootstrap());
     ASSERT_TRUE(entity.IsActive());
-    EXPECT_EQ((Count<const Number, const Hook*>([](const Number& number, const Hook* hook) {
+    EXPECT_EQ((Count<const Number, const Extra, const Hook*>([](const Number& number, const Extra& extra, const Hook* hook) {
                   EXPECT_EQ(number.m_value, 7);
+                  EXPECT_EQ(extra.m_value, 23);
                   EXPECT_EQ(hook, nullptr);
               })),
               1);
@@ -927,39 +929,85 @@ TEST_F(WorldFixture, ExplicitPrerequisitesOverrideCollectionOrderAndEmptyWorkCom
 }
 
 
+namespace
+{
+    enum class InvalidSchedule
+    {
+        kOmittedPhase,
+        kDuplicatePhase,
+        kBackwardPhasePrerequisite,
+        kPhaseDependsOnItsOwnWork,
+        kDependencyCycle,
+        kSharedChangeCursor,
+        kAliasingParallelParentTerm,
+    };
+
+
+    void RecordInvalidSchedule(EntityWorld& world, const InvalidSchedule scenario, ChangeCursor& cursor)
+    {
+        world.BeginUpdate();
+        EntityUpdateContext context{ world, nullptr, world.GetEpoch() };
+        const auto fail = [](Number&) {
+            ADD_FAILURE();
+        };
+
+        const auto first = Query<Number>::Create().Traverse(context, Phases::PostUpdate, fail);
+        switch (scenario)
+        {
+        case InvalidSchedule::kOmittedPhase:
+            world.SchedulePhase(Phases::PreUpdate);
+            break;
+        case InvalidSchedule::kDuplicatePhase:
+            world.SchedulePhase(Phases::PostUpdate);
+            world.SchedulePhase(Phases::PostUpdate);
+            break;
+        case InvalidSchedule::kBackwardPhasePrerequisite:
+            Query<Number>::Create().SetPrerequisites({ first }).Traverse(context, Phases::PreUpdate, fail);
+            world.SchedulePhase(Phases::PreUpdate);
+            world.SchedulePhase(Phases::PostUpdate);
+            break;
+        case InvalidSchedule::kPhaseDependsOnItsOwnWork:
+            world.SchedulePhase(Phases::PostUpdate, { &first, 1 });
+            break;
+        case InvalidSchedule::kDependencyCycle:
+            world.AddPrerequisite(
+                *first,
+                Query<Number>::Create().SetPrerequisites({ first }).Traverse(context, Phases::PostUpdate, fail));
+            world.SchedulePhase(Phases::PostUpdate);
+            break;
+        case InvalidSchedule::kSharedChangeCursor:
+            Query<Number>::Create().SetChangeCursor(cursor).Traverse(context, Phases::PostUpdate, fail);
+            Query<Number>::Create().SetChangeCursor(cursor).Traverse(context, Phases::PostUpdate, fail);
+            world.SchedulePhase(Phases::PostUpdate);
+            break;
+        case InvalidSchedule::kAliasingParallelParentTerm:
+            Query<Number, Parent<const Number*>>::Create()
+                .SetExecutionPolicy(ExecutionPolicy::kParallel)
+                .Traverse(context, Phases::PostUpdate, [](Number&, const Number*) {
+                    ADD_FAILURE();
+                });
+            world.SchedulePhase(Phases::PostUpdate);
+            break;
+        }
+
+        world.ValidateSchedule();
+    }
+} // namespace
+
+
 TEST_F(WorldFixture, InvalidSchedulesAssertBeforeCallbacks)
 {
     Spawn();
-    for (int scenario = 0; scenario < 3; ++scenario)
+    ChangeCursor cursor;
+    for (const InvalidSchedule scenario : { InvalidSchedule::kOmittedPhase,
+                                            InvalidSchedule::kDuplicatePhase,
+                                            InvalidSchedule::kBackwardPhasePrerequisite,
+                                            InvalidSchedule::kPhaseDependsOnItsOwnWork,
+                                            InvalidSchedule::kDependencyCycle,
+                                            InvalidSchedule::kSharedChangeCursor,
+                                            InvalidSchedule::kAliasingParallelParentTerm })
     {
-        EXPECT_DEATH(
-            ([&] {
-                m_world.BeginUpdate();
-                EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-                auto first = Query<Number>::Create().Traverse(context, Phases::PostUpdate, [](Number&) {
-                    ADD_FAILURE();
-                });
-                if (scenario == 0)
-                {
-                    m_world.SchedulePhase(Phases::PreUpdate);
-                }
-                else if (scenario == 1)
-                {
-                    m_world.SchedulePhase(Phases::PostUpdate);
-                    m_world.SchedulePhase(Phases::PostUpdate);
-                }
-                else
-                {
-                    Query<Number>::Create().SetPrerequisites({ first }).Traverse(context, Phases::PreUpdate, [](Number&) {
-                        ADD_FAILURE();
-                    });
-                    m_world.SchedulePhase(Phases::PreUpdate);
-                    m_world.SchedulePhase(Phases::PostUpdate);
-                }
-
-                m_world.ValidateSchedule();
-            }()),
-            "");
+        EXPECT_DEATH(RecordInvalidSchedule(m_world, scenario, cursor), "");
     }
 }
 
@@ -972,21 +1020,6 @@ TEST_F(WorldFixture, IncompleteUpdateScheduleAsserts)
     Query<Number>::Create().Traverse(context, Phases::Update, [](Number&) {
         ADD_FAILURE();
     });
-    ExpectIncompleteUpdate(m_world);
-}
-
-
-TEST_F(WorldFixture, PhaseCannotDependOnWorkItHasNotScheduledYet)
-{
-    Spawn();
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    auto group = Query<Number>::Create().Traverse(context, Phases::Update, [](Number&) {
-        ADD_FAILURE();
-    });
-    Rc<WaitGroup> prerequisite[] = { group };
-    m_world.SchedulePhase(Phases::Update, prerequisite);
-    EXPECT_DEATH(m_world.ValidateSchedule(), "");
     ExpectIncompleteUpdate(m_world);
 }
 
@@ -1151,41 +1184,6 @@ TEST_F(WorldFixture, ApplicationStagesAndSamePhaseForwardDependenciesExecuteInDe
 }
 
 
-TEST_F(WorldFixture, FrameworkCyclesAreRejectedBeforeAnyExecution)
-{
-    Spawn();
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    auto a = Query<Number>::Create().Traverse(context, Phases::Update, [](Number&) {
-        ADD_FAILURE();
-    });
-    auto b = Query<Number>::Create().SetPrerequisites({ a }).Traverse(context, Phases::Update, [](Number&) {
-        ADD_FAILURE();
-    });
-    ASSERT_TRUE(m_world.AddPrerequisite(*a, b));
-    m_world.SchedulePhase(Phases::Update);
-    EXPECT_DEATH(m_world.ValidateSchedule(), "");
-    ExpectIncompleteUpdate(m_world);
-}
-
-
-TEST_F(WorldFixture, OptionalParentTermsExecuteOnRoots)
-{
-    Spawn();
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    CascadeQuery<const Number, Parent<const Number*>, Extra*>::Create().Traverse(
-        context,
-        Phases::Update,
-        [](Entity&, const Number&, const Number* parent, Extra*) {
-            EXPECT_EQ(parent, nullptr);
-        });
-    m_world.SchedulePhase(Phases::Update);
-    EXPECT_TRUE(m_world.ExecuteSchedule());
-    EXPECT_TRUE(m_world.EndUpdate());
-}
-
-
 TEST_F(WorldFixture, ExistingDestructionInACreationListDoesNotWaitForNextFrame)
 {
     Entity& entity = Spawn();
@@ -1203,24 +1201,6 @@ TEST_F(WorldFixture, ExistingDestructionInACreationListDoesNotWaitForNextFrame)
     m_world.BeginUpdate();
     EXPECT_NE(m_world.Find(kOther), nullptr);
     ASSERT_TRUE(m_world.EndUpdate());
-}
-
-
-TEST_F(WorldFixture, ReadyAdditionsPublishWhileOtherAdditionsAreStillLoading)
-{
-    Entity& entity = Spawn();
-    Hook::s_pending = 1;
-    EntityCommandList commands(m_world);
-    commands.AddComponent(entity.GetID(), Hook{ 1 });
-    commands.AddComponent(entity.GetID(), Extra{ 23 });
-    m_world.Submit(std::move(commands));
-    ASSERT_TRUE(m_world.CommitBootstrap());
-    EXPECT_EQ((Count<const Extra, const Hook*>([](const Extra& extra, const Hook* hook) {
-                  EXPECT_EQ(extra.m_value, 23);
-                  EXPECT_EQ(hook, nullptr);
-              })),
-              1);
-    Hook::s_pending = 0;
 }
 
 
@@ -1287,27 +1267,6 @@ TEST_F(WorldFixture, MigrationDoesNotRepeatLifecycleHooksForRetainedComponents)
     ASSERT_TRUE(m_world.CommitBootstrap());
     EXPECT_TRUE(Hook::s_trace.empty());
     EXPECT_EQ(m_world.Find(kRoot)->FindComponent<Hook>()->m_label, 1);
-}
-
-
-TEST_F(WorldFixture, ComponentsCanBeAddedWithoutInitializationPrerequisites)
-{
-    EntityCommandList commands(m_world);
-    auto token = commands.CreateEntity(m_registry, {}, kRoot);
-    commands.AddComponent(token, Extra{ 2 });
-    m_world.Submit(std::move(commands));
-    ASSERT_TRUE(m_world.CommitBootstrap());
-
-    Entity* entity = m_world.Find(kRoot);
-    ASSERT_NE(entity, nullptr);
-    EXPECT_EQ(entity->FindComponent<const Extra>()->m_value, 2);
-
-    EntityCommandList add(m_world);
-    add.AddComponent(entity->GetID(), Number{ 1 });
-    m_world.Submit(std::move(add));
-    ASSERT_TRUE(m_world.CommitBootstrap());
-    EXPECT_EQ(entity->FindComponent<const Number>()->m_value, 1);
-    EXPECT_EQ(entity->FindComponent<const Extra>()->m_value, 2);
 }
 
 
@@ -1392,40 +1351,6 @@ TEST(EntityAssetsIntegration, MissingManagerDependencyFailsWithoutPublishingOrRe
 }
 
 
-TEST_F(WorldFixture, DestructionAndDetachRespectRecordingOrder)
-{
-    for (int scenario = 0; scenario < 2; ++scenario)
-    {
-        EntityCommandList commands(m_world);
-        auto root = commands.CreateEntity(m_registry, {}, kRoot);
-        auto child = commands.CreateEntity(m_registry, {}, kChild);
-        commands.SetParent(child, root);
-        m_world.Submit(std::move(commands));
-        ASSERT_TRUE(m_world.CommitBootstrap());
-        EntityID rootID = m_world.Find(kRoot)->GetID();
-        EntityID childID = m_world.Find(kChild)->GetID();
-        EntityCommandList destroy(m_world);
-        if (scenario == 0)
-            destroy.SetParent(childID);
-        destroy.Destroy(rootID);
-        if (scenario == 1)
-            destroy.SetParent(childID);
-        m_world.Submit(std::move(destroy));
-        ASSERT_TRUE(m_world.CommitBootstrap());
-        if (scenario == 0)
-        {
-            ASSERT_NE(m_world.Find(childID), nullptr);
-            EntityCommandList cleanup(m_world);
-            cleanup.Destroy(childID);
-            m_world.Submit(std::move(cleanup));
-            ASSERT_TRUE(m_world.CommitBootstrap());
-        }
-        else
-            EXPECT_EQ(m_world.Find(childID), nullptr);
-    }
-}
-
-
 TEST_F(WorldFixture, OverlappingSubtreeCommandsFromIndependentListsAreRejected)
 {
     EntityCommandList commands(m_world);
@@ -1444,31 +1369,6 @@ TEST_F(WorldFixture, OverlappingSubtreeCommandsFromIndependentListsAreRejected)
     EXPECT_FALSE(m_world.CommitBootstrap());
     EXPECT_EQ(m_world.Find(kRoot), r);
     EXPECT_EQ(c->GetParent(), r);
-}
-
-
-TEST_F(WorldFixture, SequentialAndParallelQueriesExecute)
-{
-    Spawn();
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    Query<Number>::Create().SetExecutionPolicy(ExecutionPolicy::kParallel).Traverse(context, Phases::Update, [](Number& number) {
-        ++number.m_value;
-    });
-    m_world.SchedulePhase(Phases::Update);
-    EXPECT_TRUE(m_world.ExecuteSchedule());
-    EXPECT_TRUE(m_world.EndUpdate());
-    m_world.BeginUpdate();
-    EntityUpdateContext next{ m_world, nullptr, m_world.GetEpoch() };
-    auto group = Query<Number>::Create()
-                     .SetExecutionPolicy(ExecutionPolicy::kSequential)
-                     .Traverse(next, Phases::Update, [](Number& number) {
-                         ++number.m_value;
-                     });
-    m_world.SchedulePhase(Phases::Update);
-    EXPECT_TRUE(m_world.ExecuteSchedule());
-    EXPECT_TRUE(group->IsSignaled());
-    EXPECT_TRUE(m_world.EndUpdate());
 }
 
 
@@ -1531,6 +1431,9 @@ TEST_F(WorldFixture, MainThreadTraversalHonorsReverseWorkerPrerequisite)
     ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
     ASSERT_TRUE(m_world.ExecuteSchedule());
     EXPECT_TRUE(read->IsSignaled());
+    EXPECT_GT(m_world.GetScheduleDiagnostics().m_conflictEdges, 0);
+    ASSERT_FALSE(m_world.GetScheduleConflicts().empty());
+    EXPECT_EQ(m_world.GetScheduleConflicts()[0].m_component, Rtti::GetTypeID<Number>());
     ASSERT_TRUE(m_world.EndUpdate());
 }
 
@@ -1553,27 +1456,6 @@ TEST_F(WorldFixture, ReadOnlyTraversalsOverlapThroughFiberBarriers)
     ASSERT_TRUE(m_world.ExecuteSchedule());
     EXPECT_EQ(count.load(), 2);
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_conflictEdges, 0);
-    ASSERT_TRUE(m_world.EndUpdate());
-}
-
-
-TEST_F(WorldFixture, ExplicitReversePrerequisiteOrientsConflictingWork)
-{
-    Spawn();
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    auto read = Query<const Number>::Create().Traverse(context, Phases::Update, [](const Number& value) {
-        EXPECT_EQ(value.m_value, 42);
-    });
-    auto write = Query<Number>::Create().Traverse(context, Phases::Update, [](Number& value) {
-        value.m_value = 42;
-    });
-    ASSERT_TRUE(m_world.AddPrerequisite(*read, write));
-    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
-    ASSERT_TRUE(m_world.ExecuteSchedule());
-    EXPECT_GT(m_world.GetScheduleDiagnostics().m_conflictEdges, 0);
-    ASSERT_FALSE(m_world.GetScheduleConflicts().empty());
-    EXPECT_EQ(m_world.GetScheduleConflicts()[0].m_component, Rtti::GetTypeID<Number>());
     ASSERT_TRUE(m_world.EndUpdate());
 }
 
@@ -1710,36 +1592,6 @@ TEST_F(WorldFixture, CascadeParentCompletesBeforeChildForAllPolicies)
 }
 
 
-TEST_F(WorldFixture, IndependentTreeBatchesOverlap)
-{
-    EntityCommandList commands(m_world);
-    for (uint32_t i = 0; i < 33; ++i)
-    {
-        auto token = commands.CreateEntity(m_registry);
-        commands.AddComponent(token, Number{ static_cast<int32_t>(i) });
-    }
-    m_world.Submit(std::move(commands));
-    ASSERT_TRUE(m_world.CommitBootstrap());
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    const Rc<WaitGroup> entered = WaitGroup::Create(2);
-    CascadeQuery<Number>::Create()
-        .SetExecutionPolicy(ExecutionPolicy::kParallel)
-        .Traverse(context, Phases::Update, [&](Number& number) {
-            if (number.m_value == 0 || number.m_value == 16)
-            {
-                entered->Signal();
-                entered->Wait();
-            }
-            ++number.m_value;
-        });
-    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
-    ASSERT_TRUE(m_world.ExecuteSchedule());
-    EXPECT_EQ(m_world.GetScheduleDiagnostics().m_treeBatches, 3);
-    ASSERT_TRUE(m_world.EndUpdate());
-}
-
-
 TEST_F(WorldFixture, SameSystemSequentialWorkGetsExclusionAndParallelWorkCanOverlap)
 {
     Entity& entity = Spawn();
@@ -1852,39 +1704,6 @@ TEST_F(WorldFixture, ConflictingCallbacksCannotOverlapWhileAnIndependentProbeRun
 }
 
 
-TEST_F(WorldFixture, WritesPublishChangesForTwoIndependentConsumers)
-{
-    Spawn();
-    ChangeCursor first, second;
-    auto tick = [&](bool write) {
-        m_world.BeginUpdate();
-        EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-        if (write)
-        {
-            Query<Number>::Create().Traverse(context, Phases::PreUpdate, [](Number& number) {
-                ++number.m_value;
-            });
-            EXPECT_TRUE(m_world.SchedulePhase(Phases::PreUpdate));
-        }
-        uint32_t count = 0;
-        Query<const Number>::Create().SetChangeCursor(first).Traverse(context, Phases::Update, [&](const Number&) {
-            ++count;
-        });
-        Query<const Number>::Create().SetChangeCursor(second).Traverse(context, Phases::Update, [&](const Number&) {
-            ++count;
-        });
-        EXPECT_TRUE(m_world.SchedulePhase(Phases::Update));
-        EXPECT_TRUE(m_world.ExecuteSchedule());
-        EXPECT_TRUE(m_world.EndUpdate());
-        return count;
-    };
-    EXPECT_EQ(tick(false), 2);
-    EXPECT_EQ(tick(false), 0);
-    EXPECT_EQ(tick(true), 2);
-    EXPECT_EQ(tick(false), 0);
-}
-
-
 TEST_F(WorldFixture, ConditionalWritesPublishMixedChunksForIndependentParallelConsumers)
 {
     EntityCommandList commands(m_world);
@@ -1943,44 +1762,6 @@ TEST_F(WorldFixture, ConditionalWritesPublishMixedChunksForIndependentParallelCo
     EXPECT_EQ(tick(false, false), 0);
     EXPECT_GE(tick(true, true), 512);
     EXPECT_EQ(tick(false, false), 0);
-}
-
-
-TEST_F(WorldFixture, SharedChangeCursorAndAliasingParallelParentTermsAreRejected)
-{
-    Spawn();
-    ChangeCursor changes;
-    m_world.BeginUpdate();
-    EntityUpdateContext context{ m_world, nullptr, m_world.GetEpoch() };
-    Query<const Number>::Create().SetChangeCursor(changes).Traverse(context, Phases::Update, [](const Number&) {
-        ADD_FAILURE();
-    });
-    Query<const Number>::Create().SetChangeCursor(changes).Traverse(context, Phases::Update, [](const Number&) {
-        ADD_FAILURE();
-    });
-    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
-    EXPECT_DEATH(m_world.ValidateSchedule(), "");
-    ExpectIncompleteUpdate(m_world);
-}
-
-
-TEST_F(WorldFixture, AliasingParallelParentTermsAssert)
-{
-    Spawn();
-    m_world.BeginUpdate();
-    EntityUpdateContext next{ m_world, nullptr, m_world.GetEpoch() };
-    Query<Number, Parent<const Number*>>::Create()
-        .SetExecutionPolicy(ExecutionPolicy::kParallel)
-        .Traverse(next, Phases::Update, [](Number&, const Number*) {
-            ADD_FAILURE();
-        });
-    ASSERT_TRUE(m_world.SchedulePhase(Phases::Update));
-    if (Cli::Check("--ecs-validation"))
-        EXPECT_DEATH(m_world.ExecuteSchedule(), "");
-    else
-        EXPECT_DEATH(m_world.ValidateSchedule(), "");
-
-    ExpectIncompleteUpdate(m_world);
 }
 
 

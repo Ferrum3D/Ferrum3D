@@ -38,9 +38,12 @@ namespace FE::Framework
         //! @brief Generate fresh root and bound identities and remap internal root references; commit only on success.
         bool MakeIndependentCopy();
 
-        //! @brief Check authored IDs, hierarchy, component values, and placement bindings without asserting on content.
+        //! @brief Check root identity, root components and binding uniqueness without asserting on content.
         [[nodiscard]] bool Validate() const;
+        //! @brief Check this placement, the collection, and that bindings map every collection source exactly once.
         [[nodiscard]] bool Validate(const EntityCollection& collection) const;
+        //! @brief Check only that bindings map every source of an already validated collection exactly once.
+        [[nodiscard]] bool Matches(const EntityCollection& collection) const;
     };
 
 

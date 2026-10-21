@@ -1,11 +1,107 @@
 #include <Core/CLI/CommandLine.h>
 #include <Core/Jobs/Jobs.h>
+#include <Core/Memory/FiberTempAllocator.h>
 #include <Core/Threading/Thread.h>
 #include <Framework/Entities/EntityWorldInternal.h>
 #include <algorithm>
 
 namespace FE::Framework
 {
+    namespace
+    {
+        constexpr uint32_t kRowsPerBatch = 32;
+        constexpr uint32_t kEntitiesPerTreeBatch = 16;
+
+
+        //! @brief Report an invalid plan; validation asserts in every build, unvalidated compilation only in debug.
+        bool Reject(const bool validate, const char* message)
+        {
+            if (validate)
+            {
+                Logger::LogError("Invalid ECS schedule: {}", message);
+                FE_Assert(false, "Invalid ECS schedule");
+            }
+            else
+            {
+                FE_AssertDebug(false, "Invalid ECS schedule");
+            }
+
+            return false;
+        }
+
+
+        festd::ascii_view GetTraversalName(const Traversal& traversal)
+        {
+            return traversal.m_system ? traversal.m_system->RTTI_GetDynamicType().m_name : "Query";
+        }
+
+
+        //! @brief Main-thread or worker job for one traversal; lives in the epoch arena and is destroyed on completion.
+        struct TraversalJob final : Jobs::JobNode
+        {
+            EntityScheduler* m_scheduler;
+            void (EntityScheduler::*m_execute)(uint32_t);
+            uint32_t m_index;
+
+            TraversalJob(EntityScheduler& scheduler, void (EntityScheduler::*execute)(uint32_t), const uint32_t index)
+                : m_scheduler(&scheduler)
+                , m_execute(execute)
+                , m_index(index)
+            {
+            }
+
+            void Execute() override
+            {
+                (m_scheduler->*m_execute)(m_index);
+                this->~TraversalJob();
+            }
+        };
+
+
+        //! @brief Run visit(batch) for every batch, dispatching jobs from fiber-local memory when parallel work pays off.
+        //! Return the number of dispatched jobs; zero when the batches ran inline.
+        template<class TVisit>
+        uint32_t RunBatches(const bool parallel, const uint32_t batchCount, std::pmr::memory_resource& temp, TVisit& visit)
+        {
+            if (!parallel || batchCount <= 1)
+            {
+                for (uint32_t batch = 0; batch < batchCount; ++batch)
+                    visit(batch);
+
+                return 0;
+            }
+
+            struct BatchJob final : Jobs::JobNode
+            {
+                TVisit* m_visit = nullptr;
+                uint32_t m_batch = 0;
+
+                void Execute() override
+                {
+                    (*m_visit)(m_batch);
+                    this->~BatchJob();
+                }
+            };
+
+            // Batch jobs and the joined completion outlive dispatch only until the wait below returns.
+            auto* jobs = static_cast<BatchJob*>(temp.allocate(sizeof(BatchJob) * batchCount, alignof(BatchJob)));
+            const Rc<WaitGroup> completion = WaitGroup::Create(batchCount + 1);
+            for (uint32_t batch = 0; batch < batchCount; ++batch)
+            {
+                auto* job = ::new (&jobs[batch]) BatchJob;
+                job->m_visit = &visit;
+                job->m_batch = batch;
+                job->DispatchForeground(completion.Get());
+            }
+
+            FE_PROFILER_ZONE_NAMED("JoinBatches");
+            completion->Signal();
+            completion->Wait();
+            return batchCount;
+        }
+    } // namespace
+
+
     EntityScheduler::EntityScheduler(EntityWorld::Impl& world)
         : m_world(world)
         , m_validationEnabled(Cli::Check("--ecs-validation"))
@@ -27,11 +123,11 @@ namespace FE::Framework
         FE_AssertDebug(Threading::IsMainThread() && !IsUpdating());
 
         const auto it = festd::find(m_systems, &system);
-        if (it != m_systems.end())
-        {
-            system.Shutdown(m_world.m_owner);
-            m_systems.erase(it);
-        }
+        if (it == m_systems.end())
+            return;
+
+        system.Shutdown(m_world.m_owner);
+        m_systems.erase(it);
     }
 
 
@@ -44,7 +140,9 @@ namespace FE::Framework
         ClearEpoch();
         m_world.m_started = true;
         ++m_epoch;
-        if (fixedDeltaSeconds == 0)
+
+        const bool fixed = fixedDeltaSeconds > 0;
+        if (!fixed)
         {
             for (WorldService* service : m_world.m_services)
                 service->Update(m_world.m_owner);
@@ -52,31 +150,28 @@ namespace FE::Framework
 
         m_world.CommitImpl(false);
 
-        m_state = State::kUpdating;
         m_diagnostics = {};
         m_conflicts.clear();
         m_validated = false;
         m_compiled = false;
         m_executed = false;
-        m_state = State::kCollecting;
 
-        auto restore = festd::defer([&] {
-            m_state = State::kUpdating;
-        });
+        m_state = State::kCollecting;
         for (auto* system : m_systems)
         {
             EntityUpdateContext context{ m_world.m_owner, system, m_epoch, fixedDeltaSeconds };
-            if (fixedDeltaSeconds > 0)
+            if (fixed)
                 system->FixedUpdate(context);
             else
                 system->Update(context);
         }
+
+        m_state = State::kRecording;
     }
 
 
-    void* EntityScheduler::AllocateTraversal(const size_t size, const size_t alignment)
+    void* EntityScheduler::AllocateEpoch(const size_t size, const size_t alignment)
     {
-        FE_AssertDebug(IsUpdating() && !IsExecuting() && !m_compiled);
         void* storage = m_epochArena.allocate(size, alignment);
         if (!storage)
         {
@@ -88,6 +183,13 @@ namespace FE::Framework
     }
 
 
+    void* EntityScheduler::AllocateTraversal(const size_t size, const size_t alignment)
+    {
+        FE_AssertDebug(IsUpdating() && !IsExecuting() && !m_compiled);
+        return AllocateEpoch(size, alignment);
+    }
+
+
     Rc<WaitGroup> EntityScheduler::RecordTraversal(EntityUpdateContext& context, const TraversalDesc& desc)
     {
         FE_AssertDebug(desc.m_callable && desc.m_destroy);
@@ -95,35 +197,35 @@ namespace FE::Framework
         FE_AssertDebug(!IsExecuting() && !m_compiled);
         FE_Assert(desc.m_filter == QueryFilter::kAll || desc.m_cursor, "Addition filters require a persistent change cursor");
 
-        Traversal traversal;
+        const auto accesses = AllocateEpochArray<QueryAccess>(desc.m_accesses.size());
+        std::copy(desc.m_accesses.begin(), desc.m_accesses.end(), accesses.begin());
+
+        Traversal& traversal = m_traversals.emplace_back();
         traversal.m_phase = desc.m_phase;
-        traversal.m_policy = desc.m_policy;
-        traversal.m_cascade = desc.m_cascade;
-        traversal.m_cursor = desc.m_cursor;
-        traversal.m_filter = desc.m_filter;
-        traversal.m_accesses.assign(desc.m_accesses.begin(), desc.m_accesses.end());
+        traversal.m_accesses = accesses;
         traversal.m_callable = desc.m_callable;
         traversal.m_invoke = desc.m_invoke;
-        traversal.m_hasWrites = eastl::any_of(desc.m_accesses.begin(), desc.m_accesses.end(), [](const QueryAccess& access) {
-            return access.m_write && !access.m_parent && !access.m_excluded;
-        });
         traversal.m_destroy = desc.m_destroy;
-        traversal.m_system = context.m_system;
         traversal.m_completion = WaitGroup::Create(1);
         traversal.m_prerequisites.assign(desc.m_prerequisites.begin(), desc.m_prerequisites.end());
+        traversal.m_system = context.m_system;
+        traversal.m_cursor = desc.m_cursor;
+        traversal.m_policy = desc.m_policy;
+        traversal.m_filter = desc.m_filter;
+        traversal.m_cascade = desc.m_cascade;
+        traversal.m_hasWrites = std::any_of(accesses.begin(), accesses.end(), [](const QueryAccess& access) {
+            return access.m_write && !access.m_parent && !access.m_excluded;
+        });
 
-        Rc<WaitGroup> result = traversal.m_completion;
-
-        m_traversals.push_back(std::move(traversal));
-        return result;
+        return traversal.m_completion;
     }
 
 
     Rc<WaitGroup> EntityScheduler::RecordStage(const StageDesc& desc)
     {
         EntityUpdateContext context{ m_world.m_owner, nullptr, m_epoch };
-        TraversalDesc traversal{ desc.m_phase, {}, desc.m_callable, nullptr, desc.m_destroy, desc.m_prerequisites };
-        auto completion = RecordTraversal(context, traversal);
+        const auto completion =
+            RecordTraversal(context, { desc.m_phase, {}, desc.m_callable, nullptr, desc.m_destroy, desc.m_prerequisites });
         m_traversals.back().m_stageInvoke = desc.m_invoke;
         return completion;
     }
@@ -166,9 +268,9 @@ namespace FE::Framework
             }
         }
 
-        ScheduledPhase scheduled{ phase };
+        ScheduledPhase& scheduled = m_phases.emplace_back();
+        scheduled.m_phase = phase;
         scheduled.m_prerequisites.assign(prerequisites.begin(), prerequisites.end());
-        m_phases.push_back(std::move(scheduled));
         return true;
     }
 
@@ -189,177 +291,254 @@ namespace FE::Framework
         m_diagnostics.m_conflictEdges = 0;
         m_diagnostics.m_systemEdges = 0;
         m_diagnostics.m_stageEdges = 0;
-        for (auto& phase : m_phases)
-            phase.m_traversals.clear();
 
-        auto fail = [validate](const char* message) {
-            if (validate)
-            {
-                Logger::LogError("Invalid ECS schedule: {}", message);
-                FE_Assert(false, "Invalid ECS schedule");
-            }
-            else
-            {
-                FE_AssertDebug(false, "Invalid ECS schedule");
-            }
-
+        if (!ResolvePhases(validate) || !ValidateTraversals(validate))
             return false;
-        };
-        auto phaseIndex = [&](const Phase phase) {
-            for (uint32_t i = 0; i < m_phases.size(); ++i)
-            {
-                if (m_phases[i].m_phase == phase)
-                    return i;
-            }
 
-            return kInvalidIndex;
-        };
-        auto producerIndex = [&](const Rc<WaitGroup>& group) {
-            for (uint32_t i = 0; i < m_traversals.size(); ++i)
-            {
-                if (m_traversals[i].m_completion == group)
-                    return i;
-            }
+        Memory::FiberTempAllocator temp;
+        festd::pmr::vector<Edge> edges(&temp);
+        if (!ResolvePrerequisites(validate, temp, edges))
+            return false;
 
-            return kInvalidIndex;
-        };
-        auto addDependency = [](Traversal& traversal, const uint32_t producer) {
-            if (festd::find(traversal.m_dependencies, producer) == traversal.m_dependencies.end())
-                traversal.m_dependencies.push_back(producer);
-        };
+        TempVector order(&temp);
+        if (!OrderTraversals(validate, temp, edges, order))
+            return false;
 
-        festd::inline_vector<uint32_t, 32> phases;
-        bool needsSort = false;
-        for (uint32_t index = 0; index < m_traversals.size(); ++index)
+        // Distribute the global order into phases; phases run in application order.
+        festd::pmr::vector<uint32_t> phaseCounts(m_phases.size(), 0u, &temp);
+        for (const auto& traversal : m_traversals)
+            ++phaseCounts[traversal.m_phaseIndex];
+
+        for (uint32_t phase = 0; phase < m_phases.size(); ++phase)
         {
-            auto& traversal = m_traversals[index];
-            traversal.m_dependencies.clear();
-            traversal.m_externalPrerequisites.clear();
-            const uint32_t phase = phaseIndex(traversal.m_phase);
-            if (phase == kInvalidIndex)
-                return fail("A submitted traversal phase was omitted");
-
-            phases.push_back(phase);
-            if (validate)
-            {
-                if (!traversal.m_invoke && !traversal.m_stageInvoke)
-                    return fail("Traversal requires an invocation adapter");
-
-                for (const auto& access : traversal.m_accesses)
-                {
-                    if (!access.m_type.IsValid() || !m_world.m_components.Find(access.m_type))
-                        return fail("Query references an unregistered component type");
-
-                    if (!traversal.m_cascade && access.m_parent && traversal.m_policy == ExecutionPolicy::kParallel)
-                    {
-                        for (const auto& other : traversal.m_accesses)
-                        {
-                            if (!other.m_parent && other.m_write && other.m_type == access.m_type)
-                                return fail("Parallel parent reads alias self writes; use a cascade query");
-                        }
-                    }
-                }
-
-                if (traversal.m_cursor)
-                {
-                    for (uint32_t previous = 0; previous < index; ++previous)
-                    {
-                        if (m_traversals[previous].m_cursor == traversal.m_cursor)
-                            return fail("A change cursor may be consumed only once per epoch");
-                    }
-                }
-            }
-
-            for (const auto& group : traversal.m_prerequisites)
-            {
-                if (!group)
-                    return fail("Null traversal prerequisite");
-
-                const uint32_t producer = producerIndex(group);
-                if (producer == kInvalidIndex)
-                {
-                    if (festd::find(traversal.m_externalPrerequisites, group) == traversal.m_externalPrerequisites.end())
-                        traversal.m_externalPrerequisites.push_back(group);
-
-                    continue;
-                }
-
-                if (phaseIndex(m_traversals[producer].m_phase) > phase)
-                    return fail("Traversal depends on a later phase");
-
-                addDependency(traversal, producer);
-                needsSort |= producer >= index;
-            }
-        }
-
-        for (uint32_t i = 0; i < m_phases.size(); ++i)
-        {
-            for (const auto& group : m_phases[i].m_prerequisites)
-            {
-                if (!group)
-                    return fail("Null phase prerequisite");
-
-                const uint32_t producer = producerIndex(group);
-                if (producer != kInvalidIndex && phases[producer] >= i)
-                    return fail("Phase prerequisite depends on itself or a later phase");
-            }
-        }
-
-        festd::inline_vector<uint32_t, 32> order;
-        if (needsSort)
-        {
-            struct ReadyTraversal
-            {
-                uint32_t m_pass;
-                uint32_t m_index;
-            };
-
-            festd::inline_vector<uint32_t, 32> indegrees(m_traversals.size(), 0);
-            festd::vector<festd::inline_vector<uint32_t>> dependents(m_traversals.size());
-            festd::inline_vector<ReadyTraversal, 32> ready;
-            auto later = [](const ReadyTraversal& lhs, const ReadyTraversal& rhs) {
-                return lhs.m_pass != rhs.m_pass ? lhs.m_pass > rhs.m_pass : lhs.m_index > rhs.m_index;
-            };
-            for (uint32_t i = 0; i < m_traversals.size(); ++i)
-            {
-                indegrees[i] = m_traversals[i].m_dependencies.size();
-                for (const uint32_t producer : m_traversals[i].m_dependencies)
-                    dependents[producer].push_back(i);
-
-                if (indegrees[i] == 0)
-                    ready.push_back({ 0, i });
-            }
-
-            // Keep recording order where explicit dependencies allow it.
-            eastl::make_heap(ready.begin(), ready.end(), later);
-            while (!ready.empty())
-            {
-                eastl::pop_heap(ready.begin(), ready.end(), later);
-                const ReadyTraversal current = ready.back();
-                ready.pop_back();
-                order.push_back(current.m_index);
-                for (const uint32_t dependent : dependents[current.m_index])
-                {
-                    if (--indegrees[dependent] == 0)
-                    {
-                        ready.push_back({ current.m_pass + (dependent < current.m_index), dependent });
-                        eastl::push_heap(ready.begin(), ready.end(), later);
-                    }
-                }
-            }
-
-            if (order.size() != m_traversals.size())
-                return fail("Framework traversal dependency cycle");
-        }
-        else
-        {
-            for (uint32_t i = 0; i < m_traversals.size(); ++i)
-                order.push_back(i);
+            m_phases[phase].m_traversals = AllocateEpochArray<uint32_t>(phaseCounts[phase]);
+            phaseCounts[phase] = 0;
         }
 
         for (const uint32_t index : order)
-            m_phases[phases[index]].m_traversals.push_back(index);
+        {
+            const uint32_t phase = m_traversals[index].m_phaseIndex;
+            m_phases[phase].m_traversals[phaseCounts[phase]++] = index;
+        }
 
+        AddExclusionEdges(edges);
+        StoreDependencies(edges);
+
+        m_compiled = true;
+        m_validated = validate;
+        return true;
+    }
+
+
+    bool EntityScheduler::ResolvePhases(const bool validate)
+    {
+        for (auto& traversal : m_traversals)
+        {
+            traversal.m_phaseIndex = kInvalidIndex;
+            for (uint32_t phase = 0; phase < m_phases.size(); ++phase)
+            {
+                if (m_phases[phase].m_phase == traversal.m_phase)
+                    traversal.m_phaseIndex = phase;
+            }
+
+            if (traversal.m_phaseIndex == kInvalidIndex)
+                return Reject(validate, "A submitted traversal phase was omitted");
+        }
+
+        return true;
+    }
+
+
+    bool EntityScheduler::ValidateTraversals(const bool validate) const
+    {
+        if (!validate)
+            return true;
+
+        for (uint32_t index = 0; index < m_traversals.size(); ++index)
+        {
+            const auto& traversal = m_traversals[index];
+            if (!traversal.m_invoke && !traversal.m_stageInvoke)
+                return Reject(validate, "Traversal requires an invocation adapter");
+
+            const bool parallelQuery = !traversal.m_cascade && traversal.m_policy == ExecutionPolicy::kParallel;
+            for (const auto& access : traversal.m_accesses)
+            {
+                if (!access.m_type.IsValid() || !m_world.m_components.Find(access.m_type))
+                    return Reject(validate, "Query references an unregistered component type");
+
+                if (!parallelQuery || !access.m_parent)
+                    continue;
+
+                const bool aliasesWrite =
+                    std::any_of(traversal.m_accesses.begin(), traversal.m_accesses.end(), [&](const QueryAccess& other) {
+                        return !other.m_parent && other.m_write && other.m_type == access.m_type;
+                    });
+                if (aliasesWrite)
+                    return Reject(validate, "Parallel parent reads alias self writes; use a cascade query");
+            }
+
+            if (!traversal.m_cursor)
+                continue;
+
+            for (uint32_t previous = 0; previous < index; ++previous)
+            {
+                if (m_traversals[previous].m_cursor == traversal.m_cursor)
+                    return Reject(validate, "A change cursor may be consumed only once per epoch");
+            }
+        }
+
+        return true;
+    }
+
+
+    bool EntityScheduler::ResolvePrerequisites(const bool validate, std::pmr::memory_resource& temp,
+                                               festd::pmr::vector<Edge>& edges)
+    {
+        festd::pmr::unordered_dense_map<const WaitGroup*, uint32_t> producers(&temp);
+        producers.reserve(m_traversals.size());
+        for (uint32_t index = 0; index < m_traversals.size(); ++index)
+            producers.emplace(m_traversals[index].m_completion.Get(), index);
+
+        const auto findProducer = [&producers](const Rc<WaitGroup>& group) {
+            const auto found = producers.find(group.Get());
+            return found == producers.end() ? kInvalidIndex : found->second;
+        };
+
+        for (uint32_t index = 0; index < m_traversals.size(); ++index)
+        {
+            auto& traversal = m_traversals[index];
+
+            uint32_t externalCount = 0;
+            for (const auto& group : traversal.m_prerequisites)
+            {
+                if (!group)
+                    return Reject(validate, "Null traversal prerequisite");
+
+                const uint32_t producer = findProducer(group);
+                if (producer == kInvalidIndex)
+                {
+                    ++externalCount;
+                    continue;
+                }
+
+                if (m_traversals[producer].m_phaseIndex > traversal.m_phaseIndex)
+                    return Reject(validate, "Traversal depends on a later phase");
+
+                edges.push_back({ producer, index });
+            }
+
+            // External groups stay alive through m_prerequisites until the epoch ends.
+            const auto external = AllocateEpochArray<WaitGroup*>(externalCount);
+            externalCount = 0;
+            for (const auto& group : traversal.m_prerequisites)
+            {
+                const auto stored = external.first(externalCount);
+                const bool duplicate = festd::find(stored, group.Get()) != stored.end();
+                if (!duplicate && findProducer(group) == kInvalidIndex)
+                    external[externalCount++] = group.Get();
+            }
+
+            traversal.m_externalPrerequisites = external.first(externalCount);
+        }
+
+        for (uint32_t phase = 0; phase < m_phases.size(); ++phase)
+        {
+            for (const auto& group : m_phases[phase].m_prerequisites)
+            {
+                if (!group)
+                    return Reject(validate, "Null phase prerequisite");
+
+                const uint32_t producer = findProducer(group);
+                if (producer != kInvalidIndex && m_traversals[producer].m_phaseIndex >= phase)
+                    return Reject(validate, "Phase prerequisite depends on itself or a later phase");
+            }
+        }
+
+        return true;
+    }
+
+
+    bool EntityScheduler::OrderTraversals(const bool validate, std::pmr::memory_resource& temp,
+                                          const festd::span<const Edge> edges, TempVector& order) const
+    {
+        const uint32_t count = m_traversals.size();
+        order.reserve(count);
+
+        const bool hasForwardEdge = std::any_of(edges.begin(), edges.end(), [](const Edge& edge) {
+            return edge.m_producer >= edge.m_consumer;
+        });
+        if (!hasForwardEdge)
+        {
+            for (uint32_t index = 0; index < count; ++index)
+                order.push_back(index);
+
+            return true;
+        }
+
+        // Kahn's algorithm that keeps recording order wherever explicit dependencies allow it: a traversal released by a
+        // later producer moves to a later pass and runs after everything already eligible in the current pass.
+        festd::pmr::vector<uint32_t> indegrees(count, 0u, &temp);
+        festd::pmr::vector<uint32_t> firstDependent(count + 1, 0u, &temp);
+        festd::pmr::vector<uint32_t> dependents(edges.size(), 0u, &temp);
+        for (const Edge& edge : edges)
+        {
+            ++indegrees[edge.m_consumer];
+            ++firstDependent[edge.m_producer + 1];
+        }
+
+        for (uint32_t index = 0; index < count; ++index)
+            firstDependent[index + 1] += firstDependent[index];
+
+        festd::pmr::vector<uint32_t> cursor(firstDependent.begin(), firstDependent.end() - 1, &temp);
+        for (const Edge& edge : edges)
+            dependents[cursor[edge.m_producer]++] = edge.m_consumer;
+
+        struct ReadyTraversal
+        {
+            uint32_t m_pass;
+            uint32_t m_index;
+        };
+
+        const auto later = [](const ReadyTraversal& lhs, const ReadyTraversal& rhs) {
+            return lhs.m_pass != rhs.m_pass ? lhs.m_pass > rhs.m_pass : lhs.m_index > rhs.m_index;
+        };
+
+        festd::pmr::vector<ReadyTraversal> ready(&temp);
+        for (uint32_t index = 0; index < count; ++index)
+        {
+            if (indegrees[index] == 0)
+                ready.push_back({ 0, index });
+        }
+
+        eastl::make_heap(ready.begin(), ready.end(), later);
+        while (!ready.empty())
+        {
+            eastl::pop_heap(ready.begin(), ready.end(), later);
+            const ReadyTraversal current = ready.back();
+            ready.pop_back();
+            order.push_back(current.m_index);
+
+            for (uint32_t edge = firstDependent[current.m_index]; edge < firstDependent[current.m_index + 1]; ++edge)
+            {
+                const uint32_t dependent = dependents[edge];
+                if (--indegrees[dependent] != 0)
+                    continue;
+
+                ready.push_back({ current.m_pass + (dependent < current.m_index), dependent });
+                eastl::push_heap(ready.begin(), ready.end(), later);
+            }
+        }
+
+        if (order.size() != count)
+            return Reject(validate, "Framework traversal dependency cycle");
+
+        return true;
+    }
+
+
+    void EntityScheduler::AddExclusionEdges(festd::pmr::vector<Edge>& edges)
+    {
+        // Within a phase, later work waits for earlier work it conflicts with; order follows the compiled sequence.
         for (const auto& phase : m_phases)
         {
             for (uint32_t a = 0; a < phase.m_traversals.size(); ++a)
@@ -369,37 +548,64 @@ namespace FE::Framework
                 for (uint32_t b = a + 1; b < phase.m_traversals.size(); ++b)
                 {
                     const uint32_t afterIndex = phase.m_traversals[b];
-                    auto& after = m_traversals[afterIndex];
-                    const bool stageExclusion = before.m_stageInvoke || after.m_stageInvoke;
+                    const auto& after = m_traversals[afterIndex];
+
                     bool conflict = false;
                     for (const auto& lhs : before.m_accesses)
                     {
                         for (const auto& rhs : after.m_accesses)
                         {
-                            if (!lhs.m_excluded && !rhs.m_excluded && lhs.m_type == rhs.m_type && (lhs.m_write || rhs.m_write))
-                            {
-                                conflict = true;
-                                m_conflicts.push_back({ lhs.m_type, beforeIndex, afterIndex });
-                            }
+                            const bool sameData = !lhs.m_excluded && !rhs.m_excluded && lhs.m_type == rhs.m_type;
+                            if (!sameData || (!lhs.m_write && !rhs.m_write))
+                                continue;
+
+                            conflict = true;
+                            m_conflicts.push_back({ lhs.m_type, beforeIndex, afterIndex });
                         }
                     }
 
-                    const bool systemExclusion = before.m_system && before.m_system == after.m_system
-                        && (before.m_policy != ExecutionPolicy::kParallel || after.m_policy != ExecutionPolicy::kParallel);
-                    if (conflict || systemExclusion || stageExclusion)
-                    {
-                        addDependency(after, beforeIndex);
-                        m_diagnostics.m_conflictEdges += conflict;
-                        m_diagnostics.m_systemEdges += systemExclusion;
-                        m_diagnostics.m_stageEdges += stageExclusion;
-                    }
+                    const bool stageExclusion = before.IsStage() || after.IsStage();
+                    const bool sequentialSystem =
+                        before.m_policy != ExecutionPolicy::kParallel || after.m_policy != ExecutionPolicy::kParallel;
+                    const bool systemExclusion = before.m_system && before.m_system == after.m_system && sequentialSystem;
+                    if (!conflict && !systemExclusion && !stageExclusion)
+                        continue;
+
+                    edges.push_back({ beforeIndex, afterIndex });
+                    m_diagnostics.m_conflictEdges += conflict;
+                    m_diagnostics.m_systemEdges += systemExclusion;
+                    m_diagnostics.m_stageEdges += stageExclusion;
                 }
             }
         }
+    }
 
-        m_compiled = true;
-        m_validated = validate;
-        return true;
+
+    void EntityScheduler::StoreDependencies(festd::pmr::vector<Edge>& edges)
+    {
+        std::sort(edges.begin(), edges.end(), [](const Edge& lhs, const Edge& rhs) {
+            return lhs.m_consumer != rhs.m_consumer ? lhs.m_consumer < rhs.m_consumer : lhs.m_producer < rhs.m_producer;
+        });
+
+        const auto sameEdge = [](const Edge& lhs, const Edge& rhs) {
+            return lhs.m_consumer == rhs.m_consumer && lhs.m_producer == rhs.m_producer;
+        };
+        edges.erase(std::unique(edges.begin(), edges.end(), sameEdge), edges.end());
+
+        const auto producers = AllocateEpochArray<uint32_t>(edges.size());
+        for (uint32_t edge = 0; edge < edges.size(); ++edge)
+            producers[edge] = edges[edge].m_producer;
+
+        uint32_t first = 0;
+        for (uint32_t index = 0; index < m_traversals.size(); ++index)
+        {
+            uint32_t last = first;
+            while (last < edges.size() && edges[last].m_consumer == index)
+                ++last;
+
+            m_traversals[index].m_dependencies = producers.subspan(first, last - first);
+            first = last;
+        }
     }
 
 
@@ -421,9 +627,8 @@ namespace FE::Framework
         }
 
         m_state = State::kExecuting;
-
         auto restore = festd::defer([&] {
-            m_state = State::kUpdating;
+            m_state = State::kRecording;
         });
 
         for (const auto& phase : m_phases)
@@ -431,27 +636,24 @@ namespace FE::Framework
             for (const auto& group : phase.m_prerequisites)
                 group->Wait();
 
-            for (const uint32_t i : phase.m_traversals)
+            for (const uint32_t index : phase.m_traversals)
             {
-                auto& traversal = m_traversals[i];
-                festd::inline_vector<WaitGroup*> prerequisites;
-                for (const auto& group : traversal.m_externalPrerequisites)
-                    prerequisites.push_back(group.Get());
+                const auto& traversal = m_traversals[index];
+                auto* job = ::new (AllocateEpoch(sizeof(TraversalJob), alignof(TraversalJob)))
+                    TraversalJob(*this, &EntityScheduler::ExecuteTraversal, index);
 
+                job->AddPrerequisites(traversal.m_externalPrerequisites);
                 for (const uint32_t dependency : traversal.m_dependencies)
-                    prerequisites.push_back(m_traversals[dependency].m_completion.Get());
+                    job->AddPrerequisite(m_traversals[dependency].m_completion);
 
-                const bool mainThread = traversal.m_stageInvoke || traversal.m_policy == ExecutionPolicy::kMainThread;
-                const auto affinity = mainThread ? Jobs::FiberAffinityMask::kMainThread : Jobs::FiberAffinityMask::kAllForeground;
+                const auto affinity =
+                    traversal.RunsOnMainThread() ? Jobs::FiberAffinityMask::kMainThread : Jobs::FiberAffinityMask::kAllForeground;
+                job->Dispatch(affinity, nullptr, Jobs::Priority::kNormal);
+            }
 
-                Jobs::Dispatch(affinity, prerequisites, Jobs::Priority::kNormal, [this, i] {
-                    ExecuteTraversal(i);
-                });
-
-                {
-                    std::lock_guard guard(m_world.m_storage.m_versionLock);
-                    ++m_diagnostics.m_jobs;
-                }
+            {
+                std::lock_guard guard(m_world.m_storage.m_versionLock);
+                m_diagnostics.m_jobs += phase.m_traversals.size();
             }
 
             for (const uint32_t index : phase.m_traversals)
@@ -463,19 +665,59 @@ namespace FE::Framework
     }
 
 
-    void EntityScheduler::PrepareTraversal(const Traversal& traversal, festd::vector<PreparedChunk>& chunks)
+    void EntityScheduler::ExecuteTraversal(const uint32_t index)
+    {
+        auto& traversal = m_traversals[index];
+
+        [[maybe_unused]] const festd::ascii_view name = GetTraversalName(traversal);
+        FE_PROFILER_ZONE_TEXT("%.*s", name.length(), name.data());
+
+        if (traversal.IsStage())
+        {
+            // A structural stage may commit queued edits, but cannot record work into the compiled schedule.
+            m_state = State::kStructuralStage;
+            traversal.m_stageInvoke(traversal.m_callable);
+            m_state = State::kExecuting;
+            traversal.m_completion->Signal();
+            return;
+        }
+
+        Memory::FiberTempAllocator temp;
+        festd::pmr::vector<PreparedChunk> chunks(&temp);
+        PrepareChunks(traversal, temp, chunks);
+
+        TraversalWork work;
+        if (traversal.m_cascade)
+            ExecuteCascade(traversal, temp, chunks, work);
+        else
+            ExecuteRows(traversal, temp, chunks, work);
+
+        PublishChanges(traversal, chunks, work);
+        traversal.m_completion->Signal();
+    }
+
+
+    void EntityScheduler::PrepareChunks(const Traversal& traversal, std::pmr::memory_resource& temp,
+                                        festd::pmr::vector<PreparedChunk>& chunks)
     {
         FE_PROFILER_ZONE();
 
+        const auto& storage = m_world.m_storage;
+        const uint32_t accessCount = traversal.m_accesses.size();
+
         // Layout matching does not access versions or mutable component values.
-        for (auto* chunk : m_world.m_storage.m_chunks)
+        auto* columns =
+            static_cast<uint32_t*>(temp.allocate(sizeof(uint32_t) * storage.m_chunks.size() * accessCount, alignof(uint32_t)));
+        chunks.reserve(storage.m_chunks.size());
+        for (auto* chunk : storage.m_chunks)
         {
-            PreparedChunk entry{ chunk };
+            uint32_t* chunkColumns = columns + chunks.size() * accessCount;
             bool matches = true;
-            for (const auto& access : traversal.m_accesses)
+            for (uint32_t i = 0; i < accessCount; ++i)
             {
+                const auto& access = traversal.m_accesses[i];
                 const uint32_t column = chunk->m_archetype.Find(access.m_type);
-                entry.m_columns.push_back(column);
+                chunkColumns[i] = column;
                 if (access.m_parent)
                     continue;
 
@@ -486,48 +728,42 @@ namespace FE::Framework
             }
 
             if (matches)
-                chunks.push_back(std::move(entry));
+                chunks.push_back({ chunk, chunkColumns });
         }
 
         if (!traversal.m_cursor || traversal.m_filter != QueryFilter::kAll)
             return;
 
+        std::lock_guard guard(m_world.m_storage.m_versionLock);
+        const auto& cursor = *traversal.m_cursor;
+        const bool invalidated =
+            cursor.m_structureRevision != storage.m_structureRevision || cursor.m_versionEra != storage.m_changeEra;
+
         // Parent terms may invalidate matching children even when the parent's own archetype is excluded.
-        festd::inline_vector<std::pair<const ArchetypeChunk*, uint32_t>> parentColumns;
+        bool parentChanged = false;
         for (const auto& access : traversal.m_accesses)
         {
             if (!access.m_parent)
                 continue;
 
-            for (const auto* chunk : m_world.m_storage.m_chunks)
+            for (const auto* chunk : storage.m_chunks)
             {
                 const uint32_t column = chunk->m_archetype.Find(access.m_type);
-                if (column != kInvalidIndex)
-                    parentColumns.emplace_back(chunk, column);
+                parentChanged |= column != kInvalidIndex && chunk->m_versions[column] > cursor.m_version;
             }
         }
 
-        std::lock_guard guard(m_world.m_storage.m_versionLock);
-        const auto& cursor = *traversal.m_cursor;
-        const bool invalidated = cursor.m_structureRevision != m_world.m_storage.m_structureRevision
-            || cursor.m_versionEra != m_world.m_storage.m_changeEra;
-        bool parentChanged = false;
-        for (const auto& [chunk, column] : parentColumns)
-            parentChanged |= chunk->m_versions[column] > cursor.m_version;
-
-        auto changed = [&](const PreparedChunk& entry) {
+        const auto changed = [&](const PreparedChunk& entry) {
             if (invalidated || parentChanged)
                 return true;
 
-            for (uint32_t i = 0; i < traversal.m_accesses.size(); ++i)
+            for (uint32_t i = 0; i < accessCount; ++i)
             {
                 const auto& access = traversal.m_accesses[i];
                 const uint32_t column = entry.m_columns[i];
-                if (!access.m_parent && !access.m_excluded && column != kInvalidIndex
-                    && entry.m_chunk->m_versions[column] > cursor.m_version)
-                {
+                const bool tracked = !access.m_parent && !access.m_excluded && column != kInvalidIndex;
+                if (tracked && entry.m_chunk->m_versions[column] > cursor.m_version)
                     return true;
-                }
             }
 
             return false;
@@ -536,29 +772,30 @@ namespace FE::Framework
         if (traversal.m_cascade)
         {
             // Reprocess all matching descendants, including through filtered ancestors.
-            const bool hierarchyChanged = cursor.m_hierarchyRevision != m_world.m_storage.m_hierarchyRevision;
-            if (!hierarchyChanged && !eastl::any_of(chunks.begin(), chunks.end(), changed))
+            const bool hierarchyChanged = cursor.m_hierarchyRevision != storage.m_hierarchyRevision;
+            if (!hierarchyChanged && std::none_of(chunks.begin(), chunks.end(), changed))
                 chunks.clear();
+
+            return;
         }
-        else
-        {
-            chunks.erase(std::remove_if(chunks.begin(),
-                                        chunks.end(),
-                                        [&](const PreparedChunk& entry) {
-                                            return !changed(entry);
-                                        }),
-                         chunks.end());
-        }
+
+        chunks.erase(std::remove_if(chunks.begin(),
+                                    chunks.end(),
+                                    [&](const PreparedChunk& entry) {
+                                        return !changed(entry);
+                                    }),
+                     chunks.end());
     }
 
 
     bool EntityScheduler::InvokeEntity(const Traversal& traversal, Entity& entity, const PreparedChunk& chunk,
-                                       festd::span<void*> values, bool& changed)
+                                       const festd::span<void*> values, bool& changed)
     {
         if (!entity.m_active)
             return false;
 
-        if (traversal.m_filter == QueryFilter::kNewEntities && entity.m_addedVersion <= traversal.m_cursor->m_additionVersion)
+        const ChangeCursor* cursor = traversal.m_cursor;
+        if (traversal.m_filter == QueryFilter::kNewEntities && entity.m_addedVersion <= cursor->m_additionVersion)
             return false;
 
         bool hasAddedComponent = false;
@@ -573,19 +810,14 @@ namespace FE::Framework
             if (access.m_parent && source && source->m_chunk)
                 column = source->m_chunk->m_archetype.Find(access.m_type);
 
-            void* value = source && source->m_active && column != kInvalidIndex
-                    && (source->m_chunk->Stage(source->m_row, column) & ComponentStage::kActive) != ComponentStage::kNone
-                ? source->m_chunk->Get(source->m_row, column)
-                : nullptr;
-
-            if (!value && !access.m_optional)
+            const bool available = source && source->m_active && column != kInvalidIndex
+                && (source->m_chunk->Stage(source->m_row, column) & ComponentStage::kActive) != ComponentStage::kNone;
+            if (!available && !access.m_optional)
                 return false;
 
-            values[i] = value;
-            if (traversal.m_filter == QueryFilter::kAddedComponents && value && !access.m_parent)
-            {
-                hasAddedComponent |= source->m_chunk->AddedVersion(source->m_row, column) > traversal.m_cursor->m_additionVersion;
-            }
+            values[i] = available ? source->m_chunk->Get(source->m_row, column) : nullptr;
+            if (available && !access.m_parent && traversal.m_filter == QueryFilter::kAddedComponents)
+                hasAddedComponent |= source->m_chunk->AddedVersion(source->m_row, column) > cursor->m_additionVersion;
         }
 
         if (traversal.m_filter == QueryFilter::kAddedComponents && !hasAddedComponent)
@@ -599,9 +831,107 @@ namespace FE::Framework
         auto restore = festd::defer([&] {
             fiber.m_executionContext = previous;
         });
+
         const bool wrote = traversal.m_invoke(traversal.m_callable, entity, values.data());
         changed |= traversal.m_hasWrites && wrote;
         return true;
+    }
+
+
+    void EntityScheduler::ExecuteRows(const Traversal& traversal, std::pmr::memory_resource& temp,
+                                      const festd::span<PreparedChunk> chunks, TraversalWork& work)
+    {
+        struct RowRange
+        {
+            PreparedChunk* m_chunk;
+            uint32_t m_first;
+            uint32_t m_end;
+        };
+
+        // Parallel traversals split chunks into fixed row ranges; other policies visit each chunk as one range.
+        const bool parallel = traversal.m_policy == ExecutionPolicy::kParallel;
+        festd::pmr::vector<RowRange> ranges(&temp);
+        for (auto& chunk : chunks)
+        {
+            const uint32_t rowCount = chunk.m_chunk->m_count;
+            const uint32_t grain = parallel ? kRowsPerBatch : Math::Max(1u, rowCount);
+            for (uint32_t first = 0; first < rowCount; first += grain)
+                ranges.push_back({ &chunk, first, Math::Min(rowCount, first + grain) });
+        }
+
+        [[maybe_unused]] const festd::ascii_view name = GetTraversalName(traversal);
+        auto visit = [&](const uint32_t batch) {
+            const RowRange& range = ranges[batch];
+            FE_PROFILER_ZONE_NAMED("QueryRows");
+            ZoneTextF("%.*s | rows %u..%u", name.length(), name.data(), range.m_first, range.m_end);
+
+            festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
+            uint32_t count = 0;
+            bool changed = false;
+            for (uint32_t row = range.m_first; row < range.m_end; ++row)
+                count += InvokeEntity(traversal, *range.m_chunk->m_chunk->m_entities[row], *range.m_chunk, values, changed);
+
+            if (changed)
+                std::atomic_ref(range.m_chunk->m_changed).store(1, std::memory_order_relaxed);
+
+            work.m_callbacks.fetch_add(count, std::memory_order_relaxed);
+        };
+
+        work.m_jobs += RunBatches(parallel, ranges.size(), temp, visit);
+    }
+
+
+    void EntityScheduler::ExecuteCascade(const Traversal& traversal, std::pmr::memory_resource& temp,
+                                         const festd::span<PreparedChunk> chunks, TraversalWork& work)
+    {
+        if (chunks.empty())
+            return;
+
+        PrepareCascadeOrder();
+
+        // Visiting in level order completes every parent before its children; only parallel work splits a level.
+        festd::pmr::unordered_dense_map<const ArchetypeChunk*, PreparedChunk*> matched(&temp);
+        matched.reserve(chunks.size());
+        for (auto& chunk : chunks)
+            matched.emplace(chunk.m_chunk, &chunk);
+
+        const bool parallel = traversal.m_policy == ExecutionPolicy::kParallel;
+        [[maybe_unused]] const festd::ascii_view name = GetTraversalName(traversal);
+        for (uint32_t level = 0; level + 1 < m_cascadeLevels.size(); ++level)
+        {
+            const uint32_t levelBegin = m_cascadeLevels[level];
+            const uint32_t levelEnd = m_cascadeLevels[level + 1];
+            const uint32_t grain = parallel ? kEntitiesPerTreeBatch : levelEnd - levelBegin;
+            const uint32_t batchCount = Math::CeilDivide(levelEnd - levelBegin, grain);
+
+            auto visit = [&](const uint32_t batch) {
+                const uint32_t first = levelBegin + batch * grain;
+                const uint32_t end = Math::Min(levelEnd, first + grain);
+                FE_PROFILER_ZONE_NAMED("CascadeRows");
+                ZoneTextF("%.*s | level %u | entities %u..%u", name.length(), name.data(), level, first, end);
+
+                festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
+                uint32_t count = 0;
+                for (uint32_t i = first; i < end; ++i)
+                {
+                    Entity& entity = *m_cascadeOrder[i];
+                    const auto found = matched.find(entity.m_chunk);
+                    if (found == matched.end())
+                        continue;
+
+                    bool changed = false;
+                    count += InvokeEntity(traversal, entity, *found->second, values, changed);
+                    if (changed)
+                        std::atomic_ref(found->second->m_changed).store(1, std::memory_order_relaxed);
+                }
+
+                work.m_callbacks.fetch_add(count, std::memory_order_relaxed);
+            };
+
+            const uint32_t jobs = RunBatches(parallel, batchCount, temp, visit);
+            work.m_jobs += jobs;
+            work.m_treeBatches += jobs;
+        }
     }
 
 
@@ -611,8 +941,9 @@ namespace FE::Framework
 
         std::lock_guard guard(m_cascadeOrderLock);
         const auto& storage = m_world.m_storage;
-        if (m_cascadeHierarchyRevision == storage.m_hierarchyRevision
-            && m_cascadeStructureRevision == storage.m_structureRevision)
+        const bool current = m_cascadeHierarchyRevision == storage.m_hierarchyRevision
+            && m_cascadeStructureRevision == storage.m_structureRevision;
+        if (current)
             return;
 
         m_cascadeOrder.clear();
@@ -644,232 +975,46 @@ namespace FE::Framework
     }
 
 
-    void EntityScheduler::ExecuteRowBatches(const Traversal& traversal, const festd::span<PreparedChunk> chunks,
-                                            TraversalWork& work)
+    void EntityScheduler::PublishChanges(const Traversal& traversal, const festd::span<const PreparedChunk> chunks,
+                                         const TraversalWork& work)
     {
-        constexpr uint32_t kRowsPerBatch = 32;
-        const bool parallel = traversal.m_policy == ExecutionPolicy::kParallel;
-        const festd::ascii_view systemName = traversal.m_system ? traversal.m_system->RTTI_GetDynamicType().m_name : "Query";
-        uint32_t batchCount = 0;
-        for (const auto& chunk : chunks)
-            batchCount += Math::CeilDivide(chunk.m_chunk->m_count, kRowsPerBatch);
+        std::lock_guard guard(m_world.m_storage.m_versionLock);
+        auto& storage = m_world.m_storage;
 
-        const Rc<WaitGroup> completion = parallel && batchCount > 1 ? WaitGroup::Create() : nullptr;
-        for (auto& chunk : chunks)
+        // Only columns this traversal writes, in chunks where a callback reported a write, receive the new version.
+        const bool changedWrites =
+            traversal.m_hasWrites && std::any_of(chunks.begin(), chunks.end(), [](const PreparedChunk& entry) {
+                return entry.m_changed != 0;
+            });
+        const uint64_t publishedVersion = changedWrites ? m_world.NextChangeVersion() : storage.m_changeVersion;
+        for (const auto& entry : chunks)
         {
-            const uint32_t rowCount = chunk.m_chunk->m_count;
-            const uint32_t grain = parallel ? kRowsPerBatch : Math::Max(1u, rowCount);
-            for (uint32_t first = 0; first < rowCount; first += grain)
+            if (!changedWrites || entry.m_changed == 0)
+                continue;
+
+            for (uint32_t i = 0; i < traversal.m_accesses.size(); ++i)
             {
-                const uint32_t end = Math::Min(rowCount, first + grain);
-                auto visitBatch = [&, entry = &chunk, first, end] {
-                    FE_PROFILER_ZONE_NAMED("QueryRows");
-                    ZoneTextF("%.*s | rows %u..%u", systemName.length(), systemName.data(), first, end);
-
-                    festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
-                    uint32_t count = 0;
-                    bool changed = false;
-                    for (uint32_t row = first; row < end; ++row)
-                    {
-                        if (InvokeEntity(traversal, *entry->m_chunk->m_entities[row], *entry, values, changed))
-                            ++count;
-                    }
-
-                    if (changed)
-                        std::atomic_ref(entry->m_changed).store(1, std::memory_order_relaxed);
-
-                    work.m_callbacks.fetch_add(count, std::memory_order_relaxed);
-                };
-                if (completion)
-                {
-                    completion->Add(1);
-                    ++work.m_jobs;
-                    Jobs::DispatchForeground(std::move(visitBatch), completion.Get());
-                }
-                else
-                {
-                    visitBatch();
-                }
+                const auto& access = traversal.m_accesses[i];
+                const uint32_t column = entry.m_columns[i];
+                if (access.m_write && !access.m_parent && !access.m_excluded && column != kInvalidIndex)
+                    entry.m_chunk->m_versions[column] = publishedVersion;
             }
         }
 
-        if (completion)
+        if (traversal.m_cursor)
         {
-            FE_PROFILER_ZONE_NAMED("JoinQueryJobs");
-            completion->Signal();
-            completion->Wait();
-        }
-    }
-
-
-    void EntityScheduler::ExecuteCascadeBatches(const Traversal& traversal, const festd::span<PreparedChunk> chunks,
-                                                TraversalWork& work)
-    {
-        if (chunks.empty())
-            return;
-
-        PrepareCascadeOrder();
-
-        festd::unordered_dense_map<const ArchetypeChunk*, uint32_t> chunkLookup;
-        for (uint32_t i = 0; i < chunks.size(); ++i)
-            chunkLookup.emplace(chunks[i].m_chunk, i);
-
-        const auto visit = [&](Entity& entity, const festd::span<void*> values) {
-            const auto found = chunkLookup.find(entity.m_chunk);
-            if (found == chunkLookup.end())
-                return 0u;
-
-            PreparedChunk& chunk = chunks[found->second];
-            bool changed = false;
-            const bool invoked = InvokeEntity(traversal, entity, chunk, values, changed);
-            if (changed)
-                std::atomic_ref(chunk.m_changed).store(1, std::memory_order_relaxed);
-
-            return uint32_t(invoked);
-        };
-        if (traversal.m_policy != ExecutionPolicy::kParallel)
-        {
-            festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
-            const uint32_t rootCount = m_cascadeLevels.size() > 1 ? m_cascadeLevels[1] : 0;
-            uint32_t count = 0;
-            for (uint32_t i = 0; i < rootCount; ++i)
-            {
-                Entity* root = m_cascadeOrder[i];
-                Entity* entity = root;
-                while (entity)
-                {
-                    count += visit(*entity, values);
-                    if (entity->m_firstChild)
-                    {
-                        entity = entity->m_firstChild;
-                        continue;
-                    }
-
-                    while (entity != root && !entity->m_nextSibling)
-                        entity = entity->m_parent;
-
-                    entity = entity == root ? nullptr : entity->m_nextSibling.Get();
-                }
-            }
-
-            work.m_callbacks += count;
-            return;
+            auto& cursor = *traversal.m_cursor;
+            cursor.m_version = publishedVersion;
+            cursor.m_versionEra = storage.m_changeEra;
+            cursor.m_hierarchyRevision = storage.m_hierarchyRevision;
+            cursor.m_structureRevision = storage.m_structureRevision;
+            cursor.m_additionVersion = storage.m_additionVersion;
         }
 
-        constexpr uint32_t kEntitiesPerBatch = 16;
-        const festd::ascii_view systemName = traversal.m_system ? traversal.m_system->RTTI_GetDynamicType().m_name : "Query";
-        for (uint32_t level = 0; level + 1 < m_cascadeLevels.size(); ++level)
-        {
-            const uint32_t levelEnd = m_cascadeLevels[level + 1];
-            const uint32_t levelBegin = m_cascadeLevels[level];
-            const bool subdivide = levelEnd - levelBegin > kEntitiesPerBatch;
-            const Rc<WaitGroup> completion = subdivide ? WaitGroup::Create() : nullptr;
-            for (uint32_t first = levelBegin; first < levelEnd; first += kEntitiesPerBatch)
-            {
-                const uint32_t end = Math::Min(levelEnd, first + kEntitiesPerBatch);
-                auto visitBatch = [&, first, end, level] {
-                    FE_PROFILER_ZONE_NAMED("CascadeRows");
-                    ZoneTextF("%.*s | level %u | entities %u..%u", systemName.length(), systemName.data(), level, first, end);
-
-                    festd::inline_vector<void*> values(traversal.m_accesses.size(), nullptr);
-                    uint32_t count = 0;
-                    for (uint32_t i = first; i < end; ++i)
-                        count += visit(*m_cascadeOrder[i], values);
-
-                    work.m_callbacks.fetch_add(count, std::memory_order_relaxed);
-                };
-                if (completion)
-                {
-                    completion->Add(1);
-                    ++work.m_jobs;
-                    ++work.m_treeBatches;
-                    Jobs::DispatchForeground(std::move(visitBatch), completion.Get());
-                }
-                else
-                {
-                    visitBatch();
-                }
-            }
-
-            if (completion)
-            {
-                FE_PROFILER_ZONE_NAMED("JoinCascadeLevel");
-                completion->Signal();
-                completion->Wait();
-            }
-        }
-    }
-
-
-    void EntityScheduler::ExecuteTraversal(const uint32_t index)
-    {
-        auto& traversal = m_traversals[index];
-
-        [[maybe_unused]] festd::ascii_view systemName = "Query";
-        if (traversal.m_system)
-            systemName = traversal.m_system->RTTI_GetDynamicType().m_name;
-
-        FE_PROFILER_ZONE_TEXT("%.*s", systemName.length(), systemName.data());
-
-        if (traversal.m_stageInvoke)
-        {
-            // A structural stage may commit queued edits, but cannot record work into the compiled schedule.
-            m_state = State::kStructuralStage;
-            traversal.m_stageInvoke(traversal.m_callable);
-            m_state = State::kExecuting;
-            traversal.m_completion->Signal();
-            return;
-        }
-
-        festd::vector<PreparedChunk> chunks;
-        PrepareTraversal(traversal, chunks);
-
-        TraversalWork work;
-        if (traversal.m_cascade)
-            ExecuteCascadeBatches(traversal, chunks, work);
-        else
-            ExecuteRowBatches(traversal, chunks, work);
-
-        {
-            std::lock_guard guard(m_world.m_storage.m_versionLock);
-
-            const bool writes = traversal.m_hasWrites;
-            const bool changedWrites = writes && eastl::any_of(chunks.begin(), chunks.end(), [](const PreparedChunk& entry) {
-                                           return entry.m_changed != 0;
-                                       });
-            const uint64_t publishedVersion = changedWrites ? m_world.NextChangeVersion() : m_world.m_storage.m_changeVersion;
-            if (changedWrites)
-            {
-                for (const auto& entry : chunks)
-                {
-                    if (entry.m_changed == 0)
-                        continue;
-
-                    for (uint32_t i = 0; i < traversal.m_accesses.size(); ++i)
-                    {
-                        const auto& access = traversal.m_accesses[i];
-                        const uint32_t column = entry.m_columns[i];
-                        if (access.m_write && !access.m_parent && !access.m_excluded && column != kInvalidIndex)
-                            entry.m_chunk->m_versions[column] = publishedVersion;
-                    }
-                }
-            }
-
-            if (traversal.m_cursor)
-            {
-                traversal.m_cursor->m_version = publishedVersion;
-                traversal.m_cursor->m_versionEra = m_world.m_storage.m_changeEra;
-                traversal.m_cursor->m_hierarchyRevision = m_world.m_storage.m_hierarchyRevision;
-                traversal.m_cursor->m_structureRevision = m_world.m_storage.m_structureRevision;
-                traversal.m_cursor->m_additionVersion = m_world.m_storage.m_additionVersion;
-            }
-            m_diagnostics.m_chunks += chunks.size();
-            m_diagnostics.m_jobs += work.m_jobs;
-            m_diagnostics.m_treeBatches += work.m_treeBatches;
-            m_diagnostics.m_callbacks += work.m_callbacks.load();
-        }
-
-        traversal.m_completion->Signal();
+        m_diagnostics.m_chunks += chunks.size();
+        m_diagnostics.m_jobs += work.m_jobs;
+        m_diagnostics.m_treeBatches += work.m_treeBatches;
+        m_diagnostics.m_callbacks += work.m_callbacks.load();
     }
 
 
@@ -895,11 +1040,11 @@ namespace FE::Framework
         });
 
         const bool completed = m_traversals.empty() || m_executed;
-
         if (IsValidationEnabled())
             FE_Assert(completed, "Incomplete update schedule");
         else
             FE_AssertDebug(completed, "Incomplete update schedule");
+
         return completed;
     }
 

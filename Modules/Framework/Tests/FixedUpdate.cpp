@@ -5,7 +5,7 @@
 using namespace FE;
 using namespace FE::Framework;
 
-TEST(EntityFixedUpdate, FixedEpochsSelectFixedHooksAndDoNotTickFrameServices)
+TEST(EntityFixedUpdate, FixedEpochsSelectFixedHooksShareFramePhasesAndDoNotTickServices)
 {
     struct Service final : WorldService
     {
@@ -18,59 +18,9 @@ TEST(EntityFixedUpdate, FixedEpochsSelectFixedHooksAndDoNotTickFrameServices)
 
     struct System final : WorldSystem
     {
-        uint32_t m_updates = 0;
-        uint32_t m_fixedUpdates = 0;
-        uint32_t m_executed = 0;
-        float m_delta = 0;
-        void Update(EntityUpdateContext&) override
-        {
-            ++m_updates;
-        }
-
-
-        void FixedUpdate(EntityUpdateContext& context) override
-        {
-            ++m_fixedUpdates;
-            m_delta = context.m_deltaSeconds;
-            context.m_world.RecordStage(Phases::Update, [this] {
-                ++m_executed;
-            });
-        }
-    } system;
-
-    EntityWorld world;
-    world.AddService(service);
-    world.AddSystem(system);
-    for (uint32_t i = 0; i < 3; ++i)
-    {
-        world.BeginFixedUpdate(1.0f / 60.0f);
-        ASSERT_TRUE(world.SchedulePhase(Phases::Update));
-        ASSERT_TRUE(world.ExecuteSchedule());
-        ASSERT_TRUE(world.EndUpdate());
-    }
-
-    EXPECT_EQ(system.m_updates, 0u);
-    EXPECT_EQ(service.m_updates, 0u);
-    EXPECT_EQ(system.m_fixedUpdates, 3u);
-    EXPECT_EQ(system.m_executed, 3u);
-    EXPECT_FLOAT_EQ(system.m_delta, 1.0f / 60.0f);
-
-    world.BeginUpdate();
-    ASSERT_TRUE(world.ExecuteSchedule());
-    ASSERT_TRUE(world.EndUpdate());
-    EXPECT_EQ(system.m_updates, 1u);
-    EXPECT_EQ(service.m_updates, 1u);
-    world.RemoveSystem(system);
-    world.RemoveService(service);
-}
-
-
-TEST(EntityFixedUpdate, SharedPhasesOrderBothUpdateFrequencies)
-{
-    struct System final : WorldSystem
-    {
         uint32_t m_order[6]{};
         uint32_t m_count = 0;
+        float m_delta = 0;
 
         void Update(EntityUpdateContext& context) override
         {
@@ -80,6 +30,7 @@ TEST(EntityFixedUpdate, SharedPhasesOrderBothUpdateFrequencies)
 
         void FixedUpdate(EntityUpdateContext& context) override
         {
+            m_delta = context.m_deltaSeconds;
             Record(context, 20);
         }
 
@@ -99,6 +50,7 @@ TEST(EntityFixedUpdate, SharedPhasesOrderBothUpdateFrequencies)
     } system;
 
     EntityWorld world;
+    world.AddService(service);
     world.AddSystem(system);
     for (const bool fixed : { true, false })
     {
@@ -112,8 +64,10 @@ TEST(EntityFixedUpdate, SharedPhasesOrderBothUpdateFrequencies)
         ASSERT_TRUE(world.SchedulePhase(Phases::PostUpdate));
         ASSERT_TRUE(world.ExecuteSchedule());
         ASSERT_TRUE(world.EndUpdate());
+        EXPECT_EQ(service.m_updates, fixed ? 0u : 1u);
     }
 
+    EXPECT_FLOAT_EQ(system.m_delta, 1.0f / 60.0f);
     ASSERT_EQ(system.m_count, 6u);
     for (uint32_t i = 0; i < 3; ++i)
     {
@@ -122,6 +76,7 @@ TEST(EntityFixedUpdate, SharedPhasesOrderBothUpdateFrequencies)
     }
 
     world.RemoveSystem(system);
+    world.RemoveService(service);
 }
 
 

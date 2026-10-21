@@ -296,7 +296,7 @@ TEST(CollectionMaterialization, PendingDependenciesPreventPublicationAndCancelWi
         }
 
 
-        LifecycleResult Poll(const EntityAssetRequest&, Rtti::TypeID) override
+        LifecycleResult Poll(const EntityAssetRequest&) override
         {
             return m_ready ? LifecycleResult::kSucceeded : LifecycleResult::kPending;
         }

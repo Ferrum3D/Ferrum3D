@@ -254,56 +254,63 @@ namespace FE::GameFramework
         }
 
 
-        JPH::RefConst<JPH::Shape> CreateShape(const PhysicsBodyComponent& definition, const Vector3 scale)
+        JPH::Ref<JPH::Shape> CreateEntryShape(const PhysicsBodyShape& entry)
         {
-            JPH::StaticCompoundShapeSettings compound;
-            JPH::RefConst<JPH::Shape> single;
-            for (const PhysicsBodyShape& entry : definition.m_shapes)
-            {
-                if (!IsFinite(entry.m_position) || !IsRotation(entry.m_rotation))
-                    return {};
-
-                const auto asset = entry.m_asset.GetAssetID().IsValid() ? entry.m_asset.GetAssetHandle().Read()
-                                                                        : IO::AssetRead<PhysicsShapeAsset>();
-                if (entry.m_asset.GetAssetID().IsValid() && !asset)
-                    return {};
-
-                const auto primitive = CreatePrimitive(asset ? *asset.Get() : entry.m_shape);
-                if (primitive.HasError())
-                {
-                    Logger::LogError("Invalid physics shape: {}", primitive.GetError().c_str());
-                    return {};
-                }
-
-                single = primitive.Get();
-                if (definition.m_shapes.size() == 1)
-                {
-                    const auto translated =
-                        JPH::RotatedTranslatedShapeSettings(ToJolt(entry.m_position), ToJolt(entry.m_rotation), single).Create();
-                    if (translated.HasError())
-                        return {};
-
-                    single = translated.Get();
-                }
-                else
-                {
-                    compound.AddShape(ToJolt(entry.m_position), ToJolt(entry.m_rotation), single);
-                }
-            }
-
-            if (definition.m_shapes.size() > 1)
-            {
-                const auto result = compound.Create();
-                if (result.HasError())
-                    return {};
-
-                single = result.Get();
-            }
-
-            if (!single || !single->IsValidScale(ToJolt(scale)))
+            if (!IsFinite(entry.m_position) || !IsRotation(entry.m_rotation))
                 return {};
 
-            const auto scaled = single->ScaleShape(ToJolt(scale));
+            const bool hasAsset = entry.m_asset.GetAssetID().IsValid();
+            const auto asset = hasAsset ? entry.m_asset.GetAssetHandle().Read() : IO::AssetRead<PhysicsShapeAsset>();
+            if (hasAsset && !asset)
+                return {};
+
+            const auto primitive = CreatePrimitive(asset ? *asset.Get() : entry.m_shape);
+            if (primitive.HasError())
+            {
+                Logger::LogError("Invalid physics shape: {}", primitive.GetError().c_str());
+                return {};
+            }
+
+            return primitive.Get();
+        }
+
+
+        JPH::RefConst<JPH::Shape> CreateShape(const PhysicsBodyComponent& definition, const Vector3 scale)
+        {
+            JPH::ShapeSettings::ShapeResult result;
+            if (definition.m_shapes.size() == 1)
+            {
+                const PhysicsBodyShape& entry = definition.m_shapes.front();
+                const JPH::Ref<JPH::Shape> shape = CreateEntryShape(entry);
+                if (!shape)
+                    return {};
+
+                const bool hasOffset = entry.m_position != Vector3::kZero || entry.m_rotation != Quaternion::kIdentity;
+                if (hasOffset)
+                    result =
+                        JPH::RotatedTranslatedShapeSettings(ToJolt(entry.m_position), ToJolt(entry.m_rotation), shape).Create();
+                else
+                    result.Set(shape);
+            }
+            else
+            {
+                JPH::StaticCompoundShapeSettings compound;
+                for (const PhysicsBodyShape& entry : definition.m_shapes)
+                {
+                    const JPH::Ref<JPH::Shape> shape = CreateEntryShape(entry);
+                    if (!shape)
+                        return {};
+
+                    compound.AddShape(ToJolt(entry.m_position), ToJolt(entry.m_rotation), shape);
+                }
+
+                result = compound.Create();
+            }
+
+            if (result.HasError() || !result.Get()->IsValidScale(ToJolt(scale)))
+                return {};
+
+            const auto scaled = result.Get()->ScaleShape(ToJolt(scale));
             return scaled.HasError() ? JPH::RefConst<JPH::Shape>() : JPH::RefConst<JPH::Shape>(scaled.Get());
         }
     } // namespace

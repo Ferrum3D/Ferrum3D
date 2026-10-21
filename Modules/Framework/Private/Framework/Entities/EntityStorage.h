@@ -53,12 +53,4 @@ namespace FE::Framework
 
         festd::unordered_dense_map<ChunkKey, festd::inline_vector<ArchetypeChunk*>, ChunkKeyHash> m_availableChunks;
     };
-
-
-    struct ComponentLoadingState final
-    {
-        Rtti::TypeID m_component = Rtti::TypeID::kNull;
-        uint64_t m_transition = 0;
-        uint64_t m_nextTransition = 1;
-    };
 } // namespace FE::Framework

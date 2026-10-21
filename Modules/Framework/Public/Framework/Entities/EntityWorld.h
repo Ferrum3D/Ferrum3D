@@ -316,6 +316,8 @@ namespace FE::Framework
 
     private:
         friend struct EntityCommandList;
+        friend struct EntityLifecycle;
+        friend struct EntityMaterializer;
         friend struct EntityScheduler;
 
         struct Impl;

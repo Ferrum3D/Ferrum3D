@@ -22,36 +22,36 @@ namespace FE::GameFramework
         FE_AssertDebug(physics, "PhysicsSystem requires WorldPhysicsService");
         const float deltaSeconds = context.m_deltaSeconds;
 
-        using InputsQuery = Query<const PhysicsBodyComponent, const TransformComponent>;
-        InputsQuery::Create()
+        // Push authored transform edits; kinematic bodies receive a target every step.
+        const auto pushInputs = [physics, deltaSeconds](const PhysicsBodyComponent& body, const TransformComponent& transform) {
+            const bool edited = transform.m_local != body.m_lastTransform;
+            if (edited || body.m_motionType == PhysicsMotionType::kKinematic)
+                physics->SetTransform(body.m_body, transform.m_local, body.m_motionType, deltaSeconds);
+        };
+
+        // Publish simulated motion; only moving dynamic bodies report a transform change.
+        const auto pullOutputs = [physics](PhysicsBodyComponent& body, TransformComponent& transform) {
+            if (body.m_motionType == PhysicsMotionType::kDynamic)
+            {
+                transform.m_local = physics->GetTransform(body.m_body, transform.m_local.Scale());
+                physics->GetVelocity(body.m_body, body.m_linearVelocity, body.m_angularVelocity);
+            }
+
+            const bool moved = body.m_motionType == PhysicsMotionType::kDynamic && transform.m_local != body.m_lastTransform;
+            body.m_lastTransform = transform.m_local;
+            return moved ? QueryWriteResult::kChanged : QueryWriteResult::kUnchanged;
+        };
+
+        Query<const PhysicsBodyComponent, const TransformComponent>::Create()
             .SetExecutionPolicy(ExecutionPolicy::kMainThread)
-            .Traverse(context,
-                      Framework::Phases::PreUpdate,
-                      [physics, deltaSeconds](const PhysicsBodyComponent& body, const TransformComponent& transform) {
-                          const bool changed = transform.m_local == body.m_lastTransform;
-                          if (changed || body.m_motionType == PhysicsMotionType::kKinematic)
-                              physics->SetTransform(body.m_body, transform.m_local, body.m_motionType, deltaSeconds);
-                      });
+            .Traverse(context, Framework::Phases::PreUpdate, pushInputs);
 
         context.m_world.RecordStage(Framework::Phases::Update, [physics, deltaSeconds] {
             physics->Step(deltaSeconds);
         });
 
-        using OutputsQuery = Query<PhysicsBodyComponent, TransformComponent>;
-        OutputsQuery::Create()
+        Query<PhysicsBodyComponent, TransformComponent>::Create()
             .SetExecutionPolicy(ExecutionPolicy::kMainThread)
-            .Traverse(context,
-                      Framework::Phases::PostUpdate,
-                      [physics](PhysicsBodyComponent& body, TransformComponent& transform) {
-                          if (body.m_motionType == PhysicsMotionType::kDynamic)
-                          {
-                              transform.m_local = physics->GetTransform(body.m_body, transform.m_local.Scale());
-                              physics->GetVelocity(body.m_body, body.m_linearVelocity, body.m_angularVelocity);
-                          }
-
-                          const bool changed = transform.m_local == body.m_lastTransform;
-                          body.m_lastTransform = transform.m_local;
-                          return changed ? QueryWriteResult::kChanged : QueryWriteResult::kUnchanged;
-                      });
+            .Traverse(context, Framework::Phases::PostUpdate, pullOutputs);
     }
 } // namespace FE::GameFramework

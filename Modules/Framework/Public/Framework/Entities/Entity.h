@@ -72,6 +72,8 @@ namespace FE::Framework
 
     private:
         friend EntityWorld;
+        friend struct EntityLifecycle;
+        friend struct EntityMaterializer;
         friend struct EntityScheduler;
         friend ArchetypeChunk;
 
