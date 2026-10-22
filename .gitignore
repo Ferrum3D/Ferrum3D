@@ -17,6 +17,9 @@ app.config
 
 # ignore the build folder
 Build/
+!/ThirdParty/JoltPhysics/Build/
+/ThirdParty/JoltPhysics/Build/*
+!/ThirdParty/JoltPhysics/Build/CMakeLists.txt
 BuildDebug/
 BuildRelease/
 BuildProfile/
