@@ -347,7 +347,9 @@ namespace FE::Framework::Windows
                 app->m_closeRequested = true;
             else
                 app->RecordEvent(Core::PlatformEvent::WindowClose(window));
-            break;
+
+            // Window owners destroy their windows; DefWindowProc would destroy the native window immediately.
+            return 0;
 
         case WM_MOVE:
             app->RecordEvent(Core::PlatformEvent::WindowMove(window));
@@ -363,6 +365,14 @@ namespace FE::Framework::Windows
 
         case WM_DISPLAYCHANGE:
             app->UpdateMonitors();
+            break;
+
+        case WM_SETCURSOR:
+            if (LOWORD(lParam) == HTCLIENT)
+            {
+                app->ApplyCursor();
+                return TRUE;
+            }
             break;
 
         case WM_MOUSEMOVE:
@@ -647,8 +657,101 @@ namespace FE::Framework::Windows
 
         const double now = Platform::GetTicks() * Platform::GetSecondsPerTick();
         const float elapsed = m_previousPollSeconds == 0 ? 0 : static_cast<float>(now - m_previousPollSeconds);
-        m_inputBackend.ProcessEvents(m_events, elapsed, now);
+        m_inputBackend.ProcessEvents(FilterCapturedInput(), elapsed, now);
         m_previousPollSeconds = now;
+    }
+
+
+    festd::span<const Core::PlatformEvent> PlatformApplication::FilterCapturedInput()
+    {
+        if (!m_isMouseCaptured && !m_isKeyboardCaptured)
+            return m_events;
+
+        m_inputEvents.clear();
+        for (const Core::PlatformEvent& event : m_events)
+        {
+            const bool isMousePress =
+                event.m_type == Core::PlatformEventType::kMouseDown || event.m_type == Core::PlatformEventType::kMouseWheel;
+            const bool isKeyboardPress = event.m_type == Core::PlatformEventType::kKeyboardKeyDown
+                || event.m_type == Core::PlatformEventType::kKeyboardCharInput;
+
+            if (isMousePress && m_isMouseCaptured)
+                continue;
+
+            if (isKeyboardPress && m_isKeyboardCaptured)
+                continue;
+
+            m_inputEvents.push_back(event);
+        }
+
+        return m_inputEvents;
+    }
+
+
+    void PlatformApplication::SetCursor(const Core::PlatformCursor cursor)
+    {
+        if (m_cursor == cursor)
+            return;
+
+        m_cursor = cursor;
+        ApplyCursor();
+    }
+
+
+    void PlatformApplication::ApplyCursor() const
+    {
+        LPCTSTR cursorName = IDC_ARROW;
+        switch (m_cursor)
+        {
+        case Core::PlatformCursor::kHidden:
+            ::SetCursor(nullptr);
+            return;
+        case Core::PlatformCursor::kArrow:
+            cursorName = IDC_ARROW;
+            break;
+        case Core::PlatformCursor::kTextInput:
+            cursorName = IDC_IBEAM;
+            break;
+        case Core::PlatformCursor::kResizeAll:
+            cursorName = IDC_SIZEALL;
+            break;
+        case Core::PlatformCursor::kResizeNS:
+            cursorName = IDC_SIZENS;
+            break;
+        case Core::PlatformCursor::kResizeEW:
+            cursorName = IDC_SIZEWE;
+            break;
+        case Core::PlatformCursor::kResizeNESW:
+            cursorName = IDC_SIZENESW;
+            break;
+        case Core::PlatformCursor::kResizeNWSE:
+            cursorName = IDC_SIZENWSE;
+            break;
+        case Core::PlatformCursor::kHand:
+            cursorName = IDC_HAND;
+            break;
+        case Core::PlatformCursor::kWait:
+            cursorName = IDC_WAIT;
+            break;
+        case Core::PlatformCursor::kProgress:
+            cursorName = IDC_APPSTARTING;
+            break;
+        case Core::PlatformCursor::kNotAllowed:
+            cursorName = IDC_NO;
+            break;
+        default:
+            FE_DebugBreak();
+            break;
+        }
+
+        ::SetCursor(::LoadCursor(nullptr, cursorName));
+    }
+
+
+    void PlatformApplication::SetInputCapture(const bool isMouseCaptured, const bool isKeyboardCaptured)
+    {
+        m_isMouseCaptured = isMouseCaptured;
+        m_isKeyboardCaptured = isKeyboardCaptured;
     }
 
 

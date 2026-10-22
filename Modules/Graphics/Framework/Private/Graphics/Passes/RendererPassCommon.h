@@ -18,7 +18,12 @@ namespace FE::Graphics
         RectF m_viewportRect{ kForceInit };
         Core::RingUploader* m_renderQueueUploader = nullptr;
         Rc<Core::Buffer> m_constants;
+        //! Set by the module that writes every pixel of the main color target; readers clear it otherwise.
+        bool m_isMainColorWritten = false;
     };
+
+
+    void ClearMainTargets(Core::FrameGraph& graph, const RendererViewData& view);
 
 
     struct RendererTargetClearPassDesc final

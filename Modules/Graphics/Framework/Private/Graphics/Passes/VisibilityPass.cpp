@@ -1,8 +1,6 @@
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/VisibilityPass.h>
-#include <Graphics/Scene/SurfaceEvaluation.h>
-#include <Shaders/Passes/Visibility/Debug.h>
 
 namespace FE::Graphics::Visibility
 {
@@ -61,26 +59,7 @@ namespace FE::Graphics::Visibility
         pass.m_drawTag = data->m_drawTag;
         pass.m_techniqueRole = data->m_techniqueRole;
         view.m_scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
-            module.AddRenderPasses(graph, *view.m_renderQueueUploader, pass);
+            module.AddRenderPasses(graph, blackboard, *view.m_renderQueueUploader, pass);
         });
-
-        if (!IsReconstructionDebug(view.m_view->GetVisibilityDebugMode()))
-            return;
-
-        InitializeDebugColor(graph, view.m_mainColorTarget);
-
-        // Reconstruction belongs to the object producer, which supplies its debug shader and data.
-        for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
-        {
-            auto* debug = graph.AllocatePassData<DebugPassDesc>();
-            debug->m_pipeline = batch.m_visibilityDebugPipeline;
-            debug->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
-            debug->m_constants.m_visibility = graph.GetSRV(output.m_target.Get());
-            debug->m_constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
-            debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
-            debug->m_constants.m_resolution = resolution;
-            debug->m_constants.m_mode = festd::to_underlying(view.m_view->GetVisibilityDebugMode());
-            graph.AddDispatchPass("VisibilityReconstruction", debug, Math::CeilDivide(resolution, 8u));
-        }
     }
 } // namespace FE::Graphics::Visibility

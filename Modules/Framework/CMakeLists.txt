@@ -37,7 +37,7 @@ target_include_directories(FeFramework PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Publi
 target_include_directories(FeFramework PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
 set_target_properties(FeFramework PROPERTIES FOLDER "Modules/Framework")
-target_link_libraries(FeFramework FeCore TracyClient)
+target_link_libraries(FeFramework FeCore TracyClient imgui)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeFramework PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

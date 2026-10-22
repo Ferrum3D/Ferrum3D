@@ -513,13 +513,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Viewport::Present()
-    {
-        Present(m_commandQueue->GetCurrentCommandBuffer());
-    }
-
-
-    void Viewport::Present(CommandBuffer* commandBuffer)
+    void Viewport::RecordPresent(CommandBuffer* commandBuffer)
     {
         FE_PROFILER_ZONE();
 
@@ -548,16 +542,20 @@ namespace FE::Graphics::Vulkan
         renderTarget->SetState(subresource, state);
 
         const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
-        const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
+        m_presentSemaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
         const VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
-        commandBuffer->EnqueueSemaphoreToWait(m_imageAvailableSemaphores[semaphoreIndex].Get(), stageFlags);
-        commandBuffer->EnqueueSemaphoreToSignal(m_renderFinishedSemaphores[semaphoreIndex].Get());
-        m_acquireCompletion[semaphoreIndex] = m_commandQueue->CloseFrame();
-        commandBuffer->EnqueueFenceToSignal(m_acquireCompletion[semaphoreIndex]);
+        commandBuffer->EnqueueSemaphoreToWait(m_imageAvailableSemaphores[m_presentSemaphoreIndex].Get(), stageFlags);
+        commandBuffer->EnqueueSemaphoreToSignal(m_renderFinishedSemaphores[m_presentSemaphoreIndex].Get());
+    }
 
-        commandBuffer->Submit();
 
-        const VkSemaphore waitSemaphore = m_renderFinishedSemaphores[semaphoreIndex]->GetNative();
+    void Viewport::QueuePresent(const Core::FenceSyncPoint& completion)
+    {
+        FE_PROFILER_ZONE();
+
+        m_acquireCompletion[m_presentSemaphoreIndex] = completion;
+
+        const VkSemaphore waitSemaphore = m_renderFinishedSemaphores[m_presentSemaphoreIndex]->GetNative();
 
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

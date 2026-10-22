@@ -15,7 +15,7 @@ namespace FE::GameFramework
         [[nodiscard]] Graphics::Scene& GetScene() const;
         [[nodiscard]] MeshSceneBridge& GetMeshes() const;
 
-        //! @brief Create a disabled camera View with the world's depth and opaque passes.
+        //! @brief Create a disabled camera View with the deferred scene pipeline, its diagnostics and tonemapping.
         [[nodiscard]] Graphics::View* CreateCameraView();
 
     protected:

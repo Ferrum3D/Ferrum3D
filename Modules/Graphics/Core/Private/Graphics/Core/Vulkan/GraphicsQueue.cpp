@@ -3,6 +3,7 @@
 #include <Graphics/Core/Vulkan/Barrier.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
+#include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -173,11 +174,20 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void GraphicsQueue::SubmitFrame()
+    void GraphicsQueue::SubmitFrame(const festd::span<Core::Viewport* const> presentedViewports)
     {
+        FE_PROFILER_ZONE();
+
         CommandBuffer* commandBuffer = GetCurrentCommandBuffer();
-        commandBuffer->EnqueueFenceToSignal(CloseFrame());
+        for (Core::Viewport* viewport : presentedViewports)
+            ImplCast(viewport)->RecordPresent(commandBuffer);
+
+        const Core::FenceSyncPoint completion = CloseFrame();
+        commandBuffer->EnqueueFenceToSignal(completion);
         commandBuffer->Submit();
+
+        for (Core::Viewport* viewport : presentedViewports)
+            ImplCast(viewport)->QueuePresent(completion);
     }
 
 

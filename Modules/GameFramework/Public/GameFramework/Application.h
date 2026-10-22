@@ -4,12 +4,13 @@
 #include <Framework/Application/Application.h>
 #include <Framework/Entities/EntityWorldInstance.h>
 #include <Graphics/Core/DeviceFactory.h>
-#include <Graphics/Passes/VisibilityDebug.h>
 
 namespace FE::Graphics
 {
+    struct ImGuiRenderer;
     struct MaterialStreamer;
     struct MeshStreamer;
+    struct RenderRequest;
     struct TextureStreamer;
 
     namespace Core
@@ -33,7 +34,6 @@ namespace FE::GameFramework
         Vector2Int m_windowSize{ 1280, 720 };
         //! @brief Graphics backend used to create the device.
         Graphics::Core::GraphicsApi m_graphicsApi = Graphics::Core::GraphicsApi::kVulkan;
-        Graphics::Visibility::DebugMode m_visibilityDebugMode = Graphics::Visibility::DebugMode::kDeferred;
     };
 
 
@@ -60,6 +60,15 @@ namespace FE::GameFramework
         virtual void ScheduleWorldFixedUpdate(Framework::EntityWorld& world);
         //! @brief Collect systems and execute the application's world schedule for one frame.
         Rc<WaitGroup> ScheduleUpdate() override;
+        //! @brief Select the views rendered this frame and their targets.
+        //!
+        //! The default renders the world's camera views into the main viewport, followed by the ImGui viewports.
+        virtual void BuildRenderRequest(Graphics::RenderRequest& request);
+
+        [[nodiscard]] Graphics::Core::Viewport* GetMainViewport() const
+        {
+            return m_viewport.Get();
+        }
 
     private:
         bool UpdateWorldLoading();
@@ -68,11 +77,11 @@ namespace FE::GameFramework
         Rc<Graphics::Core::Device> m_device;
         Rc<Graphics::Core::Viewport> m_viewport;
         Rc<Graphics::Core::PipelineFactory> m_pipelineFactory;
+        festd::unique_ptr<Graphics::ImGuiRenderer> m_imguiRenderer;
         festd::unique_ptr<Framework::EntityWorldInstance> m_world;
         IO::AssetRequest m_worldRequest;
         bool m_worldDefinitionLoaded = false;
         uint64_t m_previousUpdateTicks = 0;
-        Graphics::Visibility::DebugMode m_visibilityDebugMode = Graphics::Visibility::DebugMode::kDeferred;
         Graphics::MaterialStreamer* m_materialStreamer = nullptr;
         Graphics::MeshStreamer* m_meshStreamer = nullptr;
         Graphics::TextureStreamer* m_textureStreamer = nullptr;

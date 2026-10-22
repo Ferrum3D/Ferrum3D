@@ -61,9 +61,12 @@ namespace FE::Graphics
 
         virtual void Update() {}
         virtual void UpdateRenderData(Core::FrameGraph&, Core::RingUploader&) {}
-        virtual void PrepareRenderView(Core::FrameGraph&, Core::RingUploader&) {}
+        //! Publish per-view scene inputs into the view's blackboard after its modules have been updated.
+        virtual void PrepareRenderView(Core::FrameGraph&, Core::FrameGraphBlackboard&, Core::RingUploader&) {}
         virtual void CollectRenderBatches(RenderBatchCollector&) {}
-        virtual void AddRenderPasses(Core::FrameGraph&, Core::RingUploader&, const SceneRenderPass&) {}
+        virtual void AddRenderPasses(Core::FrameGraph&, Core::FrameGraphBlackboard&, Core::RingUploader&, const SceneRenderPass&)
+        {
+        }
 
     protected:
         explicit SceneModuleBase(Scene* scene)

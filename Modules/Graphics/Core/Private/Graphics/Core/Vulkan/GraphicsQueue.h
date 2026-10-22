@@ -50,7 +50,7 @@ namespace FE::Graphics::Vulkan
         void PublishShaderRead(Core::Texture* texture) override;
 
         void BeginFrame() override;
-        void SubmitFrame() override;
+        void SubmitFrame(festd::span<Core::Viewport* const> presentedViewports) override;
         Core::FenceSyncPoint CloseFrame() override;
         void Drain() override;
 

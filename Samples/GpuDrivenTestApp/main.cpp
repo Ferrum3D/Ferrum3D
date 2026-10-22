@@ -20,6 +20,7 @@
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
+#include <Graphics/Passes/TonemapPass.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
 #include <Graphics/Tables/MeshMemberTable.h>
@@ -180,6 +181,7 @@ namespace
             m_view->GetModules().Add<Visibility::ViewModule>();
             m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();
             m_view->GetModules().Add<DeferredShading::ViewModule>();
+            m_view->GetModules().Add<Tonemap::ViewModule>();
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
             const Vector3 cameraPosition(0.0f, 3.0f, -8.0f);
@@ -322,6 +324,7 @@ namespace
                 m_secondView->GetModules().Add<Visibility::ViewModule>();
                 m_secondView->GetModules().Add<SurfaceEvaluation::ViewModule>();
                 m_secondView->GetModules().Add<DeferredShading::ViewModule>();
+                m_secondView->GetModules().Add<Tonemap::ViewModule>();
                 auto& probePass = m_secondView->GetModules().Find<Visibility::ViewModule>();
                 probePass.m_drawTag = GMaskProbeTag;
                 probePass.m_techniqueRole = "DepthVisibility";
@@ -477,7 +480,7 @@ namespace
             HighResolutionTimer frameTimer;
             if (GBenchmarkMode)
                 frameTimer.Start();
-            Renderer::Get().Render(m_scene.Get(), m_viewport.Get());
+            Renderer::Get().Render(RenderRequest::CreateForScene(m_scene.Get(), m_viewport.Get()));
             if (GStressMode)
             {
                 const auto& scene = m_scene->GetModules().Find<MeshSceneModule>();

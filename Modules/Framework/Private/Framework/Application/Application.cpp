@@ -23,6 +23,7 @@ namespace FE::Framework
     Application::~Application()
     {
         FE_Assert(GInstance == this);
+        ShutdownImGui();
         m_mainWindow.Reset();
         m_platformApplication.Reset();
         Core::PlatformApplication::Shutdown();
@@ -39,6 +40,32 @@ namespace FE::Framework
         windowDesc.m_title = Env::GetApplicationInfo().m_name;
         m_mainWindow = m_platformApplication->CreateWindow(windowDesc);
         m_mainWindow->Show(Core::PlatformWindowShowMode::kMaximized);
+    }
+
+
+    void Application::InitializeImGui()
+    {
+        FE_Assert(m_mainWindow && !m_imgui);
+        m_imgui = festd::make_unique<ImGuiPlatform>(m_platformApplication.Get(), m_mainWindow.Get());
+    }
+
+
+    void Application::ShutdownImGui()
+    {
+        m_imgui.reset();
+    }
+
+
+    void Application::UpdateImGui()
+    {
+        FE_PROFILER_ZONE();
+
+        if (!m_imgui)
+            return;
+
+        m_imgui->NewFrame();
+        DrawImGuiWindows();
+        m_imgui->EndFrame();
     }
 
 

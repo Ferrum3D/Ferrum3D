@@ -26,6 +26,9 @@ namespace FE::Framework::Windows
         {
             return m_inputBackend;
         }
+
+        void SetCursor(Core::PlatformCursor cursor) override;
+        void SetInputCapture(bool isMouseCaptured, bool isKeyboardCaptured) override;
         bool IsCloseRequested() const override;
         festd::span<const Core::PlatformEvent> GetEvents() const override;
         festd::span<const Core::PlatformMonitorInfo> GetMonitors() const override;
@@ -51,6 +54,8 @@ namespace FE::Framework::Windows
         void RecordEvent(Core::PlatformEvent event);
         void UpdateKeyboardCodePage();
         void UpdateMonitors();
+        void ApplyCursor() const;
+        [[nodiscard]] festd::span<const Core::PlatformEvent> FilterCapturedInput();
 
         enum class MouseTrackArea
         {
@@ -69,8 +74,12 @@ namespace FE::Framework::Windows
 
         uint32_t m_keyboardCodePage = 0;
         bool m_closeRequested = false;
+        bool m_isMouseCaptured = false;
+        bool m_isKeyboardCaptured = false;
+        Core::PlatformCursor m_cursor = Core::PlatformCursor::kArrow;
         festd::inline_vector<Core::PlatformWindow*> m_windows;
         festd::vector<Core::PlatformEvent> m_events;
+        festd::vector<Core::PlatformEvent> m_inputEvents;
         festd::vector<Core::PlatformMonitorInfo> m_monitors;
     };
 

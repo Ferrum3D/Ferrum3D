@@ -36,6 +36,23 @@ namespace FE::Framework::Core
     };
 
 
+    enum class PlatformCursor : uint32_t
+    {
+        kHidden,
+        kArrow,
+        kTextInput,
+        kResizeAll,
+        kResizeNS,
+        kResizeEW,
+        kResizeNESW,
+        kResizeNWSE,
+        kHand,
+        kWait,
+        kProgress,
+        kNotAllowed,
+    };
+
+
     struct PlatformWindow;
     struct PlatformWindowDesc;
     struct PlatformEvent;
@@ -52,10 +69,21 @@ namespace FE::Framework::Core
 
         virtual void PollEvents() = 0;
         [[nodiscard]] virtual const Input::Core::Backend& GetInputBackend() const = 0;
+
+        //! @brief Select the cursor shown over the client area of application windows.
+        virtual void SetCursor(PlatformCursor cursor) = 0;
+
+        //! @brief Withhold presses, wheel and text events from the input backend while another consumer, such as UI, owns them.
+        //!
+        //! Releases and mouse movement always reach the backend, so held controls cannot get stuck. GetEvents is unaffected.
+        virtual void SetInputCapture(bool isMouseCaptured, bool isKeyboardCaptured) = 0;
+
         virtual bool IsCloseRequested() const = 0;
+
         virtual festd::span<const PlatformEvent> GetEvents() const = 0;
         virtual festd::span<const PlatformMonitorInfo> GetMonitors() const = 0;
         virtual festd::span<PlatformWindow* const> GetWindows() const = 0;
+
         virtual PlatformWindow* GetMainWindow() const = 0;
 
         static void Init();

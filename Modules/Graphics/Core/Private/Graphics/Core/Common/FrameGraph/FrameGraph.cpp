@@ -43,6 +43,10 @@ namespace FE::Graphics::Common
         Execute();
 
         m_blackboard.Reset();
+        for (Core::FrameGraphBlackboard* blackboard : m_blackboards)
+            blackboard->Reset();
+
+        m_blackboards.clear();
         m_passes.clear();
         m_scopeEvents.clear();
         m_resources.clear();
@@ -429,6 +433,8 @@ namespace FE::Graphics::Common
                 for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
                 {
                     const Core::PassTextureAccess textureAccess = field.Get<Core::PassTextureAccess>(binding.m_data, arrayIndex);
+                    if (textureAccess.m_texture == nullptr)
+                        continue;
 
                     TextureAccess access;
                     access.m_syncFlags = textureAccess.m_syncFlags;
@@ -443,6 +449,8 @@ namespace FE::Graphics::Common
                 for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
                 {
                     const Core::PassBufferAccess bufferAccess = field.Get<Core::PassBufferAccess>(binding.m_data, arrayIndex);
+                    if (bufferAccess.m_buffer == nullptr)
+                        continue;
 
                     BufferAccess access;
                     access.m_syncFlags = bufferAccess.m_syncFlags;

@@ -65,3 +65,7 @@ GameSample only supplies the world/catalog settings and selects normal or smoke 
 Application opens a shared materialization budget once per rendered frame: 32 construction/loading entity steps and 32 entities admitted to initialization/activation. Large worlds therefore become ready across several frames. Repeated commits or fixed updates in that frame share the quota. Octree culling combines small subtrees into batches targeting 64 entries; the profiler zone text reports the number of ranges and entries in each batch.
 
 Input contexts are authored in the input service descriptor in `World.asset`. Cameras reference movement, elevation, and look action assets; RMB look sensitivity is authored in the mouse-delta binding.
+
+## Debug UI
+
+The sample draws a Dear ImGui "Rendering" window. Its debug mode list is built from the modes published by the camera view's modules (`Visibility::DebugViewModule` for reconstruction modes, `GBufferDebug::ViewModule` for surface modes); the selection applies to every camera view at runtime. `--visibility-debug <mode>` selects the initial mode (`deferred` keeps lit output). Docking and multi-viewports are enabled: dragging a window outside the main window gives it its own platform window and swapchain. `--detach-debug-window` places the window outside the main viewport, which exercises that path in smoke runs. Window layout persists in `imgui.ini` next to the sample's build directory.

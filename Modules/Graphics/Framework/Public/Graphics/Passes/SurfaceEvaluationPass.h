@@ -10,6 +10,7 @@ namespace FE::Graphics::SurfaceEvaluation
     };
 
 
+    //! @brief Evaluate the materials of visible surfaces into the GBuffer targets.
     struct ViewModule final : public ViewModuleBase
     {
         FE_RTTI("D0880186-F009-4F88-896B-916A732C9BCC");

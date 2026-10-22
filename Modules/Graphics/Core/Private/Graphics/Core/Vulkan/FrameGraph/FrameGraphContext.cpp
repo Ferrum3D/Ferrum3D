@@ -171,6 +171,12 @@ namespace FE::Graphics::Vulkan
         if (m_stencilRefState.m_action == StateAction::kSet)
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
 
+        if (m_renderPassActive && m_scissorState.m_action == StateAction::kSet)
+        {
+            const VkRect2D scissor = TranslateScissor(m_scissorState.m_scissor);
+            vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+        }
+
         const GraphicsPipeline* pipeline = ImplCast(m_pipelineState.m_graphicsPipeline);
         FE_Assert(pipeline->IsReady());
 
@@ -268,6 +274,12 @@ namespace FE::Graphics::Vulkan
         if (m_stencilRefState.m_action == StateAction::kSet)
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
 
+        if (m_renderPassActive && m_scissorState.m_action == StateAction::kSet)
+        {
+            const VkRect2D scissor = TranslateScissor(m_scissorState.m_scissor);
+            vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+        }
+
         const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
         const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();
         if (descriptorSet && m_pipelineState.m_action == StateAction::kSet)
@@ -306,6 +318,12 @@ namespace FE::Graphics::Vulkan
 
         if (m_stencilRefState.m_action == StateAction::kSet)
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
+
+        if (m_renderPassActive && m_scissorState.m_action == StateAction::kSet)
+        {
+            const VkRect2D scissor = TranslateScissor(m_scissorState.m_scissor);
+            vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+        }
 
         const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
         const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();

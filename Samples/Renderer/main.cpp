@@ -18,7 +18,10 @@
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
+#include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
+#include <Graphics/Passes/TonemapPass.h>
+#include <Graphics/Passes/VisibilityDebug.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
 #include <festd/vector.h>
@@ -146,8 +149,11 @@ namespace
             m_view->GetModules().Add<Visibility::ViewModule>();
             m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();
             m_view->GetModules().Add<DeferredShading::ViewModule>();
-            if (const auto debugMode = Cli::GetValue("--visibility-debug"))
-                m_view->SetVisibilityDebugMode(Visibility::ParseDebugMode(*debugMode));
+            m_view->GetModules().Add<Visibility::DebugViewModule>();
+            m_view->GetModules().Add<GBufferDebug::ViewModule>();
+            m_view->GetModules().Add<Tonemap::ViewModule>();
+            if (const auto debugMode = Cli::GetValue("--visibility-debug"); debugMode && *debugMode != "deferred")
+                FE_Verify(m_view->SetDebugMode(Env::Name(*debugMode)), "Unknown debug mode");
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
             const Vector3 cameraPosition(0.0f, 3.0f, -8.0f);
@@ -284,7 +290,7 @@ namespace
             for (const RotatingInstance& instance : m_rotatingInstances)
                 meshSceneModule.UpdateTransform(instance.m_handle, rotation * instance.m_baseTransform);
 
-            Renderer::Get().Render(m_scene.Get(), m_viewport.Get());
+            Renderer::Get().Render(RenderRequest::CreateForScene(m_scene.Get(), m_viewport.Get()));
             return nullptr;
         }
 

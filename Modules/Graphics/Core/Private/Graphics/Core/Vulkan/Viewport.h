@@ -21,17 +21,18 @@ namespace FE::Graphics::Vulkan
         void Init(const Core::ViewportDesc& desc) override;
         [[nodiscard]] const Core::ViewportDesc& GetDesc() const override;
 
-        void Present() override;
-
         void Resize(uint32_t width, uint32_t height);
 
         Core::Texture* GetCurrentColorTarget() override;
         [[nodiscard]] bool AcquireNextImage() override;
         void PrepareBlit() override;
 
-    private:
-        void Present(CommandBuffer* commandBuffer);
+        //! Transition the acquired image for presentation and attach the frame's swapchain semaphores.
+        void RecordPresent(CommandBuffer* commandBuffer);
+        //! Present the acquired image after the frame submission that signals the completion fence.
+        void QueuePresent(const Core::FenceSyncPoint& completion);
 
+    private:
         void CreateSurface();
         bool CreateSwapChain();
         void CreateResources();
@@ -47,6 +48,7 @@ namespace FE::Graphics::Vulkan
         Core::Format m_rtvFormat = Core::Format::kUndefined;
 
         uint32_t m_imageIndex = 0;
+        uint32_t m_presentSemaphoreIndex = 0;
 
         DeviceFactory* m_deviceFactory = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;

@@ -586,11 +586,11 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::RingUploader& uploader)
+    void MeshSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                            Core::RingUploader& uploader)
     {
         FE_PROFILER_ZONE_NAMED("BuildCpuMeshWork");
 
-        auto& blackboard = graph.GetBlackboard();
         const auto& view = blackboard.Get<RendererViewData>();
         auto& culled = blackboard.Add<CulledMeshView>();
         const Matrix4x4 viewProjection = view.m_view->GetViewProjectionMatrix();
@@ -654,11 +654,12 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass)
+    void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                          Core::RingUploader& uploader, const SceneRenderPass& pass)
     {
         FE_PROFILER_ZONE();
 
-        const auto& culled = graph.GetBlackboard().Get<CulledMeshView>();
+        const auto& culled = blackboard.Get<CulledMeshView>();
         if (!culled.m_classification)
             return;
 

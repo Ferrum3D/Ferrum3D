@@ -43,9 +43,9 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual const ViewportDesc& GetDesc() const = 0;
 
         virtual Texture* GetCurrentColorTarget() = 0;
-        // False means the surface is temporarily unavailable; retry after processing window events.
+        //! False means the surface is temporarily unavailable; retry after processing window events.
+        //! Present an acquired image by passing the viewport to GraphicsQueue::SubmitFrame of the same frame.
         [[nodiscard]] virtual bool AcquireNextImage() = 0;
         virtual void PrepareBlit() = 0;
-        virtual void Present() = 0;
     };
 } // namespace FE::Graphics::Core

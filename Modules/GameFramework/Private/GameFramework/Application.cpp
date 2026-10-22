@@ -23,6 +23,7 @@
 #include <Graphics/Core/Reflection.gen.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Viewport.h>
+#include <Graphics/Features/ImGui/ImGuiRenderer.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Reflection.gen.h>
 #include <Graphics/Renderer.h>
@@ -51,13 +52,13 @@ namespace FE::GameFramework
 
     bool Application::Initialize(const ApplicationSettings& settings)
     {
-        m_visibilityDebugMode = settings.m_visibilityDebugMode;
         FE_PROFILER_ZONE();
         FE_Assert(Threading::IsMainThread() && !m_device);
 
         InitializeWindow();
         m_mainWindow->Show(Framework::Core::PlatformWindowShowMode::kNormal);
         m_mainWindow->SetSize(settings.m_windowSize);
+        InitializeImGui();
 
         Core::DeviceFactory::Init(settings.m_graphicsApi);
         auto& factory = Core::DeviceFactory::Get();
@@ -83,6 +84,7 @@ namespace FE::GameFramework
         m_viewport = m_device->CreateViewport(pool, graphicsQueue);
         m_viewport->Init(Core::ViewportDesc::Create(m_mainWindow->GetClientRect(), m_mainWindow->GetNativeHandle().m_value));
         m_pipelineFactory = m_device->CreatePipelineFactory(renderer.GetDescriptorManager());
+        m_imguiRenderer = festd::make_unique<ImGuiRenderer>(m_device.Get(), m_viewport.Get());
 
         m_materialStreamer =
             Memory::DefaultNew<MaterialStreamer>(renderer.GetMaterialParameterAllocator(), m_pipelineFactory.Get());
@@ -186,15 +188,13 @@ namespace FE::GameFramework
             if (worldReady)
                 m_worldRequest.Reset();
 
-            auto* graphics = GetWorld().FindService<WorldGraphicsSceneService>();
-            Scene* scene = graphics ? &graphics->GetScene() : nullptr;
-            if (scene != nullptr)
-            {
-                for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
-                    scene->GetView(viewIndex)->SetVisibilityDebugMode(m_visibilityDebugMode);
-            }
+            // UI reads and writes scene state, so the frame runs after the renderer released the previous frame's scene.
+            UpdateImGui();
+            m_imguiRenderer->Submit();
 
-            Renderer::Get().RenderAsync(scene, m_viewport.Get());
+            RenderRequest request;
+            BuildRenderRequest(request);
+            Renderer::Get().RenderAsync(std::move(request));
 
             if (maxFrames && worldReady && ++frames == maxFrames)
                 break;
@@ -213,6 +213,8 @@ namespace FE::GameFramework
             return;
 
         Renderer::Get().WaitForRender();
+        m_imguiRenderer.reset();
+        ShutdownImGui();
         m_device->WaitIdle();
         m_world.reset();
         m_worldRequest.Reset();
@@ -239,6 +241,22 @@ namespace FE::GameFramework
     {
         FE_Assert(m_world);
         return m_world->GetWorld();
+    }
+
+
+    void Application::BuildRenderRequest(RenderRequest& request)
+    {
+        request.AddViewport(m_viewport.Get());
+
+        // Cameras render first; UI composites over them without scene targets.
+        if (const auto* graphics = GetWorld().FindService<WorldGraphicsSceneService>())
+        {
+            const Scene& scene = graphics->GetScene();
+            for (uint32_t viewIndex = 0; viewIndex < scene.GetViewCount(); ++viewIndex)
+                request.AddView(scene.GetView(viewIndex), m_viewport.Get());
+        }
+
+        m_imguiRenderer->AddViews(request);
     }
 
 

@@ -5,9 +5,11 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
+#include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/SurfaceWorkBuilder.h>
+#include <Graphics/Passes/VisibilityDebug.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Scene/SceneImpl.h>
 #include <Graphics/Scene/SurfaceEvaluation.h>
@@ -24,6 +26,8 @@ namespace FE::Graphics::DeferredProbe
             View* view = scene->CreateView();
             view->GetModules().Add<Visibility::ViewModule>();
             view->GetModules().Add<SurfaceEvaluation::ViewModule>();
+            view->GetModules().Add<Visibility::DebugViewModule>();
+            view->GetModules().Add<GBufferDebug::ViewModule>();
             const Vector2UInt resolution(33, 17);
             const uint32_t bytes = resolution.x * resolution.y * sizeof(uint32_t);
             Rc<Core::Texture> color =
@@ -42,13 +46,11 @@ namespace FE::Graphics::DeferredProbe
             ASSERT_TRUE(inspect->IsReady());
             Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
 
-            for (const auto mode : { Visibility::DebugMode::kVisibility,
-                                     Visibility::DebugMode::kNormal,
-                                     Visibility::DebugMode::kDepthError,
-                                     Visibility::DebugMode::kEvaluationGroup })
+            for (const Env::Name mode :
+                 { Env::Name("visibility"), Env::Name("normal"), Env::Name("depth-error"), Env::Name("evaluation-group") })
             {
-                SCOPED_TRACE(festd::to_underlying(mode));
-                view->SetVisibilityDebugMode(mode);
+                SCOPED_TRACE(mode.c_str());
+                ASSERT_TRUE(view->SetDebugMode(mode));
                 queue->BeginFrame();
                 graph->BeginFrame();
                 auto& blackboard = graph->GetBlackboard();
@@ -74,7 +76,9 @@ namespace FE::Graphics::DeferredProbe
                     context.ClearRenderTargets();
                 });
                 Visibility::AddPasses(*graph, blackboard);
+                Visibility::AddDebugPasses(*graph, blackboard);
                 SurfaceEvaluation::AddPasses(*graph, blackboard);
+                GBufferDebug::AddPasses(*graph, blackboard);
 
                 auto* check = graph->AllocatePassData<PassDesc>();
                 check->m_pipeline = inspect;

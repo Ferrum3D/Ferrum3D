@@ -108,7 +108,6 @@ namespace
         Core::FenceSyncPoint m_submissionWait;
         bool m_acquiredOnMainThread = true;
         uint64_t m_acquireWorker = 0;
-        uint32_t m_presents = 0;
         Core::ViewportDesc m_desc{ 64, 64, 0 };
 
         explicit SuspendedRenderViewport(Core::Device* device)
@@ -149,12 +148,6 @@ namespace
 
         void PrepareBlit() override {}
 
-
-        void Present() override
-        {
-            ++m_presents;
-        }
-
     private:
         void DestroyObject() override
         {
@@ -193,7 +186,7 @@ TEST(AsyncRenderer, SceneHandoffPrecedesAcquisitionAndSuspendedFramesRetire)
         {
             View* view = scene->CreateView();
             view->SetEnabled(true);
-            renderer.RenderAsync(scene, viewport.Get());
+            renderer.RenderAsync(RenderRequest::CreateForScene(scene, viewport.Get()));
             viewport->m_acquiring->Wait();
             renderer.WaitForScene();
             EXPECT_FALSE(viewport->m_acquiredOnMainThread);
@@ -215,7 +208,6 @@ TEST(AsyncRenderer, SceneHandoffPrecedesAcquisitionAndSuspendedFramesRetire)
 
             viewport->m_resume->Signal();
             renderer.WaitForRender();
-            EXPECT_EQ(viewport->m_presents, 0u);
 
             viewport->m_acquiring = WaitGroup::Create();
             viewport->m_resume = WaitGroup::Create();
@@ -349,7 +341,8 @@ namespace
             });
             viewport->PrepareBlit();
             graph->CompileAndExecute();
-            viewport->Present();
+            Core::Viewport* presentedViewport = viewport.Get();
+            queue->SubmitFrame({ &presentedViewport, 1 });
             pool->EndFrame();
             device->EndFrame();
             return true;

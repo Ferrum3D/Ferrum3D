@@ -30,6 +30,14 @@ namespace FE::Graphics::Core
             return m_blackboard;
         }
 
+        //! Create a blackboard that lives until the graph executes, e.g. to retain one view's data across setup phases.
+        FrameGraphBlackboard& CreateBlackboard()
+        {
+            FrameGraphBlackboard* blackboard = Memory::New<FrameGraphBlackboard>(&m_linearAllocator, &m_linearAllocator);
+            m_blackboards.push_back(blackboard);
+            return *blackboard;
+        }
+
         template<class T>
         T* AllocatePassData()
         {
@@ -131,6 +139,7 @@ namespace FE::Graphics::Core
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
+        festd::inline_vector<FrameGraphBlackboard*, 8> m_blackboards;
         festd::inline_vector<BasePassDesc, 4> m_basePassDescs;
     };
 

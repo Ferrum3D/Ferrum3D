@@ -1,10 +1,12 @@
 #pragma once
 #include <Graphics/Core/Fence.h>
+#include <festd/span.h>
 
 namespace FE::Graphics::Core
 {
     struct Buffer;
     struct Texture;
+    struct Viewport;
 
     struct GraphicsQueue : public DeviceObject
     {
@@ -20,8 +22,9 @@ namespace FE::Graphics::Core
 
         //! Reserve the frame timeline; command storage waits are deferred until recording starts.
         virtual void BeginFrame() = 0;
-        //! Submit a frame without a presentation image (for suspended/out-of-date viewports).
-        virtual void SubmitFrame() = 0;
+        //! Submit the frame, then present the viewports that acquired an image during it.
+        //! Frames without presentation images (suspended/out-of-date viewports) pass no viewports.
+        virtual void SubmitFrame(festd::span<Viewport* const> presentedViewports = {}) = 0;
         virtual FenceSyncPoint CloseFrame() = 0;
         virtual void Drain() = 0;
     };

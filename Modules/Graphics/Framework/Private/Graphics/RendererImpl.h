@@ -20,8 +20,8 @@ namespace FE::Graphics
 
         Scene* CreateScene() override;
         void DestroyScene(Scene* scene) override;
-        void Render(Scene* scene, Core::Viewport* viewport) override;
-        void RenderAsync(Scene* scene, Core::Viewport* viewport) override;
+        void Render(RenderRequest request) override;
+        void RenderAsync(RenderRequest request) override;
         void WaitForScene() override;
         void WaitForRender() override;
 
@@ -37,11 +37,29 @@ namespace FE::Graphics
         }
 
     private:
-        void RenderFrame(Scene* scene, Core::Viewport* viewport, WaitGroup& sceneReady);
-        void PrepareFrameGraph(Scene* scene, Core::Viewport* viewport);
-        void ClearTargets(Core::FrameGraph& graph, Core::Viewport& viewport);
-        void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
-                             Core::Viewport& viewport);
+        struct FrameView final
+        {
+            View* m_view = nullptr;
+            Core::Viewport* m_viewport = nullptr;
+            Core::FrameGraphBlackboard* m_blackboard = nullptr;
+        };
+
+
+        struct FrameViewport final
+        {
+            Core::Viewport* m_viewport = nullptr;
+            bool m_isAcquired = false;
+            bool m_isInitialized = false;
+        };
+
+        using FrameViewList = festd::inline_vector<FrameView, 8>;
+        using FrameViewportList = festd::inline_vector<FrameViewport, 4>;
+
+        void RenderFrame(WaitGroup& sceneReady);
+        void PrepareFrameGraph(FrameViewList& views);
+        void SetupView(const FrameView& view);
+        void AcquireViewports(FrameViewportList& viewports);
+        void AddOutputPasses(const FrameViewList& views, FrameViewportList& viewports);
 
         void DoRelease() override;
 
@@ -57,8 +75,8 @@ namespace FE::Graphics
         festd::unique_ptr<DB::Database> m_database;
         festd::unique_ptr<MaterialParameterAllocator> m_materialParameters;
         festd::vector<Rc<Scene>> m_scenes;
-        Rc<Core::Texture> m_mainColorTarget;
-        Rc<Core::Texture> m_mainDepthTarget;
+        //! Retained by the queued frame and released by the caller joining it.
+        RenderRequest m_request;
         Core::RingUploader m_renderQueueUploader;
     };
 } // namespace FE::Graphics

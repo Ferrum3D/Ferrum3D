@@ -38,14 +38,12 @@ namespace FE::Graphics::DeferredShading
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
     {
-        if (!blackboard.Contains<ViewModule*>() || !blackboard.Contains<SurfaceEvaluation::Output>())
+        const SurfaceEvaluation::Output* surfaces = blackboard.TryGet<SurfaceEvaluation::Output>();
+        if (!blackboard.Contains<ViewModule*>() || surfaces == nullptr || blackboard.Contains<ViewColorOverride>())
             return;
 
-        const RendererViewData& view = blackboard.Get<RendererViewData>();
-        if (!NeedsDeferredShading(view.m_view->GetVisibilityDebugMode()))
-            return;
-
-        const auto& gBufferTargets = blackboard.Get<SurfaceEvaluation::Output>().m_gBufferTargets;
+        RendererViewData& view = blackboard.Get<RendererViewData>();
+        const auto& gBufferTargets = surfaces->m_gBufferTargets;
 
         FE_FG_SCOPE(graph, "DeferredShading");
         const Vector2UInt resolution = gBufferTargets[0]->GetDesc().GetSize2D();
@@ -61,6 +59,7 @@ namespace FE::Graphics::DeferredShading
         initialize->m_constants.m_resolution = resolution;
         initialize->m_constants.m_shaderCount = shaderCount;
         graph.AddDispatchPass("InitializeDeferredColor", initialize, Math::CeilDivide(resolution, 8u));
+        view.m_isMainColorWritten = true;
         if (pipelines.empty())
             return;
 

@@ -190,7 +190,9 @@ namespace FE::Framework::Windows
         if (parent != m_parent)
         {
             m_parent = ImplCast(parent);
-            SetWindowLongPtrW(m_hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(m_parent->m_hwnd));
+
+            const HWND parentHandle = m_parent ? m_parent->m_hwnd : nullptr;
+            SetWindowLongPtrW(m_hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(parentHandle));
         }
     }
 
@@ -218,7 +220,11 @@ namespace FE::Framework::Windows
         SetWindowLongW(m_hwnd, GWL_STYLE, static_cast<LONG>(style));
         SetWindowLongW(m_hwnd, GWL_EXSTYLE, static_cast<LONG>(exStyle));
 
-        RECT rect = ConvertRect(m_desc.m_rect);
+        // Keep the current client area; the user may have moved or resized the window since it was created.
+        RECT rect;
+        ::GetClientRect(m_hwnd, &rect);
+        ::MapWindowPoints(m_hwnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+        m_desc.m_rect = ConvertRect(rect);
         AdjustWindowRectEx(&rect, style, FALSE, exStyle);
 
         SetWindowPos(m_hwnd,

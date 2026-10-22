@@ -144,6 +144,19 @@ namespace FE::Graphics
             }
         }
 
+        template<class TFunctor>
+        void ForEachActive(TFunctor functor) const
+        {
+            for (uint32_t moduleIndex = 0; moduleIndex < m_list.size(); ++moduleIndex)
+            {
+                if (m_active.test(moduleIndex))
+                {
+                    FE_AssertDebug(!m_free.test(moduleIndex));
+                    functor(static_cast<const TBaseModule&>(*m_list[moduleIndex].Get()));
+                }
+            }
+        }
+
     private:
         static_assert(std::is_base_of_v<Memory::RefCountedObjectBase, TBaseModule>);
 

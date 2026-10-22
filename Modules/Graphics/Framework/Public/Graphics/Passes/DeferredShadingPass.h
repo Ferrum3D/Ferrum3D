@@ -4,6 +4,7 @@
 
 namespace FE::Graphics::DeferredShading
 {
+    //! @brief Shade evaluated GBuffer surfaces into the main color target.
     struct ViewModule final : public ViewModuleBase
     {
         FE_RTTI("3F99C20A-F2DE-442A-AC4E-930462412DBD");

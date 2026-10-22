@@ -47,7 +47,7 @@ target_include_directories(FeGraphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Shader
 target_include_directories(FeGraphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/ThirdParty/FidelityFX")
 
 set_target_properties(FeGraphics PROPERTIES FOLDER "Modules/Graphics")
-target_link_libraries(FeGraphics FeGraphicsCore TracyClient)
+target_link_libraries(FeGraphics FeGraphicsCore TracyClient imgui)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeGraphics PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

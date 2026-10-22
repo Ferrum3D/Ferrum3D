@@ -4,7 +4,6 @@
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Scene/SurfaceEvaluation.h>
 #include <Shaders/Deferred/Surface.h>
-#include <Shaders/Passes/Visibility/Debug.h>
 
 namespace FE::Graphics::SurfaceEvaluation
 {
@@ -13,54 +12,6 @@ namespace FE::Graphics::SurfaceEvaluation
     namespace
     {
         FE_COMPUTE_PIPELINE_SET(ClearSurfacePipeline, "Shaders/Deferred/ClearSurface.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(SurfaceDebugPipeline, "Shaders/Deferred/SurfaceDebug.cs.hlsl");
-
-
-        void AddDebugPass(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
-        {
-            const RendererViewData& view = blackboard.Get<RendererViewData>();
-            const auto& targets = blackboard.Get<Output>().m_gBufferTargets;
-            const auto& visibilityData = blackboard.Get<Visibility::Output>();
-            Core::Texture* visibility = visibilityData.m_target.Get();
-            const Vector2UInt resolution = visibility->GetDesc().GetSize2D();
-            if (view.m_view->GetVisibilityDebugMode() == DebugMode::kDeferred)
-                return;
-
-            const bool debugGroups = view.m_view->GetVisibilityDebugMode() == DebugMode::kEvaluationGroup;
-            if (debugGroups)
-            {
-                InitializeDebugColor(graph, view.m_mainColorTarget);
-                if (blackboard.Get<SurfaceEvaluationInputs>().empty())
-                    return;
-            }
-
-            auto* debug = graph.AllocatePassData<DebugPassDesc>();
-            debug->m_pipeline = SurfaceDebugPipeline::GetPipeline();
-            debug->m_constants.m_g0 = graph.GetSRV(targets[0].Get());
-            debug->m_constants.m_g1 = graph.GetSRV(targets[1].Get());
-            debug->m_constants.m_g2 = graph.GetSRV(targets[2].Get());
-            debug->m_constants.m_g3 = graph.GetSRV(targets[3].Get());
-            debug->m_constants.m_visibility = graph.GetSRV(visibility);
-            debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
-            debug->m_constants.m_resolution = resolution;
-            debug->m_constants.m_mode = festd::to_underlying(view.m_view->GetVisibilityDebugMode());
-
-            if (debugGroups)
-            {
-                for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
-                {
-                    auto* groupDebug = graph.AllocatePassData<DebugPassDesc>();
-                    *groupDebug = *debug;
-                    groupDebug->m_pipeline = batch.m_surfaceDebugPipeline;
-                    groupDebug->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
-                    graph.AddDispatchPass("SurfaceGroupDebug", groupDebug, Math::CeilDivide(resolution, 8u));
-                }
-            }
-            else
-            {
-                graph.AddDispatchPass("GBufferDebug", debug, Math::CeilDivide(resolution, 8u));
-            }
-        }
     } // namespace
 
 
@@ -87,16 +38,21 @@ namespace FE::Graphics::SurfaceEvaluation
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
     {
-        if (!blackboard.Contains<ViewModule*>() || !blackboard.Contains<Visibility::Output>())
+        const Visibility::Output* visibilityData = blackboard.TryGet<Visibility::Output>();
+        if (!blackboard.Contains<ViewModule*>() || visibilityData == nullptr)
             return;
 
-        const RendererViewData& view = blackboard.Get<RendererViewData>();
-        if (!NeedsSurfaceEvaluation(view.m_view->GetVisibilityDebugMode()))
-            return;
+        // Debug output that does not read the GBuffer makes evaluation redundant.
+        if (const ViewColorOverride* colorOverride = blackboard.TryGet<ViewColorOverride>())
+        {
+            if (!colorOverride->m_needsSurfaceEvaluation)
+                return;
+        }
 
         FE_FG_SCOPE(graph, "SurfaceEvaluation");
-        const Visibility::Output& visibilityData = blackboard.Get<Visibility::Output>();
-        Core::Texture* visibility = visibilityData.m_target.Get();
+
+        const RendererViewData& view = blackboard.Get<RendererViewData>();
+        Core::Texture* visibility = visibilityData->m_target.Get();
         const Vector2UInt resolution = visibility->GetDesc().GetSize2D();
 
         auto& output = blackboard.Add<Output>();
@@ -159,7 +115,5 @@ namespace FE::Graphics::SurfaceEvaluation
                 graph.AddDispatchIndirectPass("EvaluateSurface", passDesc);
             }
         }
-
-        AddDebugPass(graph, blackboard);
     }
 } // namespace FE::Graphics::SurfaceEvaluation

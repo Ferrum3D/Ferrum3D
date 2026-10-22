@@ -97,7 +97,8 @@ namespace FE::Graphics::Common
 
     void FrameGraphContext::SetScissor(const RectInt scissor)
     {
-        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kScissor), "Scissor already set");
+        // Active render passes retain their scissor across draws, but individual draws may replace it.
+        FE_Assert(m_renderPassActive || !Bit::AnySet(m_setStateMask, PipelineStateFlags::kScissor), "Scissor already set");
         m_setStateMask |= PipelineStateFlags::kScissor;
 
         if (m_scissorState.m_scissor != scissor)

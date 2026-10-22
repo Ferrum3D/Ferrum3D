@@ -105,8 +105,10 @@ namespace FE::Graphics
         void UpdateMaterial(MeshHandle handle, const IO::AssetLease<MaterialInstanceAsset>& materialLease);
 
         void UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader) override;
-        void PrepareRenderView(Core::FrameGraph& graph, Core::RingUploader& uploader) override;
-        void AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass) override;
+        void PrepareRenderView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                               Core::RingUploader& uploader) override;
+        void AddRenderPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Core::RingUploader& uploader,
+                             const SceneRenderPass& pass) override;
 
         // Indexed batch slots; destroyed batches leave null pointers until their slots are reused.
         [[nodiscard]] const festd::vector<MeshBatch*>& GetBatches() const

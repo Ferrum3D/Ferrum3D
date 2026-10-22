@@ -1,7 +1,10 @@
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <Graphics/Assets/Streamers.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
+#include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
+#include <Graphics/Passes/TonemapPass.h>
+#include <Graphics/Passes/VisibilityDebug.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
 
@@ -53,6 +56,9 @@ namespace FE::GameFramework
         view->GetModules().Add<Graphics::Visibility::ViewModule>();
         view->GetModules().Add<Graphics::SurfaceEvaluation::ViewModule>();
         view->GetModules().Add<Graphics::DeferredShading::ViewModule>();
+        view->GetModules().Add<Graphics::Visibility::DebugViewModule>();
+        view->GetModules().Add<Graphics::GBufferDebug::ViewModule>();
+        view->GetModules().Add<Graphics::Tonemap::ViewModule>();
         view->SetEnabled(false);
         return view;
     }
