@@ -1,12 +1,15 @@
 ﻿#pragma once
 #include <Core/Math/Octree.h>
 #include <Core/Math/Sphere.h>
+#include <Core/Memory/BuddyAllocator.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Base/DrawTag.h>
+#include <Graphics/Core/Fence.h>
 #include <Graphics/Database/Base.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Scene/ComputePassRegistry.h>
+#include <Graphics/Scene/Culling.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Tables/Forwards.h>
@@ -62,7 +65,12 @@ namespace FE::Graphics
         Rc<Core::Buffer> m_buffer;
         uint32_t m_meshGeneration = 0;
         uint32_t m_materialGeneration = kInvalidIndex;
+        //! The most detailed resident LOD in asset order, where LOD zero is the least detailed one.
         uint32_t m_residentLod = kInvalidIndex;
+        //! The largest meshlet count of the resident LODs.
+        uint32_t m_maxMeshletCount = 0;
+        //! Words of meshlet visibility bits each instance needs to cover any of its LODs.
+        uint32_t m_meshletVisibilityWords = 0;
         festd::vector<MeshHandle> m_instances;
     };
 
@@ -156,6 +164,28 @@ namespace FE::Graphics
     private:
         void DoRelease() override;
 
+        static constexpr uint32_t kCullingStatsReadbackCount = 4;
+
+        struct CullingStatsReadback final
+        {
+            Rc<Core::Buffer> m_buffer;
+            Core::FenceSyncPoint m_fence;
+            bool m_isPending = false;
+        };
+
+        //! Culling state that persists across the frames of one view.
+        struct ViewCullingState final
+        {
+            const View* m_view = nullptr;
+            uint64_t m_lastFrameIndex = 0;
+            Rc<Core::Buffer> m_visibility;
+            uint32_t m_visibilityCapacity = 0;
+            Rc<Core::Buffer> m_meshletVisibility;
+            uint32_t m_meshletVisibilityCapacity = 0;
+            Rc<Core::Buffer> m_stats;
+            festd::array<CullingStatsReadback, kCullingStatsReadbackCount> m_readbacks;
+        };
+
         struct InstanceRecord final
         {
             Matrix4x4* m_transform = nullptr;
@@ -164,6 +194,7 @@ namespace FE::Graphics
             MeshBatch* m_batch = nullptr;
             MeshGroup* m_group = nullptr;
             MaterialParameterAllocator::Allocation m_parameters;
+            Memory::BuddyAllocator::Handle m_meshletVisibility;
             uint32_t m_materialGeneration = 0;
             uint32_t m_generation = 1;
         };
@@ -179,6 +210,13 @@ namespace FE::Graphics
         MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
         [[nodiscard]] Aabb CalculateBatchBounds(const MeshBatch* batch) const;
         void UpdateBatchMembership(MeshBatch* batch);
+        void CollectCullDispatches(const Culling::PassData& culling);
+        void AllocateMeshletVisibility(InstanceRecord& record);
+        void FreeMeshletVisibility(InstanceRecord& record);
+        ViewCullingState& AcquireViewCullingState(Core::FrameGraph& graph, Core::RingUploader& uploader, const View* view);
+        void ReleaseUnusedViewCullingStates();
+        void ResolveCullingStats(ViewCullingState& state, Culling::Stats* output) const;
+        void ScheduleCullingStatsReadback(Core::FrameGraph& graph, ViewCullingState& state) const;
 
         MeshGroup* FindOrCreateMeshGroup(const IO::AssetLease<MeshAsset>& meshAsset,
                                          const IO::AssetLease<MaterialInstanceAsset>& material);
@@ -196,6 +234,11 @@ namespace FE::Graphics
         festd::vector<uint32_t> m_dirtyBatches;
         festd::vector<Aabb> m_dirtyBatchBounds;
         festd::vector<MeshPass::CullDispatch> m_cullDispatches[Octree::kMaxTraversalTasks];
+        festd::vector<festd::unique_ptr<ViewCullingState>> m_viewCullingStates;
+        Memory::BuddyAllocator m_meshletVisibilityAllocator;
+        //! The end of the highest meshlet visibility range allocated so far, in words.
+        uint32_t m_meshletVisibilityWordCount = 0;
+        uint64_t m_frameIndex = 0;
 
         Rc<MeshLodInfoTable> m_meshLodInfoTable;
         Rc<MeshGroupTable> m_meshGroupTable;

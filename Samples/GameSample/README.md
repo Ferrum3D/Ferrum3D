@@ -83,6 +83,8 @@ Input contexts are authored in the input service descriptor in `World.asset`. Ca
 
 ## Debug UI
 
+The "Culling" section toggles instance frustum and occlusion culling, meshlet frustum and occlusion culling, and LOD selection, sets the LOD error threshold in pixels, and freezes the culling camera. While frozen, all culling (frustum, LOD selection, instance and meshlet occlusion against the depth pyramid captured when the freeze started) uses the camera of that frame, and its frustum is drawn in yellow, so moving away shows exactly what that camera would render. "Culling statistics" shows the first view's instances, meshlets and triangles tested, culled and rendered, and rendered instances per LOD. "Color meshes by LOD" (debug mode `lod`) colors meshes by their selected LOD, from green (most detailed) through yellow and red to blue. `--no-occlusion-culling` and `--no-lod-selection` set the initial settings; smoke runs log the statistics.
+
 The sample draws a Dear ImGui "Rendering" window. Its debug mode list is built from the modes published by the camera view's modules (`Visibility::DebugViewModule` for reconstruction modes, `GBufferDebug::ViewModule` for surface modes); the selection applies to every camera view at runtime. `--visibility-debug <mode>` selects the initial mode (`deferred` keeps lit output). Docking and multi-viewports are enabled: dragging a window outside the main window gives it its own platform window and swapchain. `--detach-debug-window` places the window outside the main viewport, which exercises that path in smoke runs. Window layout persists in `imgui.ini` next to the sample's build directory.
 
 The project's editor input assets live under `Assets/Editor/Input`, manually copied from

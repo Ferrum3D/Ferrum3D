@@ -19,6 +19,7 @@
 
 #    define FE_CONST const
 #    define FE_CONSTEXPR inline constexpr
+#    define FE_INLINE inline
 
 #    define FE_INIT(...) = __VA_ARGS__
 

@@ -1,4 +1,5 @@
 #include "DeferredProbe.h"
+#include "DepthPyramidProbe.h"
 #include "GpuProbe.h"
 #include "RasterProbe.h"
 #include "SurfaceProbe.h"
@@ -527,8 +528,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_EQ(words[2], std::bit_cast<uint32_t>(2.25f));
             readback->Unmap();
             Core::GraphicsPipelineRequest coverageRequest;
-            coverageRequest.m_desc.SetAmplificationShader(Env::Name("Shaders/Passes/MeshPass/MeshCull.as.hlsl"))
-                .SetMeshShader(Env::Name("Shaders/Passes/Visibility/DepthVisibility.ms.hlsl"))
+            coverageRequest.m_desc.SetMeshShader(Env::Name("Shaders/Passes/Visibility/DepthVisibility.ms.hlsl"))
                 .SetPixelShader(Env::Name("Shaders/Passes/Visibility/DepthVisibility.ps.hlsl"))
                 .SetRTVFormat(Core::Format::kR32G32_UINT)
                 .SetDSVFormat(Core::Format::kD32_SFLOAT);
@@ -583,6 +583,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), true);
             DeferredProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+            DepthPyramidProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
 #if FE_PLATFORM_WINDOWS
             CheckWorkerSurfaceExtent(device.Get());
             CheckViewportSuspension(device.Get(), pool.Get(), queue.Get(), descriptors.Get());

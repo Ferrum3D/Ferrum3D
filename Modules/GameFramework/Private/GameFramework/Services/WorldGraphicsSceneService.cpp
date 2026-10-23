@@ -1,12 +1,14 @@
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <Graphics/Assets/Streamers.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
+#include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/TonemapPass.h>
 #include <Graphics/Passes/VisibilityDebug.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
+#include <Graphics/Scene/Culling.h>
 
 namespace FE::GameFramework
 {
@@ -53,7 +55,9 @@ namespace FE::GameFramework
         FE_PROFILER_ZONE();
 
         Graphics::View* view = GetScene().CreateView();
+        view->GetModules().Add<Graphics::Culling::ViewModule>();
         view->GetModules().Add<Graphics::Visibility::ViewModule>();
+        view->GetModules().Add<Graphics::DepthPyramidPass::ViewModule>();
         view->GetModules().Add<Graphics::SurfaceEvaluation::ViewModule>();
         view->GetModules().Add<Graphics::DeferredShading::ViewModule>();
         view->GetModules().Add<Graphics::Visibility::DebugViewModule>();

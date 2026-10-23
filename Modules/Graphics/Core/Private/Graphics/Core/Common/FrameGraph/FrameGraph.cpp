@@ -970,7 +970,10 @@ namespace FE::Graphics::Common
         const Core::TextureSubresourceIterator subresourceIterator(access.m_subresource);
         for (const auto [mipIndex, arrayIndex] : subresourceIterator)
         {
-            const Core::TextureSubresource subresource = access.m_subresource.Slice(mipIndex, arrayIndex);
+            // The iterator yields absolute indices; slices are relative to the accessed view, e.g. a single mip of a pyramid.
+            const uint32_t mipOffset = static_cast<uint32_t>(mipIndex) - access.m_subresource.m_mostDetailedMipSlice;
+            const uint32_t arrayOffset = static_cast<uint32_t>(arrayIndex) - access.m_subresource.m_firstArraySlice;
+            const Core::TextureSubresource subresource = access.m_subresource.Slice(mipOffset, arrayOffset);
             const auto existing = festd::find_if(pass.m_accessedTextures, [&](const TextureAccess& other) {
                 return other.m_localResourceIndex == localResourceIndex && other.m_subresource == subresource;
             });

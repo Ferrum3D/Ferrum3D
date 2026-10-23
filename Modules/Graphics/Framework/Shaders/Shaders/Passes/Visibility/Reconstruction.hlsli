@@ -63,23 +63,21 @@ bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, cons
 {
     result = (ReconstructedAttributes)0;
     const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;
-    const uint meshletIndex = visibility.y >> kPrimitiveBits;
-    const uint primitiveIndex = visibility.y & (kMaxPrimitiveCount - 1);
+    const uint meshletIndex = DecodeMeshlet(visibility.y);
+    const uint primitiveIndex = DecodePrimitive(visibility.y);
     if (meshletIndex >= draw.m_lodInfo.m_meshletCount)
         return false;
 
-    const uint remapOffset = draw.m_lodInfo.m_vertexCount * sizeof(VertexInput);
-    const uint headerOffset = remapOffset + draw.m_lodInfo.m_indexCount * sizeof(uint);
-    const uint triangleOffset = headerOffset + draw.m_lodInfo.m_meshletCount * sizeof(Core::MeshletHeader);
+    const MeshletLayout layout = GetMeshletLayout(draw.m_lodInfo);
     const Core::MeshletHeader header =
-        draw.m_geometry.Read<Core::MeshletHeader>(headerOffset + meshletIndex * sizeof(Core::MeshletHeader));
+        draw.m_geometry.Read<Core::MeshletHeader>(layout.m_headerOffset + meshletIndex * sizeof(Core::MeshletHeader));
     if (primitiveIndex >= header.m_primitiveCount)
         return false;
 
-    const uint3 local = LoadPrimitive(draw, header.m_primitiveOffset + primitiveIndex, triangleOffset);
-    const uint i0 = draw.m_geometry.Read<uint>(remapOffset + (header.m_vertexOffset + local.x) * sizeof(uint));
-    const uint i1 = draw.m_geometry.Read<uint>(remapOffset + (header.m_vertexOffset + local.y) * sizeof(uint));
-    const uint i2 = draw.m_geometry.Read<uint>(remapOffset + (header.m_vertexOffset + local.z) * sizeof(uint));
+    const uint3 local = LoadPrimitive(draw, header.m_primitiveOffset + primitiveIndex, layout.m_triangleOffset);
+    const uint i0 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.x) * sizeof(uint));
+    const uint i1 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.y) * sizeof(uint));
+    const uint i2 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.z) * sizeof(uint));
     const PixelAttributes v0 = TransformAttributes(draw, i0, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
     const PixelAttributes v1 = TransformAttributes(draw, i1, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
     const PixelAttributes v2 = TransformAttributes(draw, i2, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
@@ -113,7 +111,7 @@ bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, cons
         return false;
 
     const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;
-    const MeshDrawData draw = ResolveMeshDrawData(view, instanceIndex);
+    const MeshDrawData draw = ResolveMeshDrawData(view, instanceIndex, DecodeLod(visibility.y));
     return ReconstructAttributes(view, visibility, pixelCenter, resolution, draw, result, needUV, needTangent);
 }
 

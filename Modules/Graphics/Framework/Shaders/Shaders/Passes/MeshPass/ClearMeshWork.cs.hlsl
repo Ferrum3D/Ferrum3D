@@ -11,4 +11,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
         GConstants.m_counts.Store(index, 0);
         GConstants.m_cursors.Store(index, 0);
     }
+
+    if (index < GConstants.m_bucketCount)
+        GConstants.m_meshletCounts.Store(index, 0);
 }

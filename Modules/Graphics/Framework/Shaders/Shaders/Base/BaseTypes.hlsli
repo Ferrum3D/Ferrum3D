@@ -80,6 +80,7 @@ struct BufferPointer
 };
 
 #define FE_CONSTEXPR static const
+#define FE_INLINE
 
 typedef min16float fehalf;
 typedef min16float2 fehalf2;

@@ -11,7 +11,6 @@ material:technique("DepthVisibility", function(t, ctx)
     t.rasterization = Pipeline.RasterizationState.fillBackCull()
     t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
     t.depthTargetFormat = "D32_SFLOAT"
-    t.amplificationShader = "Shaders/Passes/MeshPass/MeshCull.as.hlsl"
     t.meshShader = "Shaders/Passes/Visibility/DepthVisibility.ms.hlsl"
     t.pixelShader = "Shaders/Passes/Visibility/DepthVisibility.ps.hlsl"
     return true

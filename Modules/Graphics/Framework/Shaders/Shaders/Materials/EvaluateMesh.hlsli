@@ -25,14 +25,10 @@ bool LoadMeshEvaluation(const MeshViewData view, const uint2 visibility, const u
     const MeshInstanceTable::Row instance = MeshInstanceTable::Create(scene.m_instances).ReadRow(instanceIndex);
     const MeshGroupTable::Row group = MeshGroupTable::Create(scene.m_groups).ReadRow(groupIndex);
 
-    // Every pixel command belongs to one evaluation binding, even when instances/triangles differ.
-    const uint lodIndex = SurfaceWaveUniform(group.m_lods.Get().m_rowIndex);
-    const MeshLodInfoTable::Row lod = MeshLodInfoTable::Create(scene.m_lods).ReadRow(lodIndex);
-    MeshDrawData draw = CreateMeshDrawData(instance, group, lod);
-    draw.m_geometry.m_deviceAddress = SurfaceWaveUniform(draw.m_geometry.m_deviceAddress);
-    draw.m_lodInfo.m_vertexCount = SurfaceWaveUniform(draw.m_lodInfo.m_vertexCount);
-    draw.m_lodInfo.m_indexCount = SurfaceWaveUniform(draw.m_lodInfo.m_indexCount);
-    draw.m_lodInfo.m_meshletCount = SurfaceWaveUniform(draw.m_lodInfo.m_meshletCount);
+    // Every pixel command belongs to one evaluation binding, but instances of its group may select different LODs.
+    const uint firstLod = SurfaceWaveUniform(group.m_lods.Get().m_rowIndex);
+    const MeshLodInfoTable::Row lod = MeshLodInfoTable::Create(scene.m_lods).ReadRow(firstLod + DecodeLod(visibility.y));
+    const MeshDrawData draw = CreateMeshDrawData(instance, group, lod);
     const float2 pixelCenter = float2(pixel) + 0.5f;
     if (!ReconstructAttributes(view, visibility, pixelCenter, float2(resolution), draw, result.m_attributes, needUV, needTangent))
     {

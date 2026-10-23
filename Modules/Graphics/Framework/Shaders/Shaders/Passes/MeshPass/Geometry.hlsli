@@ -51,11 +51,33 @@ struct MeshDrawData
 };
 
 
+//! Byte offsets of the meshlet data that follows the vertices of one LOD.
+struct MeshletLayout
+{
+    uint32_t m_remapOffset;
+    uint32_t m_headerOffset;
+    uint32_t m_triangleOffset;
+    uint32_t m_sphereOffset;
+};
+
+
+MeshletLayout GetMeshletLayout(const Core::MeshLodInfo lod)
+{
+    MeshletLayout layout;
+    layout.m_remapOffset = lod.m_vertexCount * sizeof(VertexInput);
+    layout.m_headerOffset = layout.m_remapOffset + lod.m_indexCount * sizeof(uint);
+    layout.m_triangleOffset = layout.m_headerOffset + lod.m_meshletCount * sizeof(Core::MeshletHeader);
+    layout.m_sphereOffset = layout.m_triangleOffset + lod.m_primitiveCount * sizeof(Core::PackedTriangle);
+    return layout;
+}
+
+
+//! The geometry pointer addresses the selected LOD inside the mesh buffer.
 MeshDrawData CreateMeshDrawData(const MeshInstanceTable::Row instance, const MeshGroupTable::Row group,
                                 const MeshLodInfoTable::Row lod)
 {
     MeshDrawData result;
-    result.m_geometry = group.m_geometry.Get();
+    result.m_geometry.SetDeviceAddress(group.m_geometry.Get().GetDeviceAddress() + lod.m_geometryOffset.Get());
     result.m_worldTransform = instance.m_transform.Get();
     result.m_lodInfo = lod.m_info.Get();
     result.m_instance = instance;
@@ -64,7 +86,8 @@ MeshDrawData CreateMeshDrawData(const MeshInstanceTable::Row instance, const Mes
 }
 
 
-MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanceIndex, const uint32_t lodIndex = kInvalidIndex)
+//! LOD indices are relative to the group's LOD slice, which is ordered from the most detailed LOD.
+MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanceIndex, const uint32_t lodIndex)
 {
     MeshInstanceTable instanceTable = MeshInstanceTable::Create(view.m_scene.Load(0).m_instances);
     MeshGroupTable groupTable = MeshGroupTable::Create(view.m_scene.Load(0).m_groups);
@@ -72,8 +95,7 @@ MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanc
 
     const MeshInstanceTable::Row instance = instanceTable.ReadRow(instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());
-    const DB::Slice<MeshLodInfoTable> lods = group.m_lods.Get();
-    const MeshLodInfoTable::Row lod = lodTable.ReadRow(lodIndex == kInvalidIndex ? lods.m_rowIndex : lodIndex);
+    const MeshLodInfoTable::Row lod = lodTable.ReadRow(group.m_lods.Get().m_rowIndex + lodIndex);
 
     return CreateMeshDrawData(instance, group, lod);
 }

@@ -8,6 +8,7 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
+#include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/ImGuiPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
@@ -383,6 +384,7 @@ namespace FE::Graphics
         });
 
         Visibility::AddPasses(graph, blackboard);
+        DepthPyramidPass::AddPasses(graph, blackboard);
         Visibility::AddDebugPasses(graph, blackboard);
         SurfaceEvaluation::AddPasses(graph, blackboard);
         GBufferDebug::AddPasses(graph, blackboard);

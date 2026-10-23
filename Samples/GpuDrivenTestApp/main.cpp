@@ -1,4 +1,4 @@
-#include <Core/Base/PlatformInclude.h>
+﻿#include <Core/Base/PlatformInclude.h>
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/Jobs/Jobs.h>
@@ -23,6 +23,7 @@
 #include <Graphics/Passes/TonemapPass.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
+#include <Graphics/Scene/Culling.h>
 #include <Graphics/Tables/MeshMemberTable.h>
 
 using namespace FE;
@@ -44,6 +45,8 @@ namespace
     }();
 
     bool GStressMode = true;
+    bool GOcclusionCulling = true;
+    bool GGroundCamera = false;
     bool GBenchmarkMode = false;
     bool GFlightMode = false;
     bool GAllCulled = false;
@@ -178,14 +181,18 @@ namespace
 
             m_scene->GetModules().Add<MeshSceneModule>();
             m_view = m_scene->CreateView();
+            m_view->GetModules().Add<Culling::ViewModule>();
+            m_view->GetModules().Find<Culling::ViewModule>().m_settings.m_instanceOcclusionCulling = GOcclusionCulling;
+            m_view->GetModules().Find<Culling::ViewModule>().m_settings.m_meshletOcclusionCulling = GOcclusionCulling;
             m_view->GetModules().Add<Visibility::ViewModule>();
             m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();
             m_view->GetModules().Add<DeferredShading::ViewModule>();
             m_view->GetModules().Add<Tonemap::ViewModule>();
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
-            const Vector3 cameraPosition(0.0f, 3.0f, -8.0f);
-            const Vector3 cameraTarget(0.0f, 0.75f, 0.0f);
+            // A camera at mesh height looks along the stress grid rows, so near instances occlude far ones.
+            const Vector3 cameraPosition = GGroundCamera ? Vector3(0.0f, 0.4f, -1.2f) : Vector3(0.0f, 3.0f, -8.0f);
+            const Vector3 cameraTarget = GGroundCamera ? Vector3(0.0f, 0.4f, 0.0f) : Vector3(0.0f, 0.75f, 0.0f);
             const Matrix4x4 cameraMatrix = Math::Invert(Matrix4x4::LookAt(cameraPosition, cameraTarget, Vector3::AxisY()));
             m_view->SetCameraTransform(Transform::Create(cameraPosition, Math::ExtractRotation(cameraMatrix), 1.0f));
             m_view->SetProjection(Constants::kPI * 0.3f, aspectRatio, 0.01f, 1000.0f);
@@ -321,6 +328,9 @@ namespace
                 instanceDesc.m_material = originalMaterial;
                 m_stressDesc = instanceDesc;
                 m_secondView = m_scene->CreateView();
+                m_secondView->GetModules().Add<Culling::ViewModule>();
+                m_secondView->GetModules().Find<Culling::ViewModule>().m_settings =
+                    m_view->GetModules().Find<Culling::ViewModule>().m_settings;
                 m_secondView->GetModules().Add<Visibility::ViewModule>();
                 m_secondView->GetModules().Add<SurfaceEvaluation::ViewModule>();
                 m_secondView->GetModules().Add<DeferredShading::ViewModule>();
@@ -513,6 +523,8 @@ namespace
                                         m_frameMilliseconds / m_timingSamples,
                                         m_timingSamples);
                     }
+
+                    LogCullingStats();
                 }
                 PostMessageW(reinterpret_cast<HWND>(m_mainWindow->GetNativeHandle().m_value), WM_CLOSE, 0, 0);
             }
@@ -523,6 +535,27 @@ namespace
         void DoRelease() override
         {
             this->~GpuDrivenTestApplication();
+        }
+
+
+        void LogCullingStats() const
+        {
+            const Culling::Stats& stats = m_view->GetModules().Find<Culling::ViewModule>().GetStats();
+            if (!stats.m_isValid)
+                return;
+
+            Logger::LogInfo("Instances: {} tested, {} frustum culled, {} occlusion culled, {} rendered ({} late)",
+                            stats.m_instanceCandidates,
+                            stats.m_instanceFrustumCulled,
+                            stats.m_instanceOcclusionCulled,
+                            stats.m_instancesRendered,
+                            stats.m_instancesRenderedLate);
+            Logger::LogInfo("Meshlets: {} tested, {} frustum culled, {} occlusion culled, {} rendered; {} triangles",
+                            stats.m_meshletCandidates,
+                            stats.m_meshletFrustumCulled,
+                            stats.m_meshletOcclusionCulled,
+                            stats.m_meshletsRendered,
+                            stats.m_trianglesRendered);
         }
 
         Rc<Core::Device> m_device;
@@ -578,6 +611,10 @@ int main(const int32_t argc, const char** argv)
             GSmallMeshes = true;
         if (strcmp(argv[index], "--gpu-large-meshes") == 0)
             GLargeMeshes = true;
+        if (strcmp(argv[index], "--no-occlusion-culling") == 0)
+            GOcclusionCulling = false;
+        if (strcmp(argv[index], "--gpu-ground-camera") == 0)
+            GGroundCamera = true;
         if (strcmp(argv[index], "--instances") == 0 && index + 1 < argc)
             GStressInstanceCount = Math::Clamp(static_cast<uint32_t>(atoi(argv[++index])), 257u, MeshBatch::kMaxInstanceCount);
         if (strcmp(argv[index], "--frames") == 0 && index + 1 < argc)

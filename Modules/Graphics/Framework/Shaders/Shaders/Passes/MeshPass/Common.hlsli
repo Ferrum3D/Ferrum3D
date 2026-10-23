@@ -6,15 +6,15 @@
 static const MeshViewData GView = GConstants.m_view.Load(0);
 
 
-struct MeshPayload
+//! Each mesh shader group rasterizes one meshlet that survived compute culling.
+VisibleMeshlet LoadVisibleMeshlet(const uint32_t groupIndex)
 {
-    uint m_instanceId;
-    uint m_lodId;
-    uint m_meshletIds[kMeshletsPerWorkChunk];
-};
+    const MeshCommandRange command = GView.m_commands.Load(GConstants.m_commandIndex);
+    return GView.m_visibleMeshlets.Load(command.m_firstMeshlet + groupIndex);
+}
 
 
-MeshDrawData LoadMeshDrawData(const uint32_t instanceIndex, const uint32_t lodIndex = kInvalidIndex)
+MeshDrawData LoadMeshDrawData(const uint32_t instanceIndex, const uint32_t lodIndex)
 {
     return ResolveMeshDrawData(GView, instanceIndex, lodIndex);
 }

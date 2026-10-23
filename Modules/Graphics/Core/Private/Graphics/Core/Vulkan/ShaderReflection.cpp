@@ -205,6 +205,7 @@ namespace FE::Graphics::Vulkan
         ParseInputAttributes(compiler.get(), resources);
         ParseResourceBindings(compiler.get(), resources);
         ParseStructLayouts(compiler.get());
+        ParseSpecializationConstants(compiler.get());
     }
 
 

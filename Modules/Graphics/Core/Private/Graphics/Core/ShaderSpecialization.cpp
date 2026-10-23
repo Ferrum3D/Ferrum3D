@@ -46,7 +46,9 @@ namespace FE::Graphics::Core
             allocator = std::pmr::get_default_resource();
 
         uint32_t defineCount = 0;
-        const festd::string_view storageView{ defineStorage };
+        festd::string_view storageView{ defineStorage };
+        storageView = storageView.strip();
+
         festd::string_view countView = storageView;
         while (!countView.empty())
         {

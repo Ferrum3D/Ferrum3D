@@ -15,20 +15,27 @@ namespace FE::Graphics
     {
         FE_RTTI("429A06B5-0BEB-5171-87F8-18737671FB7F");
 
-        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(Core::MeshLodInfo));
+        static constexpr uint32_t kRowsPerPage =
+            DB::kTablePageSize / (sizeof(Core::MeshLodInfo) + sizeof(uint32_t) + sizeof(float));
 
         static constexpr uint32_t kOffset_m_info = 0;
+        static constexpr uint32_t kOffset_m_geometryOffset = kOffset_m_info + sizeof(Core::MeshLodInfo) * kRowsPerPage;
+        static constexpr uint32_t kOffset_m_error = kOffset_m_geometryOffset + sizeof(uint32_t) * kRowsPerPage;
 
         static_assert(kRowsPerPage > 0);
 
         struct Row final
         {
             DB::ElementHandle<Core::MeshLodInfo, kOffset_m_info> m_info;
+            DB::ElementHandle<uint32_t, kOffset_m_geometryOffset> m_geometryOffset;
+            DB::ElementHandle<float, kOffset_m_error> m_error;
         };
 
         struct RWRow final
         {
             DB::RWElementHandle<Core::MeshLodInfo, kOffset_m_info> m_info;
+            DB::RWElementHandle<uint32_t, kOffset_m_geometryOffset> m_geometryOffset;
+            DB::RWElementHandle<float, kOffset_m_error> m_error;
         };
 
         using Instance = BufferPointer;
@@ -48,6 +55,8 @@ namespace FE::Graphics
             const uint32_t rowIndex = AllocateRowUninitialized();
             const RWRow row = WriteRow(rowIndex);
             row.m_info.Construct();
+            row.m_geometryOffset.Construct();
+            row.m_error.Construct();
             return DB::Ref<MeshLodInfoTable>{ rowIndex };
         }
 
@@ -59,6 +68,8 @@ namespace FE::Graphics
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_info.Construct();
+                row.m_geometryOffset.Construct();
+                row.m_error.Construct();
             }
 
             return DB::Slice<MeshLodInfoTable>{ range.m_offset, range.m_size };
@@ -74,6 +85,8 @@ namespace FE::Graphics
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_info.Construct();
+                row.m_geometryOffset.Construct();
+                row.m_error.Construct();
             }
 
             rows = { range.m_offset, range.m_size };
@@ -100,6 +113,8 @@ namespace FE::Graphics
 
             Row row;
             row.m_info.Setup(storage, localRowIndex);
+            row.m_geometryOffset.Setup(storage, localRowIndex);
+            row.m_error.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -119,6 +134,8 @@ namespace FE::Graphics
 
             RWRow row;
             row.m_info.Setup(storage, localRowIndex);
+            row.m_geometryOffset.Setup(storage, localRowIndex);
+            row.m_error.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -142,6 +159,42 @@ namespace FE::Graphics
             m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<Core::MeshLodInfo*>(storage + kOffset_m_info) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn(const DB::Slice<MeshLodInfoTable> destination, const festd::span<const uint32_t> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            if (destination.m_count == 0)
+                return;
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+            auto* destinationData = reinterpret_cast<uint32_t*>(storage + kOffset_m_geometryOffset) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn(const DB::Slice<MeshLodInfoTable> destination, const festd::span<const float> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            if (destination.m_count == 0)
+                return;
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+            auto* destinationData = reinterpret_cast<float*>(storage + kOffset_m_error) + localRowIndex;
             festd::copy(source, destinationData);
         }
     };

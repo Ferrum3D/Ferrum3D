@@ -11,7 +11,7 @@
     MODE(Normal, "normal", 6)                                                                                                    \
     MODE(Tangent, "tangent", 7)                                                                                                  \
     MODE(Derivatives, "derivatives", 8)                                                                                          \
-    MODE(DepthError, "depth-error", 9)
+    MODE(DepthError, "depth-error", 9) MODE(Lod, "lod", 17)
 
 #define FE_SURFACE_DEBUG_MODES(MODE)                                                                                             \
     MODE(EvaluationTile, "evaluation-tile", 10)                                                                                  \

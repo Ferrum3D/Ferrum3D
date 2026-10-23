@@ -8,6 +8,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::ClearMeshWork)
     {
         RWStructuredBufferDescriptor<uint32_t> m_counts;
         RWStructuredBufferDescriptor<uint32_t> m_cursors;
+        RWStructuredBufferDescriptor<uint32_t> m_meshletCounts;
         uint32_t m_bucketCount;
 
         FE_RTTI_Reflect("7E4F82A9-69A7-4AFD-8AC5-3FA032DABBB3");

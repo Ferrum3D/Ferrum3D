@@ -11,13 +11,17 @@
 
 struct MeshLodInfoTable
 {
-    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(Core::MeshLodInfo));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(Core::MeshLodInfo) + sizeof(uint32_t) + sizeof(float));
 
     FE_CONSTEXPR uint32_t kOffset_m_info = 0;
+    FE_CONSTEXPR uint32_t kOffset_m_geometryOffset = kOffset_m_info + sizeof(Core::MeshLodInfo) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_error = kOffset_m_geometryOffset + sizeof(uint32_t) * kRowsPerPage;
 
     struct Row
     {
         DB::ElementHandle<Core::MeshLodInfo, kOffset_m_info> m_info;
+        DB::ElementHandle<uint32_t, kOffset_m_geometryOffset> m_geometryOffset;
+        DB::ElementHandle<float, kOffset_m_error> m_error;
     };
 
     struct Instance
@@ -41,6 +45,8 @@ struct MeshLodInfoTable
 
         Row row;
         row.m_info.Setup(pageAddress, localRowIndex);
+        row.m_geometryOffset.Setup(pageAddress, localRowIndex);
+        row.m_error.Setup(pageAddress, localRowIndex);
         return row;
     }
 

@@ -2,25 +2,17 @@
 
 [[vk::push_constant]] Constants GConstants;
 
-void BuildBucketCommands(uint bucket, PipelineBucket range)
+// Buckets are laid out in order, so the last bucket's range ends at the total work chunk count.
+void WriteCullDispatch(const PipelineBucket lastBucket)
 {
-    const BucketLayout layout = GConstants.m_layouts.Load(bucket);
-    for (uint page = 0; page < layout.m_commandCount; ++page)
-    {
-        const uint offset = page * kWorkChunksPerCommand;
-        const uint count = offset < range.m_workChunkCount ? min(kWorkChunksPerCommand, range.m_workChunkCount - offset) : 0;
+    const uint workChunkCount = lastBucket.m_firstWorkChunk + lastBucket.m_workChunkCount;
 
-        MeshCommandRange command;
-        command.m_firstWorkChunk = range.m_firstWorkChunk + min(offset, range.m_workChunkCount);
-        command.m_workChunkCount = count;
-        GConstants.m_commands.Store(layout.m_firstCommand + page, command);
-
-        MeshDispatchArguments args;
-        args.m_groupCountX = count;
-        args.m_groupCountY = count == 0 ? 0 : 1;
-        args.m_groupCountZ = count == 0 ? 0 : 1;
-        GConstants.m_arguments.Store(layout.m_firstCommand + page, args);
-    }
+    MeshletCullDispatch dispatch;
+    dispatch.m_groupCountX = min(workChunkCount, kMaxGroupsPerDimension);
+    dispatch.m_groupCountY = (workChunkCount + kMaxGroupsPerDimension - 1) / kMaxGroupsPerDimension;
+    dispatch.m_groupCountZ = 1;
+    dispatch.m_workChunkCount = workChunkCount;
+    GConstants.m_cullDispatch.Store(0, dispatch);
 }
 
 
@@ -38,5 +30,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     range.m_instanceCount = GConstants.m_counts.Load(bucket * 2);
     range.m_workChunkCount = GConstants.m_counts.Load(bucket * 2 + 1);
     GConstants.m_buckets.Store(bucket, range);
-    BuildBucketCommands(bucket, range);
+
+    if (bucket == GConstants.m_bucketCount - 1)
+        WriteCullDispatch(range);
 }

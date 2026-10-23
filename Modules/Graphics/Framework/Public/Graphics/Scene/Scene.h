@@ -19,6 +19,11 @@ namespace FE::Graphics
         struct RingUploader;
     } // namespace Core
 
+    namespace Tools::DepthPyramid
+    {
+        struct Output;
+    } // namespace Tools::DepthPyramid
+
     struct SceneData final
     {
         ComputePassRegistry m_evaluationPipelines;
@@ -44,12 +49,27 @@ namespace FE::Graphics
     };
 
 
+    //! With occlusion culling a view renders its objects in two phases. The early phase renders the objects that were visible
+    //! in the previous frame; the late phase renders the remaining objects that the early depth does not occlude.
+    enum class SceneRenderPhase : uint32_t
+    {
+        kSingle,
+        kEarly,
+        kLate,
+    };
+
+
     struct SceneRenderPass final
     {
         Matrix4x4 m_viewProjection;
         Core::BasePassDescToken m_passDescToken;
         DrawTag m_drawTag;
         Env::Name m_techniqueRole;
+        SceneRenderPhase m_phase = SceneRenderPhase::kSingle;
+        //! The farthest-depth pyramid of the early phase; set for the late phase.
+        const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
+        //! Whether the pass reports its culling statistics to the view.
+        bool m_reportsStats = false;
     };
 
     //! Render callbacks run on a job fiber. Recorded passes must retain their inputs and must not access mutable scene state.

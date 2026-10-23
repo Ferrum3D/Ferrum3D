@@ -45,6 +45,8 @@ namespace FE::Graphics::DeferredProbe
             inspect->GetCompletionWaitGroup()->Wait();
             ASSERT_TRUE(inspect->IsReady());
             Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
+            Core::RingUploader uploader;
+            uploader.Setup("EmptyDebugUploader", pool, 64 * 1024);
 
             for (const Env::Name mode :
                  { Env::Name("visibility"), Env::Name("normal"), Env::Name("depth-error"), Env::Name("evaluation-group") })
@@ -61,6 +63,7 @@ namespace FE::Graphics::DeferredProbe
                 data.m_mainColorTarget = color.Get();
                 data.m_mainDepthTarget = depth.Get();
                 data.m_viewportRect = RectF(0, 0, 33, 17);
+                data.m_renderQueueUploader = &uploader;
                 blackboard.Add<SceneData*>(&scene->GetRenderData());
                 blackboard.Add<SurfaceEvaluationInputs>();
                 view->Update(blackboard);
@@ -88,6 +91,7 @@ namespace FE::Graphics::DeferredProbe
                 graph->AddDispatchPass("InspectEmptyDebugColor", check, Math::CeilDivide(resolution, 8u));
                 graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(stats.Get()));
                 graph->CompileAndExecute();
+                uploader.CloseFrame(queue->GetCurrentFence());
                 auto* commands = Vulkan::ImplCast(queue)->GetCurrentCommandBuffer();
                 const auto completion = queue->CloseFrame();
                 commands->EnqueueFenceToSignal(completion);
@@ -102,6 +106,9 @@ namespace FE::Graphics::DeferredProbe
                 EXPECT_EQ(wrong, 0u);
                 readback->Unmap();
             }
+
+            graph.Reset();
+            uploader.Shutdown();
         }
 
 

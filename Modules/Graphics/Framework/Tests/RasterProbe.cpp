@@ -111,8 +111,7 @@ namespace FE::Graphics::RasterProbe
         Core::ComputePipeline* scatterPipeline = classifier("Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
         Rc<Core::Buffer> sceneBuffer = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(device, "ProbeScene", 1);
         Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "RasterProbeView", 1);
-        Rc<Core::Buffer> visible = Core::Buffer::CreateStructured<MeshPass::VisibleInstance>(device, "RasterProbeInstance", 1);
-        Rc<Core::Buffer> work = Core::Buffer::CreateStructured<MeshPass::MeshletWorkChunk>(device, "RasterProbeWork", 1);
+        Rc<Core::Buffer> meshlets = Core::Buffer::CreateStructured<MeshPass::VisibleMeshlet>(device, "RasterProbeMeshlets", 1);
         Rc<Core::Buffer> commands = Core::Buffer::CreateStructured<MeshPass::MeshCommandRange>(device, "RasterProbeCommands", 1);
         Rc<Core::Buffer> arguments =
             Core::Buffer::CreateStructured<MeshPass::MeshDispatchArguments>(device, "RasterProbeArguments", 1);
@@ -127,8 +126,7 @@ namespace FE::Graphics::RasterProbe
         Rc<Core::Texture> depth =
             Core::Texture::Create(device, "RasterProbeDepth", Core::Format::kD32_SFLOAT, Vector2UInt(64, 64));
         Core::GraphicsPipelineRequest coverageRequest;
-        coverageRequest.m_desc.SetAmplificationShader("Shaders/Passes/MeshPass/MeshCull.as.hlsl")
-            .SetMeshShader("Shaders/Passes/Visibility/DepthVisibility.ms.hlsl")
+        coverageRequest.m_desc.SetMeshShader("Shaders/Passes/Visibility/DepthVisibility.ms.hlsl")
             .SetPixelShader("Shaders/Passes/Visibility/DepthVisibility.ps.hlsl")
             .SetRTVFormat(Core::Format::kR32G32_UINT)
             .SetDSVFormat(Core::Format::kD32_SFLOAT)
@@ -146,8 +144,8 @@ namespace FE::Graphics::RasterProbe
         graph->BeginFrame();
         FE_Verify(uploader.Upload(*graph, geometryBuffer.Get(), geometry));
         database.Update(*graph, queue->GetCurrentFence());
-        FE_Verify(uploader.Upload(*graph, visible.Get(), MeshPass::VisibleInstance{ instance.m_rowIndex, lod.m_rowIndex }));
-        FE_Verify(uploader.Upload(*graph, work.Get(), MeshPass::MeshletWorkChunk{ 0, 0 }));
+        // Meshlet zero lies outside the view; compute culling passes only meshlet one to rasterization.
+        FE_Verify(uploader.Upload(*graph, meshlets.Get(), MeshPass::VisibleMeshlet{ instance.m_rowIndex, 1 }));
         FE_Verify(uploader.Upload(*graph, commands.Get(), MeshPass::MeshCommandRange{ 0, 1 }));
         FE_Verify(uploader.Upload(*graph, arguments.Get(), MeshPass::MeshDispatchArguments{ 1, 1, 1 }));
         MeshPass::MeshViewData view{};
@@ -161,15 +159,13 @@ namespace FE::Graphics::RasterProbe
         scene.m_groups = groups.GetDeviceAddress();
         scene.m_lods = lods.GetDeviceAddress();
         scene.m_materials = materials.GetDeviceAddress();
-        view.m_visibleInstances = graph->GetSRV(visible.Get());
-        view.m_workChunks = graph->GetSRV(work.Get());
+        view.m_visibleMeshlets = graph->GetSRV(meshlets.Get());
         view.m_commands = graph->GetSRV(commands.Get());
         view.m_scene = graph->GetSRV(sceneBuffer.Get());
         FE_Verify(uploader.Upload(*graph, sceneBuffer.Get(), scene));
         graph->AddBufferDependency(sceneBuffer.Get(), geometryBuffer.Get());
         graph->AddBufferDependency(viewBuffer.Get(), sceneBuffer.Get());
-        graph->AddBufferDependency(viewBuffer.Get(), visible.Get());
-        graph->AddBufferDependency(viewBuffer.Get(), work.Get());
+        graph->AddBufferDependency(viewBuffer.Get(), meshlets.Get());
         graph->AddBufferDependency(viewBuffer.Get(), commands.Get());
         FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
         auto* targets = graph->AllocatePassData<Visibility::CoveragePassDesc>();

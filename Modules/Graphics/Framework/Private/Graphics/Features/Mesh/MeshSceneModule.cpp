@@ -4,6 +4,7 @@
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/PipelineVariantSet.h>
+#include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/RendererImpl.h>
@@ -66,6 +67,108 @@ namespace FE::Graphics
         FE_COMPUTE_PIPELINE_SET(ScatterMeshSurfacePipeline, "Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(MeshVisibilityDebugPipeline, "Shaders/Passes/MeshPass/VisibilityDebug.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(MeshSurfaceDebugPipeline, "Shaders/Passes/MeshPass/MeshSurfaceDebug.cs.hlsl");
+
+        static_assert(MeshPass::kMaxLodCount == Visibility::kMaxLodCount);
+        static_assert(MeshPass::kMaxLodCount == Culling::Stats::kMaxLodCount);
+        static_assert(festd::to_underlying(SceneRenderPhase::kSingle) == MeshPass::CullPhase::kSingle);
+        static_assert(festd::to_underlying(SceneRenderPhase::kEarly) == MeshPass::CullPhase::kEarly);
+        static_assert(festd::to_underlying(SceneRenderPhase::kLate) == MeshPass::CullPhase::kLate);
+
+        // Views that stop rendering keep their culling state for a few frames, e.g. while a window is minimized.
+        constexpr uint64_t kViewCullingStateLifetime = 64;
+
+        // Instances that do not fit render without meshlet visibility history: all their meshlets are tested in the late phase.
+        constexpr uint32_t kMeshletVisibilityArenaWords = 1u << 22;
+
+
+        Rc<Core::Buffer> CreateZeroedViewBuffer(Core::FrameGraph& graph, Core::RingUploader& uploader, const Env::Name name,
+                                                const uint32_t wordCount)
+        {
+            Rc<Core::Buffer> buffer = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), name, wordCount);
+
+            Core::ResourceCommitParams commitParams;
+            commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
+            commitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
+                | Core::BarrierAccessFlags::kCopyDest;
+            graph.GetResourcePool()->CommitBufferMemory(buffer.Get(), commitParams);
+            FE_Verify(uploader.UploadGenerated(graph, buffer.Get(), wordCount * sizeof(uint32_t), [wordCount](void* target) {
+                memset(target, 0, wordCount * sizeof(uint32_t));
+            }));
+
+            return buffer;
+        }
+
+
+        uint32_t CalculateLodPayloadSize(const MeshAsset& mesh, const uint32_t assetLodIndex)
+        {
+            uint32_t size = 0;
+            for (const MeshSubmeshAssetInfo& submesh : mesh.m_submeshes)
+            {
+                FE_Assert(assetLodIndex < submesh.m_lods.size());
+                const MeshLodAssetInfo& info = submesh.m_lods[assetLodIndex];
+                size += info.m_vertexCount * mesh.m_vertexStride;
+                size += info.m_indexCount * sizeof(uint32_t);
+                size += info.m_meshletCount * sizeof(Core::MeshletHeader);
+                size += info.m_primitiveCount * sizeof(Core::PackedTriangle);
+                size += info.m_meshletCount * sizeof(PackedVector4F);
+            }
+
+            return size;
+        }
+
+
+        uint32_t CalculateCullFlags(const Culling::Settings& settings)
+        {
+            uint32_t flags = 0;
+            if (settings.m_instanceFrustumCulling)
+                flags |= MeshPass::CullFlags::kInstanceFrustum;
+            if (settings.m_instanceOcclusionCulling)
+                flags |= MeshPass::CullFlags::kInstanceOcclusion;
+            if (settings.m_meshletFrustumCulling)
+                flags |= MeshPass::CullFlags::kMeshletFrustum;
+            if (settings.m_meshletOcclusionCulling)
+                flags |= MeshPass::CullFlags::kMeshletOcclusion;
+            if (settings.m_lodSelection)
+                flags |= MeshPass::CullFlags::kLodSelection;
+
+            return flags;
+        }
+
+
+        MeshPass::MeshCullData CreateCullData(const Culling::PassData& culling, const float viewportHeight)
+        {
+            // An LOD is acceptable when error * scale / distance * projection * height / 2 <= threshold.
+            const float threshold = Math::Max(culling.m_settings.m_lodErrorThreshold, 1e-3f);
+            const float lodScale = culling.m_projectionScaleY * viewportHeight * 0.5f / threshold;
+
+            MeshPass::MeshCullData cull{};
+            cull.m_viewProjection = culling.m_viewProjection;
+            cull.m_occlusionViewProjection = culling.m_occlusionViewProjection;
+            cull.m_cameraPosition = PackedVector4F(Vector4(culling.m_cameraPosition, lodScale));
+            cull.m_flags = CalculateCullFlags(culling.m_settings);
+            return cull;
+        }
+
+
+        Culling::Stats ConvertCullingStats(const uint32_t (&values)[MeshPass::CullStat::kCount])
+        {
+            Culling::Stats stats;
+            stats.m_instanceCandidates = values[MeshPass::CullStat::kInstanceCandidates];
+            stats.m_instanceFrustumCulled = values[MeshPass::CullStat::kInstanceFrustumCulled];
+            stats.m_instanceOcclusionCulled = values[MeshPass::CullStat::kInstanceOcclusionCulled];
+            stats.m_instancesRendered = values[MeshPass::CullStat::kInstanceRendered];
+            stats.m_instancesRenderedLate = values[MeshPass::CullStat::kInstanceRenderedLate];
+            stats.m_meshletCandidates = values[MeshPass::CullStat::kMeshletCandidates];
+            stats.m_meshletFrustumCulled = values[MeshPass::CullStat::kMeshletFrustumCulled];
+            stats.m_meshletOcclusionCulled = values[MeshPass::CullStat::kMeshletOcclusionCulled];
+            stats.m_meshletsRendered = values[MeshPass::CullStat::kMeshletRendered];
+            stats.m_trianglesRendered = values[MeshPass::CullStat::kTriangleRendered];
+            for (uint32_t lodIndex = 0; lodIndex < MeshPass::kMaxLodCount; ++lodIndex)
+                stats.m_lodInstances[lodIndex] = values[MeshPass::CullStat::kLodHistogram + lodIndex];
+
+            stats.m_isValid = true;
+            return stats;
+        }
     } // namespace
 
 
@@ -99,6 +202,7 @@ namespace FE::Graphics
         m_materialInstanceTable = Memory::DefaultNew<MaterialInstanceTable>(database);
         m_batchTable = Memory::DefaultNew<MeshBatchTable>(database);
         m_memberTable = Memory::DefaultNew<MeshMemberTable>(database);
+        m_meshletVisibilityAllocator.Setup(kMeshletVisibilityArenaWords);
     }
 
 
@@ -114,6 +218,8 @@ namespace FE::Graphics
         Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
             DestroyGroup(m_meshGroups[groupIndex]);
         });
+
+        m_meshletVisibilityAllocator.Shutdown();
     }
 
 
@@ -184,6 +290,7 @@ namespace FE::Graphics
         const DB::Ref<MeshInstanceTable> instanceRef = m_meshInstanceTable->AllocateRow();
         FE_Assert(instanceRef.m_rowIndex <= Visibility::kMaxInstanceRow);
         const MeshHandle handle = AllocateHandle(instanceRef, desc.m_batch, meshGroup, parameters);
+        AllocateMeshletVisibility(m_instances[handle.m_value]);
 
         const MeshInstanceTable::RWRow instance = m_meshInstanceTable->WriteRow(instanceRef);
         instance.m_meshGroup.Get() = meshGroup->m_tableRef;
@@ -233,6 +340,7 @@ namespace FE::Graphics
         group->m_instances.erase_unsorted(groupHandle);
         --group->m_instanceCount;
 
+        FreeMeshletVisibility(m_instances[instance.m_value]);
         m_meshInstanceTable->Free(record.m_tableRef);
         FreeHandle(instance);
         if (group->m_instanceCount == 0)
@@ -243,6 +351,9 @@ namespace FE::Graphics
     void MeshSceneModule::Update()
     {
         FE_PROFILER_ZONE();
+
+        ++m_frameIndex;
+        ReleaseUnusedViewCullingStates();
 
         // Live groups still poll asset generations and streamed LOD residency.
         Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
@@ -388,6 +499,7 @@ namespace FE::Graphics
         record.m_parameters = material->m_runtime->AllocateInstanceParameters();
         record.m_materialGeneration = materialLease.GetGeneration();
         record.m_group = group;
+        AllocateMeshletVisibility(record);
 
         const auto instance = m_meshInstanceTable->WriteRow(reference);
         instance.m_meshGroup.Get() = group->m_tableRef;
@@ -448,8 +560,8 @@ namespace FE::Graphics
             if (!material || !material->m_runtime || !material->m_runtime->HasTechnique(role))
                 return;
 
-            const uint32_t meshletCount =
-                m_meshLodInfoTable->ReadRow(group->m_lodsRef.m_rowIndex + group->m_residentLod).m_info.Get().m_meshletCount;
+            // LOD selection may choose any resident LOD, so capacities cover the largest one.
+            const uint32_t meshletCount = group->m_maxMeshletCount;
             if (meshletCount == 0)
                 return;
 
@@ -496,7 +608,8 @@ namespace FE::Graphics
         festd::inline_vector<MeshPass::BucketLayout, 16> layouts;
         for (const MeshPipelineSlot& slot : registry->m_slots)
         {
-            const uint32_t pageCount = Math::CeilDivide(slot.m_workCapacity, MeshPass::kWorkChunksPerCommand);
+            const uint32_t meshletCapacity = slot.m_workCapacity * MeshPass::kMeshletsPerWorkChunk;
+            const uint32_t pageCount = Math::CeilDivide(meshletCapacity, MeshPass::kMeshletsPerCommand);
             layouts.push_back({ registry->m_commandCapacity, pageCount });
             if (pageCount != 0)
                 registry->m_submissions.push_back({ slot.m_pipeline, registry->m_commandCapacity, pageCount });
@@ -586,28 +699,52 @@ namespace FE::Graphics
     }
 
 
+    void MeshSceneModule::CollectCullDispatches(const Culling::PassData& culling)
+    {
+        FE_PROFILER_ZONE();
+
+        for (auto& dispatches : m_cullDispatches)
+            dispatches.clear();
+
+        const auto addBatch = [](festd::vector<MeshPass::CullDispatch>& dispatches, const MeshBatch& batch) {
+            for (uint32_t first = 0; first < batch.m_members.m_count; first += MeshPass::kInstancesPerCullGroup)
+                dispatches.push_back({ batch.m_tableRef.m_rowIndex, first });
+        };
+
+        // Without frustum culling every batch is a candidate, including those outside the camera.
+        if (!culling.m_settings.m_instanceFrustumCulling)
+        {
+            for (const MeshBatch* batch : m_batches)
+            {
+                if (batch != nullptr)
+                    addBatch(m_cullDispatches[0], *batch);
+            }
+
+            return;
+        }
+
+        const Frustum frustum(culling.m_viewProjection);
+        m_octree.TraverseParallel(frustum, [&](const uint32_t taskIndex, const festd::span<OctreeEntry* const> entries) {
+            for (const OctreeEntry* entry : entries)
+                addBatch(m_cullDispatches[taskIndex], *m_batches[entry->m_userIndex]);
+        });
+    }
+
+
     void MeshSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
                                             Core::RingUploader& uploader)
     {
         FE_PROFILER_ZONE_NAMED("BuildCpuMeshWork");
 
         const auto& view = blackboard.Get<RendererViewData>();
+        const Culling::PassData& culling = Culling::GetPassData(blackboard);
         auto& culled = blackboard.Add<CulledMeshView>();
-        const Matrix4x4 viewProjection = view.m_view->GetViewProjectionMatrix();
 
-        const Frustum frustum(viewProjection);
-        for (auto& dispatches : m_cullDispatches)
-            dispatches.clear();
+        ViewCullingState& state = AcquireViewCullingState(graph, uploader, view.m_view);
+        blackboard.Add<ViewCullingState*>(&state);
+        ResolveCullingStats(state, culling.m_stats);
 
-        m_octree.TraverseParallel(frustum, [&](const uint32_t taskIndex, const festd::span<OctreeEntry* const> entries) {
-            auto& dispatches = m_cullDispatches[taskIndex];
-            for (const OctreeEntry* entry : entries)
-            {
-                const MeshBatch& batch = *m_batches[entry->m_userIndex];
-                for (uint32_t first = 0; first < batch.m_members.m_count; first += MeshPass::kInstancesPerCullGroup)
-                    dispatches.push_back({ batch.m_tableRef.m_rowIndex, first });
-            }
-        });
+        CollectCullDispatches(culling);
 
         uint32_t offsets[Octree::kMaxTraversalTasks];
         uint32_t count = 0;
@@ -619,7 +756,22 @@ namespace FE::Graphics
 
         MeshPass::MeshViewData data{};
         data.m_view = blackboard.Get<ViewData>();
+        data.m_cull = CreateCullData(culling, view.m_viewportRect.Height());
         data.m_scene = graph.GetSRV(m_sceneData.Get());
+
+        // A frozen pyramid replaces the two phases with a single one, matching Visibility::AddPasses.
+        const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
+        const Tools::DepthPyramid::Output* frozenDepthPyramid = culling.GetFrozenDepthPyramid();
+        const bool isTwoPhase = isOcclusionCulled && frozenDepthPyramid == nullptr;
+        const uint32_t phase = isTwoPhase ? MeshPass::CullPhase::kEarly : MeshPass::CullPhase::kSingle;
+
+        MeshCullViewResources resources;
+        resources.m_visibility = state.m_visibility.Get();
+        resources.m_visibilityCapacity = state.m_visibilityCapacity;
+        resources.m_meshletVisibility = state.m_meshletVisibility.Get();
+        resources.m_meshletVisibilityCapacity = state.m_meshletVisibilityCapacity;
+        resources.m_stats = state.m_stats.Get();
+        resources.m_depthPyramid = isOcclusionCulled ? frozenDepthPyramid : nullptr;
         GpuMeshWorkBuilder::CullView(
             graph,
             uploader,
@@ -635,7 +787,13 @@ namespace FE::Graphics
                     count >= 1024 ? 8 : Octree::kMaxTraversalTasks);
             },
             data,
+            phase,
+            resources,
             culled);
+
+        // Meshlet culling reads bounding spheres from the geometry of every group.
+        if (culled.m_view)
+            AddGeometryDependencies(graph, culled.m_view.Get());
 
         SurfaceEvaluationBatch batch;
         batch.m_objectData = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(graph.GetDevice(), "MeshSurfaceView", 1);
@@ -659,15 +817,37 @@ namespace FE::Graphics
     {
         FE_PROFILER_ZONE();
 
-        const auto& culled = blackboard.Get<CulledMeshView>();
+        auto& culled = blackboard.Get<CulledMeshView>();
+        ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
+        const bool isLate = pass.m_phase == SceneRenderPhase::kLate;
+        FE_FG_SCOPE(graph, isLate ? "LateMeshes" : "Meshes");
+
+        // Statistics are complete once the last phase of the reporting pass has culled its meshlets.
+        const auto readStats = festd::defer([&] {
+            if (pass.m_reportsStats && pass.m_phase != SceneRenderPhase::kEarly)
+                ScheduleCullingStatsReadback(graph, state);
+        });
+
         if (!culled.m_classification)
             return;
+
+        FE_Assert(festd::to_underlying(pass.m_phase) == culled.m_phase || isLate);
+        if (isLate)
+        {
+            FE_Assert(pass.m_depthPyramid != nullptr);
+            GpuMeshWorkBuilder::CullLateInstances(graph, uploader, *pass.m_depthPyramid, culled);
+        }
+
+        MeshPassPhase phase;
+        phase.m_phase = festd::to_underlying(pass.m_phase);
+        phase.m_depthPyramid = pass.m_depthPyramid;
+        phase.m_stats = pass.m_reportsStats ? state.m_stats.Get() : nullptr;
 
         MeshPipelineRegistry& registry = UpdatePipelineRegistry(graph, uploader, pass.m_techniqueRole);
         PreparedMeshPass prepared;
         const DrawTagMask mask(pass.m_drawTag);
         const Vector2UInt drawTagMask(static_cast<uint32_t>(mask.m_value), static_cast<uint32_t>(mask.m_value >> 32));
-        GpuMeshWorkBuilder::Build(graph, uploader, registry, culled, drawTagMask, prepared);
+        GpuMeshWorkBuilder::Build(graph, uploader, registry, culled, phase, drawTagMask, prepared);
         if (!prepared.m_view)
             return;
 
@@ -704,6 +884,158 @@ namespace FE::Graphics
 
                           context.EndRenderPass();
                       });
+    }
+
+
+    MeshSceneModule::ViewCullingState& MeshSceneModule::AcquireViewCullingState(Core::FrameGraph& graph,
+                                                                                Core::RingUploader& uploader, const View* view)
+    {
+        FE_PROFILER_ZONE();
+
+        ViewCullingState* state = nullptr;
+        for (const festd::unique_ptr<ViewCullingState>& candidate : m_viewCullingStates)
+        {
+            if (candidate->m_view == view)
+            {
+                state = candidate.get();
+                break;
+            }
+        }
+
+        if (state == nullptr)
+        {
+            state = m_viewCullingStates.emplace_back(festd::make_unique<ViewCullingState>()).get();
+            state->m_view = view;
+        }
+
+        state->m_lastFrameIndex = m_frameIndex;
+
+        // Visibility is indexed by instance row; new buffers start with everything unseen, so it is tested in the late phase.
+        const uint32_t rowCount = Math::Max(m_meshInstanceTable->GetReservedRowCount(), 1u);
+        if (state->m_visibilityCapacity < rowCount)
+        {
+            state->m_visibilityCapacity = Math::CeilPowerOfTwo(rowCount);
+            state->m_visibility = CreateZeroedViewBuffer(graph, uploader, "MeshInstanceVisibility", state->m_visibilityCapacity);
+        }
+
+        const uint32_t meshletWordCount = Math::Max(m_meshletVisibilityWordCount, 1u);
+        if (state->m_meshletVisibilityCapacity < meshletWordCount)
+        {
+            state->m_meshletVisibilityCapacity = Math::CeilPowerOfTwo(meshletWordCount);
+            state->m_meshletVisibility =
+                CreateZeroedViewBuffer(graph, uploader, "MeshletVisibility", state->m_meshletVisibilityCapacity);
+        }
+
+        constexpr uint32_t kStatsByteSize = MeshPass::CullStat::kCount * sizeof(uint32_t);
+        state->m_stats = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), "MeshCullStats", MeshPass::CullStat::kCount);
+        FE_Verify(uploader.UploadGenerated(graph, state->m_stats.Get(), kStatsByteSize, [](void* target) {
+            memset(target, 0, kStatsByteSize);
+        }));
+
+        return *state;
+    }
+
+
+    void MeshSceneModule::AllocateMeshletVisibility(InstanceRecord& record)
+    {
+        FreeMeshletVisibility(record);
+
+        uint32_t offset = kInvalidIndex;
+        const uint32_t wordCount = record.m_group->m_meshletVisibilityWords;
+        if (wordCount != 0)
+            record.m_meshletVisibility = m_meshletVisibilityAllocator.Allocate(wordCount);
+
+        if (record.m_meshletVisibility.IsValid())
+        {
+            offset = record.m_meshletVisibility.m_offset;
+            m_meshletVisibilityWordCount = Math::Max(m_meshletVisibilityWordCount, offset + wordCount);
+        }
+
+        m_meshInstanceTable->WriteRow(record.m_tableRef).m_meshletVisibilityOffset.Get() = offset;
+    }
+
+
+    void MeshSceneModule::FreeMeshletVisibility(InstanceRecord& record)
+    {
+        if (!record.m_meshletVisibility.IsValid())
+            return;
+
+        m_meshletVisibilityAllocator.Free(record.m_meshletVisibility);
+        record.m_meshletVisibility.Invalidate();
+    }
+
+
+    void MeshSceneModule::ReleaseUnusedViewCullingStates()
+    {
+        const auto isUnused = [this](const festd::unique_ptr<ViewCullingState>& state) {
+            if (state->m_lastFrameIndex + kViewCullingStateLifetime > m_frameIndex)
+                return false;
+
+            // Keep readback buffers alive until the GPU no longer writes them.
+            for (const CullingStatsReadback& readback : state->m_readbacks)
+            {
+                if (readback.m_isPending && !readback.m_fence.IsReady())
+                    return false;
+            }
+
+            return true;
+        };
+
+        festd::erase_if(m_viewCullingStates, isUnused);
+    }
+
+
+    void MeshSceneModule::ResolveCullingStats(ViewCullingState& state, Culling::Stats* output) const
+    {
+        // Fences complete in submission order, so the last completed readback holds the newest statistics.
+        CullingStatsReadback* latest = nullptr;
+        for (CullingStatsReadback& readback : state.m_readbacks)
+        {
+            if (!readback.m_isPending || !readback.m_fence.IsReady())
+                continue;
+
+            readback.m_isPending = false;
+            if (latest == nullptr || readback.m_fence.m_value > latest->m_fence.m_value)
+                latest = &readback;
+        }
+
+        if (latest == nullptr || output == nullptr)
+            return;
+
+        uint32_t values[MeshPass::CullStat::kCount];
+        const auto* mapped = static_cast<const uint32_t*>(latest->m_buffer->Map());
+        latest->m_buffer->InvalidateMappedRange(0, sizeof(values));
+        memcpy(values, mapped, sizeof(values));
+        latest->m_buffer->Unmap();
+
+        *output = ConvertCullingStats(values);
+    }
+
+
+    void MeshSceneModule::ScheduleCullingStatsReadback(Core::FrameGraph& graph, ViewCullingState& state) const
+    {
+        // Skip this frame when every readback is still in flight.
+        CullingStatsReadback* readback = festd::find_if(state.m_readbacks, [](const CullingStatsReadback& candidate) {
+            return !candidate.m_isPending;
+        });
+        if (readback == state.m_readbacks.end())
+            return;
+
+        if (readback->m_buffer == nullptr)
+        {
+            constexpr uint32_t kStatsByteSize = MeshPass::CullStat::kCount * sizeof(uint32_t);
+            readback->m_buffer = Core::Buffer::CreateByteAddress(graph.GetDevice(), "MeshCullStatsReadback", kStatsByteSize);
+
+            Core::ResourceCommitParams commitParams;
+            commitParams.m_memory = Core::ResourceMemory::kHostRandomAccess;
+            commitParams.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
+            graph.GetResourcePool()->CommitBufferMemory(readback->m_buffer.Get(), commitParams);
+        }
+
+        RendererImpl* renderer = Rtti::AssertCast<RendererImpl*>(m_scene->GetRenderer());
+        graph.AddCopyPass(Core::BufferView(readback->m_buffer.Get()), Core::BufferView(state.m_stats.Get()));
+        readback->m_fence = renderer->GetGraphicsQueue()->GetCurrentFence();
+        readback->m_isPending = true;
     }
 
 
@@ -850,57 +1182,78 @@ namespace FE::Graphics
             for (const MeshHandle handle : group->m_instances)
                 m_boundsDirty.set(m_instances[handle.m_value].m_batch->m_tableRef.m_rowIndex);
 
-            FE_Assert(!submesh.m_lods.empty());
+            const uint32_t lodCount = submesh.m_lods.size();
+            FE_Assert(lodCount > 0 && lodCount <= MeshPass::kMaxLodCount);
+            FE_Assert(mesh->m_residentLod < lodCount);
 
-            if (group->m_lodsRef.m_count != submesh.m_lods.size())
+            if (group->m_lodsRef.m_count != lodCount)
             {
                 if (group->m_lodsRef.m_count != 0)
                     m_meshLodInfoTable->Free(group->m_lodsRef);
-                group->m_lodsRef = m_meshLodInfoTable->AllocateRows(submesh.m_lods.size());
+                group->m_lodsRef = m_meshLodInfoTable->AllocateRows(lodCount);
             }
+
+            // Simplification errors are relative to the largest extent of the model that was simplified as a whole.
+            const Vector3 modelSize = group->m_localBounds.Size();
+            const float errorScale = Math::Max(modelSize.x, Math::Max(modelSize.y, modelSize.z));
 
             Memory::FiberTempAllocator temp;
             festd::pmr::inline_vector<Core::MeshLodInfo> lodInfos{ &temp };
-            lodInfos.reserve(submesh.m_lods.size());
+            festd::pmr::inline_vector<uint32_t> geometryOffsets{ &temp };
+            festd::pmr::inline_vector<float> lodErrors{ &temp };
+            lodInfos.resize(lodCount);
+            geometryOffsets.resize(lodCount);
+            lodErrors.resize(lodCount);
 
-            for (const MeshLodAssetInfo& assetLod : submesh.m_lods)
+            // Assets and their payloads store the least detailed LOD first; table rows start at the most detailed one.
+            uint32_t geometryOffset = 0;
+            const uint32_t previousMeshletVisibilityWords = group->m_meshletVisibilityWords;
+            group->m_maxMeshletCount = 0;
+            group->m_meshletVisibilityWords = 0;
+            for (uint32_t assetLodIndex = 0; assetLodIndex < lodCount; ++assetLodIndex)
             {
+                const MeshLodAssetInfo& assetLod = submesh.m_lods[assetLodIndex];
                 FE_Assert(assetLod.m_meshletCount <= Visibility::kMaxMeshletCount);
 
-                Core::MeshLodInfo& lod = lodInfos.emplace_back();
+                const uint32_t lodIndex = lodCount - assetLodIndex - 1;
+                Core::MeshLodInfo& lod = lodInfos[lodIndex];
                 lod.m_vertexCount = assetLod.m_vertexCount;
                 lod.m_indexCount = assetLod.m_indexCount;
                 lod.m_meshletCount = assetLod.m_meshletCount;
                 lod.m_primitiveCount = assetLod.m_primitiveCount;
+                geometryOffsets[lodIndex] = geometryOffset;
+
+                const bool hasError = assetLodIndex < mesh->m_lodErrors.size();
+                lodErrors[lodIndex] = hasError ? mesh->m_lodErrors[assetLodIndex] * errorScale : 0.0f;
+                if (assetLodIndex <= mesh->m_residentLod)
+                    group->m_maxMeshletCount = Math::Max(group->m_maxMeshletCount, assetLod.m_meshletCount);
+
+                const uint32_t visibilityWords = Math::CeilDivide(assetLod.m_meshletCount, MeshPass::kMeshletsPerWorkChunk);
+                group->m_meshletVisibilityWords = Math::Max(group->m_meshletVisibilityWords, visibilityWords);
+
+                geometryOffset += CalculateLodPayloadSize(*mesh.Get(), assetLodIndex);
             }
 
-            m_meshLodInfoTable->CopyColumn(group->m_lodsRef, lodInfos);
+            m_meshLodInfoTable->CopyColumn(group->m_lodsRef, festd::span<const Core::MeshLodInfo>(lodInfos));
+            m_meshLodInfoTable->CopyColumn(group->m_lodsRef, festd::span<const uint32_t>(geometryOffsets));
+            m_meshLodInfoTable->CopyColumn(group->m_lodsRef, festd::span<const float>(lodErrors));
 
-            const uint32_t lodIndex = mesh->m_residentLod;
-            FE_Assert(lodIndex < submesh.m_lods.size());
+            const uint32_t finestResidentLod = lodCount - mesh->m_residentLod - 1;
+            FE_Assert(geometryOffsets[finestResidentLod] < mesh->m_buffer->GetDesc().m_size);
 
-            uint32_t geometryOffset = 0;
-            for (uint32_t previousLod = 0; previousLod < lodIndex; ++previousLod)
-            {
-                for (const MeshSubmeshAssetInfo& previousSubmesh : mesh->m_submeshes)
-                {
-                    FE_Assert(previousLod < previousSubmesh.m_lods.size());
-                    const MeshLodAssetInfo& info = previousSubmesh.m_lods[previousLod];
-                    geometryOffset += info.m_vertexCount * mesh->m_vertexStride;
-                    geometryOffset += info.m_indexCount * sizeof(uint32_t);
-                    geometryOffset += info.m_meshletCount * sizeof(Core::MeshletHeader);
-                    geometryOffset += info.m_primitiveCount * sizeof(Core::PackedTriangle);
-                    geometryOffset += info.m_meshletCount * sizeof(PackedVector4F);
-                }
-            }
-
-            FE_Assert(geometryOffset < mesh->m_buffer->GetDesc().m_size);
-
-            tableRow.m_geometry.Get() = BufferPointer{ mesh->m_buffer->GetDeviceAddress() + geometryOffset };
-            tableRow.m_lods.Get() = DB::Slice<MeshLodInfoTable>{ group->m_lodsRef.m_rowIndex + lodIndex, 1 };
+            tableRow.m_geometry.Get() = BufferPointer{ mesh->m_buffer->GetDeviceAddress() };
+            tableRow.m_lods.Get() = group->m_lodsRef;
+            tableRow.m_finestResidentLod.Get() = finestResidentLod;
             group->m_buffer = mesh->m_buffer;
             group->m_meshGeneration = meshGeneration;
             group->m_residentLod = mesh->m_residentLod;
+
+            // Reloaded meshes may change their meshlet counts, which invalidates the ranges of existing instances.
+            if (group->m_meshletVisibilityWords != previousMeshletVisibilityWords)
+            {
+                for (const MeshHandle handle : group->m_instances)
+                    AllocateMeshletVisibility(m_instances[handle.m_value]);
+            }
         }
 
         if (materialChanged)

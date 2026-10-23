@@ -13,13 +13,14 @@ struct MeshGroupTable
 {
     FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize
         / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>) + sizeof(DB::Ref<MaterialInstanceTable>)
-           + sizeof(Core::MeshBoundsInfo) + sizeof(uint32_t));
+           + sizeof(Core::MeshBoundsInfo) + sizeof(uint32_t) + sizeof(uint32_t));
 
     FE_CONSTEXPR uint32_t kOffset_m_geometry = 0;
     FE_CONSTEXPR uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kRowsPerPage;
     FE_CONSTEXPR uint32_t kOffset_m_materialInstance = kOffset_m_lods + sizeof(DB::Slice<MeshLodInfoTable>) * kRowsPerPage;
     FE_CONSTEXPR uint32_t kOffset_m_bounds = kOffset_m_materialInstance + sizeof(DB::Ref<MaterialInstanceTable>) * kRowsPerPage;
     FE_CONSTEXPR uint32_t kOffset_m_renderable = kOffset_m_bounds + sizeof(Core::MeshBoundsInfo) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_finestResidentLod = kOffset_m_renderable + sizeof(uint32_t) * kRowsPerPage;
 
     struct Row
     {
@@ -28,6 +29,7 @@ struct MeshGroupTable
         DB::ElementHandle<DB::Ref<MaterialInstanceTable>, kOffset_m_materialInstance> m_materialInstance;
         DB::ElementHandle<Core::MeshBoundsInfo, kOffset_m_bounds> m_bounds;
         DB::ElementHandle<uint32_t, kOffset_m_renderable> m_renderable;
+        DB::ElementHandle<uint32_t, kOffset_m_finestResidentLod> m_finestResidentLod;
     };
 
     struct Instance
@@ -55,6 +57,7 @@ struct MeshGroupTable
         row.m_materialInstance.Setup(pageAddress, localRowIndex);
         row.m_bounds.Setup(pageAddress, localRowIndex);
         row.m_renderable.Setup(pageAddress, localRowIndex);
+        row.m_finestResidentLod.Setup(pageAddress, localRowIndex);
         return row;
     }
 

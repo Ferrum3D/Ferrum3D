@@ -1,18 +1,16 @@
 #pragma once
 #include <Shaders/Passes/MeshPass/GpuWork.h>
-#include <Shaders/Passes/MeshPass/IndirectArguments.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::FinalizeMeshBuckets)
     FE_CONSTEXPR uint32_t kThreadCount = 256;
 
+    //! Writes bucket ranges and the indirect arguments of the meshlet culling dispatch covering all work chunks.
     struct Constants final
     {
         StructuredBufferDescriptor<uint2> m_offsets;
         StructuredBufferDescriptor<uint32_t> m_counts;
-        StructuredBufferDescriptor<BucketLayout> m_layouts;
         RWStructuredBufferDescriptor<PipelineBucket> m_buckets;
-        RWStructuredBufferDescriptor<MeshCommandRange> m_commands;
-        RWStructuredBufferDescriptor<MeshDispatchArguments> m_arguments;
+        RWStructuredBufferDescriptor<MeshletCullDispatch> m_cullDispatch;
         uint32_t m_bucketCount;
 
         FE_RTTI_Reflect("2B82E380-8B59-44EB-BBAC-DA2970D24BD4");

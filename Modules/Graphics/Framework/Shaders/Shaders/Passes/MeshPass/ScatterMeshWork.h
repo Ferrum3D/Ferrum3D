@@ -2,6 +2,7 @@
 #include <Shaders/Passes/MeshPass/GpuWork.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::ScatterMeshWork)
+    //! m_stats is invalid for passes that do not report culling statistics.
     struct Constants final
     {
         StructuredBufferDescriptor<InstanceClassification> m_classification;
@@ -10,6 +11,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::ScatterMeshWork)
         RWStructuredBufferDescriptor<uint32_t> m_cursors;
         RWStructuredBufferDescriptor<VisibleInstance> m_instances;
         RWStructuredBufferDescriptor<MeshletWorkChunk> m_work;
+        RWStructuredBufferDescriptor<uint32_t> m_stats;
+        uint32_t m_phase;
 
         FE_RTTI_Reflect("F43CDE27-BE2F-41A5-BA1E-64F6D377F746");
     };

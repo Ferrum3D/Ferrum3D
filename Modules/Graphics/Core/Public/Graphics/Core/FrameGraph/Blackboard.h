@@ -53,7 +53,9 @@ namespace FE::Graphics::Core
     template<class TPassData, class... TArgs>
     TPassData& FrameGraphBlackboard::Add(TArgs&&... args)
     {
-        void* memory = m_allocator->allocate(sizeof(TPassData) + sizeof(PassDataNode));
+        // The data follows its node, so both share the node's alignment, e.g. for SIMD matrices.
+        static_assert(alignof(TPassData) <= alignof(PassDataNode));
+        void* memory = m_allocator->allocate(sizeof(TPassData) + sizeof(PassDataNode), alignof(PassDataNode));
 
         PassDataNode* node = new (memory) PassDataNode;
         node->m_typeHash = TypeNameHash<TPassData>;

@@ -14,12 +14,21 @@ TEST(VisibilityContracts, PersistentInstanceAndPrimitiveBoundaries)
     EXPECT_EQ(first.m_instance, 1u);
     EXPECT_EQ(first.m_primitive, 0u);
 
-    const Visibility::VisibilityID last =
-        Visibility::Encode(Visibility::kMaxInstanceRow, Visibility::kMaxMeshletCount - 1, Visibility::kMaxPrimitiveCount - 1, 15);
+    const Visibility::VisibilityID last = Visibility::Encode(Visibility::kMaxInstanceRow,
+                                                             Visibility::kMaxMeshletCount - 1,
+                                                             Visibility::kMaxPrimitiveCount - 1,
+                                                             15,
+                                                             Visibility::kMaxLodCount - 1);
     EXPECT_EQ(last.m_instance, 0xffffffffu);
     EXPECT_EQ(last.m_primitive, 0xffffffffu);
-    EXPECT_EQ(last.m_primitive >> Visibility::kPrimitiveBits, Visibility::kMaxMeshletCount - 1);
-    EXPECT_EQ(last.m_primitive & 63u, Visibility::kMaxPrimitiveCount - 1);
+    EXPECT_EQ(Visibility::DecodeLod(last.m_primitive), Visibility::kMaxLodCount - 1);
+    EXPECT_EQ(Visibility::DecodeMeshlet(last.m_primitive), Visibility::kMaxMeshletCount - 1);
+    EXPECT_EQ(Visibility::DecodePrimitive(last.m_primitive), Visibility::kMaxPrimitiveCount - 1);
+
+    const Visibility::VisibilityID lod = Visibility::Encode(7, 5, 3, 0, 2);
+    EXPECT_EQ(Visibility::DecodeLod(lod.m_primitive), 2u);
+    EXPECT_EQ(Visibility::DecodeMeshlet(lod.m_primitive), 5u);
+    EXPECT_EQ(Visibility::DecodePrimitive(lod.m_primitive), 3u);
 }
 
 

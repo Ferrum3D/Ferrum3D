@@ -17,11 +17,21 @@ void main(uint3 pixel : SV_DispatchThreadID)
         return;
 
     float3 color = kDebugBackgroundColor;
-    if (GConstants.m_mode <= DebugMode::kTriangle)
+    if (GConstants.m_mode == DebugMode::kLod)
+    {
+        // Shade with the reconstructed normal so the silhouette and simplification of each LOD stay visible.
+        ReconstructedAttributes attributes;
+        const bool reconstructed =
+            ReconstructAttributes(view, id, float2(pixel.xy) + 0.5f, float2(GConstants.m_resolution), attributes, false, false);
+        const float lighting =
+            reconstructed ? 0.35f + 0.65f * saturate(dot(attributes.m_normal, normalize(float3(0.4f, 0.8f, -0.45f)))) : 1.0f;
+        color = DebugLodColor(DecodeLod(id.y)) * lighting;
+    }
+    else if (GConstants.m_mode <= DebugMode::kTriangle)
     {
         const uint key = GConstants.m_mode == DebugMode::kInstance ? id.x
             : GConstants.m_mode == DebugMode::kMeshlet             ? id.y >> kPrimitiveBits
-            : GConstants.m_mode == DebugMode::kTriangle            ? id.y & (kMaxPrimitiveCount - 1)
+            : GConstants.m_mode == DebugMode::kTriangle            ? DecodePrimitive(id.y)
                                                                    : id.x * 65537 + id.y;
         color = DebugIDColor(key);
     }
