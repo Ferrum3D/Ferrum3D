@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <Core/IO/BaseIO.h>
+#include <Core/RTTI/RTTI.h>
+#include <Core/RTTI/Shape.h>
 #include <Core/Serialization/Serialization.h>
 
 namespace FE::IO
@@ -474,6 +476,7 @@ namespace FE::IO
 
     private:
         friend struct Serialization::Serializer<Link<T, TKind>>;
+        friend struct Rtti::Shape<Link<T, TKind>>;
 
         //! Serialized logical identity; never contains a physical path or artifact location.
         AssetID m_id = AssetID::kNull;
@@ -489,7 +492,6 @@ namespace FE::Serialization
     {
         static ResultCode Serialize(SerializationContext& context, const IO::Link<T, TKind>& value)
         {
-            context.VisitAssetReference(value.m_id, Rtti::GetTypeID<T>(), festd::to_underlying(TKind));
             return SerializeValue(context, value.m_id);
         }
 
@@ -509,3 +511,62 @@ namespace FE::Serialization
         }
     };
 } // namespace FE::Serialization
+
+
+namespace FE::IO
+{
+    //! @brief Type attribute of values that refer to an asset, such as Link; see IO::VisitAssetReferences.
+    struct AssetReference final : public Rtti::MetaAttributeBase
+    {
+        constexpr AssetReference(Rtti::TypeID (*getAssetType)(), const DependencyKind kind)
+            : m_getAssetType(getAssetType)
+            , m_kind(kind)
+        {
+        }
+
+        //! Expected asset type; resolved lazily because type IDs are initialized with their modules.
+        Rtti::TypeID (*m_getAssetType)();
+        DependencyKind m_kind;
+    };
+
+
+    namespace Internal
+    {
+        //! Asset references are UUID handles carrying an AssetReference attribute.
+        template<class T, DependencyKind TKind>
+        struct AssetReferenceShape final
+        {
+            static constexpr AssetReference kReference{ &Rtti::GetTypeID<T>, TKind };
+            static constexpr auto kAttributes = Rtti::DescribeAttributes(kReference);
+
+            static void Bind(Rtti::Type& type, const Rtti::HandleShape& shape)
+            {
+                type.SetShape(shape);
+                type.m_attributes = kAttributes;
+            }
+        };
+    } // namespace Internal
+} // namespace FE::IO
+
+
+namespace FE::Rtti
+{
+    template<class T, IO::DependencyKind TKind>
+    struct Shape<IO::Link<T, TKind>>
+    {
+        static void Bind(Type& type)
+        {
+            static constexpr HandleShape kShape{
+                .m_get =
+                    [](const void* value) {
+                        return static_cast<const IO::Link<T, TKind>*>(value)->m_id;
+                    },
+                .m_set =
+                    [](void* value, const Uuid uuid) {
+                        static_cast<IO::Link<T, TKind>*>(value)->m_id = uuid;
+                    },
+            };
+            IO::Internal::AssetReferenceShape<T, TKind>::Bind(type, kShape);
+        }
+    };
+} // namespace FE::Rtti

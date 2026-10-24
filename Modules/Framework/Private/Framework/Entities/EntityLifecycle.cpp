@@ -1,4 +1,4 @@
-#include <Core/Serialization/DependencySerialization.h>
+#include <Core/IO/AssetReferences.h>
 #include <Framework/Entities/EntityWorldInternal.h>
 
 namespace FE::Framework
@@ -179,29 +179,10 @@ namespace FE::Framework
         if (!HasStage(stage, ComponentStage::kDiscovered))
         {
             stage |= ComponentStage::kDiscovered;
-            if (info.m_type->m_serialize)
-            {
-                struct Discovery
-                {
-                    EntityLifecycle* m_lifecycle;
-                    Entity* m_entity;
-                } discovery{ this, &entity };
-
-                const auto result = Serialization::VisitAssetReferences(
-                    *info.m_type,
-                    data,
-                    &discovery,
-                    [](void* user, const Uuid asset, const Rtti::TypeID type, const uint32_t kind) {
-                        if (kind != festd::to_underlying(IO::DependencyKind::kHard))
-                            return;
-
-                        auto& d = *static_cast<Discovery*>(user);
-                        d.m_lifecycle->ContributeAsset(*d.m_entity, d.m_lifecycle->m_loading, asset, type);
-                    });
-
-                if (result != Serialization::ResultCode::kSuccess)
-                    return LifecycleResult::kFailed;
-            }
+            IO::VisitAssetReferences(*info.m_type, data, [&](const IO::AssetReferenceInfo& reference) {
+                if (reference.m_kind == IO::DependencyKind::kHard)
+                    ContributeAsset(entity, m_loading, reference.m_assetId, reference.m_assetType);
+            });
         }
 
         auto status = PollDependencies(entity, m_loading);

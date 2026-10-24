@@ -18,6 +18,11 @@ namespace FE::Rtti
         kEnum = 1 << 1,
         kTrivial = 1 << 2,
         kStandardLayout = 1 << 3,
+        //! The reflected fields do not hold the whole value, e.g. bitfields, anonymous unions or a manual serializer's state.
+        //! Field-wise operations such as copies treat the value as a whole.
+        kHasUnreflectedFields = 1 << 4,
+        //! Synthesized from a C++ type that has no generated reflection, e.g. a container instance.
+        kSynthesized = 1 << 5,
     };
 
 
@@ -66,7 +71,7 @@ namespace FE::Rtti
         };
 
 
-        template<uint32_t TSize, class T>
+        template<size_t TSize, class T>
         constexpr void DescribeMetaAttribute(festd::array<Attribute, TSize>& result, uint32_t& index, const T& value)
         {
             if constexpr (kIsMetaAttributeList<T>)
@@ -110,14 +115,17 @@ namespace FE::Rtti
     }
 
 
+    struct Type;
+
+
     struct FieldInfo final
     {
         festd::ascii_view m_name;
-        TypeID m_type;
+        //! Never null; C arrays, containers and other unreflected types are synthesized.
+        const Type* m_type = nullptr;
         festd::span<const Attribute> m_attributes;
         uint32_t m_offset = 0;
         uint32_t m_size = 0;
-        uint32_t m_arraySize = 0;
         FieldFlags m_flags = FieldFlags::kNone;
 
         template<class T>
@@ -127,26 +135,149 @@ namespace FE::Rtti
         }
 
 
-        template<class TValue>
-        const TValue& Get(const void* instance, const uint32_t arrayIndex = 0) const
+        [[nodiscard]] void* GetAddress(void* instance) const
         {
-            FE_AssertDebug(arrayIndex < m_arraySize);
+            return static_cast<std::byte*>(instance) + m_offset;
+        }
 
-            const uintptr_t address = reinterpret_cast<uintptr_t>(instance) + m_offset;
-            const TValue* ptr = reinterpret_cast<const TValue*>(address);
-            return ptr[arrayIndex];
+
+        [[nodiscard]] const void* GetAddress(const void* instance) const
+        {
+            return static_cast<const std::byte*>(instance) + m_offset;
         }
 
 
         template<class TValue>
-        void Set(void* instance, const TValue& value, const uint32_t arrayIndex = 0) const
+        const TValue& Get(const void* instance) const
         {
-            FE_AssertDebug(arrayIndex < m_arraySize);
-
-            const uintptr_t address = reinterpret_cast<uintptr_t>(instance) + m_offset;
-            TValue* ptr = reinterpret_cast<TValue*>(address);
-            ptr[arrayIndex] = value;
+            return *static_cast<const TValue*>(GetAddress(instance));
         }
+
+
+        template<class TValue>
+        void Set(void* instance, const TValue& value) const
+        {
+            *static_cast<TValue*>(GetAddress(instance)) = value;
+        }
+    };
+
+
+    //! How generic traversal, copying and editing see the values of a type.
+    enum class TypeShape : uint8_t
+    {
+        //! No structure is exposed; the value can only be copied as a whole.
+        kOpaque,
+        //! Reflected fields and bases.
+        kStruct,
+        kScalar,
+        kEnum,
+        kString,
+        //! Fixed number of contiguous elements, e.g. a C array.
+        kFixedArray,
+        //! Resizable list of elements.
+        kSequence,
+        //! One of several alternative types.
+        kVariant,
+        //! Value whose type is known only at runtime, e.g. Rc<T> or Any.
+        kDynamic,
+        //! UUID-valued identity; type attributes say what it refers to.
+        kHandle,
+    };
+
+
+    enum class ScalarKind : uint8_t
+    {
+        kBool,
+        kSigned,
+        kUnsigned,
+        kFloat,
+    };
+
+
+    struct ScalarShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kScalar;
+
+        ScalarKind m_kind = ScalarKind::kSigned;
+    };
+
+
+    struct EnumShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kEnum;
+
+        int64_t (*m_get)(const void* value) = nullptr;
+        void (*m_set)(void* value, int64_t underlying) = nullptr;
+    };
+
+
+    struct StringShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kString;
+
+        std::string_view (*m_get)(const void* value) = nullptr;
+        //! Null for read-only strings such as views.
+        void (*m_set)(void* value, std::string_view text) = nullptr;
+    };
+
+
+    struct FixedArrayShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kFixedArray;
+
+        const Type* m_element = nullptr;
+        uint32_t m_count = 0;
+        uint32_t m_stride = 0;
+    };
+
+
+    struct SequenceShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kSequence;
+
+        const Type* m_element = nullptr;
+        uint32_t (*m_size)(const void* value) = nullptr;
+        void* (*m_at)(void* value, uint32_t index) = nullptr;
+        //! @brief Insert a default-constructed element; fails when the container is full.
+        bool (*m_insert)(void* value, uint32_t index) = nullptr;
+        void (*m_erase)(void* value, uint32_t index) = nullptr;
+        //! @brief Resize with default-constructed elements; fails when the container cannot hold them.
+        bool (*m_resize)(void* value, uint32_t size) = nullptr;
+    };
+
+
+    struct VariantShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kVariant;
+
+        festd::span<const Type* const> m_alternatives;
+        uint32_t (*m_index)(const void* value) = nullptr;
+        void* (*m_get)(void* value) = nullptr;
+        //! @brief Replace the value with a default-constructed alternative.
+        void (*m_emplace)(void* value, uint32_t index) = nullptr;
+    };
+
+
+    struct DynamicShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kDynamic;
+
+        //! Common base of the held values; null when any registered type can be held.
+        const Type* m_base = nullptr;
+        //! Most derived type of the held value; null when empty.
+        const Type* (*m_type)(const void* value) = nullptr;
+        void* (*m_value)(void* value) = nullptr;
+        //! @brief Replace the held value with a default-constructed instance of type, or clear it when type is null.
+        bool (*m_reset)(void* value, const Type* type) = nullptr;
+    };
+
+
+    struct HandleShape final
+    {
+        static constexpr TypeShape kShape = TypeShape::kHandle;
+
+        Uuid (*m_get)(const void* value) = nullptr;
+        void (*m_set)(void* value, Uuid uuid) = nullptr;
     };
 
 
@@ -157,6 +288,7 @@ namespace FE::Rtti
     {
         using DefaultConstructor = void (*)(void*);
         using CopyConstructor = void (*)(void*, const void*);
+        using CopyAssignment = void (*)(void*, const void*);
         using MoveConstructor = void (*)(void*, void*);
         using Destructor = void (*)(void*);
         //! @brief Cast a complete polymorphic instance to a reflected base, adjusting its address when needed.
@@ -169,6 +301,7 @@ namespace FE::Rtti
         festd::ascii_view m_qualifiedName;
         DefaultConstructor m_defaultConstructor = nullptr;
         CopyConstructor m_copyConstructor = nullptr;
+        CopyAssignment m_copyAssignment = nullptr;
         MoveConstructor m_moveConstructor = nullptr;
         Destructor m_destructor = nullptr;
         //! @brief Type-erased RTTI cast; null for types without polymorphic RTTI.
@@ -191,11 +324,29 @@ namespace FE::Rtti
         uint32_t m_serializationVersion = 0;
         uint64_t m_serializationSchemaHash = 0;
         TypeFlags m_flags = TypeFlags::kNone;
+        TypeShape m_shape = TypeShape::kOpaque;
+        //! Points to the shape structure matching m_shape; null for kOpaque and kStruct.
+        const void* m_shapeInfo = nullptr;
 
         template<class T>
         [[nodiscard]] const T* TryGetAttribute() const
         {
             return Rtti::TryGetAttribute<T>(m_attributes);
+        }
+
+
+        template<class TShape>
+        [[nodiscard]] const TShape* TryGetShape() const
+        {
+            return m_shape == TShape::kShape ? static_cast<const TShape*>(m_shapeInfo) : nullptr;
+        }
+
+
+        template<class TShape>
+        void SetShape(const TShape& shape)
+        {
+            m_shape = TShape::kShape;
+            m_shapeInfo = &shape;
         }
     };
 
@@ -230,6 +381,12 @@ namespace FE::Rtti
         const Type* FindType(festd::ascii_view qualifiedName);
 
         TypeList GetTypes();
+
+        namespace Internal
+        {
+            //! @brief Register a type synthesized on first use; runs while reflecting the types that contain it.
+            void RegisterSynthesizedType(Type& type);
+        } // namespace Internal
     } // namespace TypeRegistry
 
 

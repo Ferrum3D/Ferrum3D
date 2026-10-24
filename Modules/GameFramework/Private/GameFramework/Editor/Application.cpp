@@ -308,8 +308,9 @@ namespace FE::Editor
         const void* value = isEditing ? m_componentEdit.m_value.GetValue() : live;
         const bool readOnly = component.m_policy.m_transient || !type.m_copyConstructor || !type.m_destructor;
 
-        FieldEdit edit;
-        if (!DrawReflectedFields(type, value, edit, readOnly, live))
+        InspectorEdit edit;
+        const InspectorContext context{ m_assets.GetAssets() };
+        if (!DrawReflectedValue(type, value, edit, context, readOnly, live))
             return;
 
         if (!isEditing)
@@ -328,7 +329,9 @@ namespace FE::Editor
         }
 
         void* candidate = m_componentEdit.m_value.GetValue();
-        edit.Apply(candidate);
+        if (!edit.Apply(type, candidate))
+            return;
+
         m_componentEdit.m_lastEditFrame = ImGui::GetFrameCount();
         m_componentEdit.m_isPending = !type.m_validate || type.m_validate(candidate);
     }
@@ -379,11 +382,12 @@ namespace FE::Editor
                             ImGui::TextDisabled("These settings apply when the world starts.");
 
                         const Rtti::Type& configurationType = *settings.GetType();
-                        FieldEdit edit;
-                        if (DrawReflectedFields(configurationType, settings.GetValue(), edit, readOnly) && !readOnly)
+                        InspectorEdit edit;
+                        const InspectorContext context{ m_assets.GetAssets() };
+                        if (DrawReflectedValue(configurationType, settings.GetValue(), edit, context, readOnly) && !readOnly)
                         {
-                            edit.Apply(settings.GetValue());
-                            const bool valid = !configurationType.m_validate || configurationType.m_validate(settings.GetValue());
+                            const bool valid = edit.Apply(configurationType, settings.GetValue())
+                                && (!configurationType.m_validate || configurationType.m_validate(settings.GetValue()));
                             if (valid && type.m_applyConfiguration(object, settings))
                                 m_serviceSettingsError.clear();
                             else

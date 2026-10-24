@@ -9,3 +9,5 @@
 #define FE_ICON_INPUT "\xef\x84\x9c"
 #define FE_ICON_OPEN "\xef\x81\xbc"
 #define FE_ICON_REFRESH "\xef\x80\xa1"
+#define FE_ICON_ADD "\xef\x81\xa7"
+#define FE_ICON_REMOVE "\xef\x80\x8d"

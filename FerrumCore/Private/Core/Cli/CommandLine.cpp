@@ -204,7 +204,7 @@ namespace FE::Cli
                 const Rtti::FieldInfo* result = nullptr;
                 for (const Rtti::FieldInfo& field : m_currentCommand->GetCliType().m_fields)
                 {
-                    if ((field.m_type != Rtti::GetTypeID<Flag>() && field.m_type != Rtti::GetTypeID<Option>())
+                    if ((field.m_type->m_id != Rtti::GetTypeID<Flag>() && field.m_type->m_id != Rtti::GetTypeID<Option>())
                         || !NameMatches(name, field))
                     {
                         continue;
@@ -241,7 +241,7 @@ namespace FE::Cli
                     return false;
                 }
 
-                if (field->m_type == Rtti::GetTypeID<Flag>())
+                if (field->m_type->m_id == Rtti::GetTypeID<Flag>())
                 {
                     if (separator != nullptr)
                     {
@@ -451,13 +451,13 @@ namespace FE::Cli
             result.append("\nOptions:\n");
             for (const Rtti::FieldInfo& field : command.GetCliType().m_fields)
             {
-                if (field.m_type != Rtti::GetTypeID<Flag>() && field.m_type != Rtti::GetTypeID<Option>())
+                if (field.m_type->m_id != Rtti::GetTypeID<Flag>() && field.m_type->m_id != Rtti::GetTypeID<Option>())
                     continue;
 
                 result.append("  --");
                 const uint32_t nameBegin = result.size();
                 AppendOptionName(result, field);
-                if (field.m_type == Rtti::GetTypeID<Option>())
+                if (field.m_type->m_id == Rtti::GetTypeID<Option>())
                 {
                     result.append(" <");
                     const festd::string_view valueName = GetAttribute<ValueName>(field.m_attributes);

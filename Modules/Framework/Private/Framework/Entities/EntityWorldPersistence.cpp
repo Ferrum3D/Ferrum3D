@@ -46,7 +46,6 @@ namespace FE::Framework
             return Fail("Snapshot blocked by pending entity materialization");
 
         EntityWorldSnapshotAsset result;
-        ComponentCopier copier;
         for (EntityRegistry* registry : m_storage.m_registries)
         {
             if (registry->IsTransient())
@@ -95,7 +94,7 @@ namespace FE::Framework
                     Rtti::Any& component = record.m_components.emplace_back();
                     if (!info.m_type->m_serialize || !info.m_type->m_deserialize || !info.m_type->m_copyConstructor
                         || !component.Emplace(*info.m_type)
-                        || !copier.Copy(*info.m_type, entity->m_chunk->Get(entity->m_row, column), component.GetValue()))
+                        || !CopyComponent(*info.m_type, entity->m_chunk->Get(entity->m_row, column), component.GetValue()))
                     {
                         return Fail("Invalid serializable entity component");
                     }

@@ -182,15 +182,9 @@ namespace FE::Serialization
 
     struct SerializationContext final
     {
-        // HACK
-        using AssetReferenceCallback = void (*)(void*, Uuid, Rtti::TypeID, uint32_t);
-
-        SerializationContext(IO::IStream* stream, SerializationFormat& format, void* assetReferenceUserData = nullptr,
-                             AssetReferenceCallback assetReferenceCallback = nullptr)
+        SerializationContext(IO::IStream* stream, SerializationFormat& format)
             : m_stream(stream)
             , m_format(&format)
-            , m_assetReferenceUserData(assetReferenceUserData)
-            , m_assetReferenceCallback(assetReferenceCallback)
         {
             FE_Assert(stream != nullptr);
         }
@@ -269,20 +263,12 @@ namespace FE::Serialization
             return m_format->Record(code);
         }
 
-        void VisitAssetReference(const Uuid assetId, const Rtti::TypeID expectedTypeId, const uint32_t dependencyKind) const
-        {
-            if (m_assetReferenceCallback != nullptr && assetId.IsValid())
-                m_assetReferenceCallback(m_assetReferenceUserData, assetId, expectedTypeId, dependencyKind);
-        }
-
     private:
         friend SerializationObject;
         friend SerializationArray;
 
         IO::IStream* m_stream;
         SerializationFormat* m_format;
-        void* m_assetReferenceUserData = nullptr;
-        AssetReferenceCallback m_assetReferenceCallback = nullptr;
 
         template<class T>
         ResultCode Field(const festd::ascii_view name, const T& value)
@@ -415,20 +401,6 @@ namespace FE::Serialization
 
         ResultCode Load(const Rtti::Type& type, void* value);
 
-        using ObjectReferenceRemapper = Uuid (*)(void*, Uuid);
-        void SetObjectReferenceRemapper(void* data, ObjectReferenceRemapper remapper)
-        {
-            m_objectReferenceData = data;
-            m_objectReferenceRemapper = remapper;
-        }
-
-
-        [[nodiscard]] Uuid RemapObjectReference(const Uuid uuid) const
-        {
-            return m_objectReferenceRemapper ? m_objectReferenceRemapper(m_objectReferenceData, uuid) : uuid;
-        }
-
-
         template<class T>
         ResultCode Number(T& value)
         {
@@ -467,8 +439,6 @@ namespace FE::Serialization
 
         IO::IStream* m_stream;
         SerializationFormat* m_format;
-        void* m_objectReferenceData = nullptr;
-        ObjectReferenceRemapper m_objectReferenceRemapper = nullptr;
 
         template<class T>
         ResultCode Field(const festd::ascii_view name, T& value)
@@ -844,6 +814,7 @@ namespace FE::Serialization
 
     //! Tagged alternatives with transactional payload decoding.
     template<class... Types>
+        requires(Internal::HasSerializer<Types> && ...)
     struct Serializer<festd::variant<Types...>>
     {
         using Variant = festd::variant<Types...>;
@@ -999,6 +970,7 @@ namespace FE::Serialization
 
 
     template<class T, size_t TSize>
+        requires Internal::HasSerializer<T>
     struct Serializer<T[TSize]>
     {
         static ResultCode Serialize(SerializationContext& context, const T (&value)[TSize])
@@ -1047,6 +1019,7 @@ namespace FE::Serialization
 
 
     template<class T, size_t TSize>
+        requires Internal::HasSerializer<T>
     struct Serializer<festd::array<T, TSize>>
     {
         static ResultCode Serialize(SerializationContext& context, const festd::array<T, TSize>& value)
@@ -1095,6 +1068,7 @@ namespace FE::Serialization
 
 
     template<class T, class TAllocator>
+        requires Internal::HasSerializer<T>
     struct Serializer<eastl::vector<T, TAllocator>>
     {
         static ResultCode Serialize(SerializationContext& context, const eastl::vector<T, TAllocator>& value)
@@ -1140,6 +1114,7 @@ namespace FE::Serialization
 
 
     template<class T, size_t TInlineCapacity, class TAllocator>
+        requires Internal::HasSerializer<T>
     struct Serializer<gch::small_vector<T, TInlineCapacity, TAllocator>>
     {
         static ResultCode Serialize(SerializationContext& context, const gch::small_vector<T, TInlineCapacity, TAllocator>& value)

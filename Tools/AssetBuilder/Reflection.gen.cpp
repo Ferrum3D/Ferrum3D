@@ -24,6 +24,22 @@ namespace FE::AssetBuilder
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_38a7f222c6364947b7009e6fa582bc4a(TextureBuildSettings* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x38, 0xa7, 0xf2, 0x22, 0xc6, 0x36, 0x49, 0x47,
+                0xb7, 0x00, 0x9e, 0x6f, 0xa5, 0x82, 0xbc, 0x4a, // FE::AssetBuilder::TextureBuildSettings (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_38a7f222c6364947b7009e6fa582bc4a()
         {
             static Rtti::Type typeInstance;
@@ -46,12 +62,6 @@ namespace FE::AssetBuilder
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_sourceObjectIndex
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_sourcePath
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_sourceObjectIndex = {};
@@ -59,16 +69,14 @@ namespace FE::AssetBuilder
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_sourcePath = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourceObjectIndex",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TextureBuildSettings::m_sourceObjectIndex,
-                                                        kAttributes_m_sourceObjectIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourcePath",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TextureBuildSettings::m_sourcePath,
-                                                        kAttributes_m_sourcePath,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sourceObjectIndex",
+                                                     &TextureBuildSettings::m_sourceObjectIndex,
+                                                     kAttributes_m_sourceObjectIndex,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sourcePath",
+                                                     &TextureBuildSettings::m_sourcePath,
+                                                     kAttributes_m_sourcePath,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<TextureBuildSettings>(typeInstance,
@@ -76,7 +84,11 @@ namespace FE::AssetBuilder
                                                    "FE::AssetBuilder::TextureBuildSettings",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields);
+                                                   kFields,
+                                                   Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_38a7f222c6364947b7009e6fa582bc4a(static_cast<TextureBuildSettings*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_38a7f222c6364947b7009e6fa582bc4a(&TextureBuildSettings::Reflect);
@@ -153,6 +165,7 @@ namespace FE::AssetBuilder
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_42707ccb12484abba6a8067b1d2d6a0b()
         {
             static Rtti::Type typeInstance;
@@ -193,7 +206,8 @@ namespace FE::AssetBuilder
                                                             "FE::AssetBuilder::MaterialInstanceBuildSettings",
                                                             kBaseClassTypeIDs,
                                                             kAttributes,
-                                                            kFields);
+                                                            kFields,
+                                                            Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MaterialInstanceBuildSettings*>(instance)->RTTI_TryCast(target);
         };
@@ -250,6 +264,22 @@ namespace FE::AssetBuilder
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_534cd65c1645484db12437e908676f00(MeshBuildSettings* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x53, 0x4c, 0xd6, 0x5c, 0x16, 0x45, 0x48, 0x4d,
+                0xb1, 0x24, 0x37, 0xe9, 0x08, 0x67, 0x6f, 0x00, // FE::AssetBuilder::MeshBuildSettings (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_534cd65c1645484db12437e908676f00()
         {
             static Rtti::Type typeInstance;
@@ -272,12 +302,6 @@ namespace FE::AssetBuilder
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_sourceObjectIndex
-            0xdd, 0x3b, 0xa9, 0xbb, 0xe7, 0xd2, 0x42, 0x17,
-            0xa7, 0x97, 0xf7, 0xc8, 0x1e, 0xf3, 0x51, 0xa2, // bool m_generateLods
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_sourceObjectIndex = {};
@@ -285,16 +309,14 @@ namespace FE::AssetBuilder
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_generateLods = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourceObjectIndex",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MeshBuildSettings::m_sourceObjectIndex,
-                                                        kAttributes_m_sourceObjectIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_generateLods",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MeshBuildSettings::m_generateLods,
-                                                        kAttributes_m_generateLods,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sourceObjectIndex",
+                                                     &MeshBuildSettings::m_sourceObjectIndex,
+                                                     kAttributes_m_sourceObjectIndex,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_generateLods",
+                                                     &MeshBuildSettings::m_generateLods,
+                                                     kAttributes_m_generateLods,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MeshBuildSettings>(typeInstance,
@@ -302,7 +324,11 @@ namespace FE::AssetBuilder
                                                 "FE::AssetBuilder::MeshBuildSettings",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields);
+                                                kFields,
+                                                Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_534cd65c1645484db12437e908676f00(static_cast<MeshBuildSettings*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_534cd65c1645484db12437e908676f00(&MeshBuildSettings::Reflect);
@@ -364,6 +390,22 @@ namespace FE::AssetBuilder
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_80d1a4921c424c3c9913df8085e9655a(ModelBuildSettings* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x80, 0xd1, 0xa4, 0x92, 0x1c, 0x42, 0x4c, 0x3c,
+                0x99, 0x13, 0xdf, 0x80, 0x85, 0xe9, 0x65, 0x5a, // FE::AssetBuilder::ModelBuildSettings (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_80d1a4921c424c3c9913df8085e9655a()
         {
             static Rtti::Type typeInstance;
@@ -386,20 +428,15 @@ namespace FE::AssetBuilder
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_sourceObjectIndex
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_sourceObjectIndex = {};
 
         static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourceObjectIndex",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ModelBuildSettings::m_sourceObjectIndex,
-                                                        kAttributes_m_sourceObjectIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sourceObjectIndex",
+                                                     &ModelBuildSettings::m_sourceObjectIndex,
+                                                     kAttributes_m_sourceObjectIndex,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ModelBuildSettings>(typeInstance,
@@ -407,7 +444,11 @@ namespace FE::AssetBuilder
                                                  "FE::AssetBuilder::ModelBuildSettings",
                                                  kBaseClassTypeIDs,
                                                  kAttributes,
-                                                 kFields);
+                                                 kFields,
+                                                 Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_80d1a4921c424c3c9913df8085e9655a(static_cast<ModelBuildSettings*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_80d1a4921c424c3c9913df8085e9655a(&ModelBuildSettings::Reflect);
@@ -480,6 +521,7 @@ namespace FE::AssetBuilder
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_a5f968e2282c4364957bdc52cc51014d()
         {
             static Rtti::Type typeInstance;
@@ -520,7 +562,8 @@ namespace FE::AssetBuilder
                                                     "FE::AssetBuilder::MaterialBuildSettings",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MaterialBuildSettings*>(instance)->RTTI_TryCast(target);
         };

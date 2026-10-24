@@ -164,11 +164,11 @@ namespace FE::Editor
         };
 
 
-        //! Controls edit a byte copy of the field, so their types must be trivially copyable and fit a FieldEdit.
+        //! Controls edit a byte copy of the value, so their types must be trivially copyable and fit an InspectorEdit.
         template<class T>
         Control MakeControl(const DrawControl draw)
         {
-            static_assert(std::is_trivially_copyable_v<T> && sizeof(T) <= FieldEdit::kMaxSize && alignof(T) <= 16);
+            static_assert(std::is_trivially_copyable_v<T> && sizeof(T) <= InspectorEdit::kMaxSize && alignof(T) <= 16);
             return { Rtti::GetTypeID<T>(), draw };
         }
 
@@ -220,98 +220,550 @@ namespace FE::Editor
         }
 
 
-        //! Draw one field from a copy; on change, record it relative to the start of the drawn root value.
-        bool DrawField(const Rtti::FieldInfo& field, const void* storage, const uint32_t rootOffset, FieldEdit& edit)
+        festd::ascii_view GetFieldLabel(const Rtti::FieldInfo& field)
         {
             const auto* display = field.TryGetAttribute<Rtti::DisplayName>();
-            const festd::inline_string name(display ? display->m_name : field.m_name);
-            const bool isSingleValue = field.m_arraySize == 1 && !Bit::AnySet(field.m_flags, Rtti::FieldFlags::kPointer);
-            const auto draw = isSingleValue ? FindControl(field.m_type) : nullptr;
-            if (!draw)
+            return display ? display->m_name : field.m_name;
+        }
+
+
+        const char* GetEnumName(const Rtti::Type& type, const int64_t value)
+        {
+            for (uint32_t index = 0; index < type.m_enumValues.size(); ++index)
             {
-                ImGui::TextDisabled("%s (unsupported type)", name.c_str());
-                return false;
+                if (type.m_enumValues[index] != value)
+                    continue;
+
+                const bool hasDisplayName = index < type.m_enumDisplayNames.size() && !type.m_enumDisplayNames[index].empty();
+                return (hasDisplayName ? type.m_enumDisplayNames[index] : type.m_enumNames[index]).data();
             }
 
-            FE_AssertDebug(field.m_size <= FieldEdit::kMaxSize);
-            alignas(16) std::byte copy[FieldEdit::kMaxSize];
-            memcpy(copy, static_cast<const std::byte*>(storage) + field.m_offset, field.m_size);
+            return nullptr;
+        }
 
-            const bool transient = Bit::AnySet(field.m_flags, Rtti::FieldFlags::kTransient);
-            ImGui::BeginDisabled(transient);
-            const bool changed = draw(name.c_str(), copy) && !transient;
-            ImGui::EndDisabled();
-            if (!changed)
+
+        //! Types a dynamic value can hold: registered default-constructible classes derived from its base, or serializable ones.
+        bool IsDynamicCandidate(const Rtti::Type& candidate, const Rtti::Type* base)
+        {
+            if (!candidate.m_defaultConstructor || !candidate.m_destructor || candidate.m_shape != Rtti::TypeShape::kStruct)
                 return false;
 
-            edit.m_offset = rootOffset + field.m_offset;
-            edit.m_size = field.m_size;
-            memcpy(edit.m_value, copy, field.m_size);
-            return true;
+            if (base == nullptr)
+                return candidate.m_serialize != nullptr;
+
+            if (&candidate == base)
+                return true;
+
+            return festd::find(candidate.m_baseTypes, base->m_id) != candidate.m_baseTypes.end();
         }
 
 
-        //! Base subobject address; the cast only adjusts the pointer and never writes through it.
-        const void* CastToBase(const Rtti::Type& type, const void* value, const Rtti::TypeID baseId)
+        //! Recursive drawing state; records the first edit and the path to the value it changes.
+        struct Inspector final
         {
-            return value ? type.m_cast(const_cast<void*>(value), baseId) : nullptr;
-        }
+            InspectorEdit& m_edit;
+            const InspectorContext& m_context;
+            Rtti::ValuePath m_path;
 
-
-        bool DrawFields(const Rtti::Type& type, const void* value, const bool includeBases, const void* runtimeValue,
-                        const uint32_t rootOffset, FieldEdit& edit)
-        {
-            // At most one control is active at a time; a later change in the same frame is dropped.
-            FieldEdit ignored;
-            bool changed = false;
-            if (includeBases && type.m_cast)
+            [[nodiscard]] bool HasEdit() const
             {
-                for (const auto baseId : type.m_baseTypes)
-                {
-                    const auto* base = Rtti::TypeRegistry::FindType(baseId);
-                    const void* baseValue = CastToBase(type, value, baseId);
-                    if (!base || !baseValue)
-                        continue;
+                return m_edit.m_kind != InspectorEdit::Kind::kNone;
+            }
 
-                    ImGui::PushID(Fmt::FixedFormat("{}", baseId).c_str());
-                    if (ImGui::TreeNode(festd::inline_string(GetDisplayName(*base)).c_str()))
+
+            void DrawRoot(const Rtti::Type& type, const void* value, const void* runtimeValue)
+            {
+                if (type.m_shape == Rtti::TypeShape::kStruct)
+                    DrawStruct(type, value, runtimeValue, true);
+                else
+                    DrawValue("Value", type, value, false);
+            }
+
+        private:
+            //! Begin an edit of the value at the current path; later edits in the same frame are dropped.
+            bool BeginEdit(const InspectorEdit::Kind kind)
+            {
+                if (HasEdit())
+                    return false;
+
+                m_edit.m_kind = kind;
+                m_edit.m_path = m_path;
+                return true;
+            }
+
+
+            bool BeginTree(const char* label) const
+            {
+                if (m_context.m_expandAll)
+                    ImGui::SetNextItemOpen(true);
+
+                return ImGui::TreeNode(label);
+            }
+
+
+            void PushStep(const Rtti::PathStep::Kind kind, const uint32_t index)
+            {
+                m_path.push_back({ kind, index });
+                ImGui::PushID(static_cast<int>(festd::to_underlying(kind) << 24 | index));
+            }
+
+
+            void PopStep()
+            {
+                ImGui::PopID();
+                m_path.pop_back();
+            }
+
+
+            void DrawValue(const char* label, const Rtti::Type& type, const void* value, const bool readOnly)
+            {
+                ImGui::BeginDisabled(readOnly);
+                if (const DrawControl draw = FindControl(type.m_id))
+                    DrawLeaf(label, type, value, draw);
+                else
+                    DrawShape(label, type, value);
+
+                ImGui::EndDisabled();
+            }
+
+
+            void DrawLeaf(const char* label, const Rtti::Type& type, const void* value, const DrawControl draw)
+            {
+                alignas(16) std::byte copy[InspectorEdit::kMaxSize];
+                memcpy(copy, value, type.m_size);
+                if (!draw(label, copy) || !BeginEdit(InspectorEdit::Kind::kAssign))
+                    return;
+
+                m_edit.m_size = type.m_size;
+                memcpy(m_edit.m_value, copy, type.m_size);
+            }
+
+
+            void DrawShape(const char* label, const Rtti::Type& type, const void* value)
+            {
+                switch (type.m_shape)
+                {
+                case Rtti::TypeShape::kStruct:
+                    if (BeginTree(label))
                     {
-                        const auto baseOffset = static_cast<uint32_t>(static_cast<const std::byte*>(baseValue)
-                                                                      - static_cast<const std::byte*>(value));
-                        const void* runtimeBase = CastToBase(type, runtimeValue, baseId);
-                        changed |=
-                            DrawFields(*base, baseValue, false, runtimeBase, rootOffset + baseOffset, changed ? ignored : edit);
+                        DrawStruct(type, value, nullptr, true);
                         ImGui::TreePop();
                     }
+                    break;
 
-                    ImGui::PopID();
+                case Rtti::TypeShape::kEnum:
+                    DrawEnum(label, type, value);
+                    break;
+
+                case Rtti::TypeShape::kString:
+                    DrawString(label, *type.TryGetShape<Rtti::StringShape>(), value);
+                    break;
+
+                case Rtti::TypeShape::kHandle:
+                    DrawHandle(label, type, value);
+                    break;
+
+                case Rtti::TypeShape::kFixedArray:
+                case Rtti::TypeShape::kSequence:
+                    DrawElements(label, type, value);
+                    break;
+
+                case Rtti::TypeShape::kVariant:
+                    DrawVariant(label, *type.TryGetShape<Rtti::VariantShape>(), value);
+                    break;
+
+                case Rtti::TypeShape::kDynamic:
+                    DrawDynamic(label, *type.TryGetShape<Rtti::DynamicShape>(), value);
+                    break;
+
+                default:
+                    ImGui::TextDisabled("%s (unsupported type)", label);
+                    break;
                 }
             }
 
-            for (const auto& field : type.m_fields)
-            {
-                if (!Bit::AnySet(field.m_flags, Rtti::FieldFlags::kInstance))
-                    continue;
 
-                const bool transient = Bit::AnySet(field.m_flags, Rtti::FieldFlags::kTransient);
-                const void* storage = transient && runtimeValue ? runtimeValue : value;
-                ImGui::PushID(static_cast<int>(field.m_offset));
-                changed |= DrawField(field, storage, rootOffset, changed ? ignored : edit);
-                ImGui::PopID();
+            //! Bases are flattened into the most derived type, so a base is drawn with its own fields only.
+            void DrawStruct(const Rtti::Type& type, const void* value, const void* runtimeValue, const bool includeBases)
+            {
+                if (includeBases)
+                {
+                    for (uint32_t baseIndex = 0; baseIndex < type.m_baseTypes.size(); ++baseIndex)
+                        DrawBase(type, baseIndex, value);
+                }
+
+                for (uint32_t fieldIndex = 0; fieldIndex < type.m_fields.size(); ++fieldIndex)
+                {
+                    const Rtti::FieldInfo& field = type.m_fields[fieldIndex];
+                    if (!Bit::AnySet(field.m_flags, Rtti::FieldFlags::kInstance))
+                        continue;
+
+                    // Runtime state is shown from the live value and cannot be edited.
+                    const bool isTransient = Bit::AnySet(field.m_flags, Rtti::FieldFlags::kTransient);
+                    const void* storage = isTransient && runtimeValue ? runtimeValue : value;
+                    const festd::inline_string label(GetFieldLabel(field));
+
+                    PushStep(Rtti::PathStep::Kind::kField, fieldIndex);
+                    if (Bit::AnySet(field.m_flags, Rtti::FieldFlags::kPointer))
+                        ImGui::TextDisabled("%s (pointer)", label.c_str());
+                    else
+                        DrawValue(label.c_str(), *field.m_type, field.GetAddress(storage), isTransient);
+
+                    PopStep();
+                }
             }
 
-            return changed;
-        }
+
+            void DrawBase(const Rtti::Type& type, const uint32_t baseIndex, const void* value)
+            {
+                const Rtti::PathStep step{ Rtti::PathStep::Kind::kBase, baseIndex };
+                const Rtti::ValueRef base = Rtti::ResolveStep(type, const_cast<void*>(value), step);
+                if (!base || base.m_type->m_fields.empty())
+                    return;
+
+                PushStep(step.m_kind, step.m_index);
+                if (BeginTree(festd::inline_string(GetDisplayName(*base.m_type)).c_str()))
+                {
+                    DrawStruct(*base.m_type, base.m_value, nullptr, false);
+                    ImGui::TreePop();
+                }
+
+                PopStep();
+            }
+
+
+            void DrawEnum(const char* label, const Rtti::Type& type, const void* value)
+            {
+                const int64_t current = type.TryGetShape<Rtti::EnumShape>()->m_get(value);
+                if (type.m_enumValues.empty())
+                {
+                    int64_t candidate = current;
+                    if (ImGui::InputScalar(label, ImGuiDataType_S64, &candidate) && candidate != current)
+                        AssignEnum(type, value, candidate);
+
+                    return;
+                }
+
+                const char* currentName = GetEnumName(type, current);
+                const festd::fixed_string unknown = Fmt::FixedFormat("{}", current);
+                if (!ImGui::BeginCombo(label, currentName ? currentName : unknown.c_str()))
+                    return;
+
+                for (const int64_t option : type.m_enumValues)
+                {
+                    if (ImGui::Selectable(GetEnumName(type, option), option == current) && option != current)
+                        AssignEnum(type, value, option);
+                }
+
+                ImGui::EndCombo();
+            }
+
+
+            void AssignEnum(const Rtti::Type& type, const void* value, const int64_t underlying)
+            {
+                if (!BeginEdit(InspectorEdit::Kind::kAssign))
+                    return;
+
+                m_edit.m_size = type.m_size;
+                memcpy(m_edit.m_value, value, type.m_size);
+                type.TryGetShape<Rtti::EnumShape>()->m_set(m_edit.m_value, underlying);
+            }
+
+
+            void DrawString(const char* label, const Rtti::StringShape& shape, const void* value)
+            {
+                const std::string_view text = shape.m_get(value);
+                char input[256];
+                const size_t size = Math::Min(text.size(), sizeof(input) - 1);
+                memcpy(input, text.data(), size);
+                input[size] = '\0';
+
+                const ImGuiInputTextFlags flags = shape.m_set ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_ReadOnly;
+                if (!ImGui::InputText(label, input, sizeof(input), flags) || !BeginEdit(InspectorEdit::Kind::kSetString))
+                    return;
+
+                m_edit.m_text = festd::fixed_string{ input, static_cast<uint32_t>(strlen(input)) };
+            }
+
+
+            void DrawHandle(const char* label, const Rtti::Type& type, const void* value)
+            {
+                const Uuid current = type.TryGetShape<Rtti::HandleShape>()->m_get(value);
+                if (const auto* reference = type.TryGetAttribute<IO::AssetReference>())
+                {
+                    DrawAssetPicker(label, reference->m_getAssetType(), current);
+                    return;
+                }
+
+                const festd::fixed_string text = current.IsValid() ? Fmt::FixedFormat("{}", current) : festd::fixed_string{};
+                char input[64];
+                memcpy(input, text.data(), text.size());
+                input[text.size()] = '\0';
+
+                const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsNoBlank;
+                if (ImGui::InputTextWithHint(label, "None", input, sizeof(input), flags))
+                    SetHandle(Uuid::Parse(festd::ascii_view{ input, static_cast<uint32_t>(strlen(input)) }), current);
+            }
+
+
+            void DrawAssetPicker(const char* label, const Rtti::TypeID assetType, const Uuid current)
+            {
+                const AssetEntry* selected = nullptr;
+                for (const AssetEntry& asset : m_context.m_assets)
+                {
+                    if (asset.m_id == current)
+                        selected = &asset;
+                }
+
+                // References to assets outside the browsed directory still show their identity.
+                const festd::fixed_string missing = Fmt::FixedFormat("{}", current);
+                const char* preview = selected ? selected->m_name.c_str() : (current.IsValid() ? missing.c_str() : "None");
+                if (!ImGui::BeginCombo(label, preview))
+                    return;
+
+                if (ImGui::Selectable("None", !current.IsValid()))
+                    SetHandle(Uuid::kNull, current);
+
+                for (const AssetEntry& asset : m_context.m_assets)
+                {
+                    if (asset.m_type != assetType)
+                        continue;
+
+                    ImGui::PushID(Fmt::FixedFormat("{}", asset.m_id).c_str());
+                    if (ImGui::Selectable(asset.m_name.c_str(), asset.m_id == current))
+                        SetHandle(asset.m_id, current);
+
+                    ImGui::SetItemTooltip("%s", asset.m_path.AsBaseString().c_str());
+                    ImGui::PopID();
+                }
+
+                ImGui::EndCombo();
+            }
+
+
+            void SetHandle(const Uuid handle, const Uuid current)
+            {
+                if (handle != current && BeginEdit(InspectorEdit::Kind::kSetHandle))
+                    m_edit.m_handle = handle;
+            }
+
+
+            void DrawElements(const char* label, const Rtti::Type& type, const void* value)
+            {
+                const auto* sequence = type.TryGetShape<Rtti::SequenceShape>();
+                const uint32_t count = sequence ? sequence->m_size(value) : type.TryGetShape<Rtti::FixedArrayShape>()->m_count;
+                const festd::fixed_string header = Fmt::FixedFormat("{} [{}]###{}", label, count, label);
+                if (!BeginTree(header.c_str()))
+                    return;
+
+                const Rtti::Type& elementType = *Rtti::GetElementType(type);
+                for (uint32_t index = 0; index < count; ++index)
+                {
+                    const Rtti::PathStep step{ Rtti::PathStep::Kind::kElement, index };
+                    const Rtti::ValueRef element = Rtti::ResolveStep(type, const_cast<void*>(value), step);
+
+                    if (sequence && sequence->m_erase)
+                        DrawEraseButton(index);
+
+                    PushStep(step.m_kind, step.m_index);
+                    DrawValue(Fmt::FixedFormat("[{}]", index).c_str(), elementType, element.m_value, false);
+                    PopStep();
+                }
+
+                const bool canInsert = sequence && sequence->m_insert;
+                if (canInsert && ImGui::SmallButton(FE_ICON_ADD " Add") && BeginEdit(InspectorEdit::Kind::kInsertElement))
+                    m_edit.m_index = count;
+
+                ImGui::TreePop();
+            }
+
+
+            void DrawEraseButton(const uint32_t index)
+            {
+                ImGui::PushID(static_cast<int>(index));
+                if (ImGui::SmallButton(FE_ICON_REMOVE) && BeginEdit(InspectorEdit::Kind::kEraseElement))
+                    m_edit.m_index = index;
+
+                ImGui::SetItemTooltip("Remove");
+                ImGui::PopID();
+                ImGui::SameLine();
+            }
+
+
+            void DrawVariant(const char* label, const Rtti::VariantShape& shape, const void* value)
+            {
+                const uint32_t current = shape.m_index(value);
+                const char* preview = current < shape.m_alternatives.size() ? shape.m_alternatives[current]->m_name.data() : "";
+                if (ImGui::BeginCombo(label, preview))
+                {
+                    for (uint32_t index = 0; index < shape.m_alternatives.size(); ++index)
+                    {
+                        ImGui::PushID(static_cast<int>(index));
+                        const bool isSelected = index == current;
+                        if (ImGui::Selectable(shape.m_alternatives[index]->m_name.data(), isSelected) && !isSelected)
+                            SetAlternative(index);
+
+                        ImGui::PopID();
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                if (current >= shape.m_alternatives.size())
+                    return;
+
+                ImGui::Indent();
+                PushStep(Rtti::PathStep::Kind::kAlternative, current);
+                DrawValue("Value", *shape.m_alternatives[current], shape.m_get(const_cast<void*>(value)), false);
+                PopStep();
+                ImGui::Unindent();
+            }
+
+
+            void SetAlternative(const uint32_t index)
+            {
+                if (BeginEdit(InspectorEdit::Kind::kSetAlternative))
+                    m_edit.m_index = index;
+            }
+
+
+            void DrawDynamic(const char* label, const Rtti::DynamicShape& shape, const void* value)
+            {
+                const Rtti::Type* current = shape.m_type(value);
+                const festd::inline_string preview(current ? GetDisplayName(*current) : festd::ascii_view{ "None" });
+                if (ImGui::BeginCombo(label, preview.c_str()))
+                {
+                    if (ImGui::Selectable("None", current == nullptr) && current != nullptr)
+                        SetDynamicType(nullptr);
+
+                    for (const Rtti::Type& candidate : Rtti::TypeRegistry::GetTypes())
+                    {
+                        if (!IsDynamicCandidate(candidate, shape.m_base))
+                            continue;
+
+                        ImGui::PushID(&candidate);
+                        const bool isSelected = &candidate == current;
+                        if (ImGui::Selectable(festd::inline_string(GetDisplayName(candidate)).c_str(), isSelected) && !isSelected)
+                            SetDynamicType(&candidate);
+
+                        ImGui::PopID();
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                if (current == nullptr)
+                    return;
+
+                void* heldValue = shape.m_value(const_cast<void*>(value));
+                ImGui::Indent();
+                PushStep(Rtti::PathStep::Kind::kDynamic, 0);
+                if (current->m_shape == Rtti::TypeShape::kStruct)
+                    DrawStruct(*current, heldValue, nullptr, true);
+                else
+                    DrawValue("Value", *current, heldValue, false);
+
+                PopStep();
+                ImGui::Unindent();
+            }
+
+
+            void SetDynamicType(const Rtti::Type* type)
+            {
+                if (BeginEdit(InspectorEdit::Kind::kSetDynamicType))
+                    m_edit.m_dynamicType = type;
+            }
+        };
     } // namespace
 
 
-    bool DrawReflectedFields(const Rtti::Type& type, const void* value, FieldEdit& edit, const bool readOnly,
-                             const void* runtimeValue)
+    bool InspectorEdit::Apply(const Rtti::Type& type, void* value) const
     {
+        const Rtti::ValueRef target = Rtti::ResolvePath(type, value, m_path);
+        if (!target)
+            return false;
+
+        switch (m_kind)
+        {
+        case Kind::kAssign:
+            {
+                if (target.m_type->m_size != m_size)
+                    return false;
+
+                memcpy(target.m_value, m_value, m_size);
+                return true;
+            }
+
+        case Kind::kSetString:
+            {
+                const auto* shape = target.m_type->TryGetShape<Rtti::StringShape>();
+                if (shape == nullptr || shape->m_set == nullptr)
+                    return false;
+
+                shape->m_set(target.m_value, std::string_view{ m_text.data(), m_text.size() });
+                return true;
+            }
+
+        case Kind::kSetHandle:
+            {
+                const auto* shape = target.m_type->TryGetShape<Rtti::HandleShape>();
+                if (shape == nullptr)
+                    return false;
+
+                shape->m_set(target.m_value, m_handle);
+                return true;
+            }
+
+        case Kind::kInsertElement:
+            {
+                const auto* shape = target.m_type->TryGetShape<Rtti::SequenceShape>();
+                if (shape == nullptr || shape->m_insert == nullptr || m_index > shape->m_size(target.m_value))
+                    return false;
+
+                return shape->m_insert(target.m_value, m_index);
+            }
+
+        case Kind::kEraseElement:
+            {
+                const auto* shape = target.m_type->TryGetShape<Rtti::SequenceShape>();
+                if (shape == nullptr || m_index >= shape->m_size(target.m_value))
+                    return false;
+
+                shape->m_erase(target.m_value, m_index);
+                return true;
+            }
+
+        case Kind::kSetAlternative:
+            {
+                const auto* shape = target.m_type->TryGetShape<Rtti::VariantShape>();
+                if (shape == nullptr || m_index >= shape->m_alternatives.size())
+                    return false;
+
+                shape->m_emplace(target.m_value, m_index);
+                return true;
+            }
+
+        case Kind::kSetDynamicType:
+            {
+                const auto* shape = target.m_type->TryGetShape<Rtti::DynamicShape>();
+                return shape != nullptr && shape->m_reset(target.m_value, m_dynamicType);
+            }
+
+        default:
+            return false;
+        }
+    }
+
+
+    bool DrawReflectedValue(const Rtti::Type& type, const void* value, InspectorEdit& edit, const InspectorContext& context,
+                            const bool readOnly, const void* runtimeValue)
+    {
+        edit = {};
+        Inspector inspector{ edit, context, {} };
         ImGui::BeginDisabled(readOnly);
-        const bool changed = DrawFields(type, value, true, runtimeValue, 0, edit);
+        inspector.DrawRoot(type, value, runtimeValue);
         ImGui::EndDisabled();
-        return changed && !readOnly;
+        return inspector.HasEdit() && !readOnly;
     }
 
 

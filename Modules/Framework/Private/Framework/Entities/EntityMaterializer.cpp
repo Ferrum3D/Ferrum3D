@@ -1,3 +1,4 @@
+#include <Core/IO/AssetReferences.h>
 #include <Core/Threading/Thread.h>
 #include <Framework/Entities/EntitySerialization.h>
 #include <Framework/Entities/EntityWorldInternal.h>
@@ -401,7 +402,6 @@ namespace FE::Framework
 
         uint32_t unlimited = UINT32_MAX;
         uint32_t& remaining = budget ? *budget : unlimited;
-        ComponentCopier copier;
         const uint32_t recordCount = operation.GetRecordCount();
         for (uint32_t row = operation.m_entities.size(); row < recordCount && remaining; ++row)
         {
@@ -425,22 +425,15 @@ namespace FE::Framework
             for (const auto& component : record.m_components)
             {
                 const auto& type = *component.GetType();
-                festd::inline_vector<EntityLifecycle::AssetDependency> dependencies;
-                const bool copied =
-                    copier.Copy(type,
-                                component.GetValue(),
-                                entity->FindComponent(type.m_id),
-                                operation.m_bindings,
-                                &dependencies,
-                                [](void* user, Uuid asset, Rtti::TypeID assetType, const uint32_t kind) {
-                                    if (kind == festd::to_underlying(IO::DependencyKind::kHard))
-                                    {
-                                        auto& list = *static_cast<festd::inline_vector<EntityLifecycle::AssetDependency>*>(user);
-                                        list.emplace_back(asset, assetType);
-                                    }
-                                });
-                if (!copied)
+                void* value = entity->FindComponent(type.m_id);
+                if (!CopyComponent(type, component.GetValue(), value, operation.m_bindings))
                     return reject(kInvalidAsset);
+
+                festd::inline_vector<EntityLifecycle::AssetDependency> dependencies;
+                IO::VisitAssetReferences(type, value, [&](const IO::AssetReferenceInfo& reference) {
+                    if (reference.m_kind == IO::DependencyKind::kHard)
+                        dependencies.emplace_back(reference.m_assetId, reference.m_assetType);
+                });
 
                 // Install ownership only after the authored copy succeeds; loading can skip a second discovery pass.
                 m_world.m_lifecycle.InstallDependencies(*entity, archetype.Find(type.m_id), dependencies);

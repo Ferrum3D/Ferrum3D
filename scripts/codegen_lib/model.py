@@ -35,14 +35,12 @@ class FieldFlags(Flag):
 
 class FieldInfo:
     def __init__(self, name: str, attributes: list[str], codegen_attributes: dict[str, str], flags: FieldFlags,
-                 type: "ReflectedType|None", enum_value=None, array_size=1, is_bitfield=False) -> None:
+                 enum_value=None, is_bitfield=False) -> None:
         self.name = name
         self.attributes = attributes
         self.codegen_attributes = codegen_attributes
         self.flags = flags | (FieldFlags.TRANSIENT if "SkipSerializing" in codegen_attributes else FieldFlags.NONE)
-        self.type = type
         self.enum_value = enum_value
-        self.array_size = array_size
         self.is_bitfield = is_bitfield
         self.display_name = codegen_attributes.get("EnumName", name)
 
@@ -111,6 +109,7 @@ class ReflectedType:
         has_manual_serializer: bool = False,
         serialization_fields_only: bool = False,
         serialization_version: str | None = None,
+        has_unreflected_members: bool = False,
     ):
         self.need_reflect = need_reflect
         self.name = name
@@ -143,6 +142,7 @@ class ReflectedType:
         self.has_manual_serializer = has_manual_serializer
         self.serialization_fields_only = serialization_fields_only
         self.serialization_version = serialization_version
+        self.has_unreflected_members = has_unreflected_members
         self.pointer_level = 0
 
         # if not self.is_external and not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) and self.id != REF_COUNTED_OBJECT_BASE_ID:
@@ -152,6 +152,17 @@ class ReflectedType:
     @property
     def supports_serialization(self) -> bool:
         return self.is_serializable or self.has_manual_serializer or any(base.supports_serialization for base in self.direct_bases)
+
+
+    @property
+    def has_unreflected_fields(self) -> bool:
+        # Field-wise copies and traversal need reflected fields that hold the whole value. Bitfields and anonymous unions are not
+        # reflected, manual serializers define their own contract, and external classes reflect public fields only.
+        has_bitfields = any(field.is_bitfield for field in self.fields)
+        is_external_class = self.is_external and not self.is_builtin and not self.is_enum
+        # Generated serialization declares the same methods; a fields-only wrapper still has a manual contract.
+        has_manual_contract = self.has_manual_serializer and (not self.is_serializable or self.serialization_fields_only)
+        return has_bitfields or self.has_unreflected_members or has_manual_contract or is_external_class
 
 
     @property

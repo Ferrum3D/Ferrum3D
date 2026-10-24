@@ -68,18 +68,6 @@ namespace FE::Rtti
         context.ReflectEnum<{{ type.qualified_name }}>(typeInstance, TypeID::LoadAligned(kTypeIDBytes), kUnderlyingTypeIDBytes,
             "{{ type.qualified_name }}", kAttributes, kEnumNames, kEnumDisplayNames, kEnumValues);
 {%- else %}
-        {%- if type.reflection_fields|length > 0 %}
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.reflection_fields|length }} * sizeof(TypeID)] = {
-            {%- for field in type.reflection_fields %}
-            {%- if field.type %}
-            {% for b in field.type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ field.type.qualified_name }} {{ field.name }}
-            {%- else %}
-            {{ '0x00, ' * 16 }} // <unknown> {{ field.name }}
-            {%- endif %}
-            {%- endfor %}
-        };
-
-        {%- endif %}
         {%- if type.attributes|length > 0 %}
         static constexpr auto kAttributeValues = {{ type.attributes|join(' + ') }};
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
@@ -96,15 +84,14 @@ namespace FE::Rtti
         {% endfor %}
         static const festd::array<Rtti::FieldInfo, {{ type.reflection_fields|length }}> kFields = {
             {%- for field in type.reflection_fields %}
-            Rtti::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
-                                                     TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
+            Rtti::ReflectionContext::CreateFieldInfo("{{ field.name }}",
                                                      &{{ type.qualified_name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
                                                      {{ field.flags }}),
             {%- endfor %}
         };
 
-        context.ReflectClass<{{ type.qualified_name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", {}, kAttributes, kFields);
+        context.ReflectClass<{{ type.qualified_name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", {}, kAttributes, kFields, {{ "Rtti::TypeFlags::kHasUnreflectedFields" if type.has_unreflected_fields else "Rtti::TypeFlags::kNone" }});
 {% endif %}
     }
 
@@ -119,7 +106,6 @@ namespace {{ type.namespace }}
 
     namespace
     {
-{% if not type.is_member -%}
         FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_{{ type.id.bytes.hex() }}({{ type.name }}* thisPtr, const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[{{ type.bases|length + 1 }} * sizeof(Rtti::TypeID)] = {
@@ -143,7 +129,6 @@ namespace {{ type.namespace }}
 
             return nullptr;
         }
-{% endif -%}
 
         Rtti::Type& RTTI_GetMutableType_{{ type.id.bytes.hex() }}()
         {
@@ -183,18 +168,6 @@ namespace {{ type.namespace }}
             {%- endfor %}
         };
 
-        {%- if type.reflection_fields|length > 0 %}
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.reflection_fields|length }} * sizeof(Rtti::TypeID)] = {
-            {%- for field in type.reflection_fields %}
-            {%- if field.type %}
-            {% for b in field.type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ field.type.qualified_name }} {{ field.name }}
-            {%- else %}
-            {{ '0x00, ' * 16 }} // <unknown> {{ field.name }}
-            {%- endif %}
-            {%- endfor %}
-        };
-
-        {%- endif %}
         {%- if type.attributes|length > 0 %}
         static constexpr auto kAttributeValues = {{ type.attributes|join(' + ') }};
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
@@ -211,16 +184,19 @@ namespace {{ type.namespace }}
         {% endfor %}
         static const festd::array<Rtti::FieldInfo, {{ type.reflection_fields|length }}> kFields = {
             {%- for field in type.reflection_fields %}
-            Rtti::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
-                                                     Rtti::TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
+            Rtti::ReflectionContext::CreateFieldInfo("{{ field.name }}",
                                                      &{{ type.name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
                                                      {{ field.flags }}),
             {%- endfor %}
         };
 
-        context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields);
-        {%- if not type.is_member %}
+        context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields, {{ "Rtti::TypeFlags::kHasUnreflectedFields" if type.has_unreflected_fields else "Rtti::TypeFlags::kNone" }});
+        {%- if type.is_member %}
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_{{ type.id.bytes.hex() }}(static_cast<{{ type.name }}*>(instance), target);
+        };
+        {%- else %}
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<{{ type.name }}*>(instance)->RTTI_TryCast(target);
         };

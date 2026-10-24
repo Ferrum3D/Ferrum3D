@@ -108,8 +108,8 @@ TEST(RTTI, Reflection)
     EXPECT_EQ(type.m_fields[0].m_name, "m_translationScale");
     EXPECT_EQ(type.m_fields[1].m_name, "m_rotation");
 
-    EXPECT_EQ(type.m_fields[0].m_type, Rtti::GetTypeID<Vector4>());
-    EXPECT_EQ(type.m_fields[1].m_type, Rtti::GetTypeID<Quaternion>());
+    EXPECT_EQ(type.m_fields[0].m_type, &Rtti::GetType<Vector4>());
+    EXPECT_EQ(type.m_fields[1].m_type, &Rtti::GetType<Quaternion>());
 
     EXPECT_EQ(type.m_fields[0].m_size, sizeof(Vector4));
     EXPECT_EQ(type.m_fields[1].m_size, sizeof(Quaternion));

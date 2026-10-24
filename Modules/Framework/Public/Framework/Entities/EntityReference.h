@@ -19,8 +19,6 @@ namespace FE::Framework
             return world.Find(m_uuid, activeOnly);
         }
 
-        Serialization::ResultCode Serialize(Serialization::SerializationContext& context) const;
-        Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context);
-        FE_RTTI_SerializeFields();
+        FE_RTTI_Serialize();
     };
 } // namespace FE::Framework

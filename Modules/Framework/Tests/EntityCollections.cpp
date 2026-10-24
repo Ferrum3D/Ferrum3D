@@ -1,7 +1,10 @@
+#include <Core/IO/AssetReferences.h>
 #include <Core/IO/MemoryStream.h>
+#include <Core/RTTI/ReflectionContext.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Serialization/JsonSerialization.h>
 #include <EntityTestTypes.h>
+#include <Framework/Entities/EntitySerialization.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -179,7 +182,7 @@ TEST_F(CollectionFixture, BindingMaintenanceAndCopiesKeepSourceIdentity)
 }
 
 
-TEST_F(CollectionFixture, CollectionSerializationDiscoversNestedAssetLinks)
+TEST_F(CollectionFixture, CollectionTraversalDiscoversNestedAssetLinks)
 {
     const auto asset = Uuid::Random();
     EntityRecord record;
@@ -189,14 +192,20 @@ TEST_F(CollectionFixture, CollectionSerializationDiscoversNestedAssetLinks)
     m_collection.m_entities.push_back(std::move(record));
 
     uint32_t hard = 0;
+    uint32_t soft = 0;
+    IO::VisitAssetReferences(Rtti::GetType<EntityCollection>(), &m_collection, [&](const IO::AssetReferenceInfo& reference) {
+        const bool isHard = reference.m_kind == IO::DependencyKind::kHard;
+        EXPECT_EQ(reference.m_assetId, isHard ? asset : kExternal);
+        EXPECT_EQ(reference.m_assetType, Rtti::GetTypeID<Number>());
+        ++(isHard ? hard : soft);
+    });
+    EXPECT_EQ(hard, 1);
+    EXPECT_EQ(soft, 1);
+
     IO::WriteOnlyMemoryStream stream;
     Serialization::TaggedBinaryFormat format;
-    Serialization::SerializationContext context(&stream, format, &hard, [](void* data, Uuid, Rtti::TypeID, uint32_t kind) {
-        if (kind == festd::to_underlying(IO::DependencyKind::kHard))
-            ++*static_cast<uint32_t*>(data);
-    });
+    Serialization::SerializationContext context(&stream, format);
     ASSERT_EQ(context.Store(m_collection), Serialization::ResultCode::kSuccess);
-    EXPECT_EQ(hard, 1);
     festd::pmr::vector<std::byte> bytes;
     stream.DumpAll(bytes);
     IO::ReadOnlyMemoryStream input(bytes);
@@ -419,28 +428,22 @@ TEST_F(CollectionFixture, ReferenceSerializerUsesReflectedFieldNames)
 }
 
 
-TEST_F(CollectionFixture, FailedReferenceDeserializationDoesNotRemap)
+TEST_F(CollectionFixture, RemappingFindsReferencesInsideContainersAndDynamicValues)
 {
-    const EntityReference source{ kSource, kPlacement };
-    IO::WriteOnlyMemoryStream stream;
-    Serialization::PackedBinaryFormat format;
-    Serialization::SerializationContext writer(&stream, format);
-    ASSERT_EQ(writer.Store(source), Serialization::ResultCode::kSuccess);
-    festd::pmr::vector<std::byte> bytes;
-    stream.DumpAll(bytes);
-    bytes.pop_back();
-    IO::ReadOnlyMemoryStream input(bytes);
-    Serialization::PackedBinaryFormat loadFormat;
-    Serialization::DeserializationContext reader(&input, loadFormat);
+    festd::vector<Rtti::Any> components;
+    ReferenceComponent& component = components.emplace_back().Emplace<ReferenceComponent>();
+    component.m_internal = { kSource, kPlacement };
+    component.m_external = { kExternal, kPlacement };
 
-    uint32_t remaps = 0;
-    reader.SetObjectReferenceRemapper(&remaps, [](void* data, Uuid) {
-        ++*static_cast<uint32_t*>(data);
-        return kExternal;
-    });
-    EntityReference restored;
-    EXPECT_NE(reader.Load(restored), Serialization::ResultCode::kSuccess);
-    EXPECT_EQ(remaps, 0);
+    const Uuid placed = Uuid::Random();
+    const EntityUuidBinding bindings[] = { { kSource, placed } };
+    RemapEntityReferences(Rtti::ResolveType<festd::vector<Rtti::Any>>(), &components, bindings);
+
+    // The placement identity described the source collection, so it is cleared with the remap.
+    EXPECT_EQ(component.m_internal.m_uuid, placed);
+    EXPECT_EQ(component.m_internal.m_placementAsset, IO::AssetID::kNull);
+    EXPECT_EQ(component.m_external.m_uuid, kExternal);
+    EXPECT_EQ(component.m_external.m_placementAsset, kPlacement);
 }
 
 

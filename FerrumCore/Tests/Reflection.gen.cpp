@@ -7,6 +7,7 @@
 
 #include <Cli/CommandLineTypes.h>
 #include <IO/AssetTestTypes.h>
+#include <RTTI/TraversalTypes.h>
 #include <Serialization/SerializationTypes.h>
 
 
@@ -39,6 +40,7 @@ namespace FE::Serialization::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_113937cb7d404f5d823d7b535b4312b1()
         {
             static Rtti::Type typeInstance;
@@ -79,7 +81,8 @@ namespace FE::Serialization::Tests
                                                    "FE::Serialization::Tests::ManualSerializedBase",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields);
+                                                   kFields,
+                                                   Rtti::TypeFlags::kHasUnreflectedFields);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ManualSerializedBase*>(instance)->RTTI_TryCast(target);
         };
@@ -112,6 +115,7 @@ namespace FE::Serialization::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_2339a6d00eca4898a5b785bb8b841320()
         {
             static Rtti::Type typeInstance;
@@ -143,20 +147,15 @@ namespace FE::Serialization::Tests
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_runtimeValue
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runtimeValue = {};
 
         static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_runtimeValue",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &RuntimeBase::m_runtimeValue,
-                                                        kAttributes_m_runtimeValue,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_runtimeValue",
+                                                     &RuntimeBase::m_runtimeValue,
+                                                     kAttributes_m_runtimeValue,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<RuntimeBase>(typeInstance,
@@ -164,7 +163,8 @@ namespace FE::Serialization::Tests
                                           "FE::Serialization::Tests::RuntimeBase",
                                           kBaseClassTypeIDs,
                                           kAttributes,
-                                          kFields);
+                                          kFields,
+                                          Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<RuntimeBase*>(instance)->RTTI_TryCast(target);
         };
@@ -172,6 +172,176 @@ namespace FE::Serialization::Tests
 
     static Rtti::TypeRegistrar GTypeRegistrar_2339a6d00eca4898a5b785bb8b841320(&RuntimeBase::Reflect);
 } // namespace FE::Serialization::Tests
+
+
+namespace FE::Rtti::Tests
+{
+    const Rtti::TypeID TraversalLeaf::TypeID = Rtti::TypeID{
+        0x34, 0xc5, 0xe8, 0x45, 0x2a, 0x05, 0x4c, 0xdd, 0xa1, 0xbd, 0x08, 0x07, 0xb5, 0x3a, 0x60, 0x02,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_34c5e8452a054cdda1bd0807b53a6002(TraversalLeaf* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x34, 0xc5, 0xe8, 0x45, 0x2a, 0x05, 0x4c, 0xdd,
+                0xa1, 0xbd, 0x08, 0x07, 0xb5, 0x3a, 0x60, 0x02, // FE::Rtti::Tests::TraversalLeaf (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_34c5e8452a054cdda1bd0807b53a6002()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TraversalLeaf::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_34c5e8452a054cdda1bd0807b53a6002();
+    }
+
+    void TraversalLeaf::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_34c5e8452a054cdda1bd0807b53a6002();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x34, 0xc5, 0xe8, 0x45, 0x2a, 0x05, 0x4c, 0xdd,
+            0xa1, 0xbd, 0x08, 0x07, 0xb5, 0x3a, 0x60, 0x02, // FE::Rtti::Tests::TraversalLeaf
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_value = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_link = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_value",
+                                                     &TraversalLeaf::m_value,
+                                                     kAttributes_m_value,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_link",
+                                                     &TraversalLeaf::m_link,
+                                                     kAttributes_m_link,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TraversalLeaf>(typeInstance,
+                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                            "FE::Rtti::Tests::TraversalLeaf",
+                                            kBaseClassTypeIDs,
+                                            kAttributes,
+                                            kFields,
+                                            Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_34c5e8452a054cdda1bd0807b53a6002(static_cast<TraversalLeaf*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_34c5e8452a054cdda1bd0807b53a6002(&TraversalLeaf::Reflect);
+} // namespace FE::Rtti::Tests
+
+
+namespace FE::Rtti::Tests
+{
+    const Rtti::TypeID TraversalObject::TypeID = Rtti::TypeID{
+        0x84, 0xa0, 0xd6, 0x93, 0xc7, 0x9f, 0x4d, 0x75, 0xac, 0x93, 0xa7, 0xf1, 0x1d, 0x92, 0x75, 0xcc,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_84a0d693c79f4d75ac93a7f11d9275cc(TraversalObject* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0x84, 0xa0, 0xd6, 0x93, 0xc7, 0x9f, 0x4d, 0x75,
+                0xac, 0x93, 0xa7, 0xf1, 0x1d, 0x92, 0x75, 0xcc, // FE::Rtti::Tests::TraversalObject (this type)
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_84a0d693c79f4d75ac93a7f11d9275cc()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TraversalObject::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_84a0d693c79f4d75ac93a7f11d9275cc();
+    }
+
+    void* FE_VECTORCALL TraversalObject::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_84a0d693c79f4d75ac93a7f11d9275cc(this, typeID);
+    }
+
+    const void* FE_VECTORCALL TraversalObject::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_84a0d693c79f4d75ac93a7f11d9275cc(const_cast<TraversalObject*>(this), typeID);
+    }
+    void TraversalObject::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_84a0d693c79f4d75ac93a7f11d9275cc();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x84, 0xa0, 0xd6, 0x93, 0xc7, 0x9f, 0x4d, 0x75,
+            0xac, 0x93, 0xa7, 0xf1, 0x1d, 0x92, 0x75, 0xcc, // FE::Rtti::Tests::TraversalObject
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_baseValue = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_baseValue",
+                                                     &TraversalObject::m_baseValue,
+                                                     kAttributes_m_baseValue,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TraversalObject>(typeInstance,
+                                              Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                              "FE::Rtti::Tests::TraversalObject",
+                                              kBaseClassTypeIDs,
+                                              kAttributes,
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<TraversalObject*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_84a0d693c79f4d75ac93a7f11d9275cc(&TraversalObject::Reflect);
+} // namespace FE::Rtti::Tests
 
 
 namespace FE::Serialization::Tests
@@ -182,6 +352,22 @@ namespace FE::Serialization::Tests
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_8e8f777d28c647f789c6e66e68a2b31d(PackedDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x8e, 0x8f, 0x77, 0x7d, 0x28, 0xc6, 0x47, 0xf7,
+                0x89, 0xc6, 0xe6, 0x6e, 0x68, 0xa2, 0xb3, 0x1d, // FE::Serialization::Tests::PackedDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_8e8f777d28c647f789c6e66e68a2b31d()
         {
             static Rtti::Type typeInstance;
@@ -204,19 +390,15 @@ namespace FE::Serialization::Tests
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47, 0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_scale
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scale = {};
 
         static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scale",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PackedDesc::m_scale,
-                                                        kAttributes_m_scale,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scale",
+                                                     &PackedDesc::m_scale,
+                                                     kAttributes_m_scale,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PackedDesc>(typeInstance,
@@ -224,7 +406,11 @@ namespace FE::Serialization::Tests
                                          "FE::Serialization::Tests::PackedDesc",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kHasUnreflectedFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_8e8f777d28c647f789c6e66e68a2b31d(static_cast<PackedDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_8e8f777d28c647f789c6e66e68a2b31d(&PackedDesc::Reflect);
@@ -321,6 +507,7 @@ namespace FE::Serialization::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_bed2b1fa4bed4b448ead7d7a2d3256eb()
         {
             static Rtti::Type typeInstance;
@@ -355,20 +542,15 @@ namespace FE::Serialization::Tests
             0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
             0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
         };
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_intermediateRuntime
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_intermediateRuntime = {};
 
         static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_intermediateRuntime",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &IntermediateBase::m_intermediateRuntime,
-                                                        kAttributes_m_intermediateRuntime,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_intermediateRuntime",
+                                                     &IntermediateBase::m_intermediateRuntime,
+                                                     kAttributes_m_intermediateRuntime,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<IntermediateBase>(typeInstance,
@@ -376,7 +558,8 @@ namespace FE::Serialization::Tests
                                                "FE::Serialization::Tests::IntermediateBase",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<IntermediateBase*>(instance)->RTTI_TryCast(target);
         };
@@ -409,6 +592,7 @@ namespace FE::Serialization::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_cc51822c73864596a208f4a4950d63cb()
         {
             static Rtti::Type typeInstance;
@@ -440,20 +624,6 @@ namespace FE::Serialization::Tests
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_id
-            0x8e, 0x8f, 0x77, 0x7d, 0x28, 0xc6, 0x47, 0xf7, 0x89,
-            0xc6, 0xe6, 0x6e, 0x68, 0xa2, 0xb3, 0x1d, // FE::Serialization::Tests::PackedDesc m_desc
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_values
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_coordinates
-            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
-            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_name
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac,
-            0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_transient
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_id = {};
@@ -469,37 +639,31 @@ namespace FE::Serialization::Tests
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_transient = {};
 
         static const festd::array<Rtti::FieldInfo, 6> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_id",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TestObject::m_id,
-                                                        kAttributes_m_id,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_desc",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TestObject::m_desc,
-                                                        kAttributes_m_desc,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_values",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &TestObject::m_values,
-                                                        kAttributes_m_values,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_coordinates",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &TestObject::m_coordinates,
-                                                        kAttributes_m_coordinates,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &TestObject::m_name,
-                                                        kAttributes_m_name,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_transient",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &TestObject::m_transient,
-                                                        kAttributes_m_transient,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_id",
+                                                     &TestObject::m_id,
+                                                     kAttributes_m_id,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_desc",
+                                                     &TestObject::m_desc,
+                                                     kAttributes_m_desc,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_values",
+                                                     &TestObject::m_values,
+                                                     kAttributes_m_values,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_coordinates",
+                                                     &TestObject::m_coordinates,
+                                                     kAttributes_m_coordinates,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_name",
+                                                     &TestObject::m_name,
+                                                     kAttributes_m_name,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_transient",
+                                                     &TestObject::m_transient,
+                                                     kAttributes_m_transient,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<TestObject>(typeInstance,
@@ -507,7 +671,8 @@ namespace FE::Serialization::Tests
                                          "FE::Serialization::Tests::TestObject",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<TestObject*>(instance)->RTTI_TryCast(target);
         };
@@ -623,6 +788,7 @@ namespace FE::Serialization::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_d50860c52188486f8d18a79d8c633c0c()
         {
             static Rtti::Type typeInstance;
@@ -663,20 +829,15 @@ namespace FE::Serialization::Tests
             0xdc, 0x64, 0x8e, 0x8e, 0x65, 0x44, 0x46, 0x37,
             0x95, 0xfb, 0x87, 0x20, 0xc5, 0xe0, 0xf8, 0xa3, // FE::Serialization::Tests::SerializedBase
         };
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_derivedValue
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_derivedValue = {};
 
         static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_derivedValue",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DerivedObject::m_derivedValue,
-                                                        kAttributes_m_derivedValue,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_derivedValue",
+                                                     &DerivedObject::m_derivedValue,
+                                                     kAttributes_m_derivedValue,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DerivedObject>(typeInstance,
@@ -684,7 +845,8 @@ namespace FE::Serialization::Tests
                                             "FE::Serialization::Tests::DerivedObject",
                                             kBaseClassTypeIDs,
                                             kAttributes,
-                                            kFields);
+                                            kFields,
+                                            Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<DerivedObject*>(instance)->RTTI_TryCast(target);
         };
@@ -784,6 +946,7 @@ namespace FE::Cli::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_d5dd1441e7ec48e5970615434aa507d5()
         {
             static Rtti::Type typeInstance;
@@ -818,12 +981,6 @@ namespace FE::Cli::Tests
             0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
             0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
         };
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2,
-            0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag m_help
-            0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
-            0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_asset
-        };
         static constexpr auto kAttributeValues =
             Rtti::DisplayName("Build") + Cli::Parent("FE::Cli::Tests::TestParser") + Cli::Description("Build an asset");
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
@@ -836,16 +993,14 @@ namespace FE::Cli::Tests
         static constexpr auto kAttributes_m_asset = Rtti::DescribeAttributes(kAttributeValues_m_asset);
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Build::m_help,
-                                                        kAttributes_m_help,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_asset",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Build::m_asset,
-                                                        kAttributes_m_asset,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_help",
+                                                     &Build::m_help,
+                                                     kAttributes_m_help,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_asset",
+                                                     &Build::m_asset,
+                                                     kAttributes_m_asset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Build>(typeInstance,
@@ -853,7 +1008,8 @@ namespace FE::Cli::Tests
                                     "FE::Cli::Tests::Build",
                                     kBaseClassTypeIDs,
                                     kAttributes,
-                                    kFields);
+                                    kFields,
+                                    Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<Build*>(instance)->RTTI_TryCast(target);
         };
@@ -886,6 +1042,7 @@ namespace FE::IO::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_d734d82a479041e9b4282d639be4cf17()
         {
             static Rtti::Type typeInstance;
@@ -917,12 +1074,6 @@ namespace FE::IO::Tests
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_value
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_dependency
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_value = {};
@@ -930,16 +1081,14 @@ namespace FE::IO::Tests
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependency = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_value",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SyntheticAsset::m_value,
-                                                        kAttributes_m_value,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dependency",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SyntheticAsset::m_dependency,
-                                                        kAttributes_m_dependency,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_value",
+                                                     &SyntheticAsset::m_value,
+                                                     kAttributes_m_value,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_dependency",
+                                                     &SyntheticAsset::m_dependency,
+                                                     kAttributes_m_dependency,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SyntheticAsset>(typeInstance,
@@ -947,7 +1096,8 @@ namespace FE::IO::Tests
                                              "FE::IO::Tests::SyntheticAsset",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<SyntheticAsset*>(instance)->RTTI_TryCast(target);
         };
@@ -1004,6 +1154,105 @@ namespace FE::IO::Tests
 } // namespace FE::IO::Tests
 
 
+namespace FE::Rtti::Tests
+{
+    const Rtti::TypeID TraversalDerivedObject::TypeID = Rtti::TypeID{
+        0xd8, 0x70, 0x17, 0xaf, 0x63, 0xb4, 0x40, 0xcd, 0x9a, 0x53, 0x76, 0x9e, 0x43, 0x62, 0xba, 0x74,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_d87017af63b440cd9a53769e4362ba74(TraversalDerivedObject* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0xd8, 0x70, 0x17, 0xaf, 0x63, 0xb4, 0x40, 0xcd,
+                0x9a, 0x53, 0x76, 0x9e, 0x43, 0x62, 0xba, 0x74, // FE::Rtti::Tests::TraversalDerivedObject (this type)
+                0x84, 0xa0, 0xd6, 0x93, 0xc7, 0x9f, 0x4d, 0x75,
+                0xac, 0x93, 0xa7, 0xf1, 0x1d, 0x92, 0x75, 0xcc, // FE::Rtti::Tests::TraversalObject
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Rtti::Tests::TraversalObject*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_d87017af63b440cd9a53769e4362ba74()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TraversalDerivedObject::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_d87017af63b440cd9a53769e4362ba74();
+    }
+
+    void* FE_VECTORCALL TraversalDerivedObject::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_d87017af63b440cd9a53769e4362ba74(this, typeID);
+    }
+
+    const void* FE_VECTORCALL TraversalDerivedObject::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_d87017af63b440cd9a53769e4362ba74(const_cast<TraversalDerivedObject*>(this), typeID);
+    }
+    void TraversalDerivedObject::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_d87017af63b440cd9a53769e4362ba74();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xd8, 0x70, 0x17, 0xaf, 0x63, 0xb4, 0x40, 0xcd,
+            0x9a, 0x53, 0x76, 0x9e, 0x43, 0x62, 0xba, 0x74, // FE::Rtti::Tests::TraversalDerivedObject
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x84, 0xa0, 0xd6, 0x93, 0xc7, 0x9f, 0x4d, 0x75,
+            0xac, 0x93, 0xa7, 0xf1, 0x1d, 0x92, 0x75, 0xcc, // FE::Rtti::Tests::TraversalObject
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_leaves = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_leaves",
+                                                     &TraversalDerivedObject::m_leaves,
+                                                     kAttributes_m_leaves,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TraversalDerivedObject>(typeInstance,
+                                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                     "FE::Rtti::Tests::TraversalDerivedObject",
+                                                     kBaseClassTypeIDs,
+                                                     kAttributes,
+                                                     kFields,
+                                                     Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<TraversalDerivedObject*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_d87017af63b440cd9a53769e4362ba74(&TraversalDerivedObject::Reflect);
+} // namespace FE::Rtti::Tests
+
+
 namespace FE::Serialization::Tests
 {
     const Rtti::TypeID SerializedBase::TypeID = Rtti::TypeID{
@@ -1027,6 +1276,7 @@ namespace FE::Serialization::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_dc648e8e6544463795fb8720c5e0f8a3()
         {
             static Rtti::Type typeInstance;
@@ -1058,20 +1308,15 @@ namespace FE::Serialization::Tests
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_baseValue
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_baseValue = {};
 
         static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_baseValue",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SerializedBase::m_baseValue,
-                                                        kAttributes_m_baseValue,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_baseValue",
+                                                     &SerializedBase::m_baseValue,
+                                                     kAttributes_m_baseValue,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SerializedBase>(typeInstance,
@@ -1079,7 +1324,8 @@ namespace FE::Serialization::Tests
                                              "FE::Serialization::Tests::SerializedBase",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<SerializedBase*>(instance)->RTTI_TryCast(target);
         };
@@ -1132,6 +1378,135 @@ namespace FE::Serialization::Tests
 } // namespace FE::Serialization::Tests
 
 
+namespace FE::Rtti::Tests
+{
+    const Rtti::TypeID TraversalRoot::TypeID = Rtti::TypeID{
+        0xe8, 0xc5, 0xc6, 0x7e, 0x5b, 0xa4, 0x42, 0x1e, 0x99, 0x9e, 0xcb, 0x76, 0x19, 0xc8, 0xac, 0x77,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_e8c5c67e5ba4421e999ecb7619c8ac77(TraversalRoot* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xe8, 0xc5, 0xc6, 0x7e, 0x5b, 0xa4, 0x42, 0x1e,
+                0x99, 0x9e, 0xcb, 0x76, 0x19, 0xc8, 0xac, 0x77, // FE::Rtti::Tests::TraversalRoot (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_e8c5c67e5ba4421e999ecb7619c8ac77()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TraversalRoot::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_e8c5c67e5ba4421e999ecb7619c8ac77();
+    }
+
+    void TraversalRoot::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_e8c5c67e5ba4421e999ecb7619c8ac77();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xe8, 0xc5, 0xc6, 0x7e, 0x5b, 0xa4, 0x42, 0x1e,
+            0x99, 0x9e, 0xcb, 0x76, 0x19, 0xc8, 0xac, 0x77, // FE::Rtti::Tests::TraversalRoot
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_leaves = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_fixed = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_choice = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_object = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_any = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_numbers = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offset = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runtimeLink = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runtimeValue = {};
+
+        static const festd::array<Rtti::FieldInfo, 10> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_leaves",
+                                                     &TraversalRoot::m_leaves,
+                                                     kAttributes_m_leaves,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_fixed",
+                                                     &TraversalRoot::m_fixed,
+                                                     kAttributes_m_fixed,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_choice",
+                                                     &TraversalRoot::m_choice,
+                                                     kAttributes_m_choice,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_object",
+                                                     &TraversalRoot::m_object,
+                                                     kAttributes_m_object,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_any",
+                                                     &TraversalRoot::m_any,
+                                                     kAttributes_m_any,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_numbers",
+                                                     &TraversalRoot::m_numbers,
+                                                     kAttributes_m_numbers,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_name",
+                                                     &TraversalRoot::m_name,
+                                                     kAttributes_m_name,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_offset",
+                                                     &TraversalRoot::m_offset,
+                                                     kAttributes_m_offset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_runtimeLink",
+                                                     &TraversalRoot::m_runtimeLink,
+                                                     kAttributes_m_runtimeLink,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_runtimeValue",
+                                                     &TraversalRoot::m_runtimeValue,
+                                                     kAttributes_m_runtimeValue,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+        };
+
+        context.ReflectClass<TraversalRoot>(typeInstance,
+                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                            "FE::Rtti::Tests::TraversalRoot",
+                                            kBaseClassTypeIDs,
+                                            kAttributes,
+                                            kFields,
+                                            Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_e8c5c67e5ba4421e999ecb7619c8ac77(static_cast<TraversalRoot*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_e8c5c67e5ba4421e999ecb7619c8ac77(&TraversalRoot::Reflect);
+} // namespace FE::Rtti::Tests
+
+
 namespace FE::Cli::Tests
 {
     const Rtti::TypeID TestParser::TypeID = Rtti::TypeID{
@@ -1167,6 +1542,7 @@ namespace FE::Cli::Tests
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_ef03ae87b2df4fa0a77db92cc8e2015c()
         {
             static Rtti::Type typeInstance;
@@ -1201,12 +1577,6 @@ namespace FE::Cli::Tests
             0xc3, 0xc4, 0x96, 0x54, 0xfe, 0x98, 0x4c, 0xe6, 0xb7, 0x59, 0x06, 0xd7, 0xef, 0x4e, 0xaa, 0x0f, // FE::Cli::Parser
             0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
         };
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2,
-            0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag m_help
-            0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2,
-            0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag m_version
-        };
         static constexpr auto kAttributeValues = Cli::Description("Test command line");
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
@@ -1217,16 +1587,14 @@ namespace FE::Cli::Tests
         static constexpr auto kAttributes_m_version = Rtti::DescribeAttributes(kAttributeValues_m_version);
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TestParser::m_help,
-                                                        kAttributes_m_help,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_version",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TestParser::m_version,
-                                                        kAttributes_m_version,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_help",
+                                                     &TestParser::m_help,
+                                                     kAttributes_m_help,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_version",
+                                                     &TestParser::m_version,
+                                                     kAttributes_m_version,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<TestParser>(typeInstance,
@@ -1234,7 +1602,8 @@ namespace FE::Cli::Tests
                                          "FE::Cli::Tests::TestParser",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<TestParser*>(instance)->RTTI_TryCast(target);
         };

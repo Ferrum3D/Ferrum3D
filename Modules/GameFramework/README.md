@@ -11,11 +11,15 @@ and call `Run()` and `Shutdown()` as for the game application. Override
 
 The dock layout contains World, Entity, Asset Browser, and Main Viewport. World visits
 root entities through `TraverseRoots` and follows child links only for expanded nodes.
-Entity edits the selected entity's components through existing RTTI field descriptors and
-submits type-erased component replacement commands. Editor controls identify primitive
-and math types by their existing type IDs. Other field types are listed as unsupported;
-containers, variants, and asset references await a future RTTI rework. Runtime fields are
-read-only. Component types have no dedicated inspector controls.
+Entity draws the selected entity's components from their reflected type shapes (see
+`Core/RTTI/Traversal.h`). Primitive and math types use dedicated controls found by type ID;
+structs and bases are tree nodes; arrays and sequences list their elements, and sequences
+can add and remove them; enums use their reflected names; strings are text fields; asset
+references pick from the Asset Browser's assets of the referenced type; variants and
+dynamic values (`Rc`, `Rtti::Any`) choose their alternative or type, then show its value.
+An edit is a value path plus an operation applied to a copy of the component, submitted as
+a replacement once per world update. Runtime fields are read-only. Component types have
+no dedicated inspector controls.
 
 Type icons come from `FE_META(Rtti::Icon(FE_ICON_MESH))` metadata; `Rtti::DisplayName`
 provides optional display labels. Icons are string-literal macros from `Core/Utils/Icons.h`,

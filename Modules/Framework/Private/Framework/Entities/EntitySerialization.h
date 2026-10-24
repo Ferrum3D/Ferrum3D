@@ -1,25 +1,18 @@
 #pragma once
-#include <Core/Serialization/Serialization.h>
 #include <Framework/Entities/EntityAssetRecords.h>
 #include <festd/span.h>
 
 namespace FE::Framework
 {
-    //! @brief Copy serialized fields between initialized values through a reusable scratch buffer.
-    struct ComponentCopier final
-    {
-        //! @brief Copy fields into destination, remapping internal entity references and reporting asset references.
-        bool Copy(const Rtti::Type& type, const void* source, void* destination,
-                  festd::span<const EntityUuidBinding> bindings = {}, void* referenceUserData = nullptr,
-                  Serialization::SerializationContext::AssetReferenceCallback referenceCallback = nullptr);
-
-    private:
-        festd::pmr::vector<std::byte> m_buffer;
-    };
+    //! @brief Point entity references to the entities bound to their UUIDs; references to other entities are kept.
+    //!
+    //! References are found anywhere in the value, including containers and dynamic values; runtime-only fields are skipped.
+    void RemapEntityReferences(const Rtti::Type& type, void* value, festd::span<const EntityUuidBinding> bindings);
 
 
-    //! @brief One-off ComponentCopier::Copy; prefer a shared copier when copying many components.
+    //! @brief Copy serialized fields between initialized component values, then remap internal entity references.
+    //!
+    //! The destination keeps its runtime-only fields. Pass the same value as source and destination to only remap.
     bool CopyComponent(const Rtti::Type& type, const void* source, void* destination,
-                       festd::span<const EntityUuidBinding> bindings = {}, void* referenceUserData = nullptr,
-                       Serialization::SerializationContext::AssetReferenceCallback referenceCallback = nullptr);
+                       festd::span<const EntityUuidBinding> bindings = {});
 } // namespace FE::Framework

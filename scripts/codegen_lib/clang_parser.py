@@ -232,16 +232,14 @@ def parse_class(
             else:
                 constructors.append(ConstructorInfo.create_invalid())
         if child.kind == cindex.CursorKind.FIELD_DECL and need_reflect:
+            # Field types are resolved by the generated C++, which also covers containers and other template instances.
             field_name = child.spelling
-            canonical_type = child.type.get_canonical()
-            field_type = resolve_type(canonical_type, types)
-            array_size = canonical_type.get_array_size() if canonical_type.kind == cindex.TypeKind.CONSTANTARRAY else 1
             field_attributes = parse_meta_attributes(child)
             field_codegen_attributes = parse_attributes(child)
             field_flags = get_field_flags(child, access_spec)
             if not public_only or access_spec == cindex.AccessSpecifier.PUBLIC:
-                fields.append(FieldInfo(field_name, field_attributes, field_codegen_attributes, field_flags, field_type,
-                                        array_size=array_size, is_bitfield=child.is_bitfield()))
+                fields.append(FieldInfo(field_name, field_attributes, field_codegen_attributes, field_flags,
+                                        is_bitfield=child.is_bitfield()))
 
 
 def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type]):
@@ -252,7 +250,7 @@ def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[ci
             field_value = child.enum_value
             field_attributes = parse_meta_attributes(child)
             field_codegen_attributes = parse_attributes(child)
-            fields.append(FieldInfo(field_name, field_attributes, field_codegen_attributes, FieldFlags.NONE, None,
+            fields.append(FieldInfo(field_name, field_attributes, field_codegen_attributes, FieldFlags.NONE,
                                     enum_value=field_value))
 
 
@@ -320,6 +318,18 @@ def visit_external_rtti_declaration(
     )
     types[ref_type.internal_id] = ref_type
     return True
+
+
+def has_unreflected_members(node: cindex.Cursor) -> bool:
+    # Anonymous unions and structs are not reflected, and a static Serialize is a manual serializer such as Vector4's.
+    for child in node.get_children():
+        is_record = child.kind in (cindex.CursorKind.UNION_DECL, cindex.CursorKind.STRUCT_DECL, cindex.CursorKind.CLASS_DECL)
+        if is_record and child.is_anonymous():
+            return True
+        if child.kind == cindex.CursorKind.CXX_METHOD and child.is_static_method() and child.spelling == "Serialize":
+            return True
+
+    return False
 
 
 def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], project_dir: Path):
@@ -401,6 +411,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             has_manual_serializer=has_serialize and has_deserialize,
             serialization_fields_only=serialization_fields_only,
             serialization_version=serialization_version,
+            has_unreflected_members=has_unreflected_members(node),
         )
         types[ref_type.internal_id] = ref_type
 

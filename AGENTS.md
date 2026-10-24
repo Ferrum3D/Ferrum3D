@@ -88,6 +88,8 @@ This only changes the current process environment. It leaves the normal Windows 
 - Use existing project diagnostics and helpers instead of ad hoc checks: `FE_Assert`, `FE_AssertDebug`, `FE_DebugBreak`, `VerifyVk`, `FE_PROFILER_ZONE`, `Rtti::AssertCast`, `NativeCast`, and `ImplCast`.
 - Keep comments sparse. Use comments for namespace endings, complex intent, or non-obvious behavior rather than restating the code.
 - Prefer generated serialization via `FE_RTTI_Serialize()` whenever reflection can express the serialized fields. Write a manual `Serializer` only when generated serialization cannot represent the required contract.
+- Reflected field types are resolved by C++ (`Rtti::ResolveType`): types without generated reflection, such as containers and other template instances, get synthesized types. How traversal, copying and the editor see a type is its `Rtti::TypeShape`. A type with a manual `Serializer` that wraps references or other structure must also specialize `Rtti::Shape` next to it, as `IO::Link` and `Input::ActionReference` do; otherwise asset discovery and entity reference remapping cannot see inside it.
+- Find asset references with `IO::VisitAssetReferences` and walk nested values with `Rtti::Visit`; do not discover structure by running serialization.
 - Avoid unnecessary casts, e.g. most `festd` containers' `size_type` is `uint32_t` so `static_cast<uint32_t>(vec.size())` is redundant.
 - Never use `auto` in lambda parameters.
 

@@ -70,6 +70,12 @@ namespace FE::Rtti
     }
 
 
+    void TypeRegistry::Internal::RegisterSynthesizedType(Type& type)
+    {
+        GTypeRegistry->RegisterType(type);
+    }
+
+
     TypeRegistrar::TypeRegistrar(const RegisterFunc func) noexcept
     {
         func(*GTypeRegistry);

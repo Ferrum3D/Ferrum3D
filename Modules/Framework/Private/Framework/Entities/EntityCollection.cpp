@@ -1,5 +1,4 @@
-#include <Core/IO/MemoryStream.h>
-#include <Core/Serialization/BinarySerialization.h>
+#include <Core/RTTI/Traversal.h>
 #include <Framework/Entities/EntityCollection.h>
 #include <Framework/Entities/EntityReference.h>
 #include <Framework/Entities/EntitySerialization.h>
@@ -35,65 +34,59 @@ namespace FE::Framework
 
             return true;
         }
+
+
+        void RemapReference(EntityReference& reference, const festd::span<const EntityUuidBinding> bindings)
+        {
+            for (const EntityUuidBinding& binding : bindings)
+            {
+                if (binding.m_sourceUuid != reference.m_uuid)
+                    continue;
+
+                // The placement identity described the source collection, not the remapped entity.
+                reference.m_uuid = binding.m_entityUuid;
+                reference.m_placementAsset = IO::AssetID::kNull;
+                return;
+            }
+        }
     } // namespace
 
 
-    Serialization::ResultCode EntityReference::Serialize(Serialization::SerializationContext& context) const
-    {
-        return RTTI_SerializeFields(context);
-    }
-
-
-    Serialization::ResultCode EntityReference::Deserialize(Serialization::DeserializationContext& context)
-    {
-        RTTI_DeserializeFields(context);
-        if (!context.IsValid())
-            return context.GetResultCode();
-
-        const Uuid remapped = context.RemapObjectReference(m_uuid);
-        if (remapped != m_uuid)
-            m_placementAsset = IO::AssetID::kNull;
-        m_uuid = remapped;
-        return context.GetResultCode();
-    }
-
-
-    bool ComponentCopier::Copy(const Rtti::Type& type, const void* source, void* destination,
-                               festd::span<const EntityUuidBinding> bindings, void* referenceUserData,
-                               const Serialization::SerializationContext::AssetReferenceCallback referenceCallback)
+    void RemapEntityReferences(const Rtti::Type& type, void* value, const festd::span<const EntityUuidBinding> bindings)
     {
         FE_PROFILER_ZONE();
-        FE_Assert(type.m_serialize && type.m_deserialize && source && destination);
 
-        m_buffer.clear();
-        IO::WriteOnlyVectorStream stream(m_buffer);
-        Serialization::PackedBinaryFormat format;
-        Serialization::SerializationContext writer(&stream, format, referenceUserData, referenceCallback);
-        if (writer.Store(type, source) != Serialization::ResultCode::kSuccess)
-            return false;
+        if (bindings.empty())
+            return;
 
-        IO::ReadOnlyMemoryStream input(m_buffer);
-        Serialization::DeserializationContext reader(&input, format);
-        reader.SetObjectReferenceRemapper(&bindings, [](void* user, const Uuid uuid) {
-            for (const EntityUuidBinding& binding : *static_cast<const festd::span<const EntityUuidBinding>*>(user))
+        const Rtti::Type& referenceType = Rtti::GetType<EntityReference>();
+        Rtti::Visit(type, value, Rtti::VisitFlags::kSkipTransient, [&](const Rtti::VisitNode& node) {
+            if (&node.m_type == &referenceType)
             {
-                if (binding.m_sourceUuid == uuid)
-                    return binding.m_entityUuid;
+                RemapReference(*static_cast<EntityReference*>(node.m_value), bindings);
+                return Rtti::VisitResult::kSkipChildren;
             }
 
-            return uuid;
-        });
+            const Rtti::Type* elementType = Rtti::GetElementType(node.m_type);
+            if (elementType && !Rtti::CanContainType(*elementType, referenceType))
+                return Rtti::VisitResult::kSkipChildren;
 
-        return reader.Load(type, destination) == Serialization::ResultCode::kSuccess;
+            return Rtti::VisitResult::kContinue;
+        });
     }
 
 
     bool CopyComponent(const Rtti::Type& type, const void* source, void* destination,
-                       const festd::span<const EntityUuidBinding> bindings, void* referenceUserData,
-                       const Serialization::SerializationContext::AssetReferenceCallback referenceCallback)
+                       const festd::span<const EntityUuidBinding> bindings)
     {
-        ComponentCopier copier;
-        return copier.Copy(type, source, destination, bindings, referenceUserData, referenceCallback);
+        FE_PROFILER_ZONE();
+        FE_Assert(source && destination);
+
+        if (source != destination && !Rtti::CopyValue(type, source, destination, Rtti::VisitFlags::kSkipTransient))
+            return false;
+
+        RemapEntityReferences(type, destination, bindings);
+        return true;
     }
 
 

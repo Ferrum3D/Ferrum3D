@@ -644,11 +644,25 @@ namespace FE::Serialization::Tests
     }
 
 
-    TEST(Serialization, IncompleteReflectionMetadataIsAllowed)
+    TEST(Serialization, FieldsWithoutGeneratedReflectionHaveSynthesizedTypes)
     {
         const Rtti::Type& type = Rtti::GetType<TestObject>();
         ASSERT_EQ(type.m_fields.size(), 6);
-        EXPECT_EQ(type.m_fields[2].m_type, Rtti::TypeID::kNull);
+        EXPECT_EQ(type.m_fields[0].m_type->m_shape, Rtti::TypeShape::kHandle);
+
+        const Rtti::Type& values = *type.m_fields[2].m_type;
+        EXPECT_TRUE(Bit::AnySet(values.m_flags, Rtti::TypeFlags::kSynthesized));
+        EXPECT_EQ(Rtti::TypeRegistry::FindType(values.m_id), &values);
+        ASSERT_NE(values.TryGetShape<Rtti::SequenceShape>(), nullptr);
+        EXPECT_EQ(values.TryGetShape<Rtti::SequenceShape>()->m_element, &Rtti::GetType<uint32_t>());
+        EXPECT_EQ(values.m_serializationSchemaHash, GetSchemaHash<festd::vector<uint32_t>>());
+
+        const auto* coordinates = type.m_fields[3].m_type->TryGetShape<Rtti::FixedArrayShape>();
+        ASSERT_NE(coordinates, nullptr);
+        EXPECT_EQ(coordinates->m_count, 3u);
+        EXPECT_EQ(coordinates->m_element, &Rtti::GetType<float>());
+        EXPECT_EQ(type.m_fields[4].m_type->m_shape, Rtti::TypeShape::kString);
+        EXPECT_TRUE(Bit::AnySet(type.m_fields[5].m_flags, Rtti::FieldFlags::kTransient));
 
         const Rtti::Type& descType = Rtti::GetType<PackedDesc>();
         ASSERT_EQ(descType.m_fields.size(), 1);

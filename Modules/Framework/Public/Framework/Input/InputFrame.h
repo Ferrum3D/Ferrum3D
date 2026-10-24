@@ -112,3 +112,29 @@ namespace FE::Serialization
         }
     };
 } // namespace FE::Serialization
+
+
+namespace FE::Rtti
+{
+    //! An action reference is an asset reference to its action, like the link it wraps.
+    template<Input::ActionValue T>
+    struct Shape<Input::ActionReference<T>>
+    {
+        using Reference = Input::ActionReference<T>;
+
+        static void Bind(Type& type)
+        {
+            static constexpr HandleShape kShape{
+                .m_get =
+                    [](const void* value) {
+                        return static_cast<const Reference*>(value)->GetLink().GetAssetID();
+                    },
+                .m_set =
+                    [](void* value, const Uuid uuid) {
+                        *static_cast<Reference*>(value) = IO::Link<Input::Action>(uuid);
+                    },
+            };
+            IO::Internal::AssetReferenceShape<Input::Action, IO::DependencyKind::kHard>::Bind(type, kShape);
+        }
+    };
+} // namespace FE::Rtti

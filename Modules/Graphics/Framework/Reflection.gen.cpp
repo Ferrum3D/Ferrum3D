@@ -97,6 +97,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_03321e1e0a925203b75c027838609287()
         {
             static Rtti::Type typeInstance;
@@ -142,7 +143,8 @@ namespace FE::Graphics
                                              "FE::Graphics::MeshGroupTable",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MeshGroupTable*>(instance)->RTTI_TryCast(target);
         };
@@ -160,6 +162,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_0708b35e69194fca8ccc5d42d907644f(SurfacePassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x07, 0x08, 0xb3, 0x5e, 0x69, 0x19, 0x4f, 0xca,
+                0x8c, 0xcc, 0x5d, 0x42, 0xd9, 0x07, 0x64, 0x4f, // FE::Graphics::Visibility::SurfacePassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_0708b35e69194fca8ccc5d42d907644f()
         {
             static Rtti::Type typeInstance;
@@ -182,14 +200,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x7b, 0xe2, 0x3b, 0x88, 0xff, 0xac, 0x44, 0x20,
-            0x95, 0xc8, 0x75, 0x93, 0xdb, 0x85, 0xef, 0xf2, // FE::Graphics::Visibility::SurfaceConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8,
-            0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -199,21 +209,18 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfacePassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfacePassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SurfacePassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SurfacePassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SurfacePassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &SurfacePassDesc::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfacePassDesc>(typeInstance,
@@ -221,7 +228,11 @@ namespace FE::Graphics::Visibility
                                               "FE::Graphics::Visibility::SurfacePassDesc",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields);
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_0708b35e69194fca8ccc5d42d907644f(static_cast<SurfacePassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_0708b35e69194fca8ccc5d42d907644f(&SurfacePassDesc::Reflect);
@@ -236,6 +247,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_08dbd2a2814b447391679269ffa9d67a(ClearSurfacePassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x08, 0xdb, 0xd2, 0xa2, 0x81, 0x4b, 0x44, 0x73,
+                0x91, 0x67, 0x92, 0x69, 0xff, 0xa9, 0xd6, 0x7a, // FE::Graphics::Visibility::ClearSurfacePassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_08dbd2a2814b447391679269ffa9d67a()
         {
             static Rtti::Type typeInstance;
@@ -258,12 +285,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xf3, 0xa5, 0x93, 0xe6, 0x58, 0x0f, 0x43, 0x45,
-            0xa5, 0x08, 0x52, 0x36, 0x59, 0xf3, 0x08, 0x82, // FE::Graphics::Visibility::ClearSurfaceConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -271,16 +292,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ClearSurfacePassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &ClearSurfacePassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &ClearSurfacePassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &ClearSurfacePassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ClearSurfacePassDesc>(typeInstance,
@@ -288,7 +307,11 @@ namespace FE::Graphics::Visibility
                                                    "FE::Graphics::Visibility::ClearSurfacePassDesc",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields);
+                                                   kFields,
+                                                   Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_08dbd2a2814b447391679269ffa9d67a(static_cast<ClearSurfacePassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_08dbd2a2814b447391679269ffa9d67a(&ClearSurfacePassDesc::Reflect);
@@ -303,6 +326,22 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_0f0748c21d734b58a9e248e75c6c51f0(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x0f, 0x07, 0x48, 0xc2, 0x1d, 0x73, 0x4b, 0x58, 0xa9,
+                0xe2, 0x48, 0xe7, 0x5c, 0x6c, 0x51, 0xf0, // FE::Graphics::MeshPass::CountMeshInstances::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_0f0748c21d734b58a9e248e75c6c51f0()
         {
             static Rtti::Type typeInstance;
@@ -325,18 +364,6 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_classification
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_routing
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_instanceBuckets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_counts
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_drawTagMask
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_classification = {};
@@ -350,31 +377,26 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_drawTagMask = {};
 
         static const festd::array<Rtti::FieldInfo, 5> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_classification",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_classification,
-                                                        kAttributes_m_classification,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_routing",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_routing,
-                                                        kAttributes_m_routing,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceBuckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_instanceBuckets,
-                                                        kAttributes_m_instanceBuckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_counts,
-                                                        kAttributes_m_counts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_drawTagMask",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_drawTagMask,
-                                                        kAttributes_m_drawTagMask,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_classification",
+                                                     &Constants::m_classification,
+                                                     kAttributes_m_classification,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_routing",
+                                                     &Constants::m_routing,
+                                                     kAttributes_m_routing,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_instanceBuckets",
+                                                     &Constants::m_instanceBuckets,
+                                                     kAttributes_m_instanceBuckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counts",
+                                                     &Constants::m_counts,
+                                                     kAttributes_m_counts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_drawTagMask",
+                                                     &Constants::m_drawTagMask,
+                                                     kAttributes_m_drawTagMask,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -382,7 +404,11 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
                                         "FE::Graphics::MeshPass::CountMeshInstances::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_0f0748c21d734b58a9e248e75c6c51f0(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_0f0748c21d734b58a9e248e75c6c51f0(&Constants::Reflect);
@@ -424,6 +450,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_10ad85c9459c570cb6ed5813e489b160()
         {
             static Rtti::Type typeInstance;
@@ -469,7 +496,8 @@ namespace FE::Graphics
                                               "FE::Graphics::MeshMemberTable",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields);
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MeshMemberTable*>(instance)->RTTI_TryCast(target);
         };
@@ -514,6 +542,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_113ac82790ac48f79a7a4c7ae0695ad8()
         {
             static Rtti::Type typeInstance;
@@ -559,7 +588,8 @@ namespace FE::Graphics
                                        "FE::Graphics::ViewImpl",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewImpl*>(instance)->RTTI_TryCast(target);
         };
@@ -577,6 +607,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_12ca5527dcd8448d914119bd100b9d80(SurfacePropagateConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x12, 0xca, 0x55, 0x27, 0xdc, 0xd8, 0x44, 0x8d,
+                0x91, 0x41, 0x19, 0xbd, 0x10, 0x0b, 0x9d, 0x80, // FE::Graphics::Visibility::SurfacePropagateConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_12ca5527dcd8448d914119bd100b9d80()
         {
             static Rtti::Type typeInstance;
@@ -599,14 +645,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_scanOutput
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_parentOffsets
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_scanCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanOutput = {};
@@ -616,21 +654,18 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scanCount = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanOutput",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfacePropagateConstants::m_scanOutput,
-                                                        kAttributes_m_scanOutput,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_parentOffsets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfacePropagateConstants::m_parentOffsets,
-                                                        kAttributes_m_parentOffsets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SurfacePropagateConstants::m_scanCount,
-                                                        kAttributes_m_scanCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scanOutput",
+                                                     &SurfacePropagateConstants::m_scanOutput,
+                                                     kAttributes_m_scanOutput,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_parentOffsets",
+                                                     &SurfacePropagateConstants::m_parentOffsets,
+                                                     kAttributes_m_parentOffsets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scanCount",
+                                                     &SurfacePropagateConstants::m_scanCount,
+                                                     kAttributes_m_scanCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfacePropagateConstants>(typeInstance,
@@ -638,7 +673,11 @@ namespace FE::Graphics::Visibility
                                                         "FE::Graphics::Visibility::SurfacePropagateConstants",
                                                         kBaseClassTypeIDs,
                                                         kAttributes,
-                                                        kFields);
+                                                        kFields,
+                                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_12ca5527dcd8448d914119bd100b9d80(static_cast<SurfacePropagateConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_12ca5527dcd8448d914119bd100b9d80(&SurfacePropagateConstants::Reflect);
@@ -653,6 +692,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_16e3baa2a8b34f66b18648e7265aeca7(MeshSubmeshAssetInfo* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x16, 0xe3, 0xba, 0xa2, 0xa8, 0xb3, 0x4f, 0x66,
+                0xb1, 0x86, 0x48, 0xe7, 0x26, 0x5a, 0xec, 0xa7, // FE::Graphics::MeshSubmeshAssetInfo (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_16e3baa2a8b34f66b18648e7265aeca7()
         {
             static Rtti::Type typeInstance;
@@ -675,10 +730,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lods
-            0x52, 0x1e, 0x15, 0x92, 0x5f, 0xf2, 0x40, 0x2b, 0x9c, 0x85, 0x8e, 0xde, 0x1d, 0x30, 0x79, 0x8c, // FE::Aabb m_bounds
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lods = {};
@@ -686,16 +737,14 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bounds = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lods",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MeshSubmeshAssetInfo::m_lods,
-                                                        kAttributes_m_lods,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bounds",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MeshSubmeshAssetInfo::m_bounds,
-                                                        kAttributes_m_bounds,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lods",
+                                                     &MeshSubmeshAssetInfo::m_lods,
+                                                     kAttributes_m_lods,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bounds",
+                                                     &MeshSubmeshAssetInfo::m_bounds,
+                                                     kAttributes_m_bounds,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MeshSubmeshAssetInfo>(typeInstance,
@@ -703,7 +752,11 @@ namespace FE::Graphics
                                                    "FE::Graphics::MeshSubmeshAssetInfo",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields);
+                                                   kFields,
+                                                   Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_16e3baa2a8b34f66b18648e7265aeca7(static_cast<MeshSubmeshAssetInfo*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_16e3baa2a8b34f66b18648e7265aeca7(&MeshSubmeshAssetInfo::Reflect);
@@ -792,6 +845,7 @@ namespace FE::Graphics::ImGuiPass
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_170ba4484f9d479394b6ec224b679ac7()
         {
             static Rtti::Type typeInstance;
@@ -837,7 +891,8 @@ namespace FE::Graphics::ImGuiPass
                                          "FE::Graphics::ImGuiPass::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -855,6 +910,22 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_171f7c24a5484d438cacdc79cd672599(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x17, 0x1f, 0x7c, 0x24, 0xa5, 0x48, 0x4d, 0x43,
+                0x8c, 0xac, 0xdc, 0x79, 0xcd, 0x67, 0x25, 0x99, // FE::Graphics::MeshPass::ScatterMeshWork::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_171f7c24a5484d438cacdc79cd672599()
         {
             static Rtti::Type typeInstance;
@@ -877,12 +948,6 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xf4, 0x3c, 0xde, 0x27, 0xbe, 0x2f, 0x41, 0xa5,
-            0xba, 0x1e, 0x64, 0xf6, 0xd3, 0x77, 0xf7, 0x46, // FE::Graphics::MeshPass::ScatterMeshWork::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -890,16 +955,14 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -907,7 +970,11 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
                                        "FE::Graphics::MeshPass::ScatterMeshWork::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_171f7c24a5484d438cacdc79cd672599(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_171f7c24a5484d438cacdc79cd672599(&PassDesc::Reflect);
@@ -949,6 +1016,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_1784843c50854289aa8204c480e423ee()
         {
             static Rtti::Type typeInstance;
@@ -994,7 +1062,8 @@ namespace FE::Graphics
                                               "FE::Graphics::MeshSceneModule",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields);
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MeshSceneModule*>(instance)->RTTI_TryCast(target);
         };
@@ -1012,6 +1081,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_1a8aa57631694d3691e28d60537d00c7(SurfacePropagatePassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x1a, 0x8a, 0xa5, 0x76, 0x31, 0x69, 0x4d, 0x36,
+                0x91, 0xe2, 0x8d, 0x60, 0x53, 0x7d, 0x00, 0xc7, // FE::Graphics::Visibility::SurfacePropagatePassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_1a8aa57631694d3691e28d60537d00c7()
         {
             static Rtti::Type typeInstance;
@@ -1034,12 +1119,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x12, 0xca, 0x55, 0x27, 0xdc, 0xd8, 0x44, 0x8d,
-            0x91, 0x41, 0x19, 0xbd, 0x10, 0x0b, 0x9d, 0x80, // FE::Graphics::Visibility::SurfacePropagateConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -1047,16 +1126,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfacePropagatePassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfacePropagatePassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SurfacePropagatePassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SurfacePropagatePassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfacePropagatePassDesc>(typeInstance,
@@ -1064,7 +1141,11 @@ namespace FE::Graphics::Visibility
                                                        "FE::Graphics::Visibility::SurfacePropagatePassDesc",
                                                        kBaseClassTypeIDs,
                                                        kAttributes,
-                                                       kFields);
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_1a8aa57631694d3691e28d60537d00c7(static_cast<SurfacePropagatePassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1a8aa57631694d3691e28d60537d00c7(&SurfacePropagatePassDesc::Reflect);
@@ -1079,6 +1160,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_1ca2dff47a05429da488c79a5f2b9f17(SurfaceCommandsPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x1c, 0xa2, 0xdf, 0xf4, 0x7a, 0x05, 0x42, 0x9d,
+                0xa4, 0x88, 0xc7, 0x9a, 0x5f, 0x2b, 0x9f, 0x17, // FE::Graphics::Visibility::SurfaceCommandsPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_1ca2dff47a05429da488c79a5f2b9f17()
         {
             static Rtti::Type typeInstance;
@@ -1101,14 +1198,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x9f, 0xd1, 0x8d, 0xea, 0x19, 0x42, 0xaa,
-            0x8f, 0x6f, 0x33, 0xb9, 0xae, 0x92, 0x14, 0x2e, // FE::Graphics::Visibility::SurfaceCommandsConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8,
-            0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -1118,21 +1207,18 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfaceCommandsPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfaceCommandsPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SurfaceCommandsPassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SurfaceCommandsPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SurfaceCommandsPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &SurfaceCommandsPassDesc::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfaceCommandsPassDesc>(typeInstance,
@@ -1140,7 +1226,11 @@ namespace FE::Graphics::Visibility
                                                       "FE::Graphics::Visibility::SurfaceCommandsPassDesc",
                                                       kBaseClassTypeIDs,
                                                       kAttributes,
-                                                      kFields);
+                                                      kFields,
+                                                      Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_1ca2dff47a05429da488c79a5f2b9f17(static_cast<SurfaceCommandsPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1ca2dff47a05429da488c79a5f2b9f17(&SurfaceCommandsPassDesc::Reflect);
@@ -1155,6 +1245,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_1e04ce309984481cb70bf641777f69c4(MaterialParameterDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x1e, 0x04, 0xce, 0x30, 0x99, 0x84, 0x48, 0x1c,
+                0xb7, 0x0b, 0xf6, 0x41, 0x77, 0x7f, 0x69, 0xc4, // FE::Graphics::MaterialParameterDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_1e04ce309984481cb70bf641777f69c4()
         {
             static Rtti::Type typeInstance;
@@ -1177,16 +1283,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0,
-            0x8d, 0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_name
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_type
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_scope
-            0xc0, 0x5e, 0xdb, 0x73, 0x4a, 0x72, 0x4b, 0x89,
-            0xb0, 0xe4, 0x2f, 0x4b, 0xfd, 0xc6, 0xc5, 0x38, // FE::Vector4 m_defaultValue
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
@@ -1198,26 +1294,22 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_defaultValue = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MaterialParameterDesc::m_name,
-                                                        kAttributes_m_name,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_type",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MaterialParameterDesc::m_type,
-                                                        kAttributes_m_type,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scope",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MaterialParameterDesc::m_scope,
-                                                        kAttributes_m_scope,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_defaultValue",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &MaterialParameterDesc::m_defaultValue,
-                                                        kAttributes_m_defaultValue,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_name",
+                                                     &MaterialParameterDesc::m_name,
+                                                     kAttributes_m_name,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_type",
+                                                     &MaterialParameterDesc::m_type,
+                                                     kAttributes_m_type,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scope",
+                                                     &MaterialParameterDesc::m_scope,
+                                                     kAttributes_m_scope,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_defaultValue",
+                                                     &MaterialParameterDesc::m_defaultValue,
+                                                     kAttributes_m_defaultValue,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MaterialParameterDesc>(typeInstance,
@@ -1225,7 +1317,11 @@ namespace FE::Graphics
                                                     "FE::Graphics::MaterialParameterDesc",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_1e04ce309984481cb70bf641777f69c4(static_cast<MaterialParameterDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1e04ce309984481cb70bf641777f69c4(&MaterialParameterDesc::Reflect);
@@ -1295,6 +1391,22 @@ namespace FE::Graphics::Tools::Downsample
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_1e74b92c3d4d4a75af29f023496e19bf(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x1e, 0x74, 0xb9, 0x2c, 0x3d, 0x4d, 0x4a, 0x75,
+                0xaf, 0x29, 0xf0, 0x23, 0x49, 0x6e, 0x19, 0xbf, // FE::Graphics::Tools::Downsample::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_1e74b92c3d4d4a75af29f023496e19bf()
         {
             static Rtti::Type typeInstance;
@@ -1317,28 +1429,6 @@ namespace FE::Graphics::Tools::Downsample
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[10 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_mips
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_numWorkGroups
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_workGroupOffset
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_invInputSize
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_input
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_internalGlobalAtomic
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_inputSrcMidMip
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_inputSrcMips
-            0x0a, 0xdc, 0x65, 0xde, 0x1b, 0xa6, 0x4a, 0x60,
-            0xb3, 0x20, 0x33, 0x3a, 0xd0, 0xc2, 0xf2, 0x7b, // FE::Graphics::SamplerDescriptor m_linearClamp
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_padding
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mips = {};
@@ -1362,56 +1452,46 @@ namespace FE::Graphics::Tools::Downsample
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_padding = {};
 
         static const festd::array<Rtti::FieldInfo, 10> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mips",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_mips,
-                                                        kAttributes_m_mips,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_numWorkGroups",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_numWorkGroups,
-                                                        kAttributes_m_numWorkGroups,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_workGroupOffset",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_workGroupOffset,
-                                                        kAttributes_m_workGroupOffset,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_invInputSize",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_invInputSize,
-                                                        kAttributes_m_invInputSize,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_input",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_input,
-                                                        kAttributes_m_input,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_internalGlobalAtomic",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &Constants::m_internalGlobalAtomic,
-                                                        kAttributes_m_internalGlobalAtomic,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_inputSrcMidMip",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &Constants::m_inputSrcMidMip,
-                                                        kAttributes_m_inputSrcMidMip,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<13>("m_inputSrcMips",
-                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                         &Constants::m_inputSrcMips,
-                                                         kAttributes_m_inputSrcMips,
-                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_linearClamp",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &Constants::m_linearClamp,
-                                                        kAttributes_m_linearClamp,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_padding",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &Constants::m_padding,
-                                                        kAttributes_m_padding,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mips",
+                                                     &Constants::m_mips,
+                                                     kAttributes_m_mips,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_numWorkGroups",
+                                                     &Constants::m_numWorkGroups,
+                                                     kAttributes_m_numWorkGroups,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_workGroupOffset",
+                                                     &Constants::m_workGroupOffset,
+                                                     kAttributes_m_workGroupOffset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_invInputSize",
+                                                     &Constants::m_invInputSize,
+                                                     kAttributes_m_invInputSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_input",
+                                                     &Constants::m_input,
+                                                     kAttributes_m_input,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_internalGlobalAtomic",
+                                                     &Constants::m_internalGlobalAtomic,
+                                                     kAttributes_m_internalGlobalAtomic,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_inputSrcMidMip",
+                                                     &Constants::m_inputSrcMidMip,
+                                                     kAttributes_m_inputSrcMidMip,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_inputSrcMips",
+                                                     &Constants::m_inputSrcMips,
+                                                     kAttributes_m_inputSrcMips,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_linearClamp",
+                                                     &Constants::m_linearClamp,
+                                                     kAttributes_m_linearClamp,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_padding",
+                                                     &Constants::m_padding,
+                                                     kAttributes_m_padding,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -1419,7 +1499,11 @@ namespace FE::Graphics::Tools::Downsample
                                         "FE::Graphics::Tools::Downsample::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_1e74b92c3d4d4a75af29f023496e19bf(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1e74b92c3d4d4a75af29f023496e19bf(&Constants::Reflect);
@@ -1461,6 +1545,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_1f14d47fbee35efa93d27f97311a9ed3()
         {
             static Rtti::Type typeInstance;
@@ -1506,7 +1591,8 @@ namespace FE::Graphics
                                              "FE::Graphics::MeshBatchTable",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MeshBatchTable*>(instance)->RTTI_TryCast(target);
         };
@@ -1551,6 +1637,7 @@ namespace FE::Graphics::DepthPyramidPass
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_1f8cb52b6d214c51bb8431d5ada1c348()
         {
             static Rtti::Type typeInstance;
@@ -1596,7 +1683,8 @@ namespace FE::Graphics::DepthPyramidPass
                                          "FE::Graphics::DepthPyramidPass::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -1635,6 +1723,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_20121f058d10442799252dba388379c9()
         {
             static Rtti::Type typeInstance;
@@ -1677,7 +1766,8 @@ namespace FE::Graphics
                                     "FE::Graphics::Scene",
                                     kBaseClassTypeIDs,
                                     kAttributes,
-                                    kFields);
+                                    kFields,
+                                    Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<Scene*>(instance)->RTTI_TryCast(target);
         };
@@ -1716,6 +1806,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_273b0f50b9914323a5166c87bbcd83a1()
         {
             static Rtti::Type typeInstance;
@@ -1759,7 +1850,8 @@ namespace FE::Graphics
                                                  "FE::Graphics::RendererModuleBase",
                                                  kBaseClassTypeIDs,
                                                  kAttributes,
-                                                 kFields);
+                                                 kFields,
+                                                 Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<RendererModuleBase*>(instance)->RTTI_TryCast(target);
         };
@@ -1777,6 +1869,22 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_2b82e3808b5944ebbbacda2970d24bd4(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x2b, 0x82, 0xe3, 0x80, 0x8b, 0x59, 0x44, 0xeb, 0xbb,
+                0xac, 0xda, 0x29, 0x70, 0xd2, 0x4b, 0xd4, // FE::Graphics::MeshPass::FinalizeMeshBuckets::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_2b82e3808b5944ebbbacda2970d24bd4()
         {
             static Rtti::Type typeInstance;
@@ -1799,18 +1907,6 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_offsets
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_counts
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_buckets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_cullDispatch
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_bucketCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offsets = {};
@@ -1824,31 +1920,26 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bucketCount = {};
 
         static const festd::array<Rtti::FieldInfo, 5> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_offsets,
-                                                        kAttributes_m_offsets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_counts,
-                                                        kAttributes_m_counts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_buckets,
-                                                        kAttributes_m_buckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cullDispatch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_cullDispatch,
-                                                        kAttributes_m_cullDispatch,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bucketCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_bucketCount,
-                                                        kAttributes_m_bucketCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_offsets",
+                                                     &Constants::m_offsets,
+                                                     kAttributes_m_offsets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counts",
+                                                     &Constants::m_counts,
+                                                     kAttributes_m_counts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_buckets",
+                                                     &Constants::m_buckets,
+                                                     kAttributes_m_buckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_cullDispatch",
+                                                     &Constants::m_cullDispatch,
+                                                     kAttributes_m_cullDispatch,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bucketCount",
+                                                     &Constants::m_bucketCount,
+                                                     kAttributes_m_bucketCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -1856,7 +1947,11 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
                                         "FE::Graphics::MeshPass::FinalizeMeshBuckets::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_2b82e3808b5944ebbbacda2970d24bd4(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2b82e3808b5944ebbbacda2970d24bd4(&Constants::Reflect);
@@ -1871,6 +1966,22 @@ namespace FE::Graphics::MeshPass::CullMeshlets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_2c78344a439446e5bdfe69a32663ef5c(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x2c, 0x78, 0x34, 0x4a, 0x43, 0x94, 0x46, 0xe5,
+                0xbd, 0xfe, 0x69, 0xa3, 0x26, 0x63, 0xef, 0x5c, // FE::Graphics::MeshPass::CullMeshlets::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_2c78344a439446e5bdfe69a32663ef5c()
         {
             static Rtti::Type typeInstance;
@@ -1893,36 +2004,6 @@ namespace FE::Graphics::MeshPass::CullMeshlets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[14 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_instances
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_work
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_buckets
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_dispatch
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_meshletCounts
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_meshlets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_meshletVisibility
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_occlusionCandidates
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_occlusionDispatch
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_stats
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_meshletVisibilityCapacity
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_isOcclusionTested
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_phase
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -1954,76 +2035,62 @@ namespace FE::Graphics::MeshPass::CullMeshlets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_phase = {};
 
         static const festd::array<Rtti::FieldInfo, 14> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instances",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_instances,
-                                                        kAttributes_m_instances,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_work",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_work,
-                                                        kAttributes_m_work,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_buckets,
-                                                        kAttributes_m_buckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dispatch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_dispatch,
-                                                        kAttributes_m_dispatch,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletCounts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &Constants::m_meshletCounts,
-                                                        kAttributes_m_meshletCounts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshlets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &Constants::m_meshlets,
-                                                        kAttributes_m_meshlets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletVisibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &Constants::m_meshletVisibility,
-                                                        kAttributes_m_meshletVisibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_occlusionCandidates",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &Constants::m_occlusionCandidates,
-                                                        kAttributes_m_occlusionCandidates,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_occlusionDispatch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &Constants::m_occlusionDispatch,
-                                                        kAttributes_m_occlusionDispatch,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_stats",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &Constants::m_stats,
-                                                        kAttributes_m_stats,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletVisibilityCapacity",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &Constants::m_meshletVisibilityCapacity,
-                                                        kAttributes_m_meshletVisibilityCapacity,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_isOcclusionTested",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
-                                                        &Constants::m_isOcclusionTested,
-                                                        kAttributes_m_isOcclusionTested,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_phase",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
-                                                        &Constants::m_phase,
-                                                        kAttributes_m_phase,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &Constants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_instances",
+                                                     &Constants::m_instances,
+                                                     kAttributes_m_instances,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_work",
+                                                     &Constants::m_work,
+                                                     kAttributes_m_work,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_buckets",
+                                                     &Constants::m_buckets,
+                                                     kAttributes_m_buckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_dispatch",
+                                                     &Constants::m_dispatch,
+                                                     kAttributes_m_dispatch,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletCounts",
+                                                     &Constants::m_meshletCounts,
+                                                     kAttributes_m_meshletCounts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshlets",
+                                                     &Constants::m_meshlets,
+                                                     kAttributes_m_meshlets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletVisibility",
+                                                     &Constants::m_meshletVisibility,
+                                                     kAttributes_m_meshletVisibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_occlusionCandidates",
+                                                     &Constants::m_occlusionCandidates,
+                                                     kAttributes_m_occlusionCandidates,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_occlusionDispatch",
+                                                     &Constants::m_occlusionDispatch,
+                                                     kAttributes_m_occlusionDispatch,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_stats",
+                                                     &Constants::m_stats,
+                                                     kAttributes_m_stats,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletVisibilityCapacity",
+                                                     &Constants::m_meshletVisibilityCapacity,
+                                                     kAttributes_m_meshletVisibilityCapacity,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_isOcclusionTested",
+                                                     &Constants::m_isOcclusionTested,
+                                                     kAttributes_m_isOcclusionTested,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_phase",
+                                                     &Constants::m_phase,
+                                                     kAttributes_m_phase,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -2031,7 +2098,11 @@ namespace FE::Graphics::MeshPass::CullMeshlets
                                         "FE::Graphics::MeshPass::CullMeshlets::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_2c78344a439446e5bdfe69a32663ef5c(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2c78344a439446e5bdfe69a32663ef5c(&Constants::Reflect);
@@ -2061,6 +2132,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_2d0926a683124d3c8675f67bb9a62b67()
         {
             static Rtti::Type typeInstance;
@@ -2092,12 +2164,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_meshes
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_textures
-        };
         static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MESH);
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
@@ -2106,16 +2172,14 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_textures = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshes",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ModelAsset::m_meshes,
-                                                        kAttributes_m_meshes,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_textures",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &ModelAsset::m_textures,
-                                                        kAttributes_m_textures,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshes",
+                                                     &ModelAsset::m_meshes,
+                                                     kAttributes_m_meshes,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_textures",
+                                                     &ModelAsset::m_textures,
+                                                     kAttributes_m_textures,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ModelAsset>(typeInstance,
@@ -2123,7 +2187,8 @@ namespace FE::Graphics
                                          "FE::Graphics::ModelAsset",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ModelAsset*>(instance)->RTTI_TryCast(target);
         };
@@ -2188,6 +2253,22 @@ namespace FE::Graphics::MeshPass::CullMeshlets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_302094e972ec40e48382ef16d3e5bab9(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x30, 0x20, 0x94, 0xe9, 0x72, 0xec, 0x40, 0xe4,
+                0x83, 0x82, 0xef, 0x16, 0xd3, 0xe5, 0xba, 0xb9, // FE::Graphics::MeshPass::CullMeshlets::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_302094e972ec40e48382ef16d3e5bab9()
         {
             static Rtti::Type typeInstance;
@@ -2210,14 +2291,6 @@ namespace FE::Graphics::MeshPass::CullMeshlets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x2c, 0x78, 0x34, 0x4a, 0x43, 0x94, 0x46, 0xe5,
-            0xbd, 0xfe, 0x69, 0xa3, 0x26, 0x63, 0xef, 0x5c, // FE::Graphics::MeshPass::CullMeshlets::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8,
-            0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -2227,21 +2300,18 @@ namespace FE::Graphics::MeshPass::CullMeshlets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &PassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &PassDesc::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -2249,7 +2319,11 @@ namespace FE::Graphics::MeshPass::CullMeshlets
                                        "FE::Graphics::MeshPass::CullMeshlets::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_302094e972ec40e48382ef16d3e5bab9(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_302094e972ec40e48382ef16d3e5bab9(&PassDesc::Reflect);
@@ -2264,6 +2338,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_339fd18dea1942aa8f6f33b9ae92142e(SurfaceCommandsConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x33, 0x9f, 0xd1, 0x8d, 0xea, 0x19, 0x42, 0xaa,
+                0x8f, 0x6f, 0x33, 0xb9, 0xae, 0x92, 0x14, 0x2e, // FE::Graphics::Visibility::SurfaceCommandsConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_339fd18dea1942aa8f6f33b9ae92142e()
         {
             static Rtti::Type typeInstance;
@@ -2286,32 +2376,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[12 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_offsets
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_totals
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_countsRead
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_bindings
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_shaderBindings
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_waves
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_ranges
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_arguments
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tileCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_bucketCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_shaderCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_waveLaneCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offsets = {};
@@ -2339,66 +2403,54 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_waveLaneCount = {};
 
         static const festd::array<Rtti::FieldInfo, 12> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_offsets,
-                                                        kAttributes_m_offsets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_totals",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_totals,
-                                                        kAttributes_m_totals,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_countsRead",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_countsRead,
-                                                        kAttributes_m_countsRead,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bindings",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_bindings,
-                                                        kAttributes_m_bindings,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderBindings",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_shaderBindings,
-                                                        kAttributes_m_shaderBindings,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_waves",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_waves,
-                                                        kAttributes_m_waves,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ranges",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_ranges,
-                                                        kAttributes_m_ranges,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tileCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_tileCount,
-                                                        kAttributes_m_tileCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bucketCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_bucketCount,
-                                                        kAttributes_m_bucketCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_shaderCount,
-                                                        kAttributes_m_shaderCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_waveLaneCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &SurfaceCommandsConstants::m_waveLaneCount,
-                                                        kAttributes_m_waveLaneCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_offsets",
+                                                     &SurfaceCommandsConstants::m_offsets,
+                                                     kAttributes_m_offsets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_totals",
+                                                     &SurfaceCommandsConstants::m_totals,
+                                                     kAttributes_m_totals,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_countsRead",
+                                                     &SurfaceCommandsConstants::m_countsRead,
+                                                     kAttributes_m_countsRead,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bindings",
+                                                     &SurfaceCommandsConstants::m_bindings,
+                                                     kAttributes_m_bindings,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderBindings",
+                                                     &SurfaceCommandsConstants::m_shaderBindings,
+                                                     kAttributes_m_shaderBindings,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_waves",
+                                                     &SurfaceCommandsConstants::m_waves,
+                                                     kAttributes_m_waves,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_ranges",
+                                                     &SurfaceCommandsConstants::m_ranges,
+                                                     kAttributes_m_ranges,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &SurfaceCommandsConstants::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
+                                                     &SurfaceCommandsConstants::m_tileCount,
+                                                     kAttributes_m_tileCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bucketCount",
+                                                     &SurfaceCommandsConstants::m_bucketCount,
+                                                     kAttributes_m_bucketCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderCount",
+                                                     &SurfaceCommandsConstants::m_shaderCount,
+                                                     kAttributes_m_shaderCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_waveLaneCount",
+                                                     &SurfaceCommandsConstants::m_waveLaneCount,
+                                                     kAttributes_m_waveLaneCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfaceCommandsConstants>(typeInstance,
@@ -2406,7 +2458,11 @@ namespace FE::Graphics::Visibility
                                                        "FE::Graphics::Visibility::SurfaceCommandsConstants",
                                                        kBaseClassTypeIDs,
                                                        kAttributes,
-                                                       kFields);
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_339fd18dea1942aa8f6f33b9ae92142e(static_cast<SurfaceCommandsConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_339fd18dea1942aa8f6f33b9ae92142e(&SurfaceCommandsConstants::Reflect);
@@ -2421,6 +2477,22 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_33efa1b15190466fa50c23794a74045a(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x33, 0xef, 0xa1, 0xb1, 0x51, 0x90, 0x46, 0x6f, 0xa5,
+                0x0c, 0x23, 0x79, 0x4a, 0x74, 0x04, 0x5a, // FE::Graphics::MeshPass::PropagateMeshBucketOffsets::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_33efa1b15190466fa50c23794a74045a()
         {
             static Rtti::Type typeInstance;
@@ -2443,12 +2515,6 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x98, 0xf0, 0xa8, 0xe2, 0x05, 0x3c, 0x4f, 0x16, 0xac,
-            0x99, 0xab, 0xf6, 0x1f, 0xdb, 0x4e, 0x67, // FE::Graphics::MeshPass::PropagateMeshBucketOffsets::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19, 0x96,
-            0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -2456,16 +2522,14 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -2473,7 +2537,11 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
                                        "FE::Graphics::MeshPass::PropagateMeshBucketOffsets::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_33efa1b15190466fa50c23794a74045a(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_33efa1b15190466fa50c23794a74045a(&PassDesc::Reflect);
@@ -2488,6 +2556,22 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_37f91dfb9bfd489f8e127dbfc3163b98(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x37, 0xf9, 0x1d, 0xfb, 0x9b, 0xfd, 0x48, 0x9f, 0x8e,
+                0x12, 0x7d, 0xbf, 0xc3, 0x16, 0x3b, 0x98, // FE::Graphics::MeshPass::FinalizeMeshletCommands::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_37f91dfb9bfd489f8e127dbfc3163b98()
         {
             static Rtti::Type typeInstance;
@@ -2510,12 +2594,6 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x90, 0x49, 0x88, 0x5e, 0xc5, 0x14, 0x40, 0xc6, 0x9f,
-            0x2d, 0x21, 0xaa, 0x94, 0xa9, 0x20, 0x2c, // FE::Graphics::MeshPass::FinalizeMeshletCommands::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19, 0x96,
-            0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -2523,16 +2601,14 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -2540,7 +2616,11 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
                                        "FE::Graphics::MeshPass::FinalizeMeshletCommands::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_37f91dfb9bfd489f8e127dbfc3163b98(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_37f91dfb9bfd489f8e127dbfc3163b98(&PassDesc::Reflect);
@@ -2555,6 +2635,22 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_388ed96c7c0e4d70923330d3e126be6c(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x38, 0x8e, 0xd9, 0x6c, 0x7c, 0x0e, 0x4d, 0x70,
+                0x92, 0x33, 0x30, 0xd3, 0xe1, 0x26, 0xbe, 0x6c, // FE::Graphics::MeshPass::ClearMeshWork::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_388ed96c7c0e4d70923330d3e126be6c()
         {
             static Rtti::Type typeInstance;
@@ -2577,12 +2673,6 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x7e, 0x4f, 0x82, 0xa9, 0x69, 0xa7, 0x4a, 0xfd,
-            0x8a, 0xc5, 0x3f, 0xa0, 0x32, 0xda, 0xbb, 0xb3, // FE::Graphics::MeshPass::ClearMeshWork::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -2590,16 +2680,14 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -2607,7 +2695,11 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
                                        "FE::Graphics::MeshPass::ClearMeshWork::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_388ed96c7c0e4d70923330d3e126be6c(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_388ed96c7c0e4d70923330d3e126be6c(&PassDesc::Reflect);
@@ -2649,6 +2741,7 @@ namespace FE::Graphics::DeferredShading
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_3f99c20af2de442aac4e930462412dbd()
         {
             static Rtti::Type typeInstance;
@@ -2694,7 +2787,8 @@ namespace FE::Graphics::DeferredShading
                                          "FE::Graphics::DeferredShading::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -2739,6 +2833,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_429a06b50beb517187f818737671fb7f()
         {
             static Rtti::Type typeInstance;
@@ -2784,7 +2879,8 @@ namespace FE::Graphics
                                                "FE::Graphics::MeshLodInfoTable",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MeshLodInfoTable*>(instance)->RTTI_TryCast(target);
         };
@@ -2817,6 +2913,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_44ebc248fd5e4cf4ab4c09511b78362c()
         {
             static Rtti::Type typeInstance;
@@ -2848,20 +2945,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_vertexStride
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_submeshes
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lodErrors
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_buffer
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_currentOperation
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_residentLod
-        };
         static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MESH);
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
@@ -2878,39 +2961,33 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_residentLod = {};
 
         static const festd::array<Rtti::FieldInfo, 6> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexStride",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MeshAsset::m_vertexStride,
-                                                        kAttributes_m_vertexStride,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_submeshes",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MeshAsset::m_submeshes,
-                                                        kAttributes_m_submeshes,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lodErrors",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MeshAsset::m_lodErrors,
-                                                        kAttributes_m_lodErrors,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buffer",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &MeshAsset::m_buffer,
-                                                        kAttributes_m_buffer,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_currentOperation",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &MeshAsset::m_currentOperation,
-                                                        kAttributes_m_currentOperation,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_residentLod",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &MeshAsset::m_residentLod,
-                                                        kAttributes_m_residentLod,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_vertexStride",
+                                                     &MeshAsset::m_vertexStride,
+                                                     kAttributes_m_vertexStride,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_submeshes",
+                                                     &MeshAsset::m_submeshes,
+                                                     kAttributes_m_submeshes,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lodErrors",
+                                                     &MeshAsset::m_lodErrors,
+                                                     kAttributes_m_lodErrors,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_buffer",
+                                                     &MeshAsset::m_buffer,
+                                                     kAttributes_m_buffer,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_currentOperation",
+                                                     &MeshAsset::m_currentOperation,
+                                                     kAttributes_m_currentOperation,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_residentLod",
+                                                     &MeshAsset::m_residentLod,
+                                                     kAttributes_m_residentLod,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<MeshAsset>(typeInstance,
@@ -2918,7 +2995,8 @@ namespace FE::Graphics
                                         "FE::Graphics::MeshAsset",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MeshAsset*>(instance)->RTTI_TryCast(target);
         };
@@ -3002,6 +3080,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_44f1653fb7164e1da631eaa8e728dc08()
         {
             static Rtti::Type typeInstance;
@@ -3033,16 +3112,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_material
-            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
-            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_permutationKey
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_parameters
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_runtime
-        };
         static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MATERIAL);
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
@@ -3055,27 +3124,23 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runtime = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_material",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MaterialInstanceAsset::m_material,
-                                                        kAttributes_m_material,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_permutationKey",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MaterialInstanceAsset::m_permutationKey,
-                                                        kAttributes_m_permutationKey,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_parameters",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MaterialInstanceAsset::m_parameters,
-                                                        kAttributes_m_parameters,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_runtime",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &MaterialInstanceAsset::m_runtime,
-                                                        kAttributes_m_runtime,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_material",
+                                                     &MaterialInstanceAsset::m_material,
+                                                     kAttributes_m_material,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_permutationKey",
+                                                     &MaterialInstanceAsset::m_permutationKey,
+                                                     kAttributes_m_permutationKey,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_parameters",
+                                                     &MaterialInstanceAsset::m_parameters,
+                                                     kAttributes_m_parameters,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_runtime",
+                                                     &MaterialInstanceAsset::m_runtime,
+                                                     kAttributes_m_runtime,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<MaterialInstanceAsset>(typeInstance,
@@ -3083,7 +3148,8 @@ namespace FE::Graphics
                                                     "FE::Graphics::MaterialInstanceAsset",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MaterialInstanceAsset*>(instance)->RTTI_TryCast(target);
         };
@@ -3152,6 +3218,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_4916ec59742a498c99dddc0764001791(GlobalLightingParameters* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x49, 0x16, 0xec, 0x59, 0x74, 0x2a, 0x49, 0x8c,
+                0x99, 0xdd, 0xdc, 0x07, 0x64, 0x00, 0x17, 0x91, // FE::Graphics::GlobalLightingParameters (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_4916ec59742a498c99dddc0764001791()
         {
             static Rtti::Type typeInstance;
@@ -3174,16 +3256,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0xe9, 0xa0, 0xd3, 0xb6, 0xe0, 0x43, 0x47, 0xe6,
-            0x86, 0x07, 0x7b, 0x36, 0x2c, 0xed, 0x07, 0x7e, // FE::Quaternion m_directionalLightOrientation
-            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
-            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_directionalLightColor
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_directionalLightIlluminanceLux
-            0x60, 0xb4, 0xbd, 0x91, 0x0a, 0x5f, 0x4f, 0x4a,
-            0x84, 0xfe, 0x90, 0x01, 0xab, 0xd1, 0x7e, 0x4a, // FE::Graphics::SkyAtmosphereParameters m_atmosphere
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr auto kAttributeValues_m_directionalLightOrientation = Rtti::DisplayName("Sun orientation");
@@ -3202,26 +3274,22 @@ namespace FE::Graphics
         static constexpr auto kAttributes_m_atmosphere = Rtti::DescribeAttributes(kAttributeValues_m_atmosphere);
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_directionalLightOrientation",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &GlobalLightingParameters::m_directionalLightOrientation,
-                                                        kAttributes_m_directionalLightOrientation,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_directionalLightColor",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &GlobalLightingParameters::m_directionalLightColor,
-                                                        kAttributes_m_directionalLightColor,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_directionalLightIlluminanceLux",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &GlobalLightingParameters::m_directionalLightIlluminanceLux,
-                                                        kAttributes_m_directionalLightIlluminanceLux,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_atmosphere",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &GlobalLightingParameters::m_atmosphere,
-                                                        kAttributes_m_atmosphere,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_directionalLightOrientation",
+                                                     &GlobalLightingParameters::m_directionalLightOrientation,
+                                                     kAttributes_m_directionalLightOrientation,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_directionalLightColor",
+                                                     &GlobalLightingParameters::m_directionalLightColor,
+                                                     kAttributes_m_directionalLightColor,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_directionalLightIlluminanceLux",
+                                                     &GlobalLightingParameters::m_directionalLightIlluminanceLux,
+                                                     kAttributes_m_directionalLightIlluminanceLux,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_atmosphere",
+                                                     &GlobalLightingParameters::m_atmosphere,
+                                                     kAttributes_m_atmosphere,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<GlobalLightingParameters>(typeInstance,
@@ -3229,7 +3297,11 @@ namespace FE::Graphics
                                                        "FE::Graphics::GlobalLightingParameters",
                                                        kBaseClassTypeIDs,
                                                        kAttributes,
-                                                       kFields);
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_4916ec59742a498c99dddc0764001791(static_cast<GlobalLightingParameters*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4916ec59742a498c99dddc0764001791(&GlobalLightingParameters::Reflect);
@@ -3299,6 +3371,22 @@ namespace FE::Graphics::ImGuiPass
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_4aced814f36a4a91b35c83220229a7cd(TextureUploadConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x4a, 0xce, 0xd8, 0x14, 0xf3, 0x6a, 0x4a, 0x91,
+                0xb3, 0x5c, 0x83, 0x22, 0x02, 0x29, 0xa7, 0xcd, // FE::Graphics::ImGuiPass::TextureUploadConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_4aced814f36a4a91b35c83220229a7cd()
         {
             static Rtti::Type typeInstance;
@@ -3321,18 +3409,6 @@ namespace FE::Graphics::ImGuiPass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_source
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_target
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_offset
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_size
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_bytesPerPixel
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_source = {};
@@ -3346,31 +3422,26 @@ namespace FE::Graphics::ImGuiPass
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bytesPerPixel = {};
 
         static const festd::array<Rtti::FieldInfo, 5> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_source",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TextureUploadConstants::m_source,
-                                                        kAttributes_m_source,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_target",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TextureUploadConstants::m_target,
-                                                        kAttributes_m_target,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offset",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &TextureUploadConstants::m_offset,
-                                                        kAttributes_m_offset,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_size",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &TextureUploadConstants::m_size,
-                                                        kAttributes_m_size,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bytesPerPixel",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &TextureUploadConstants::m_bytesPerPixel,
-                                                        kAttributes_m_bytesPerPixel,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_source",
+                                                     &TextureUploadConstants::m_source,
+                                                     kAttributes_m_source,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_target",
+                                                     &TextureUploadConstants::m_target,
+                                                     kAttributes_m_target,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_offset",
+                                                     &TextureUploadConstants::m_offset,
+                                                     kAttributes_m_offset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_size",
+                                                     &TextureUploadConstants::m_size,
+                                                     kAttributes_m_size,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bytesPerPixel",
+                                                     &TextureUploadConstants::m_bytesPerPixel,
+                                                     kAttributes_m_bytesPerPixel,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<TextureUploadConstants>(typeInstance,
@@ -3378,7 +3449,11 @@ namespace FE::Graphics::ImGuiPass
                                                      "FE::Graphics::ImGuiPass::TextureUploadConstants",
                                                      kBaseClassTypeIDs,
                                                      kAttributes,
-                                                     kFields);
+                                                     kFields,
+                                                     Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_4aced814f36a4a91b35c83220229a7cd(static_cast<TextureUploadConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4aced814f36a4a91b35c83220229a7cd(&TextureUploadConstants::Reflect);
@@ -3414,6 +3489,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_4b83afa470b94af98ab81082c6b49849()
         {
             static Rtti::Type typeInstance;
@@ -3456,7 +3532,8 @@ namespace FE::Graphics
                                    "FE::Graphics::View",
                                    kBaseClassTypeIDs,
                                    kAttributes,
-                                   kFields);
+                                   kFields,
+                                   Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<View*>(instance)->RTTI_TryCast(target);
         };
@@ -3474,6 +3551,22 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_506790e0c08647d89b18db522c75c2e5(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x50, 0x67, 0x90, 0xe0, 0xc0, 0x86, 0x47, 0xd8, 0x9b,
+                0x18, 0xdb, 0x52, 0x2c, 0x75, 0xc2, 0xe5, // FE::Graphics::MeshPass::OcclusionCullMeshlets::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_506790e0c08647d89b18db522c75c2e5()
         {
             static Rtti::Type typeInstance;
@@ -3496,38 +3589,6 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[15 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_instances
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_candidates
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_dispatch
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_buckets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_meshletCounts
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_meshlets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_meshletVisibility
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_stats
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_depthPyramid
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_depthPyramidSize
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_depthPyramidUvScale
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_depthPyramidMipCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_meshletVisibilityCapacity
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_phase
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -3561,81 +3622,66 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_phase = {};
 
         static const festd::array<Rtti::FieldInfo, 15> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instances",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_instances,
-                                                        kAttributes_m_instances,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_candidates",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_candidates,
-                                                        kAttributes_m_candidates,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dispatch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_dispatch,
-                                                        kAttributes_m_dispatch,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_buckets,
-                                                        kAttributes_m_buckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletCounts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &Constants::m_meshletCounts,
-                                                        kAttributes_m_meshletCounts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshlets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &Constants::m_meshlets,
-                                                        kAttributes_m_meshlets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletVisibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &Constants::m_meshletVisibility,
-                                                        kAttributes_m_meshletVisibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_stats",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &Constants::m_stats,
-                                                        kAttributes_m_stats,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramid",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramid,
-                                                        kAttributes_m_depthPyramid,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramidSize",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramidSize,
-                                                        kAttributes_m_depthPyramidSize,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramidUvScale",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramidUvScale,
-                                                        kAttributes_m_depthPyramidUvScale,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramidMipCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramidMipCount,
-                                                        kAttributes_m_depthPyramidMipCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletVisibilityCapacity",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
-                                                        &Constants::m_meshletVisibilityCapacity,
-                                                        kAttributes_m_meshletVisibilityCapacity,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_phase",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 14 * sizeof(TypeID)),
-                                                        &Constants::m_phase,
-                                                        kAttributes_m_phase,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &Constants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_instances",
+                                                     &Constants::m_instances,
+                                                     kAttributes_m_instances,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_candidates",
+                                                     &Constants::m_candidates,
+                                                     kAttributes_m_candidates,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_dispatch",
+                                                     &Constants::m_dispatch,
+                                                     kAttributes_m_dispatch,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_buckets",
+                                                     &Constants::m_buckets,
+                                                     kAttributes_m_buckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletCounts",
+                                                     &Constants::m_meshletCounts,
+                                                     kAttributes_m_meshletCounts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshlets",
+                                                     &Constants::m_meshlets,
+                                                     kAttributes_m_meshlets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletVisibility",
+                                                     &Constants::m_meshletVisibility,
+                                                     kAttributes_m_meshletVisibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_stats",
+                                                     &Constants::m_stats,
+                                                     kAttributes_m_stats,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramid",
+                                                     &Constants::m_depthPyramid,
+                                                     kAttributes_m_depthPyramid,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidSize",
+                                                     &Constants::m_depthPyramidSize,
+                                                     kAttributes_m_depthPyramidSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidUvScale",
+                                                     &Constants::m_depthPyramidUvScale,
+                                                     kAttributes_m_depthPyramidUvScale,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidMipCount",
+                                                     &Constants::m_depthPyramidMipCount,
+                                                     kAttributes_m_depthPyramidMipCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletVisibilityCapacity",
+                                                     &Constants::m_meshletVisibilityCapacity,
+                                                     kAttributes_m_meshletVisibilityCapacity,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_phase",
+                                                     &Constants::m_phase,
+                                                     kAttributes_m_phase,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -3643,7 +3689,11 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
                                         "FE::Graphics::MeshPass::OcclusionCullMeshlets::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_506790e0c08647d89b18db522c75c2e5(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_506790e0c08647d89b18db522c75c2e5(&Constants::Reflect);
@@ -3658,6 +3708,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_5304e304612547b19bfcebd8874b6d53(MaterialParameterValue* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x53, 0x04, 0xe3, 0x04, 0x61, 0x25, 0x47, 0xb1,
+                0x9b, 0xfc, 0xeb, 0xd8, 0x87, 0x4b, 0x6d, 0x53, // FE::Graphics::MaterialParameterValue (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_5304e304612547b19bfcebd8874b6d53()
         {
             static Rtti::Type typeInstance;
@@ -3680,14 +3746,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0,
-            0x8d, 0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_name
-            0xc0, 0x5e, 0xdb, 0x73, 0x4a, 0x72, 0x4b, 0x89,
-            0xb0, 0xe4, 0x2f, 0x4b, 0xfd, 0xc6, 0xc5, 0x38, // FE::Vector4 m_value
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_texture
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
@@ -3697,21 +3755,18 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_texture = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MaterialParameterValue::m_name,
-                                                        kAttributes_m_name,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_value",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MaterialParameterValue::m_value,
-                                                        kAttributes_m_value,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_texture",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MaterialParameterValue::m_texture,
-                                                        kAttributes_m_texture,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_name",
+                                                     &MaterialParameterValue::m_name,
+                                                     kAttributes_m_name,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_value",
+                                                     &MaterialParameterValue::m_value,
+                                                     kAttributes_m_value,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_texture",
+                                                     &MaterialParameterValue::m_texture,
+                                                     kAttributes_m_texture,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MaterialParameterValue>(typeInstance,
@@ -3719,7 +3774,11 @@ namespace FE::Graphics
                                                      "FE::Graphics::MaterialParameterValue",
                                                      kBaseClassTypeIDs,
                                                      kAttributes,
-                                                     kFields);
+                                                     kFields,
+                                                     Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_5304e304612547b19bfcebd8874b6d53(static_cast<MaterialParameterValue*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_5304e304612547b19bfcebd8874b6d53(&MaterialParameterValue::Reflect);
@@ -3785,6 +3844,22 @@ namespace FE::Graphics::Tools::DepthPyramid
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_5e568e197a5c4ea9b42df4e39d109b93(TileConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x5e, 0x56, 0x8e, 0x19, 0x7a, 0x5c, 0x4e, 0xa9,
+                0xb4, 0x2d, 0xf4, 0xe3, 0x9d, 0x10, 0x9b, 0x93, // FE::Graphics::Tools::DepthPyramid::TileConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_5e568e197a5c4ea9b42df4e39d109b93()
         {
             static Rtti::Type typeInstance;
@@ -3807,20 +3882,6 @@ namespace FE::Graphics::Tools::DepthPyramid
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_depth
-            0x0a, 0xdc, 0x65, 0xde, 0x1b, 0xa6, 0x4a, 0x60,
-            0xb3, 0x20, 0x33, 0x3a, 0xd0, 0xc2, 0xf2, 0x7b, // FE::Graphics::SamplerDescriptor m_sampler
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_invDepthSize
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_spdCounters
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_farthest
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_closest
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depth = {};
@@ -3836,36 +3897,30 @@ namespace FE::Graphics::Tools::DepthPyramid
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_closest = {};
 
         static const festd::array<Rtti::FieldInfo, 6> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depth",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TileConstants::m_depth,
-                                                        kAttributes_m_depth,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sampler",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TileConstants::m_sampler,
-                                                        kAttributes_m_sampler,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_invDepthSize",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &TileConstants::m_invDepthSize,
-                                                        kAttributes_m_invDepthSize,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_spdCounters",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &TileConstants::m_spdCounters,
-                                                        kAttributes_m_spdCounters,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<5>("m_farthest",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &TileConstants::m_farthest,
-                                                        kAttributes_m_farthest,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<5>("m_closest",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &TileConstants::m_closest,
-                                                        kAttributes_m_closest,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depth",
+                                                     &TileConstants::m_depth,
+                                                     kAttributes_m_depth,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sampler",
+                                                     &TileConstants::m_sampler,
+                                                     kAttributes_m_sampler,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_invDepthSize",
+                                                     &TileConstants::m_invDepthSize,
+                                                     kAttributes_m_invDepthSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_spdCounters",
+                                                     &TileConstants::m_spdCounters,
+                                                     kAttributes_m_spdCounters,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_farthest",
+                                                     &TileConstants::m_farthest,
+                                                     kAttributes_m_farthest,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_closest",
+                                                     &TileConstants::m_closest,
+                                                     kAttributes_m_closest,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<TileConstants>(typeInstance,
@@ -3873,7 +3928,11 @@ namespace FE::Graphics::Tools::DepthPyramid
                                             "FE::Graphics::Tools::DepthPyramid::TileConstants",
                                             kBaseClassTypeIDs,
                                             kAttributes,
-                                            kFields);
+                                            kFields,
+                                            Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_5e568e197a5c4ea9b42df4e39d109b93(static_cast<TileConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_5e568e197a5c4ea9b42df4e39d109b93(&TileConstants::Reflect);
@@ -3888,6 +3947,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_60b4bd910a5f4f4a84fe9001abd17e4a(SkyAtmosphereParameters* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x60, 0xb4, 0xbd, 0x91, 0x0a, 0x5f, 0x4f, 0x4a,
+                0x84, 0xfe, 0x90, 0x01, 0xab, 0xd1, 0x7e, 0x4a, // FE::Graphics::SkyAtmosphereParameters (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_60b4bd910a5f4f4a84fe9001abd17e4a()
         {
             static Rtti::Type typeInstance;
@@ -3910,34 +3985,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[13 * sizeof(Rtti::TypeID)] = {
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_planetRadiusKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_atmosphereHeightKm
-            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
-            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_rayleighScatteringPerKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_rayleighScaleHeightKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieScatteringPerKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieExtinctionPerKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieScaleHeightKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieAnisotropy
-            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
-            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_ozoneAbsorptionPerKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_ozoneCenterHeightKm
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_ozoneHalfWidthKm
-            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
-            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_groundAlbedo
-            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
-            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_sunAngularRadius
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr auto kAttributeValues_m_planetRadiusKm = Rtti::DisplayName("Planet radius (km)");
@@ -3984,71 +4031,58 @@ namespace FE::Graphics
         static constexpr auto kAttributes_m_sunAngularRadius = Rtti::DescribeAttributes(kAttributeValues_m_sunAngularRadius);
 
         static const festd::array<Rtti::FieldInfo, 13> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_planetRadiusKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_planetRadiusKm,
-                                                        kAttributes_m_planetRadiusKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_atmosphereHeightKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_atmosphereHeightKm,
-                                                        kAttributes_m_atmosphereHeightKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_rayleighScatteringPerKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_rayleighScatteringPerKm,
-                                                        kAttributes_m_rayleighScatteringPerKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_rayleighScaleHeightKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_rayleighScaleHeightKm,
-                                                        kAttributes_m_rayleighScaleHeightKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieScatteringPerKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_mieScatteringPerKm,
-                                                        kAttributes_m_mieScatteringPerKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieExtinctionPerKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_mieExtinctionPerKm,
-                                                        kAttributes_m_mieExtinctionPerKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieScaleHeightKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_mieScaleHeightKm,
-                                                        kAttributes_m_mieScaleHeightKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieAnisotropy",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_mieAnisotropy,
-                                                        kAttributes_m_mieAnisotropy,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ozoneAbsorptionPerKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_ozoneAbsorptionPerKm,
-                                                        kAttributes_m_ozoneAbsorptionPerKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ozoneCenterHeightKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_ozoneCenterHeightKm,
-                                                        kAttributes_m_ozoneCenterHeightKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ozoneHalfWidthKm",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_ozoneHalfWidthKm,
-                                                        kAttributes_m_ozoneHalfWidthKm,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_groundAlbedo",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_groundAlbedo,
-                                                        kAttributes_m_groundAlbedo,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sunAngularRadius",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
-                                                        &SkyAtmosphereParameters::m_sunAngularRadius,
-                                                        kAttributes_m_sunAngularRadius,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_planetRadiusKm",
+                                                     &SkyAtmosphereParameters::m_planetRadiusKm,
+                                                     kAttributes_m_planetRadiusKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_atmosphereHeightKm",
+                                                     &SkyAtmosphereParameters::m_atmosphereHeightKm,
+                                                     kAttributes_m_atmosphereHeightKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_rayleighScatteringPerKm",
+                                                     &SkyAtmosphereParameters::m_rayleighScatteringPerKm,
+                                                     kAttributes_m_rayleighScatteringPerKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_rayleighScaleHeightKm",
+                                                     &SkyAtmosphereParameters::m_rayleighScaleHeightKm,
+                                                     kAttributes_m_rayleighScaleHeightKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mieScatteringPerKm",
+                                                     &SkyAtmosphereParameters::m_mieScatteringPerKm,
+                                                     kAttributes_m_mieScatteringPerKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mieExtinctionPerKm",
+                                                     &SkyAtmosphereParameters::m_mieExtinctionPerKm,
+                                                     kAttributes_m_mieExtinctionPerKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mieScaleHeightKm",
+                                                     &SkyAtmosphereParameters::m_mieScaleHeightKm,
+                                                     kAttributes_m_mieScaleHeightKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mieAnisotropy",
+                                                     &SkyAtmosphereParameters::m_mieAnisotropy,
+                                                     kAttributes_m_mieAnisotropy,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_ozoneAbsorptionPerKm",
+                                                     &SkyAtmosphereParameters::m_ozoneAbsorptionPerKm,
+                                                     kAttributes_m_ozoneAbsorptionPerKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_ozoneCenterHeightKm",
+                                                     &SkyAtmosphereParameters::m_ozoneCenterHeightKm,
+                                                     kAttributes_m_ozoneCenterHeightKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_ozoneHalfWidthKm",
+                                                     &SkyAtmosphereParameters::m_ozoneHalfWidthKm,
+                                                     kAttributes_m_ozoneHalfWidthKm,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_groundAlbedo",
+                                                     &SkyAtmosphereParameters::m_groundAlbedo,
+                                                     kAttributes_m_groundAlbedo,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sunAngularRadius",
+                                                     &SkyAtmosphereParameters::m_sunAngularRadius,
+                                                     kAttributes_m_sunAngularRadius,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SkyAtmosphereParameters>(typeInstance,
@@ -4056,7 +4090,11 @@ namespace FE::Graphics
                                                       "FE::Graphics::SkyAtmosphereParameters",
                                                       kBaseClassTypeIDs,
                                                       kAttributes,
-                                                      kFields);
+                                                      kFields,
+                                                      Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_60b4bd910a5f4f4a84fe9001abd17e4a(static_cast<SkyAtmosphereParameters*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_60b4bd910a5f4f4a84fe9001abd17e4a(&SkyAtmosphereParameters::Reflect);
@@ -4162,6 +4200,22 @@ namespace FE::Graphics::Tools::Blit
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_631d3d7c40ef4b50a8f642eb2861045a(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x63, 0x1d, 0x3d, 0x7c, 0x40, 0xef, 0x4b, 0x50,
+                0xa8, 0xf6, 0x42, 0xeb, 0x28, 0x61, 0x04, 0x5a, // FE::Graphics::Tools::Blit::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_631d3d7c40ef4b50a8f642eb2861045a()
         {
             static Rtti::Type typeInstance;
@@ -4184,14 +4238,6 @@ namespace FE::Graphics::Tools::Blit
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0xff, 0xb6, 0xb4, 0x34, 0x3b, 0xfa, 0x40, 0x58,
-            0x81, 0x92, 0x25, 0x93, 0x45, 0xdb, 0x48, 0x9b, // FE::Graphics::Tools::Blit::Constants m_constants
-            0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
-            0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_colorTarget
-            0xd9, 0x0e, 0xd8, 0x70, 0xc9, 0x66, 0x44, 0x3f,
-            0x9b, 0xfe, 0x1d, 0x75, 0x3a, 0xee, 0xdf, 0xbf, // FE::Graphics::Core::PassGraphicsPipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -4201,21 +4247,18 @@ namespace FE::Graphics::Tools::Blit
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_colorTarget",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_colorTarget,
-                                                        kAttributes_m_colorTarget,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_colorTarget",
+                                                     &PassDesc::m_colorTarget,
+                                                     kAttributes_m_colorTarget,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -4223,7 +4266,11 @@ namespace FE::Graphics::Tools::Blit
                                        "FE::Graphics::Tools::Blit::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_631d3d7c40ef4b50a8f642eb2861045a(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_631d3d7c40ef4b50a8f642eb2861045a(&PassDesc::Reflect);
@@ -4265,6 +4312,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_636c5c42d04648e5991e90ab330ad0d0()
         {
             static Rtti::Type typeInstance;
@@ -4310,7 +4358,8 @@ namespace FE::Graphics
                                                         "FE::Graphics::GlobalLightingSceneModule",
                                                         kBaseClassTypeIDs,
                                                         kAttributes,
-                                                        kFields);
+                                                        kFields,
+                                                        Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<GlobalLightingSceneModule*>(instance)->RTTI_TryCast(target);
         };
@@ -4328,6 +4377,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_649c3406616d417f8e1c182e6a871ac0(ShadingCountPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x64, 0x9c, 0x34, 0x06, 0x61, 0x6d, 0x41, 0x7f,
+                0x8e, 0x1c, 0x18, 0x2e, 0x6a, 0x87, 0x1a, 0xc0, // FE::Graphics::Visibility::ShadingCountPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_649c3406616d417f8e1c182e6a871ac0()
         {
             static Rtti::Type typeInstance;
@@ -4350,12 +4415,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x6c, 0xf9, 0x6f, 0x7d, 0x92, 0xdd, 0x43, 0xf5,
-            0x8c, 0x14, 0xfe, 0x57, 0x0f, 0xa2, 0x88, 0x0a, // FE::Graphics::Visibility::ShadingCountConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -4363,16 +4422,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ShadingCountPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &ShadingCountPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &ShadingCountPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &ShadingCountPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ShadingCountPassDesc>(typeInstance,
@@ -4380,7 +4437,11 @@ namespace FE::Graphics::Visibility
                                                    "FE::Graphics::Visibility::ShadingCountPassDesc",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields);
+                                                   kFields,
+                                                   Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_649c3406616d417f8e1c182e6a871ac0(static_cast<ShadingCountPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_649c3406616d417f8e1c182e6a871ac0(&ShadingCountPassDesc::Reflect);
@@ -4395,6 +4456,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_6cf96f7d92dd43f58c14fe570fa2880a(ShadingCountConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x6c, 0xf9, 0x6f, 0x7d, 0x92, 0xdd, 0x43, 0xf5,
+                0x8c, 0x14, 0xfe, 0x57, 0x0f, 0xa2, 0x88, 0x0a, // FE::Graphics::Visibility::ShadingCountConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_6cf96f7d92dd43f58c14fe570fa2880a()
         {
             static Rtti::Type typeInstance;
@@ -4417,22 +4494,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[7 * sizeof(Rtti::TypeID)] = {
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g0Read
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_lookup
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_counts
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tileCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_groupRowCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g0Read = {};
@@ -4450,41 +4511,34 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
 
         static const festd::array<Rtti::FieldInfo, 7> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0Read",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ShadingCountConstants::m_g0Read,
-                                                        kAttributes_m_g0Read,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lookup",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &ShadingCountConstants::m_lookup,
-                                                        kAttributes_m_lookup,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &ShadingCountConstants::m_counts,
-                                                        kAttributes_m_counts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &ShadingCountConstants::m_resolution,
-                                                        kAttributes_m_resolution,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &ShadingCountConstants::m_tilesPerRow,
-                                                        kAttributes_m_tilesPerRow,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tileCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &ShadingCountConstants::m_tileCount,
-                                                        kAttributes_m_tileCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_groupRowCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &ShadingCountConstants::m_groupRowCount,
-                                                        kAttributes_m_groupRowCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g0Read",
+                                                     &ShadingCountConstants::m_g0Read,
+                                                     kAttributes_m_g0Read,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lookup",
+                                                     &ShadingCountConstants::m_lookup,
+                                                     kAttributes_m_lookup,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counts",
+                                                     &ShadingCountConstants::m_counts,
+                                                     kAttributes_m_counts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &ShadingCountConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
+                                                     &ShadingCountConstants::m_tilesPerRow,
+                                                     kAttributes_m_tilesPerRow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
+                                                     &ShadingCountConstants::m_tileCount,
+                                                     kAttributes_m_tileCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
+                                                     &ShadingCountConstants::m_groupRowCount,
+                                                     kAttributes_m_groupRowCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ShadingCountConstants>(typeInstance,
@@ -4492,7 +4546,11 @@ namespace FE::Graphics::Visibility
                                                     "FE::Graphics::Visibility::ShadingCountConstants",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_6cf96f7d92dd43f58c14fe570fa2880a(static_cast<ShadingCountConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_6cf96f7d92dd43f58c14fe570fa2880a(&ShadingCountConstants::Reflect);
@@ -4507,6 +4565,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_6e642c0f15254db2a021ba36728f1b91(ShadingScatterConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x6e, 0x64, 0x2c, 0x0f, 0x15, 0x25, 0x4d, 0xb2,
+                0xa0, 0x21, 0xba, 0x36, 0x72, 0x8f, 0x1b, 0x91, // FE::Graphics::Visibility::ShadingScatterConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_6e642c0f15254db2a021ba36728f1b91()
         {
             static Rtti::Type typeInstance;
@@ -4529,26 +4603,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[9 * sizeof(Rtti::TypeID)] = {
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g0Read
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_lookup
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_offsets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_cursors
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_pixels
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tileCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_groupRowCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g0Read = {};
@@ -4570,51 +4624,42 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
 
         static const festd::array<Rtti::FieldInfo, 9> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0Read",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_g0Read,
-                                                        kAttributes_m_g0Read,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lookup",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_lookup,
-                                                        kAttributes_m_lookup,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_offsets,
-                                                        kAttributes_m_offsets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cursors",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_cursors,
-                                                        kAttributes_m_cursors,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixels",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_pixels,
-                                                        kAttributes_m_pixels,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_resolution,
-                                                        kAttributes_m_resolution,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_tilesPerRow,
-                                                        kAttributes_m_tilesPerRow,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tileCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_tileCount,
-                                                        kAttributes_m_tileCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_groupRowCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &ShadingScatterConstants::m_groupRowCount,
-                                                        kAttributes_m_groupRowCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g0Read",
+                                                     &ShadingScatterConstants::m_g0Read,
+                                                     kAttributes_m_g0Read,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lookup",
+                                                     &ShadingScatterConstants::m_lookup,
+                                                     kAttributes_m_lookup,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_offsets",
+                                                     &ShadingScatterConstants::m_offsets,
+                                                     kAttributes_m_offsets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_cursors",
+                                                     &ShadingScatterConstants::m_cursors,
+                                                     kAttributes_m_cursors,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pixels",
+                                                     &ShadingScatterConstants::m_pixels,
+                                                     kAttributes_m_pixels,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &ShadingScatterConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
+                                                     &ShadingScatterConstants::m_tilesPerRow,
+                                                     kAttributes_m_tilesPerRow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
+                                                     &ShadingScatterConstants::m_tileCount,
+                                                     kAttributes_m_tileCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
+                                                     &ShadingScatterConstants::m_groupRowCount,
+                                                     kAttributes_m_groupRowCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ShadingScatterConstants>(typeInstance,
@@ -4622,7 +4667,11 @@ namespace FE::Graphics::Visibility
                                                       "FE::Graphics::Visibility::ShadingScatterConstants",
                                                       kBaseClassTypeIDs,
                                                       kAttributes,
-                                                      kFields);
+                                                      kFields,
+                                                      Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_6e642c0f15254db2a021ba36728f1b91(static_cast<ShadingScatterConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_6e642c0f15254db2a021ba36728f1b91(&ShadingScatterConstants::Reflect);
@@ -4637,6 +4686,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_6f735fda2c654f81992eb40e13f7fbbf(CoveragePassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x6f, 0x73, 0x5f, 0xda, 0x2c, 0x65, 0x4f, 0x81,
+                0x99, 0x2e, 0xb4, 0x0e, 0x13, 0xf7, 0xfb, 0xbf, // FE::Graphics::Visibility::CoveragePassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_6f735fda2c654f81992eb40e13f7fbbf()
         {
             static Rtti::Type typeInstance;
@@ -4659,14 +4724,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
-            0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_visibility
-            0xd1, 0x1c, 0xe8, 0x81, 0x3d, 0x3c, 0x47, 0xaf,
-            0xa0, 0x50, 0x34, 0x64, 0x82, 0x67, 0x73, 0x16, // FE::Graphics::Core::PassDepthTarget m_depth
-            0x37, 0x22, 0xe7, 0x47, 0xaa, 0xbe, 0x49, 0xd8,
-            0x9d, 0x95, 0xad, 0xc6, 0xd0, 0x80, 0xd8, 0xe7, // FE::Graphics::Core::PassViewport m_viewport
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_visibility = {};
@@ -4676,21 +4733,18 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &CoveragePassDesc::m_visibility,
-                                                        kAttributes_m_visibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depth",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &CoveragePassDesc::m_depth,
-                                                        kAttributes_m_depth,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewport",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &CoveragePassDesc::m_viewport,
-                                                        kAttributes_m_viewport,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibility",
+                                                     &CoveragePassDesc::m_visibility,
+                                                     kAttributes_m_visibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depth",
+                                                     &CoveragePassDesc::m_depth,
+                                                     kAttributes_m_depth,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_viewport",
+                                                     &CoveragePassDesc::m_viewport,
+                                                     kAttributes_m_viewport,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<CoveragePassDesc>(typeInstance,
@@ -4698,7 +4752,11 @@ namespace FE::Graphics::Visibility
                                                "FE::Graphics::Visibility::CoveragePassDesc",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_6f735fda2c654f81992eb40e13f7fbbf(static_cast<CoveragePassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_6f735fda2c654f81992eb40e13f7fbbf(&CoveragePassDesc::Reflect);
@@ -4713,6 +4771,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_726163f8fa994077be180d7c050054df(MaterialTechniqueDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x72, 0x61, 0x63, 0xf8, 0xfa, 0x99, 0x40, 0x77,
+                0xbe, 0x18, 0x0d, 0x7c, 0x05, 0x00, 0x54, 0xdf, // FE::Graphics::MaterialTechniqueDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_726163f8fa994077be180d7c050054df()
         {
             static Rtti::Type typeInstance;
@@ -4735,36 +4809,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[14 * sizeof(Rtti::TypeID)] = {
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
-            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_role
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_kind
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
-            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_computeShader
-            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
-            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_permutationKey
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
-            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_vertexShader
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
-            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_amplificationShader
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
-            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_meshShader
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
-            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_pixelShader
-            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
-            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_shaderDefines
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_renderTargetFormats
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_depthTargetFormat
-            0xb3, 0x76, 0x66, 0x70, 0x7b, 0x32, 0x44, 0xef, 0x90,
-            0x7f, 0x70, 0xb8, 0x93, 0x7a, 0x0e, 0x52, // FE::Graphics::Core::RasterizationState m_rasterization
-            0x73, 0x78, 0x28, 0xea, 0x5f, 0xc4, 0x4e, 0xfa, 0x87,
-            0x70, 0x89, 0x0b, 0xca, 0xd6, 0x9f, 0x9d, // FE::Graphics::Core::DepthStencilState m_depthStencil
-            0xe3, 0x6f, 0x3a, 0xa9, 0xf9, 0x9d, 0x48, 0x39, 0x87,
-            0x1f, 0x98, 0x56, 0x69, 0x33, 0x4a, 0xed, // FE::Graphics::Core::ColorBlendState m_blend
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_role = {};
@@ -4796,76 +4840,62 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_blend = {};
 
         static const festd::array<Rtti::FieldInfo, 14> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_role",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_role,
-                                                        kAttributes_m_role,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_kind",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_kind,
-                                                        kAttributes_m_kind,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_computeShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_computeShader,
-                                                        kAttributes_m_computeShader,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_permutationKey",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_permutationKey,
-                                                        kAttributes_m_permutationKey,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_vertexShader,
-                                                        kAttributes_m_vertexShader,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_amplificationShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_amplificationShader,
-                                                        kAttributes_m_amplificationShader,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_meshShader,
-                                                        kAttributes_m_meshShader,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixelShader",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_pixelShader,
-                                                        kAttributes_m_pixelShader,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderDefines",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_shaderDefines,
-                                                        kAttributes_m_shaderDefines,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_renderTargetFormats",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_renderTargetFormats,
-                                                        kAttributes_m_renderTargetFormats,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTargetFormat",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_depthTargetFormat,
-                                                        kAttributes_m_depthTargetFormat,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_rasterization",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_rasterization,
-                                                        kAttributes_m_rasterization,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthStencil",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_depthStencil,
-                                                        kAttributes_m_depthStencil,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_blend",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
-                                                        &MaterialTechniqueDesc::m_blend,
-                                                        kAttributes_m_blend,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_role",
+                                                     &MaterialTechniqueDesc::m_role,
+                                                     kAttributes_m_role,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_kind",
+                                                     &MaterialTechniqueDesc::m_kind,
+                                                     kAttributes_m_kind,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_computeShader",
+                                                     &MaterialTechniqueDesc::m_computeShader,
+                                                     kAttributes_m_computeShader,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_permutationKey",
+                                                     &MaterialTechniqueDesc::m_permutationKey,
+                                                     kAttributes_m_permutationKey,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_vertexShader",
+                                                     &MaterialTechniqueDesc::m_vertexShader,
+                                                     kAttributes_m_vertexShader,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_amplificationShader",
+                                                     &MaterialTechniqueDesc::m_amplificationShader,
+                                                     kAttributes_m_amplificationShader,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshShader",
+                                                     &MaterialTechniqueDesc::m_meshShader,
+                                                     kAttributes_m_meshShader,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pixelShader",
+                                                     &MaterialTechniqueDesc::m_pixelShader,
+                                                     kAttributes_m_pixelShader,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderDefines",
+                                                     &MaterialTechniqueDesc::m_shaderDefines,
+                                                     kAttributes_m_shaderDefines,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_renderTargetFormats",
+                                                     &MaterialTechniqueDesc::m_renderTargetFormats,
+                                                     kAttributes_m_renderTargetFormats,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthTargetFormat",
+                                                     &MaterialTechniqueDesc::m_depthTargetFormat,
+                                                     kAttributes_m_depthTargetFormat,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_rasterization",
+                                                     &MaterialTechniqueDesc::m_rasterization,
+                                                     kAttributes_m_rasterization,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthStencil",
+                                                     &MaterialTechniqueDesc::m_depthStencil,
+                                                     kAttributes_m_depthStencil,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_blend",
+                                                     &MaterialTechniqueDesc::m_blend,
+                                                     kAttributes_m_blend,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MaterialTechniqueDesc>(typeInstance,
@@ -4873,7 +4903,11 @@ namespace FE::Graphics
                                                     "FE::Graphics::MaterialTechniqueDesc",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_726163f8fa994077be180d7c050054df(static_cast<MaterialTechniqueDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_726163f8fa994077be180d7c050054df(&MaterialTechniqueDesc::Reflect);
@@ -4983,6 +5017,22 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_74f4a270390f4a91b5feaeaeeee4090c(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x74, 0xf4, 0xa2, 0x70, 0x39, 0x0f, 0x4a, 0x91, 0xb5,
+                0xfe, 0xae, 0xae, 0xee, 0xe4, 0x09, 0x0c, // FE::Graphics::MeshPass::OcclusionCullMeshInstances::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_74f4a270390f4a91b5feaeaeeee4090c()
         {
             static Rtti::Type typeInstance;
@@ -5005,14 +5055,6 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0xf1, 0x76, 0xbf, 0x50, 0xd6, 0x2d, 0x46, 0xed, 0x92,
-            0x11, 0x8e, 0xe6, 0xb1, 0xc4, 0x59, 0x59, // FE::Graphics::MeshPass::OcclusionCullMeshInstances::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19, 0x96,
-            0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8, 0xab,
-            0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -5022,21 +5064,18 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &PassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &PassDesc::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -5044,7 +5083,11 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
                                        "FE::Graphics::MeshPass::OcclusionCullMeshInstances::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_74f4a270390f4a91b5feaeaeeee4090c(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_74f4a270390f4a91b5feaeaeeee4090c(&PassDesc::Reflect);
@@ -5086,6 +5129,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_75336687960e4693ae02a6dcda770fac()
         {
             static Rtti::Type typeInstance;
@@ -5131,7 +5175,8 @@ namespace FE::Graphics
                                         "FE::Graphics::SceneImpl",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<SceneImpl*>(instance)->RTTI_TryCast(target);
         };
@@ -5170,6 +5215,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_7729e6838638471281d3b1c78b16bfe3()
         {
             static Rtti::Type typeInstance;
@@ -5213,7 +5259,8 @@ namespace FE::Graphics
                                               "FE::Graphics::SceneModuleBase",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields);
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<SceneModuleBase*>(instance)->RTTI_TryCast(target);
         };
@@ -5252,6 +5299,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_77bc4de9a7924a65bcb8f23556551774()
         {
             static Rtti::Type typeInstance;
@@ -5295,7 +5343,8 @@ namespace FE::Graphics
                                              "FE::Graphics::ViewModuleBase",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModuleBase*>(instance)->RTTI_TryCast(target);
         };
@@ -5328,6 +5377,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_78a8f995b51c42e0856d922999074183()
         {
             static Rtti::Type typeInstance;
@@ -5359,22 +5409,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[7 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_desc
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_mipTailData
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_mipTailOffsets
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_texture
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_currentOperation
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_residentMip
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_descriptorIndex
-        };
         static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_IMAGE);
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
@@ -5393,45 +5427,38 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_descriptorIndex = {};
 
         static const festd::array<Rtti::FieldInfo, 7> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_desc",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TextureAsset::m_desc,
-                                                        kAttributes_m_desc,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mipTailData",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TextureAsset::m_mipTailData,
-                                                        kAttributes_m_mipTailData,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mipTailOffsets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &TextureAsset::m_mipTailOffsets,
-                                                        kAttributes_m_mipTailOffsets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_texture",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &TextureAsset::m_texture,
-                                                        kAttributes_m_texture,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_currentOperation",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &TextureAsset::m_currentOperation,
-                                                        kAttributes_m_currentOperation,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_residentMip",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &TextureAsset::m_residentMip,
-                                                        kAttributes_m_residentMip,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_descriptorIndex",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &TextureAsset::m_descriptorIndex,
-                                                        kAttributes_m_descriptorIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
-                                                            | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_desc",
+                                                     &TextureAsset::m_desc,
+                                                     kAttributes_m_desc,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mipTailData",
+                                                     &TextureAsset::m_mipTailData,
+                                                     kAttributes_m_mipTailData,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mipTailOffsets",
+                                                     &TextureAsset::m_mipTailOffsets,
+                                                     kAttributes_m_mipTailOffsets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_texture",
+                                                     &TextureAsset::m_texture,
+                                                     kAttributes_m_texture,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_currentOperation",
+                                                     &TextureAsset::m_currentOperation,
+                                                     kAttributes_m_currentOperation,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_residentMip",
+                                                     &TextureAsset::m_residentMip,
+                                                     kAttributes_m_residentMip,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_descriptorIndex",
+                                                     &TextureAsset::m_descriptorIndex,
+                                                     kAttributes_m_descriptorIndex,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<TextureAsset>(typeInstance,
@@ -5439,7 +5466,8 @@ namespace FE::Graphics
                                            "FE::Graphics::TextureAsset",
                                            kBaseClassTypeIDs,
                                            kAttributes,
-                                           kFields);
+                                           kFields,
+                                           Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<TextureAsset*>(instance)->RTTI_TryCast(target);
         };
@@ -5508,6 +5536,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_7a3210ee260e48d488a599c0ccbff485(EvaluationScatterPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x7a, 0x32, 0x10, 0xee, 0x26, 0x0e, 0x48, 0xd4,
+                0x88, 0xa5, 0x99, 0xc0, 0xcc, 0xbf, 0xf4, 0x85, // FE::Graphics::Visibility::EvaluationScatterPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_7a3210ee260e48d488a599c0ccbff485()
         {
             static Rtti::Type typeInstance;
@@ -5530,12 +5574,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xe4, 0xba, 0x6e, 0x37, 0x16, 0x69, 0x41, 0x4a,
-            0x98, 0xe7, 0xa2, 0xf1, 0xfb, 0xde, 0x4a, 0xda, // FE::Graphics::Visibility::EvaluationScatterConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -5543,16 +5581,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &EvaluationScatterPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &EvaluationScatterPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &EvaluationScatterPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &EvaluationScatterPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<EvaluationScatterPassDesc>(typeInstance,
@@ -5560,7 +5596,11 @@ namespace FE::Graphics::Visibility
                                                         "FE::Graphics::Visibility::EvaluationScatterPassDesc",
                                                         kBaseClassTypeIDs,
                                                         kAttributes,
-                                                        kFields);
+                                                        kFields,
+                                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_7a3210ee260e48d488a599c0ccbff485(static_cast<EvaluationScatterPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7a3210ee260e48d488a599c0ccbff485(&EvaluationScatterPassDesc::Reflect);
@@ -5575,6 +5615,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_7be23b88ffac442095c87593db85eff2(SurfaceConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x7b, 0xe2, 0x3b, 0x88, 0xff, 0xac, 0x44, 0x20,
+                0x95, 0xc8, 0x75, 0x93, 0xdb, 0x85, 0xef, 0xf2, // FE::Graphics::Visibility::SurfaceConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_7be23b88ffac442095c87593db85eff2()
         {
             static Rtti::Type typeInstance;
@@ -5597,32 +5653,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[12 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_visibility
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_pixels
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_waves
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_ranges
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_g0
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_g1
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_g2
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_g3
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_shaderSlot
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -5650,66 +5680,54 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderSlot = {};
 
         static const festd::array<Rtti::FieldInfo, 12> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_visibility,
-                                                        kAttributes_m_visibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixels",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_pixels,
-                                                        kAttributes_m_pixels,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_waves",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_waves,
-                                                        kAttributes_m_waves,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ranges",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_ranges,
-                                                        kAttributes_m_ranges,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_g0,
-                                                        kAttributes_m_g0,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g1",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_g1,
-                                                        kAttributes_m_g1,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g2",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_g2,
-                                                        kAttributes_m_g2,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g3",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_g3,
-                                                        kAttributes_m_g3,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_resolution,
-                                                        kAttributes_m_resolution,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_tilesPerRow,
-                                                        kAttributes_m_tilesPerRow,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderSlot",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &SurfaceConstants::m_shaderSlot,
-                                                        kAttributes_m_shaderSlot,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &SurfaceConstants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibility",
+                                                     &SurfaceConstants::m_visibility,
+                                                     kAttributes_m_visibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pixels",
+                                                     &SurfaceConstants::m_pixels,
+                                                     kAttributes_m_pixels,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_waves",
+                                                     &SurfaceConstants::m_waves,
+                                                     kAttributes_m_waves,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_ranges",
+                                                     &SurfaceConstants::m_ranges,
+                                                     kAttributes_m_ranges,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g0",
+                                                     &SurfaceConstants::m_g0,
+                                                     kAttributes_m_g0,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g1",
+                                                     &SurfaceConstants::m_g1,
+                                                     kAttributes_m_g1,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g2",
+                                                     &SurfaceConstants::m_g2,
+                                                     kAttributes_m_g2,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g3",
+                                                     &SurfaceConstants::m_g3,
+                                                     kAttributes_m_g3,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &SurfaceConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
+                                                     &SurfaceConstants::m_tilesPerRow,
+                                                     kAttributes_m_tilesPerRow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderSlot",
+                                                     &SurfaceConstants::m_shaderSlot,
+                                                     kAttributes_m_shaderSlot,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfaceConstants>(typeInstance,
@@ -5717,7 +5735,11 @@ namespace FE::Graphics::Visibility
                                                "FE::Graphics::Visibility::SurfaceConstants",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_7be23b88ffac442095c87593db85eff2(static_cast<SurfaceConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7be23b88ffac442095c87593db85eff2(&SurfaceConstants::Reflect);
@@ -5732,6 +5754,22 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_7e4f82a969a74afd8ac53fa032dabbb3(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x7e, 0x4f, 0x82, 0xa9, 0x69, 0xa7, 0x4a, 0xfd,
+                0x8a, 0xc5, 0x3f, 0xa0, 0x32, 0xda, 0xbb, 0xb3, // FE::Graphics::MeshPass::ClearMeshWork::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_7e4f82a969a74afd8ac53fa032dabbb3()
         {
             static Rtti::Type typeInstance;
@@ -5754,16 +5792,6 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_counts
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_cursors
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_meshletCounts
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_bucketCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counts = {};
@@ -5775,26 +5803,22 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bucketCount = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_counts,
-                                                        kAttributes_m_counts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cursors",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_cursors,
-                                                        kAttributes_m_cursors,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletCounts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_meshletCounts,
-                                                        kAttributes_m_meshletCounts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bucketCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_bucketCount,
-                                                        kAttributes_m_bucketCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counts",
+                                                     &Constants::m_counts,
+                                                     kAttributes_m_counts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_cursors",
+                                                     &Constants::m_cursors,
+                                                     kAttributes_m_cursors,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletCounts",
+                                                     &Constants::m_meshletCounts,
+                                                     kAttributes_m_meshletCounts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bucketCount",
+                                                     &Constants::m_bucketCount,
+                                                     kAttributes_m_bucketCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -5802,7 +5826,11 @@ namespace FE::Graphics::MeshPass::ClearMeshWork
                                         "FE::Graphics::MeshPass::ClearMeshWork::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_7e4f82a969a74afd8ac53fa032dabbb3(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7e4f82a969a74afd8ac53fa032dabbb3(&Constants::Reflect);
@@ -5817,6 +5845,22 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_7f32193bcc9c46eaa206b5dd9dc5d4fd(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x7f, 0x32, 0x19, 0x3b, 0xcc, 0x9c, 0x46, 0xea, 0xa2,
+                0x06, 0xb5, 0xdd, 0x9d, 0xc5, 0xd4, 0xfd, // FE::Graphics::MeshPass::CountMeshInstances::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_7f32193bcc9c46eaa206b5dd9dc5d4fd()
         {
             static Rtti::Type typeInstance;
@@ -5839,12 +5883,6 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x0f, 0x07, 0x48, 0xc2, 0x1d, 0x73, 0x4b, 0x58,
-            0xa9, 0xe2, 0x48, 0xe7, 0x5c, 0x6c, 0x51, 0xf0, // FE::Graphics::MeshPass::CountMeshInstances::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -5852,16 +5890,14 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -5869,7 +5905,11 @@ namespace FE::Graphics::MeshPass::CountMeshInstances
                                        "FE::Graphics::MeshPass::CountMeshInstances::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_7f32193bcc9c46eaa206b5dd9dc5d4fd(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7f32193bcc9c46eaa206b5dd9dc5d4fd(&PassDesc::Reflect);
@@ -5911,6 +5951,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_7f7cb83adb684baab6773a54fc30231c()
         {
             static Rtti::Type typeInstance;
@@ -5956,7 +5997,8 @@ namespace FE::Graphics
                                                "FE::Graphics::ImGuiSceneModule",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ImGuiSceneModule*>(instance)->RTTI_TryCast(target);
         };
@@ -5974,6 +6016,22 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_818ef35c744445f2b6a58c97a016f41c(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x81, 0x8e, 0xf3, 0x5c, 0x74, 0x44, 0x45, 0xf2, 0xb6,
+                0xa5, 0x8c, 0x97, 0xa0, 0x16, 0xf4, 0x1c, // FE::Graphics::MeshPass::CullMeshInstances::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_818ef35c744445f2b6a58c97a016f41c()
         {
             static Rtti::Type typeInstance;
@@ -5996,28 +6054,6 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[10 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_dispatches
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_classification
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_visibility
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_occlusionCandidates
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_occlusionDispatch
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_stats
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_visibilityCapacity
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_isOcclusionTested
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_phase
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -6041,56 +6077,46 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_phase = {};
 
         static const festd::array<Rtti::FieldInfo, 10> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dispatches",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_dispatches,
-                                                        kAttributes_m_dispatches,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_classification",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_classification,
-                                                        kAttributes_m_classification,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_visibility,
-                                                        kAttributes_m_visibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_occlusionCandidates",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_occlusionCandidates,
-                                                        kAttributes_m_occlusionCandidates,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_occlusionDispatch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &Constants::m_occlusionDispatch,
-                                                        kAttributes_m_occlusionDispatch,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_stats",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &Constants::m_stats,
-                                                        kAttributes_m_stats,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibilityCapacity",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &Constants::m_visibilityCapacity,
-                                                        kAttributes_m_visibilityCapacity,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_isOcclusionTested",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &Constants::m_isOcclusionTested,
-                                                        kAttributes_m_isOcclusionTested,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_phase",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &Constants::m_phase,
-                                                        kAttributes_m_phase,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &Constants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_dispatches",
+                                                     &Constants::m_dispatches,
+                                                     kAttributes_m_dispatches,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_classification",
+                                                     &Constants::m_classification,
+                                                     kAttributes_m_classification,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibility",
+                                                     &Constants::m_visibility,
+                                                     kAttributes_m_visibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_occlusionCandidates",
+                                                     &Constants::m_occlusionCandidates,
+                                                     kAttributes_m_occlusionCandidates,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_occlusionDispatch",
+                                                     &Constants::m_occlusionDispatch,
+                                                     kAttributes_m_occlusionDispatch,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_stats",
+                                                     &Constants::m_stats,
+                                                     kAttributes_m_stats,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibilityCapacity",
+                                                     &Constants::m_visibilityCapacity,
+                                                     kAttributes_m_visibilityCapacity,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_isOcclusionTested",
+                                                     &Constants::m_isOcclusionTested,
+                                                     kAttributes_m_isOcclusionTested,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_phase",
+                                                     &Constants::m_phase,
+                                                     kAttributes_m_phase,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -6098,7 +6124,11 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
                                         "FE::Graphics::MeshPass::CullMeshInstances::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_818ef35c744445f2b6a58c97a016f41c(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_818ef35c744445f2b6a58c97a016f41c(&Constants::Reflect);
@@ -6113,6 +6143,22 @@ namespace FE::Graphics::ImGuiPass
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_841ae091da764ca7b3e4e640715966b2(TextureUploadPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x84, 0x1a, 0xe0, 0x91, 0xda, 0x76, 0x4c, 0xa7,
+                0xb3, 0xe4, 0xe6, 0x40, 0x71, 0x59, 0x66, 0xb2, // FE::Graphics::ImGuiPass::TextureUploadPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_841ae091da764ca7b3e4e640715966b2()
         {
             static Rtti::Type typeInstance;
@@ -6135,12 +6181,6 @@ namespace FE::Graphics::ImGuiPass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x4a, 0xce, 0xd8, 0x14, 0xf3, 0x6a, 0x4a, 0x91,
-            0xb3, 0x5c, 0x83, 0x22, 0x02, 0x29, 0xa7, 0xcd, // FE::Graphics::ImGuiPass::TextureUploadConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -6148,16 +6188,14 @@ namespace FE::Graphics::ImGuiPass
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TextureUploadPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TextureUploadPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &TextureUploadPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &TextureUploadPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<TextureUploadPassDesc>(typeInstance,
@@ -6165,7 +6203,11 @@ namespace FE::Graphics::ImGuiPass
                                                     "FE::Graphics::ImGuiPass::TextureUploadPassDesc",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_841ae091da764ca7b3e4e640715966b2(static_cast<TextureUploadPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_841ae091da764ca7b3e4e640715966b2(&TextureUploadPassDesc::Reflect);
@@ -6201,6 +6243,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_8666f7783bbf44cb87b6aa1c7b2089d7()
         {
             static Rtti::Type typeInstance;
@@ -6244,7 +6287,8 @@ namespace FE::Graphics
                                        "FE::Graphics::Renderer",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<Renderer*>(instance)->RTTI_TryCast(target);
         };
@@ -6262,6 +6306,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_86e490c49ac8455fbf43ba2e04b5c0bb(ShadingScatterPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x86, 0xe4, 0x90, 0xc4, 0x9a, 0xc8, 0x45, 0x5f,
+                0xbf, 0x43, 0xba, 0x2e, 0x04, 0xb5, 0xc0, 0xbb, // FE::Graphics::Visibility::ShadingScatterPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_86e490c49ac8455fbf43ba2e04b5c0bb()
         {
             static Rtti::Type typeInstance;
@@ -6284,12 +6344,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x6e, 0x64, 0x2c, 0x0f, 0x15, 0x25, 0x4d, 0xb2,
-            0xa0, 0x21, 0xba, 0x36, 0x72, 0x8f, 0x1b, 0x91, // FE::Graphics::Visibility::ShadingScatterConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -6297,16 +6351,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ShadingScatterPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &ShadingScatterPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &ShadingScatterPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &ShadingScatterPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ShadingScatterPassDesc>(typeInstance,
@@ -6314,7 +6366,11 @@ namespace FE::Graphics::Visibility
                                                      "FE::Graphics::Visibility::ShadingScatterPassDesc",
                                                      kBaseClassTypeIDs,
                                                      kAttributes,
-                                                     kFields);
+                                                     kFields,
+                                                     Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_86e490c49ac8455fbf43ba2e04b5c0bb(static_cast<ShadingScatterPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_86e490c49ac8455fbf43ba2e04b5c0bb(&ShadingScatterPassDesc::Reflect);
@@ -6344,6 +6400,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_8a685626dfe14e08a4b09be046f58a5d()
         {
             static Rtti::Type typeInstance;
@@ -6375,16 +6432,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
-            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_name
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_specializers
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_parameters
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_techniques
-        };
         static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MATERIAL);
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
@@ -6397,26 +6444,22 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_techniques = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MaterialAsset::m_name,
-                                                        kAttributes_m_name,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_specializers",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MaterialAsset::m_specializers,
-                                                        kAttributes_m_specializers,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_parameters",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MaterialAsset::m_parameters,
-                                                        kAttributes_m_parameters,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_techniques",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &MaterialAsset::m_techniques,
-                                                        kAttributes_m_techniques,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_name",
+                                                     &MaterialAsset::m_name,
+                                                     kAttributes_m_name,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_specializers",
+                                                     &MaterialAsset::m_specializers,
+                                                     kAttributes_m_specializers,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_parameters",
+                                                     &MaterialAsset::m_parameters,
+                                                     kAttributes_m_parameters,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_techniques",
+                                                     &MaterialAsset::m_techniques,
+                                                     kAttributes_m_techniques,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MaterialAsset>(typeInstance,
@@ -6424,7 +6467,8 @@ namespace FE::Graphics
                                             "FE::Graphics::MaterialAsset",
                                             kBaseClassTypeIDs,
                                             kAttributes,
-                                            kFields);
+                                            kFields,
+                                            Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MaterialAsset*>(instance)->RTTI_TryCast(target);
         };
@@ -6524,6 +6568,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_8a836070a79850fba93b6fe5848b70b9()
         {
             static Rtti::Type typeInstance;
@@ -6569,7 +6614,8 @@ namespace FE::Graphics
                                                 "FE::Graphics::MeshInstanceTable",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields);
+                                                kFields,
+                                                Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MeshInstanceTable*>(instance)->RTTI_TryCast(target);
         };
@@ -6587,6 +6633,22 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_9049885ec51440c69f2d21aa94a9202c(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x90, 0x49, 0x88, 0x5e, 0xc5, 0x14, 0x40, 0xc6, 0x9f,
+                0x2d, 0x21, 0xaa, 0x94, 0xa9, 0x20, 0x2c, // FE::Graphics::MeshPass::FinalizeMeshletCommands::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_9049885ec51440c69f2d21aa94a9202c()
         {
             static Rtti::Type typeInstance;
@@ -6609,20 +6671,6 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_buckets
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_meshletCounts
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_layouts
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_commands
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_arguments
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_bucketCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_buckets = {};
@@ -6638,36 +6686,30 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bucketCount = {};
 
         static const festd::array<Rtti::FieldInfo, 6> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_buckets,
-                                                        kAttributes_m_buckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletCounts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_meshletCounts,
-                                                        kAttributes_m_meshletCounts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_layouts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_layouts,
-                                                        kAttributes_m_layouts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_commands",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_commands,
-                                                        kAttributes_m_commands,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bucketCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &Constants::m_bucketCount,
-                                                        kAttributes_m_bucketCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_buckets",
+                                                     &Constants::m_buckets,
+                                                     kAttributes_m_buckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletCounts",
+                                                     &Constants::m_meshletCounts,
+                                                     kAttributes_m_meshletCounts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_layouts",
+                                                     &Constants::m_layouts,
+                                                     kAttributes_m_layouts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_commands",
+                                                     &Constants::m_commands,
+                                                     kAttributes_m_commands,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &Constants::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bucketCount",
+                                                     &Constants::m_bucketCount,
+                                                     kAttributes_m_bucketCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -6675,7 +6717,11 @@ namespace FE::Graphics::MeshPass::FinalizeMeshletCommands
                                         "FE::Graphics::MeshPass::FinalizeMeshletCommands::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_9049885ec51440c69f2d21aa94a9202c(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9049885ec51440c69f2d21aa94a9202c(&Constants::Reflect);
@@ -6690,6 +6736,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_906ab659157b461d929f127f5203b714(DeferredDirectPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x90, 0x6a, 0xb6, 0x59, 0x15, 0x7b, 0x46, 0x1d,
+                0x92, 0x9f, 0x12, 0x7f, 0x52, 0x03, 0xb7, 0x14, // FE::Graphics::Visibility::DeferredDirectPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_906ab659157b461d929f127f5203b714()
         {
             static Rtti::Type typeInstance;
@@ -6712,12 +6774,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xb2, 0xa5, 0x5d, 0xb1, 0x85, 0x34, 0x47, 0x5d,
-            0xa6, 0xe0, 0x5c, 0x4c, 0x02, 0x58, 0x61, 0xfd, // FE::Graphics::Visibility::DeferredConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -6725,16 +6781,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DeferredDirectPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DeferredDirectPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &DeferredDirectPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &DeferredDirectPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DeferredDirectPassDesc>(typeInstance,
@@ -6742,7 +6796,11 @@ namespace FE::Graphics::Visibility
                                                      "FE::Graphics::Visibility::DeferredDirectPassDesc",
                                                      kBaseClassTypeIDs,
                                                      kAttributes,
-                                                     kFields);
+                                                     kFields,
+                                                     Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_906ab659157b461d929f127f5203b714(static_cast<DeferredDirectPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_906ab659157b461d929f127f5203b714(&DeferredDirectPassDesc::Reflect);
@@ -6784,6 +6842,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_921d754b9a7e563c86f9372197a38c92()
         {
             static Rtti::Type typeInstance;
@@ -6829,7 +6888,8 @@ namespace FE::Graphics
                                                   "FE::Graphics::GlobalLightingTable",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
-                                                  kFields);
+                                                  kFields,
+                                                  Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<GlobalLightingTable*>(instance)->RTTI_TryCast(target);
         };
@@ -6874,6 +6934,7 @@ namespace FE::Graphics::Tonemap
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_93bc5b9c7b1c4829bfc798475f8d91bd()
         {
             static Rtti::Type typeInstance;
@@ -6919,7 +6980,8 @@ namespace FE::Graphics::Tonemap
                                          "FE::Graphics::Tonemap::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -6937,6 +6999,22 @@ namespace FE::Graphics::MeshPass
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_9565427ffe7249cda99e2a4082d638f7(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x95, 0x65, 0x42, 0x7f, 0xfe, 0x72, 0x49, 0xcd,
+                0xa9, 0x9e, 0x2a, 0x40, 0x82, 0xd6, 0x38, 0xf7, // FE::Graphics::MeshPass::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_9565427ffe7249cda99e2a4082d638f7()
         {
             static Rtti::Type typeInstance;
@@ -6959,12 +7037,6 @@ namespace FE::Graphics::MeshPass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_commandIndex
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -6972,16 +7044,14 @@ namespace FE::Graphics::MeshPass
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_commandIndex = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_commandIndex",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_commandIndex,
-                                                        kAttributes_m_commandIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &Constants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_commandIndex",
+                                                     &Constants::m_commandIndex,
+                                                     kAttributes_m_commandIndex,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -6989,7 +7059,11 @@ namespace FE::Graphics::MeshPass
                                         "FE::Graphics::MeshPass::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_9565427ffe7249cda99e2a4082d638f7(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9565427ffe7249cda99e2a4082d638f7(&Constants::Reflect);
@@ -7004,6 +7078,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_98e1dbb0d1ba4f87a44612463850ee06(SurfaceDirectPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x98, 0xe1, 0xdb, 0xb0, 0xd1, 0xba, 0x4f, 0x87,
+                0xa4, 0x46, 0x12, 0x46, 0x38, 0x50, 0xee, 0x06, // FE::Graphics::Visibility::SurfaceDirectPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_98e1dbb0d1ba4f87a44612463850ee06()
         {
             static Rtti::Type typeInstance;
@@ -7026,12 +7116,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x7b, 0xe2, 0x3b, 0x88, 0xff, 0xac, 0x44, 0x20,
-            0x95, 0xc8, 0x75, 0x93, 0xdb, 0x85, 0xef, 0xf2, // FE::Graphics::Visibility::SurfaceConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -7039,16 +7123,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfaceDirectPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfaceDirectPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SurfaceDirectPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SurfaceDirectPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfaceDirectPassDesc>(typeInstance,
@@ -7056,7 +7138,11 @@ namespace FE::Graphics::Visibility
                                                     "FE::Graphics::Visibility::SurfaceDirectPassDesc",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_98e1dbb0d1ba4f87a44612463850ee06(static_cast<SurfaceDirectPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_98e1dbb0d1ba4f87a44612463850ee06(&SurfaceDirectPassDesc::Reflect);
@@ -7071,6 +7157,22 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_98f0a8e2053c4f16ac99abf61fdb4e67(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x98, 0xf0, 0xa8, 0xe2, 0x05, 0x3c, 0x4f, 0x16, 0xac,
+                0x99, 0xab, 0xf6, 0x1f, 0xdb, 0x4e, 0x67, // FE::Graphics::MeshPass::PropagateMeshBucketOffsets::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_98f0a8e2053c4f16ac99abf61fdb4e67()
         {
             static Rtti::Type typeInstance;
@@ -7093,14 +7195,6 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_input
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_output
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_count
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_input = {};
@@ -7110,21 +7204,18 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_count = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_input",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_input,
-                                                        kAttributes_m_input,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_output,
-                                                        kAttributes_m_output,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_count",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_count,
-                                                        kAttributes_m_count,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_input",
+                                                     &Constants::m_input,
+                                                     kAttributes_m_input,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &Constants::m_output,
+                                                     kAttributes_m_output,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_count",
+                                                     &Constants::m_count,
+                                                     kAttributes_m_count,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -7132,7 +7223,11 @@ namespace FE::Graphics::MeshPass::PropagateMeshBucketOffsets
                                         "FE::Graphics::MeshPass::PropagateMeshBucketOffsets::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_98f0a8e2053c4f16ac99abf61fdb4e67(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_98f0a8e2053c4f16ac99abf61fdb4e67(&Constants::Reflect);
@@ -7147,6 +7242,22 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_9fb458cca1de4758b0acd0a818bb01df(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x9f, 0xb4, 0x58, 0xcc, 0xa1, 0xde, 0x47, 0x58, 0xb0,
+                0xac, 0xd0, 0xa8, 0x18, 0xbb, 0x01, 0xdf, // FE::Graphics::MeshPass::FinalizeMeshBuckets::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_9fb458cca1de4758b0acd0a818bb01df()
         {
             static Rtti::Type typeInstance;
@@ -7169,12 +7280,6 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x2b, 0x82, 0xe3, 0x80, 0x8b, 0x59, 0x44, 0xeb,
-            0xbb, 0xac, 0xda, 0x29, 0x70, 0xd2, 0x4b, 0xd4, // FE::Graphics::MeshPass::FinalizeMeshBuckets::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -7182,16 +7287,14 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -7199,7 +7302,11 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
                                        "FE::Graphics::MeshPass::FinalizeMeshBuckets::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_9fb458cca1de4758b0acd0a818bb01df(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9fb458cca1de4758b0acd0a818bb01df(&PassDesc::Reflect);
@@ -7214,6 +7321,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_a33ff480b7734d16a69ff02cc7103e18(SurfaceScanPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xa3, 0x3f, 0xf4, 0x80, 0xb7, 0x73, 0x4d, 0x16,
+                0xa6, 0x9f, 0xf0, 0x2c, 0xc7, 0x10, 0x3e, 0x18, // FE::Graphics::Visibility::SurfaceScanPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_a33ff480b7734d16a69ff02cc7103e18()
         {
             static Rtti::Type typeInstance;
@@ -7236,12 +7359,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xdd, 0x28, 0xf0, 0x73, 0x66, 0x4f, 0x41, 0x75,
-            0x8b, 0x2c, 0x4e, 0x58, 0x8b, 0xf3, 0x88, 0x2d, // FE::Graphics::Visibility::SurfaceScanConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -7249,16 +7366,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfaceScanPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfaceScanPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SurfaceScanPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SurfaceScanPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfaceScanPassDesc>(typeInstance,
@@ -7266,7 +7381,11 @@ namespace FE::Graphics::Visibility
                                                   "FE::Graphics::Visibility::SurfaceScanPassDesc",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
-                                                  kFields);
+                                                  kFields,
+                                                  Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_a33ff480b7734d16a69ff02cc7103e18(static_cast<SurfaceScanPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_a33ff480b7734d16a69ff02cc7103e18(&SurfaceScanPassDesc::Reflect);
@@ -7281,6 +7400,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_a4a4724886f84fc6b312a92713568e55(MaterialSpecializerDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xa4, 0xa4, 0x72, 0x48, 0x86, 0xf8, 0x4f, 0xc6,
+                0xb3, 0x12, 0xa9, 0x27, 0x13, 0x56, 0x8e, 0x55, // FE::Graphics::MaterialSpecializerDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_a4a4724886f84fc6b312a92713568e55()
         {
             static Rtti::Type typeInstance;
@@ -7303,14 +7438,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0,
-            0x8d, 0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_name
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_values
-            0x17, 0x41, 0x96, 0xbd, 0x8b, 0xfe, 0x40, 0x49,
-            0xb7, 0x2e, 0x8a, 0x07, 0xad, 0x37, 0x26, 0x59, // int32_t m_defaultValue
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
@@ -7320,21 +7447,18 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_defaultValue = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MaterialSpecializerDesc::m_name,
-                                                        kAttributes_m_name,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_values",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MaterialSpecializerDesc::m_values,
-                                                        kAttributes_m_values,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_defaultValue",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MaterialSpecializerDesc::m_defaultValue,
-                                                        kAttributes_m_defaultValue,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_name",
+                                                     &MaterialSpecializerDesc::m_name,
+                                                     kAttributes_m_name,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_values",
+                                                     &MaterialSpecializerDesc::m_values,
+                                                     kAttributes_m_values,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_defaultValue",
+                                                     &MaterialSpecializerDesc::m_defaultValue,
+                                                     kAttributes_m_defaultValue,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MaterialSpecializerDesc>(typeInstance,
@@ -7342,7 +7466,11 @@ namespace FE::Graphics
                                                       "FE::Graphics::MaterialSpecializerDesc",
                                                       kBaseClassTypeIDs,
                                                       kAttributes,
-                                                      kFields);
+                                                      kFields,
+                                                      Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_a4a4724886f84fc6b312a92713568e55(static_cast<MaterialSpecializerDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_a4a4724886f84fc6b312a92713568e55(&MaterialSpecializerDesc::Reflect);
@@ -7408,6 +7536,22 @@ namespace FE::Graphics::ImGuiPass
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_aa33a0361cbd4537882f465e1cef215e(DrawConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xaa, 0x33, 0xa0, 0x36, 0x1c, 0xbd, 0x45, 0x37,
+                0x88, 0x2f, 0x46, 0x5e, 0x1c, 0xef, 0x21, 0x5e, // FE::Graphics::ImGuiPass::DrawConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_aa33a0361cbd4537882f465e1cef215e()
         {
             static Rtti::Type typeInstance;
@@ -7430,24 +7574,6 @@ namespace FE::Graphics::ImGuiPass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[8 * sizeof(Rtti::TypeID)] = {
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_scale
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_translation
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_vertices
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_indices
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_texture
-            0x0a, 0xdc, 0x65, 0xde, 0x1b, 0xa6, 0x4a, 0x60,
-            0xb3, 0x20, 0x33, 0x3a, 0xd0, 0xc2, 0xf2, 0x7b, // FE::Graphics::SamplerDescriptor m_sampler
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_firstIndex
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_vertexOffset
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scale = {};
@@ -7467,46 +7593,38 @@ namespace FE::Graphics::ImGuiPass
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_vertexOffset = {};
 
         static const festd::array<Rtti::FieldInfo, 8> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scale",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DrawConstants::m_scale,
-                                                        kAttributes_m_scale,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_translation",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DrawConstants::m_translation,
-                                                        kAttributes_m_translation,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertices",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &DrawConstants::m_vertices,
-                                                        kAttributes_m_vertices,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_indices",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &DrawConstants::m_indices,
-                                                        kAttributes_m_indices,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_texture",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &DrawConstants::m_texture,
-                                                        kAttributes_m_texture,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sampler",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &DrawConstants::m_sampler,
-                                                        kAttributes_m_sampler,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_firstIndex",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &DrawConstants::m_firstIndex,
-                                                        kAttributes_m_firstIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexOffset",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &DrawConstants::m_vertexOffset,
-                                                        kAttributes_m_vertexOffset,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scale",
+                                                     &DrawConstants::m_scale,
+                                                     kAttributes_m_scale,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_translation",
+                                                     &DrawConstants::m_translation,
+                                                     kAttributes_m_translation,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_vertices",
+                                                     &DrawConstants::m_vertices,
+                                                     kAttributes_m_vertices,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_indices",
+                                                     &DrawConstants::m_indices,
+                                                     kAttributes_m_indices,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_texture",
+                                                     &DrawConstants::m_texture,
+                                                     kAttributes_m_texture,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sampler",
+                                                     &DrawConstants::m_sampler,
+                                                     kAttributes_m_sampler,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_firstIndex",
+                                                     &DrawConstants::m_firstIndex,
+                                                     kAttributes_m_firstIndex,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_vertexOffset",
+                                                     &DrawConstants::m_vertexOffset,
+                                                     kAttributes_m_vertexOffset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DrawConstants>(typeInstance,
@@ -7514,7 +7632,11 @@ namespace FE::Graphics::ImGuiPass
                                             "FE::Graphics::ImGuiPass::DrawConstants",
                                             kBaseClassTypeIDs,
                                             kAttributes,
-                                            kFields);
+                                            kFields,
+                                            Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_aa33a0361cbd4537882f465e1cef215e(static_cast<DrawConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_aa33a0361cbd4537882f465e1cef215e(&DrawConstants::Reflect);
@@ -7550,6 +7672,7 @@ namespace FE::Graphics::DB
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_b0b292173d304b3580269d0eb91b8fd2()
         {
             static Rtti::Type typeInstance;
@@ -7593,7 +7716,8 @@ namespace FE::Graphics::DB
                                         "FE::Graphics::DB::TableBase",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<TableBase*>(instance)->RTTI_TryCast(target);
         };
@@ -7611,6 +7735,22 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b104cd6492a042999ae40df27b73cb75(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xb1, 0x04, 0xcd, 0x64, 0x92, 0xa0, 0x42, 0x99,
+                0x9a, 0xe4, 0x0d, 0xf2, 0x7b, 0x73, 0xcb, 0x75, // FE::Graphics::MeshPass::ScanMeshBuckets::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_b104cd6492a042999ae40df27b73cb75()
         {
             static Rtti::Type typeInstance;
@@ -7633,16 +7773,6 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_input
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_output
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_sums
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_count
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_input = {};
@@ -7654,26 +7784,22 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_count = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_input",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_input,
-                                                        kAttributes_m_input,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_output,
-                                                        kAttributes_m_output,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sums",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_sums,
-                                                        kAttributes_m_sums,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_count",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_count,
-                                                        kAttributes_m_count,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_input",
+                                                     &Constants::m_input,
+                                                     kAttributes_m_input,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &Constants::m_output,
+                                                     kAttributes_m_output,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sums",
+                                                     &Constants::m_sums,
+                                                     kAttributes_m_sums,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_count",
+                                                     &Constants::m_count,
+                                                     kAttributes_m_count,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -7681,7 +7807,11 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
                                         "FE::Graphics::MeshPass::ScanMeshBuckets::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_b104cd6492a042999ae40df27b73cb75(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b104cd6492a042999ae40df27b73cb75(&Constants::Reflect);
@@ -7696,6 +7826,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b2a55db18534475da6e05c4c025861fd(DeferredConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xb2, 0xa5, 0x5d, 0xb1, 0x85, 0x34, 0x47, 0x5d,
+                0xa6, 0xe0, 0x5c, 0x4c, 0x02, 0x58, 0x61, 0xfd, // FE::Graphics::Visibility::DeferredConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_b2a55db18534475da6e05c4c025861fd()
         {
             static Rtti::Type typeInstance;
@@ -7718,38 +7864,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[15 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lighting
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g0
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g1
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g2
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g3
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_depth
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_output
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_pixels
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_waves
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_ranges
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_shaderSlot
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_shaderCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -7783,81 +7897,66 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderCount = {};
 
         static const festd::array<Rtti::FieldInfo, 15> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lighting",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_lighting,
-                                                        kAttributes_m_lighting,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_g0,
-                                                        kAttributes_m_g0,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g1",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_g1,
-                                                        kAttributes_m_g1,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g2",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_g2,
-                                                        kAttributes_m_g2,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g3",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_g3,
-                                                        kAttributes_m_g3,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depth",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_depth,
-                                                        kAttributes_m_depth,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_output,
-                                                        kAttributes_m_output,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixels",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_pixels,
-                                                        kAttributes_m_pixels,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_waves",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_waves,
-                                                        kAttributes_m_waves,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ranges",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_ranges,
-                                                        kAttributes_m_ranges,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_resolution,
-                                                        kAttributes_m_resolution,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_tilesPerRow,
-                                                        kAttributes_m_tilesPerRow,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderSlot",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_shaderSlot,
-                                                        kAttributes_m_shaderSlot,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 14 * sizeof(TypeID)),
-                                                        &DeferredConstants::m_shaderCount,
-                                                        kAttributes_m_shaderCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &DeferredConstants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lighting",
+                                                     &DeferredConstants::m_lighting,
+                                                     kAttributes_m_lighting,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g0",
+                                                     &DeferredConstants::m_g0,
+                                                     kAttributes_m_g0,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g1",
+                                                     &DeferredConstants::m_g1,
+                                                     kAttributes_m_g1,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g2",
+                                                     &DeferredConstants::m_g2,
+                                                     kAttributes_m_g2,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g3",
+                                                     &DeferredConstants::m_g3,
+                                                     kAttributes_m_g3,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depth",
+                                                     &DeferredConstants::m_depth,
+                                                     kAttributes_m_depth,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &DeferredConstants::m_output,
+                                                     kAttributes_m_output,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pixels",
+                                                     &DeferredConstants::m_pixels,
+                                                     kAttributes_m_pixels,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_waves",
+                                                     &DeferredConstants::m_waves,
+                                                     kAttributes_m_waves,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_ranges",
+                                                     &DeferredConstants::m_ranges,
+                                                     kAttributes_m_ranges,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &DeferredConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
+                                                     &DeferredConstants::m_tilesPerRow,
+                                                     kAttributes_m_tilesPerRow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderSlot",
+                                                     &DeferredConstants::m_shaderSlot,
+                                                     kAttributes_m_shaderSlot,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderCount",
+                                                     &DeferredConstants::m_shaderCount,
+                                                     kAttributes_m_shaderCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DeferredConstants>(typeInstance,
@@ -7865,7 +7964,11 @@ namespace FE::Graphics::Visibility
                                                 "FE::Graphics::Visibility::DeferredConstants",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields);
+                                                kFields,
+                                                Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_b2a55db18534475da6e05c4c025861fd(static_cast<DeferredConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b2a55db18534475da6e05c4c025861fd(&DeferredConstants::Reflect);
@@ -7880,6 +7983,22 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b5ffea50b69048188865baec87a59b83(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xb5, 0xff, 0xea, 0x50, 0xb6, 0x90, 0x48, 0x18, 0x88,
+                0x65, 0xba, 0xec, 0x87, 0xa5, 0x9b, 0x83, // FE::Graphics::MeshPass::OcclusionCullMeshlets::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_b5ffea50b69048188865baec87a59b83()
         {
             static Rtti::Type typeInstance;
@@ -7902,14 +8021,6 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x50, 0x67, 0x90, 0xe0, 0xc0, 0x86, 0x47, 0xd8, 0x9b,
-            0x18, 0xdb, 0x52, 0x2c, 0x75, 0xc2, 0xe5, // FE::Graphics::MeshPass::OcclusionCullMeshlets::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19, 0x96,
-            0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8, 0xab,
-            0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -7919,21 +8030,18 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &PassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &PassDesc::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -7941,7 +8049,11 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
                                        "FE::Graphics::MeshPass::OcclusionCullMeshlets::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_b5ffea50b69048188865baec87a59b83(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b5ffea50b69048188865baec87a59b83(&PassDesc::Reflect);
@@ -7956,6 +8068,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b6cd22e2880f46edb2c23f2e0d9d1f79(EvaluationCountPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xb6, 0xcd, 0x22, 0xe2, 0x88, 0x0f, 0x46, 0xed,
+                0xb2, 0xc2, 0x3f, 0x2e, 0x0d, 0x9d, 0x1f, 0x79, // FE::Graphics::Visibility::EvaluationCountPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_b6cd22e2880f46edb2c23f2e0d9d1f79()
         {
             static Rtti::Type typeInstance;
@@ -7978,12 +8106,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xe5, 0x65, 0xe3, 0x35, 0x5f, 0xcc, 0x4d, 0x69,
-            0x86, 0x6b, 0x67, 0x6d, 0x0d, 0xa1, 0xac, 0xda, // FE::Graphics::Visibility::EvaluationCountConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -7991,16 +8113,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &EvaluationCountPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &EvaluationCountPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &EvaluationCountPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &EvaluationCountPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<EvaluationCountPassDesc>(typeInstance,
@@ -8008,7 +8128,11 @@ namespace FE::Graphics::Visibility
                                                       "FE::Graphics::Visibility::EvaluationCountPassDesc",
                                                       kBaseClassTypeIDs,
                                                       kAttributes,
-                                                      kFields);
+                                                      kFields,
+                                                      Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_b6cd22e2880f46edb2c23f2e0d9d1f79(static_cast<EvaluationCountPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b6cd22e2880f46edb2c23f2e0d9d1f79(&EvaluationCountPassDesc::Reflect);
@@ -8023,6 +8147,22 @@ namespace FE::Graphics::MeshPass
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_c3621d2994e842daa4d8ba3fd6ebec1e(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xc3, 0x62, 0x1d, 0x29, 0x94, 0xe8, 0x42, 0xda,
+                0xa4, 0xd8, 0xba, 0x3f, 0xd6, 0xeb, 0xec, 0x1e, // FE::Graphics::MeshPass::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_c3621d2994e842daa4d8ba3fd6ebec1e()
         {
             static Rtti::Type typeInstance;
@@ -8045,14 +8185,6 @@ namespace FE::Graphics::MeshPass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x95, 0x65, 0x42, 0x7f, 0xfe, 0x72, 0x49, 0xcd,
-            0xa9, 0x9e, 0x2a, 0x40, 0x82, 0xd6, 0x38, 0xf7, // FE::Graphics::MeshPass::Constants m_constants
-            0xd9, 0x0e, 0xd8, 0x70, 0xc9, 0x66, 0x44, 0x3f,
-            0x9b, 0xfe, 0x1d, 0x75, 0x3a, 0xee, 0xdf, 0xbf, // FE::Graphics::Core::PassGraphicsPipeline m_pipeline
-            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8,
-            0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -8062,21 +8194,18 @@ namespace FE::Graphics::MeshPass
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &PassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &PassDesc::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -8084,7 +8213,11 @@ namespace FE::Graphics::MeshPass
                                        "FE::Graphics::MeshPass::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_c3621d2994e842daa4d8ba3fd6ebec1e(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c3621d2994e842daa4d8ba3fd6ebec1e(&PassDesc::Reflect);
@@ -8099,6 +8232,22 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_c4f922e3773f41ce867ac4b0b34dc424(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xc4, 0xf9, 0x22, 0xe3, 0x77, 0x3f, 0x41, 0xce,
+                0x86, 0x7a, 0xc4, 0xb0, 0xb3, 0x4d, 0xc4, 0x24, // FE::Graphics::MeshPass::CullMeshInstances::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_c4f922e3773f41ce867ac4b0b34dc424()
         {
             static Rtti::Type typeInstance;
@@ -8121,12 +8270,6 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x81, 0x8e, 0xf3, 0x5c, 0x74, 0x44, 0x45, 0xf2,
-            0xb6, 0xa5, 0x8c, 0x97, 0xa0, 0x16, 0xf4, 0x1c, // FE::Graphics::MeshPass::CullMeshInstances::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -8134,16 +8277,14 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -8151,7 +8292,11 @@ namespace FE::Graphics::MeshPass::CullMeshInstances
                                        "FE::Graphics::MeshPass::CullMeshInstances::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_c4f922e3773f41ce867ac4b0b34dc424(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c4f922e3773f41ce867ac4b0b34dc424(&PassDesc::Reflect);
@@ -8166,6 +8311,22 @@ namespace FE::Graphics::Tools::DepthPyramid
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_c7f6fc3c9bb0413e84f37155b6ee13c8(SpdConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xc7, 0xf6, 0xfc, 0x3c, 0x9b, 0xb0, 0x41, 0x3e,
+                0x84, 0xf3, 0x71, 0x55, 0xb6, 0xee, 0x13, 0xc8, // FE::Graphics::Tools::DepthPyramid::SpdConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_c7f6fc3c9bb0413e84f37155b6ee13c8()
         {
             static Rtti::Type typeInstance;
@@ -8188,26 +8349,6 @@ namespace FE::Graphics::Tools::DepthPyramid
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[9 * sizeof(Rtti::TypeID)] = {
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_source
-            0x0a, 0xdc, 0x65, 0xde, 0x1b, 0xa6, 0x4a, 0x60,
-            0xb3, 0x20, 0x33, 0x3a, 0xd0, 0xc2, 0xf2, 0x7b, // FE::Graphics::SamplerDescriptor m_sampler
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_invSourceSize
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_sourceSize
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_workGroupCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_counterIndex
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_atomicCounter
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_midMip
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_mips
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_source = {};
@@ -8229,51 +8370,42 @@ namespace FE::Graphics::Tools::DepthPyramid
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mips = {};
 
         static const festd::array<Rtti::FieldInfo, 9> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_source",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SpdConstants::m_source,
-                                                        kAttributes_m_source,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sampler",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SpdConstants::m_sampler,
-                                                        kAttributes_m_sampler,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_invSourceSize",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SpdConstants::m_invSourceSize,
-                                                        kAttributes_m_invSourceSize,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourceSize",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &SpdConstants::m_sourceSize,
-                                                        kAttributes_m_sourceSize,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_workGroupCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &SpdConstants::m_workGroupCount,
-                                                        kAttributes_m_workGroupCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counterIndex",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &SpdConstants::m_counterIndex,
-                                                        kAttributes_m_counterIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_atomicCounter",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &SpdConstants::m_atomicCounter,
-                                                        kAttributes_m_atomicCounter,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_midMip",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &SpdConstants::m_midMip,
-                                                        kAttributes_m_midMip,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<12>("m_mips",
-                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                         &SpdConstants::m_mips,
-                                                         kAttributes_m_mips,
-                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_source",
+                                                     &SpdConstants::m_source,
+                                                     kAttributes_m_source,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sampler",
+                                                     &SpdConstants::m_sampler,
+                                                     kAttributes_m_sampler,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_invSourceSize",
+                                                     &SpdConstants::m_invSourceSize,
+                                                     kAttributes_m_invSourceSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sourceSize",
+                                                     &SpdConstants::m_sourceSize,
+                                                     kAttributes_m_sourceSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_workGroupCount",
+                                                     &SpdConstants::m_workGroupCount,
+                                                     kAttributes_m_workGroupCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counterIndex",
+                                                     &SpdConstants::m_counterIndex,
+                                                     kAttributes_m_counterIndex,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_atomicCounter",
+                                                     &SpdConstants::m_atomicCounter,
+                                                     kAttributes_m_atomicCounter,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_midMip",
+                                                     &SpdConstants::m_midMip,
+                                                     kAttributes_m_midMip,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mips",
+                                                     &SpdConstants::m_mips,
+                                                     kAttributes_m_mips,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SpdConstants>(typeInstance,
@@ -8281,7 +8413,11 @@ namespace FE::Graphics::Tools::DepthPyramid
                                            "FE::Graphics::Tools::DepthPyramid::SpdConstants",
                                            kBaseClassTypeIDs,
                                            kAttributes,
-                                           kFields);
+                                           kFields,
+                                           Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_c7f6fc3c9bb0413e84f37155b6ee13c8(static_cast<SpdConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c7f6fc3c9bb0413e84f37155b6ee13c8(&SpdConstants::Reflect);
@@ -8296,6 +8432,22 @@ namespace FE::Graphics::Tools::Downsample
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_c9d2d09609864dfbb94015c9ac6ea4ab(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xc9, 0xd2, 0xd0, 0x96, 0x09, 0x86, 0x4d, 0xfb,
+                0xb9, 0x40, 0x15, 0xc9, 0xac, 0x6e, 0xa4, 0xab, // FE::Graphics::Tools::Downsample::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_c9d2d09609864dfbb94015c9ac6ea4ab()
         {
             static Rtti::Type typeInstance;
@@ -8318,12 +8470,6 @@ namespace FE::Graphics::Tools::Downsample
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x1e, 0x74, 0xb9, 0x2c, 0x3d, 0x4d, 0x4a, 0x75,
-            0xaf, 0x29, 0xf0, 0x23, 0x49, 0x6e, 0x19, 0xbf, // FE::Graphics::Tools::Downsample::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -8331,16 +8477,14 @@ namespace FE::Graphics::Tools::Downsample
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -8348,7 +8492,11 @@ namespace FE::Graphics::Tools::Downsample
                                        "FE::Graphics::Tools::Downsample::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_c9d2d09609864dfbb94015c9ac6ea4ab(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c9d2d09609864dfbb94015c9ac6ea4ab(&PassDesc::Reflect);
@@ -8363,6 +8511,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_ce5bd90ec1d04003864e473e44d40f0e(DebugPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xce, 0x5b, 0xd9, 0x0e, 0xc1, 0xd0, 0x40, 0x03,
+                0x86, 0x4e, 0x47, 0x3e, 0x44, 0xd4, 0x0f, 0x0e, // FE::Graphics::Visibility::DebugPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_ce5bd90ec1d04003864e473e44d40f0e()
         {
             static Rtti::Type typeInstance;
@@ -8385,12 +8549,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xe4, 0xd4, 0x03, 0xa6, 0x90, 0x86, 0x46, 0xe8,
-            0xaf, 0x82, 0xab, 0x6d, 0xaf, 0xbe, 0xc1, 0x8a, // FE::Graphics::Visibility::DebugConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -8398,16 +8556,14 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DebugPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DebugPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &DebugPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &DebugPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DebugPassDesc>(typeInstance,
@@ -8415,7 +8571,11 @@ namespace FE::Graphics::Visibility
                                             "FE::Graphics::Visibility::DebugPassDesc",
                                             kBaseClassTypeIDs,
                                             kAttributes,
-                                            kFields);
+                                            kFields,
+                                            Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_ce5bd90ec1d04003864e473e44d40f0e(static_cast<DebugPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ce5bd90ec1d04003864e473e44d40f0e(&DebugPassDesc::Reflect);
@@ -8457,6 +8617,7 @@ namespace FE::Graphics::Visibility
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_cf238fedc4464fdca57744e5edcdd425()
         {
             static Rtti::Type typeInstance;
@@ -8502,7 +8663,8 @@ namespace FE::Graphics::Visibility
                                               "FE::Graphics::Visibility::DebugViewModule",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields);
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<DebugViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -8547,6 +8709,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_cfd1e397fc2e4f9b99f34cf67f695b1e()
         {
             static Rtti::Type typeInstance;
@@ -8592,7 +8755,8 @@ namespace FE::Graphics
                                            "FE::Graphics::RendererImpl",
                                            kBaseClassTypeIDs,
                                            kAttributes,
-                                           kFields);
+                                           kFields,
+                                           Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<RendererImpl*>(instance)->RTTI_TryCast(target);
         };
@@ -8637,6 +8801,7 @@ namespace FE::Graphics::SurfaceEvaluation
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_d0880186f0094f88896b916a732c9bcc()
         {
             static Rtti::Type typeInstance;
@@ -8682,7 +8847,8 @@ namespace FE::Graphics::SurfaceEvaluation
                                          "FE::Graphics::SurfaceEvaluation::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -8727,6 +8893,7 @@ namespace FE::Graphics::Visibility
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_d6f76e4181b54442b976e9f80b37feb7()
         {
             static Rtti::Type typeInstance;
@@ -8772,7 +8939,8 @@ namespace FE::Graphics::Visibility
                                          "FE::Graphics::Visibility::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -8817,6 +8985,7 @@ namespace FE::Graphics
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_da93720cb6a558c29859e0a2bb3ca5f8()
         {
             static Rtti::Type typeInstance;
@@ -8862,7 +9031,8 @@ namespace FE::Graphics
                                                     "FE::Graphics::MaterialInstanceTable",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<MaterialInstanceTable*>(instance)->RTTI_TryCast(target);
         };
@@ -8880,6 +9050,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_dd28f073664f41758b2c4e588bf3882d(SurfaceScanConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xdd, 0x28, 0xf0, 0x73, 0x66, 0x4f, 0x41, 0x75,
+                0x8b, 0x2c, 0x4e, 0x58, 0x8b, 0xf3, 0x88, 0x2d, // FE::Graphics::Visibility::SurfaceScanConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_dd28f073664f41758b2c4e588bf3882d()
         {
             static Rtti::Type typeInstance;
@@ -8902,26 +9088,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[9 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_countsRead
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_scanInput
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_scanOutput
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_scanSums
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_emissionArguments
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_scanCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_waveLaneCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_scanBuckets
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_shaderCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_countsRead = {};
@@ -8943,51 +9109,42 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderCount = {};
 
         static const festd::array<Rtti::FieldInfo, 9> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_countsRead",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_countsRead,
-                                                        kAttributes_m_countsRead,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanInput",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_scanInput,
-                                                        kAttributes_m_scanInput,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanOutput",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_scanOutput,
-                                                        kAttributes_m_scanOutput,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanSums",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_scanSums,
-                                                        kAttributes_m_scanSums,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_emissionArguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_emissionArguments,
-                                                        kAttributes_m_emissionArguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_scanCount,
-                                                        kAttributes_m_scanCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_waveLaneCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_waveLaneCount,
-                                                        kAttributes_m_waveLaneCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scanBuckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_scanBuckets,
-                                                        kAttributes_m_scanBuckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &SurfaceScanConstants::m_shaderCount,
-                                                        kAttributes_m_shaderCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_countsRead",
+                                                     &SurfaceScanConstants::m_countsRead,
+                                                     kAttributes_m_countsRead,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scanInput",
+                                                     &SurfaceScanConstants::m_scanInput,
+                                                     kAttributes_m_scanInput,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scanOutput",
+                                                     &SurfaceScanConstants::m_scanOutput,
+                                                     kAttributes_m_scanOutput,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scanSums",
+                                                     &SurfaceScanConstants::m_scanSums,
+                                                     kAttributes_m_scanSums,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_emissionArguments",
+                                                     &SurfaceScanConstants::m_emissionArguments,
+                                                     kAttributes_m_emissionArguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scanCount",
+                                                     &SurfaceScanConstants::m_scanCount,
+                                                     kAttributes_m_scanCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_waveLaneCount",
+                                                     &SurfaceScanConstants::m_waveLaneCount,
+                                                     kAttributes_m_waveLaneCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scanBuckets",
+                                                     &SurfaceScanConstants::m_scanBuckets,
+                                                     kAttributes_m_scanBuckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderCount",
+                                                     &SurfaceScanConstants::m_shaderCount,
+                                                     kAttributes_m_shaderCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SurfaceScanConstants>(typeInstance,
@@ -8995,7 +9152,11 @@ namespace FE::Graphics::Visibility
                                                    "FE::Graphics::Visibility::SurfaceScanConstants",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields);
+                                                   kFields,
+                                                   Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_dd28f073664f41758b2c4e588bf3882d(static_cast<SurfaceScanConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_dd28f073664f41758b2c4e588bf3882d(&SurfaceScanConstants::Reflect);
@@ -9010,6 +9171,22 @@ namespace FE::Graphics::Tools::DepthPyramid
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_de08d889a3094f22b99de94c8bf17eef(TilePassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xde, 0x08, 0xd8, 0x89, 0xa3, 0x09, 0x4f, 0x22,
+                0xb9, 0x9d, 0xe9, 0x4c, 0x8b, 0xf1, 0x7e, 0xef, // FE::Graphics::Tools::DepthPyramid::TilePassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_de08d889a3094f22b99de94c8bf17eef()
         {
             static Rtti::Type typeInstance;
@@ -9032,12 +9209,6 @@ namespace FE::Graphics::Tools::DepthPyramid
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0x5e, 0x56, 0x8e, 0x19, 0x7a, 0x5c, 0x4e, 0xa9,
-            0xb4, 0x2d, 0xf4, 0xe3, 0x9d, 0x10, 0x9b, 0x93, // FE::Graphics::Tools::DepthPyramid::TileConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -9045,16 +9216,14 @@ namespace FE::Graphics::Tools::DepthPyramid
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &TilePassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &TilePassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &TilePassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &TilePassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<TilePassDesc>(typeInstance,
@@ -9062,7 +9231,11 @@ namespace FE::Graphics::Tools::DepthPyramid
                                            "FE::Graphics::Tools::DepthPyramid::TilePassDesc",
                                            kBaseClassTypeIDs,
                                            kAttributes,
-                                           kFields);
+                                           kFields,
+                                           Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_de08d889a3094f22b99de94c8bf17eef(static_cast<TilePassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_de08d889a3094f22b99de94c8bf17eef(&TilePassDesc::Reflect);
@@ -9077,6 +9250,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_e4ba6e371669414a98e7a2f1fbde4ada(EvaluationScatterConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xe4, 0xba, 0x6e, 0x37, 0x16, 0x69, 0x41, 0x4a, 0x98,
+                0xe7, 0xa2, 0xf1, 0xfb, 0xde, 0x4a, 0xda, // FE::Graphics::Visibility::EvaluationScatterConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_e4ba6e371669414a98e7a2f1fbde4ada()
         {
             static Rtti::Type typeInstance;
@@ -9099,28 +9288,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[10 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_visibility
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_lookup
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_offsets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_cursors
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_pixels
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tileCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_groupRowCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -9144,56 +9311,46 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
 
         static const festd::array<Rtti::FieldInfo, 10> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_visibility,
-                                                        kAttributes_m_visibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lookup",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_lookup,
-                                                        kAttributes_m_lookup,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_offsets,
-                                                        kAttributes_m_offsets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cursors",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_cursors,
-                                                        kAttributes_m_cursors,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixels",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_pixels,
-                                                        kAttributes_m_pixels,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_resolution,
-                                                        kAttributes_m_resolution,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_tilesPerRow,
-                                                        kAttributes_m_tilesPerRow,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tileCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_tileCount,
-                                                        kAttributes_m_tileCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_groupRowCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &EvaluationScatterConstants::m_groupRowCount,
-                                                        kAttributes_m_groupRowCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &EvaluationScatterConstants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibility",
+                                                     &EvaluationScatterConstants::m_visibility,
+                                                     kAttributes_m_visibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lookup",
+                                                     &EvaluationScatterConstants::m_lookup,
+                                                     kAttributes_m_lookup,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_offsets",
+                                                     &EvaluationScatterConstants::m_offsets,
+                                                     kAttributes_m_offsets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_cursors",
+                                                     &EvaluationScatterConstants::m_cursors,
+                                                     kAttributes_m_cursors,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pixels",
+                                                     &EvaluationScatterConstants::m_pixels,
+                                                     kAttributes_m_pixels,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &EvaluationScatterConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
+                                                     &EvaluationScatterConstants::m_tilesPerRow,
+                                                     kAttributes_m_tilesPerRow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
+                                                     &EvaluationScatterConstants::m_tileCount,
+                                                     kAttributes_m_tileCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
+                                                     &EvaluationScatterConstants::m_groupRowCount,
+                                                     kAttributes_m_groupRowCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<EvaluationScatterConstants>(typeInstance,
@@ -9201,7 +9358,11 @@ namespace FE::Graphics::Visibility
                                                          "FE::Graphics::Visibility::EvaluationScatterConstants",
                                                          kBaseClassTypeIDs,
                                                          kAttributes,
-                                                         kFields);
+                                                         kFields,
+                                                         Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_e4ba6e371669414a98e7a2f1fbde4ada(static_cast<EvaluationScatterConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_e4ba6e371669414a98e7a2f1fbde4ada(&EvaluationScatterConstants::Reflect);
@@ -9216,6 +9377,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_e4d403a6908646e8af82ab6dafbec18a(DebugConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xe4, 0xd4, 0x03, 0xa6, 0x90, 0x86, 0x46, 0xe8,
+                0xaf, 0x82, 0xab, 0x6d, 0xaf, 0xbe, 0xc1, 0x8a, // FE::Graphics::Visibility::DebugConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_e4d403a6908646e8af82ab6dafbec18a()
         {
             static Rtti::Type typeInstance;
@@ -9238,28 +9415,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[10 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_visibility
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_depth
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g0
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g1
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g2
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g3
-            0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
-            0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_output
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_mode
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -9283,56 +9438,46 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mode = {};
 
         static const festd::array<Rtti::FieldInfo, 10> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DebugConstants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DebugConstants::m_visibility,
-                                                        kAttributes_m_visibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depth",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &DebugConstants::m_depth,
-                                                        kAttributes_m_depth,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &DebugConstants::m_g0,
-                                                        kAttributes_m_g0,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g1",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &DebugConstants::m_g1,
-                                                        kAttributes_m_g1,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g2",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &DebugConstants::m_g2,
-                                                        kAttributes_m_g2,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g3",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &DebugConstants::m_g3,
-                                                        kAttributes_m_g3,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &DebugConstants::m_output,
-                                                        kAttributes_m_output,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &DebugConstants::m_resolution,
-                                                        kAttributes_m_resolution,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mode",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &DebugConstants::m_mode,
-                                                        kAttributes_m_mode,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &DebugConstants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibility",
+                                                     &DebugConstants::m_visibility,
+                                                     kAttributes_m_visibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depth",
+                                                     &DebugConstants::m_depth,
+                                                     kAttributes_m_depth,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g0",
+                                                     &DebugConstants::m_g0,
+                                                     kAttributes_m_g0,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g1",
+                                                     &DebugConstants::m_g1,
+                                                     kAttributes_m_g1,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g2",
+                                                     &DebugConstants::m_g2,
+                                                     kAttributes_m_g2,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_g3",
+                                                     &DebugConstants::m_g3,
+                                                     kAttributes_m_g3,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &DebugConstants::m_output,
+                                                     kAttributes_m_output,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &DebugConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mode",
+                                                     &DebugConstants::m_mode,
+                                                     kAttributes_m_mode,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DebugConstants>(typeInstance,
@@ -9340,7 +9485,11 @@ namespace FE::Graphics::Visibility
                                              "FE::Graphics::Visibility::DebugConstants",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_e4d403a6908646e8af82ab6dafbec18a(static_cast<DebugConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_e4d403a6908646e8af82ab6dafbec18a(&DebugConstants::Reflect);
@@ -9355,6 +9504,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_e565e3355fcc4d69866b676d0da1acda(EvaluationCountConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xe5, 0x65, 0xe3, 0x35, 0x5f, 0xcc, 0x4d, 0x69,
+                0x86, 0x6b, 0x67, 0x6d, 0x0d, 0xa1, 0xac, 0xda, // FE::Graphics::Visibility::EvaluationCountConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_e565e3355fcc4d69866b676d0da1acda()
         {
             static Rtti::Type typeInstance;
@@ -9377,24 +9542,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[8 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_visibility
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_lookup
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_counts
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tilesPerRow
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_tileCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_groupRowCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -9414,46 +9561,38 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
 
         static const festd::array<Rtti::FieldInfo, 8> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_visibility,
-                                                        kAttributes_m_visibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lookup",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_lookup,
-                                                        kAttributes_m_lookup,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_counts,
-                                                        kAttributes_m_counts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_resolution,
-                                                        kAttributes_m_resolution,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_tilesPerRow,
-                                                        kAttributes_m_tilesPerRow,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_tileCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_tileCount,
-                                                        kAttributes_m_tileCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_groupRowCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &EvaluationCountConstants::m_groupRowCount,
-                                                        kAttributes_m_groupRowCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &EvaluationCountConstants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibility",
+                                                     &EvaluationCountConstants::m_visibility,
+                                                     kAttributes_m_visibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lookup",
+                                                     &EvaluationCountConstants::m_lookup,
+                                                     kAttributes_m_lookup,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counts",
+                                                     &EvaluationCountConstants::m_counts,
+                                                     kAttributes_m_counts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &EvaluationCountConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
+                                                     &EvaluationCountConstants::m_tilesPerRow,
+                                                     kAttributes_m_tilesPerRow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
+                                                     &EvaluationCountConstants::m_tileCount,
+                                                     kAttributes_m_tileCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
+                                                     &EvaluationCountConstants::m_groupRowCount,
+                                                     kAttributes_m_groupRowCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<EvaluationCountConstants>(typeInstance,
@@ -9461,7 +9600,11 @@ namespace FE::Graphics::Visibility
                                                        "FE::Graphics::Visibility::EvaluationCountConstants",
                                                        kBaseClassTypeIDs,
                                                        kAttributes,
-                                                       kFields);
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_e565e3355fcc4d69866b676d0da1acda(static_cast<EvaluationCountConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_e565e3355fcc4d69866b676d0da1acda(&EvaluationCountConstants::Reflect);
@@ -9476,6 +9619,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL
+        RTTI_TryCastImpl_e92985a45d674caa82e7a4d702e97c27(RendererTargetClearPassDesc* thisPtr, const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xe9, 0x29, 0x85, 0xa4, 0x5d, 0x67, 0x4c, 0xaa,
+                0x82, 0xe7, 0xa4, 0xd7, 0x02, 0xe9, 0x7c, 0x27, // FE::Graphics::RendererTargetClearPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_e92985a45d674caa82e7a4d702e97c27()
         {
             static Rtti::Type typeInstance;
@@ -9498,14 +9657,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
-            0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_colorTarget
-            0xd1, 0x1c, 0xe8, 0x81, 0x3d, 0x3c, 0x47, 0xaf,
-            0xa0, 0x50, 0x34, 0x64, 0x82, 0x67, 0x73, 0x16, // FE::Graphics::Core::PassDepthTarget m_depthTarget
-            0x37, 0x22, 0xe7, 0x47, 0xaa, 0xbe, 0x49, 0xd8,
-            0x9d, 0x95, 0xad, 0xc6, 0xd0, 0x80, 0xd8, 0xe7, // FE::Graphics::Core::PassViewport m_viewport
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_colorTarget = {};
@@ -9515,21 +9666,18 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_colorTarget",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &RendererTargetClearPassDesc::m_colorTarget,
-                                                        kAttributes_m_colorTarget,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTarget",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &RendererTargetClearPassDesc::m_depthTarget,
-                                                        kAttributes_m_depthTarget,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewport",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &RendererTargetClearPassDesc::m_viewport,
-                                                        kAttributes_m_viewport,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_colorTarget",
+                                                     &RendererTargetClearPassDesc::m_colorTarget,
+                                                     kAttributes_m_colorTarget,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthTarget",
+                                                     &RendererTargetClearPassDesc::m_depthTarget,
+                                                     kAttributes_m_depthTarget,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_viewport",
+                                                     &RendererTargetClearPassDesc::m_viewport,
+                                                     kAttributes_m_viewport,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<RendererTargetClearPassDesc>(typeInstance,
@@ -9537,7 +9685,11 @@ namespace FE::Graphics
                                                           "FE::Graphics::RendererTargetClearPassDesc",
                                                           kBaseClassTypeIDs,
                                                           kAttributes,
-                                                          kFields);
+                                                          kFields,
+                                                          Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_e92985a45d674caa82e7a4d702e97c27(static_cast<RendererTargetClearPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_e92985a45d674caa82e7a4d702e97c27(&RendererTargetClearPassDesc::Reflect);
@@ -9579,6 +9731,7 @@ namespace FE::Graphics::Culling
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_e936245b09f3475ca4763568ce7268fc()
         {
             static Rtti::Type typeInstance;
@@ -9624,7 +9777,8 @@ namespace FE::Graphics::Culling
                                          "FE::Graphics::Culling::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -9669,6 +9823,7 @@ namespace FE::Graphics::GBufferDebug
 
             return nullptr;
         }
+
         Rtti::Type& RTTI_GetMutableType_ec61e888a82548058320bb01d72013a0()
         {
             static Rtti::Type typeInstance;
@@ -9714,7 +9869,8 @@ namespace FE::Graphics::GBufferDebug
                                          "FE::Graphics::GBufferDebug::ViewModule",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
             return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
         };
@@ -9732,6 +9888,22 @@ namespace FE::Graphics::ImGuiPass
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_eca0ac0c1e764f8587ba91b8e604c155(DrawPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xec, 0xa0, 0xac, 0x0c, 0x1e, 0x76, 0x4f, 0x85,
+                0x87, 0xba, 0x91, 0xb8, 0xe6, 0x04, 0xc1, 0x55, // FE::Graphics::ImGuiPass::DrawPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_eca0ac0c1e764f8587ba91b8e604c155()
         {
             static Rtti::Type typeInstance;
@@ -9754,16 +9926,6 @@ namespace FE::Graphics::ImGuiPass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
-            0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_colorTarget
-            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
-            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_vertices
-            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
-            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_indices
-            0x9f, 0x23, 0x33, 0x0e, 0x8c, 0x01, 0x41, 0x19,
-            0xa9, 0x57, 0x0d, 0x9a, 0x80, 0x8c, 0x72, 0x73, // FE::Graphics::Core::PassTextureAccess m_textures
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_colorTarget = {};
@@ -9775,26 +9937,22 @@ namespace FE::Graphics::ImGuiPass
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_textures = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_colorTarget",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DrawPassDesc::m_colorTarget,
-                                                        kAttributes_m_colorTarget,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertices",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DrawPassDesc::m_vertices,
-                                                        kAttributes_m_vertices,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_indices",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &DrawPassDesc::m_indices,
-                                                        kAttributes_m_indices,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<8>("m_textures",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &DrawPassDesc::m_textures,
-                                                        kAttributes_m_textures,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_colorTarget",
+                                                     &DrawPassDesc::m_colorTarget,
+                                                     kAttributes_m_colorTarget,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_vertices",
+                                                     &DrawPassDesc::m_vertices,
+                                                     kAttributes_m_vertices,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_indices",
+                                                     &DrawPassDesc::m_indices,
+                                                     kAttributes_m_indices,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_textures",
+                                                     &DrawPassDesc::m_textures,
+                                                     kAttributes_m_textures,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DrawPassDesc>(typeInstance,
@@ -9802,7 +9960,11 @@ namespace FE::Graphics::ImGuiPass
                                            "FE::Graphics::ImGuiPass::DrawPassDesc",
                                            kBaseClassTypeIDs,
                                            kAttributes,
-                                           kFields);
+                                           kFields,
+                                           Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_eca0ac0c1e764f8587ba91b8e604c155(static_cast<DrawPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_eca0ac0c1e764f8587ba91b8e604c155(&DrawPassDesc::Reflect);
@@ -9817,6 +9979,22 @@ namespace FE::Graphics::Tools::DepthPyramid
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_ef57256dae4e49b2ba5e3bd75c72b666(SpdPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xef, 0x57, 0x25, 0x6d, 0xae, 0x4e, 0x49, 0xb2,
+                0xba, 0x5e, 0x3b, 0xd7, 0x5c, 0x72, 0xb6, 0x66, // FE::Graphics::Tools::DepthPyramid::SpdPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_ef57256dae4e49b2ba5e3bd75c72b666()
         {
             static Rtti::Type typeInstance;
@@ -9839,12 +10017,6 @@ namespace FE::Graphics::Tools::DepthPyramid
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xc7, 0xf6, 0xfc, 0x3c, 0x9b, 0xb0, 0x41, 0x3e,
-            0x84, 0xf3, 0x71, 0x55, 0xb6, 0xee, 0x13, 0xc8, // FE::Graphics::Tools::DepthPyramid::SpdConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -9852,16 +10024,14 @@ namespace FE::Graphics::Tools::DepthPyramid
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &SpdPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &SpdPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SpdPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SpdPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<SpdPassDesc>(typeInstance,
@@ -9869,7 +10039,11 @@ namespace FE::Graphics::Tools::DepthPyramid
                                           "FE::Graphics::Tools::DepthPyramid::SpdPassDesc",
                                           kBaseClassTypeIDs,
                                           kAttributes,
-                                          kFields);
+                                          kFields,
+                                          Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_ef57256dae4e49b2ba5e3bd75c72b666(static_cast<SpdPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ef57256dae4e49b2ba5e3bd75c72b666(&SpdPassDesc::Reflect);
@@ -9884,6 +10058,22 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f176bf50d62d46ed92118ee6b1c45959(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xf1, 0x76, 0xbf, 0x50, 0xd6, 0x2d, 0x46, 0xed, 0x92,
+                0x11, 0x8e, 0xe6, 0xb1, 0xc4, 0x59, 0x59, // FE::Graphics::MeshPass::OcclusionCullMeshInstances::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_f176bf50d62d46ed92118ee6b1c45959()
         {
             static Rtti::Type typeInstance;
@@ -9906,32 +10096,6 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[12 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_candidates
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_dispatch
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_classification
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_visibility
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_stats
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_depthPyramid
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_visibilityCapacity
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_depthPyramidSize
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_depthPyramidUvScale
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_depthPyramidMipCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_phase
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
@@ -9959,66 +10123,54 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_phase = {};
 
         static const festd::array<Rtti::FieldInfo, 12> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_view,
-                                                        kAttributes_m_view,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_candidates",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_candidates,
-                                                        kAttributes_m_candidates,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dispatch",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_dispatch,
-                                                        kAttributes_m_dispatch,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_classification",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_classification,
-                                                        kAttributes_m_classification,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibility",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_visibility,
-                                                        kAttributes_m_visibility,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_stats",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &Constants::m_stats,
-                                                        kAttributes_m_stats,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramid",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramid,
-                                                        kAttributes_m_depthPyramid,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_visibilityCapacity",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &Constants::m_visibilityCapacity,
-                                                        kAttributes_m_visibilityCapacity,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramidSize",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramidSize,
-                                                        kAttributes_m_depthPyramidSize,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramidUvScale",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramidUvScale,
-                                                        kAttributes_m_depthPyramidUvScale,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthPyramidMipCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
-                                                        &Constants::m_depthPyramidMipCount,
-                                                        kAttributes_m_depthPyramidMipCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_phase",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
-                                                        &Constants::m_phase,
-                                                        kAttributes_m_phase,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_view",
+                                                     &Constants::m_view,
+                                                     kAttributes_m_view,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_candidates",
+                                                     &Constants::m_candidates,
+                                                     kAttributes_m_candidates,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_dispatch",
+                                                     &Constants::m_dispatch,
+                                                     kAttributes_m_dispatch,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_classification",
+                                                     &Constants::m_classification,
+                                                     kAttributes_m_classification,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibility",
+                                                     &Constants::m_visibility,
+                                                     kAttributes_m_visibility,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_stats",
+                                                     &Constants::m_stats,
+                                                     kAttributes_m_stats,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramid",
+                                                     &Constants::m_depthPyramid,
+                                                     kAttributes_m_depthPyramid,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_visibilityCapacity",
+                                                     &Constants::m_visibilityCapacity,
+                                                     kAttributes_m_visibilityCapacity,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidSize",
+                                                     &Constants::m_depthPyramidSize,
+                                                     kAttributes_m_depthPyramidSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidUvScale",
+                                                     &Constants::m_depthPyramidUvScale,
+                                                     kAttributes_m_depthPyramidUvScale,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidMipCount",
+                                                     &Constants::m_depthPyramidMipCount,
+                                                     kAttributes_m_depthPyramidMipCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_phase",
+                                                     &Constants::m_phase,
+                                                     kAttributes_m_phase,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -10026,7 +10178,11 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
                                         "FE::Graphics::MeshPass::OcclusionCullMeshInstances::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_f176bf50d62d46ed92118ee6b1c45959(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f176bf50d62d46ed92118ee6b1c45959(&Constants::Reflect);
@@ -10041,6 +10197,22 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f32c621287544f419c9163458fb524da(PassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xf3, 0x2c, 0x62, 0x12, 0x87, 0x54, 0x4f, 0x41,
+                0x9c, 0x91, 0x63, 0x45, 0x8f, 0xb5, 0x24, 0xda, // FE::Graphics::MeshPass::ScanMeshBuckets::PassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_f32c621287544f419c9163458fb524da()
         {
             static Rtti::Type typeInstance;
@@ -10063,12 +10235,6 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-            0xb1, 0x04, 0xcd, 0x64, 0x92, 0xa0, 0x42, 0x99,
-            0x9a, 0xe4, 0x0d, 0xf2, 0x7b, 0x73, 0xcb, 0x75, // FE::Graphics::MeshPass::ScanMeshBuckets::Constants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -10076,16 +10242,14 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &PassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &PassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &PassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<PassDesc>(typeInstance,
@@ -10093,7 +10257,11 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
                                        "FE::Graphics::MeshPass::ScanMeshBuckets::PassDesc",
                                        kBaseClassTypeIDs,
                                        kAttributes,
-                                       kFields);
+                                       kFields,
+                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_f32c621287544f419c9163458fb524da(static_cast<PassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f32c621287544f419c9163458fb524da(&PassDesc::Reflect);
@@ -10108,6 +10276,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f3a593e6580f4345a508523659f30882(ClearSurfaceConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xf3, 0xa5, 0x93, 0xe6, 0x58, 0x0f, 0x43, 0x45,
+                0xa5, 0x08, 0x52, 0x36, 0x59, 0xf3, 0x08, 0x82, // FE::Graphics::Visibility::ClearSurfaceConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_f3a593e6580f4345a508523659f30882()
         {
             static Rtti::Type typeInstance;
@@ -10130,14 +10314,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_counts
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_cursors
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_bucketCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counts = {};
@@ -10147,21 +10323,18 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_bucketCount = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_counts",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ClearSurfaceConstants::m_counts,
-                                                        kAttributes_m_counts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cursors",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &ClearSurfaceConstants::m_cursors,
-                                                        kAttributes_m_cursors,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_bucketCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &ClearSurfaceConstants::m_bucketCount,
-                                                        kAttributes_m_bucketCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counts",
+                                                     &ClearSurfaceConstants::m_counts,
+                                                     kAttributes_m_counts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_cursors",
+                                                     &ClearSurfaceConstants::m_cursors,
+                                                     kAttributes_m_cursors,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_bucketCount",
+                                                     &ClearSurfaceConstants::m_bucketCount,
+                                                     kAttributes_m_bucketCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<ClearSurfaceConstants>(typeInstance,
@@ -10169,7 +10342,11 @@ namespace FE::Graphics::Visibility
                                                     "FE::Graphics::Visibility::ClearSurfaceConstants",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields);
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_f3a593e6580f4345a508523659f30882(static_cast<ClearSurfaceConstants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f3a593e6580f4345a508523659f30882(&ClearSurfaceConstants::Reflect);
@@ -10184,6 +10361,22 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f43cde27be2f41a5ba1e64f6d377f746(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xf4, 0x3c, 0xde, 0x27, 0xbe, 0x2f, 0x41, 0xa5,
+                0xba, 0x1e, 0x64, 0xf6, 0xd3, 0x77, 0xf7, 0x46, // FE::Graphics::MeshPass::ScatterMeshWork::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_f43cde27be2f41a5ba1e64f6d377f746()
         {
             static Rtti::Type typeInstance;
@@ -10206,24 +10399,6 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[8 * sizeof(Rtti::TypeID)] = {
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_classification
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_instanceBuckets
-            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
-            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_buckets
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_cursors
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_instances
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_work
-            0xb0, 0x30, 0x04, 0xc4, 0x31, 0x08, 0x46, 0xb1,
-            0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_stats
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_phase
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_classification = {};
@@ -10243,46 +10418,38 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_phase = {};
 
         static const festd::array<Rtti::FieldInfo, 8> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_classification",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_classification,
-                                                        kAttributes_m_classification,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceBuckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_instanceBuckets,
-                                                        kAttributes_m_instanceBuckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buckets",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_buckets,
-                                                        kAttributes_m_buckets,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cursors",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_cursors,
-                                                        kAttributes_m_cursors,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instances",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_instances,
-                                                        kAttributes_m_instances,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_work",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
-                                                        &Constants::m_work,
-                                                        kAttributes_m_work,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_stats",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &Constants::m_stats,
-                                                        kAttributes_m_stats,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_phase",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &Constants::m_phase,
-                                                        kAttributes_m_phase,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_classification",
+                                                     &Constants::m_classification,
+                                                     kAttributes_m_classification,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_instanceBuckets",
+                                                     &Constants::m_instanceBuckets,
+                                                     kAttributes_m_instanceBuckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_buckets",
+                                                     &Constants::m_buckets,
+                                                     kAttributes_m_buckets,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_cursors",
+                                                     &Constants::m_cursors,
+                                                     kAttributes_m_cursors,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_instances",
+                                                     &Constants::m_instances,
+                                                     kAttributes_m_instances,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_work",
+                                                     &Constants::m_work,
+                                                     kAttributes_m_work,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_stats",
+                                                     &Constants::m_stats,
+                                                     kAttributes_m_stats,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_phase",
+                                                     &Constants::m_phase,
+                                                     kAttributes_m_phase,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -10290,7 +10457,11 @@ namespace FE::Graphics::MeshPass::ScatterMeshWork
                                         "FE::Graphics::MeshPass::ScatterMeshWork::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_f43cde27be2f41a5ba1e64f6d377f746(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f43cde27be2f41a5ba1e64f6d377f746(&Constants::Reflect);
@@ -10305,6 +10476,22 @@ namespace FE::Graphics
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f49e166143f44a5e836b147be60828ed(MeshLodAssetInfo* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xf4, 0x9e, 0x16, 0x61, 0x43, 0xf4, 0x4a, 0x5e,
+                0x83, 0x6b, 0x14, 0x7b, 0xe6, 0x08, 0x28, 0xed, // FE::Graphics::MeshLodAssetInfo (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_f49e166143f44a5e836b147be60828ed()
         {
             static Rtti::Type typeInstance;
@@ -10327,16 +10514,6 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_vertexCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_indexCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_meshletCount
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_primitiveCount
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_vertexCount = {};
@@ -10348,26 +10525,22 @@ namespace FE::Graphics
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_primitiveCount = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &MeshLodAssetInfo::m_vertexCount,
-                                                        kAttributes_m_vertexCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_indexCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &MeshLodAssetInfo::m_indexCount,
-                                                        kAttributes_m_indexCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &MeshLodAssetInfo::m_meshletCount,
-                                                        kAttributes_m_meshletCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_primitiveCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &MeshLodAssetInfo::m_primitiveCount,
-                                                        kAttributes_m_primitiveCount,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_vertexCount",
+                                                     &MeshLodAssetInfo::m_vertexCount,
+                                                     kAttributes_m_vertexCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_indexCount",
+                                                     &MeshLodAssetInfo::m_indexCount,
+                                                     kAttributes_m_indexCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_meshletCount",
+                                                     &MeshLodAssetInfo::m_meshletCount,
+                                                     kAttributes_m_meshletCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_primitiveCount",
+                                                     &MeshLodAssetInfo::m_primitiveCount,
+                                                     kAttributes_m_primitiveCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<MeshLodAssetInfo>(typeInstance,
@@ -10375,7 +10548,11 @@ namespace FE::Graphics
                                                "FE::Graphics::MeshLodAssetInfo",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_f49e166143f44a5e836b147be60828ed(static_cast<MeshLodAssetInfo*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f49e166143f44a5e836b147be60828ed(&MeshLodAssetInfo::Reflect);
@@ -10445,6 +10622,22 @@ namespace FE::Graphics::Visibility
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_fc55e539c1fd4d459ac95e31d9c623e1(DeferredPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xfc, 0x55, 0xe5, 0x39, 0xc1, 0xfd, 0x4d, 0x45,
+                0x9a, 0xc9, 0x5e, 0x31, 0xd9, 0xc6, 0x23, 0xe1, // FE::Graphics::Visibility::DeferredPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_fc55e539c1fd4d459ac95e31d9c623e1()
         {
             static Rtti::Type typeInstance;
@@ -10467,14 +10660,6 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-            0xb2, 0xa5, 0x5d, 0xb1, 0x85, 0x34, 0x47, 0x5d,
-            0xa6, 0xe0, 0x5c, 0x4c, 0x02, 0x58, 0x61, 0xfd, // FE::Graphics::Visibility::DeferredConstants m_constants
-            0xbd, 0xe9, 0xab, 0x4a, 0xd5, 0x06, 0x4b, 0x19,
-            0x96, 0x12, 0x3f, 0xb7, 0xe5, 0x13, 0x3e, 0xea, // FE::Graphics::Core::PassComputePipeline m_pipeline
-            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8,
-            0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
@@ -10484,21 +10669,18 @@ namespace FE::Graphics::Visibility
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
 
         static const festd::array<Rtti::FieldInfo, 3> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DeferredPassDesc::m_constants,
-                                                        kAttributes_m_constants,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DeferredPassDesc::m_pipeline,
-                                                        kAttributes_m_pipeline,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &DeferredPassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &DeferredPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &DeferredPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_arguments",
+                                                     &DeferredPassDesc::m_arguments,
+                                                     kAttributes_m_arguments,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<DeferredPassDesc>(typeInstance,
@@ -10506,7 +10688,11 @@ namespace FE::Graphics::Visibility
                                                "FE::Graphics::Visibility::DeferredPassDesc",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_fc55e539c1fd4d459ac95e31d9c623e1(static_cast<DeferredPassDesc*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_fc55e539c1fd4d459ac95e31d9c623e1(&DeferredPassDesc::Reflect);
@@ -10521,6 +10707,22 @@ namespace FE::Graphics::Tools::Blit
 
     namespace
     {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_ffb6b4343bfa40588192259345db489b(Constants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xff, 0xb6, 0xb4, 0x34, 0x3b, 0xfa, 0x40, 0x58,
+                0x81, 0x92, 0x25, 0x93, 0x45, 0xdb, 0x48, 0x9b, // FE::Graphics::Tools::Blit::Constants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
         Rtti::Type& RTTI_GetMutableType_ffb6b4343bfa40588192259345db489b()
         {
             static Rtti::Type typeInstance;
@@ -10543,18 +10745,6 @@ namespace FE::Graphics::Tools::Blit
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_uvOffset
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_uvScale
-            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
-            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_input
-            0x0a, 0xdc, 0x65, 0xde, 0x1b, 0xa6, 0x4a, 0x60,
-            0xb3, 0x20, 0x33, 0x3a, 0xd0, 0xc2, 0xf2, 0x7b, // FE::Graphics::SamplerDescriptor m_sampler
-            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
-            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_padding
-        };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_uvOffset = {};
@@ -10568,31 +10758,26 @@ namespace FE::Graphics::Tools::Blit
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_padding = {};
 
         static const festd::array<Rtti::FieldInfo, 5> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_uvOffset",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &Constants::m_uvOffset,
-                                                        kAttributes_m_uvOffset,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_uvScale",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_uvScale,
-                                                        kAttributes_m_uvScale,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_input",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &Constants::m_input,
-                                                        kAttributes_m_input,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sampler",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &Constants::m_sampler,
-                                                        kAttributes_m_sampler,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_padding",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &Constants::m_padding,
-                                                        kAttributes_m_padding,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_uvOffset",
+                                                     &Constants::m_uvOffset,
+                                                     kAttributes_m_uvOffset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_uvScale",
+                                                     &Constants::m_uvScale,
+                                                     kAttributes_m_uvScale,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_input",
+                                                     &Constants::m_input,
+                                                     kAttributes_m_input,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sampler",
+                                                     &Constants::m_sampler,
+                                                     kAttributes_m_sampler,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_padding",
+                                                     &Constants::m_padding,
+                                                     kAttributes_m_padding,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
         context.ReflectClass<Constants>(typeInstance,
@@ -10600,7 +10785,11 @@ namespace FE::Graphics::Tools::Blit
                                         "FE::Graphics::Tools::Blit::Constants",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_ffb6b4343bfa40588192259345db489b(static_cast<Constants*>(instance), target);
+        };
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ffb6b4343bfa40588192259345db489b(&Constants::Reflect);
