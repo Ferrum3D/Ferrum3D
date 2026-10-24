@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Utils/Icons.h>
 #include <Framework/Input/Action.h>
 #include <Framework/Input/Core/Keys.h>
 #include <festd/variant.h>
@@ -119,7 +120,7 @@ namespace FE::Input
     };
 
 
-    struct MappingTable final
+    struct FE_META(Rtti::Icon(FE_ICON_INPUT)) MappingTable final
     {
         FE_RTTI_Reflect("C27E593F-6199-41FB-AFFD-8E73F51ECCFE");
         FE_RTTI_Serialize();

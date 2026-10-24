@@ -33,6 +33,7 @@ namespace FE::Rtti
         kProtected = 1 << 3,
         kPublic = 1 << 4,
         kPointer = 1 << 5,
+        kTransient = 1 << 6,
 
         kAll = Constants::kMaxU32,
     };

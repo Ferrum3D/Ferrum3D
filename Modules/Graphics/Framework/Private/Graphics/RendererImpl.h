@@ -42,6 +42,7 @@ namespace FE::Graphics
             View* m_view = nullptr;
             Core::Viewport* m_viewport = nullptr;
             Core::FrameGraphBlackboard* m_blackboard = nullptr;
+            Core::Texture* m_texture = nullptr;
         };
 
 

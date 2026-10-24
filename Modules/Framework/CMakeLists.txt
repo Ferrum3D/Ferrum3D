@@ -43,3 +43,5 @@ get_property("TARGET_SOURCE_FILES" TARGET FeFramework PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
 
 add_subdirectory(Tests)
+
+target_compile_definitions(FeFramework PRIVATE FE_IMGUI_NERD_FONT_PATH="${FE_PROJECT_ROOT}/ThirdParty/nerd-fonts/SymbolsNerdFontMono-Regular.ttf")

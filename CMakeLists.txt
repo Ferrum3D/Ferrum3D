@@ -14,6 +14,7 @@ list(PREPEND CMAKE_MODULE_PATH "${FE_PROJECT_ROOT}/cmake")
 
 include(Config)
 include(Dependencies)
+include(GameProject)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/IO/Assets.h>
 #include <Core/Math/Vector4.h>
+#include <Core/Utils/Icons.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <festd/string.h>
@@ -77,7 +78,7 @@ namespace FE::Graphics
     };
 
 
-    struct MaterialAsset final
+    struct FE_META(Rtti::Icon(FE_ICON_MATERIAL)) MaterialAsset final
     {
         festd::string m_name;
         festd::vector<MaterialSpecializerDesc> m_specializers;
@@ -101,7 +102,7 @@ namespace FE::Graphics
     };
 
 
-    struct MaterialInstanceAsset final
+    struct FE_META(Rtti::Icon(FE_ICON_MATERIAL)) MaterialInstanceAsset final
     {
         IO::Link<MaterialAsset> m_material;
         festd::string m_permutationKey;

@@ -498,7 +498,8 @@ namespace FE::Serialization::Tests
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &TestObject::m_transient,
                                                         kAttributes_m_transient,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<TestObject>(typeInstance,

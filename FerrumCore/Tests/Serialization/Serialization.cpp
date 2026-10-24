@@ -1,3 +1,4 @@
+#include <Core/IO/AssetFile.h>
 #include <Core/IO/MemoryStream.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/Math/Aabb.h>
@@ -11,6 +12,7 @@
 #include <Core/Math/Vector3UInt.h>
 #include <Core/RTTI/Any.h>
 #include <Core/Serialization/BinarySerialization.h>
+#include <Core/Serialization/Document.h>
 #include <Core/Serialization/JsonSerialization.h>
 #include <Serialization/SerializationTypes.h>
 #include <gtest/gtest.h>
@@ -653,3 +655,33 @@ namespace FE::Serialization::Tests
         EXPECT_EQ(descType.m_fields[0].m_name, "m_scale");
     }
 } // namespace FE::Serialization::Tests
+
+
+TEST(SerializationDocument, DetectsAndLoadsAssetDefinitionsInEverySupportedFormat)
+{
+    using namespace FE;
+    const auto roundTrip = [](Serialization::SerializationFormat& format) {
+        IO::AssetFile authored;
+        auto& product = authored.m_artifacts.emplace_back();
+        product.m_name = "Example";
+        product.m_assetId = Uuid::Random();
+        product.m_assetTypeId = Rtti::GetTypeID<uint32_t>();
+        IO::WriteOnlyMemoryStream output;
+        Serialization::SerializationContext writer(&output, format);
+        ASSERT_EQ(writer.Store(authored), Serialization::ResultCode::kSuccess);
+        festd::pmr::vector<std::byte> bytes;
+        output.DumpAll(bytes);
+        IO::ReadOnlyMemoryStream input(bytes);
+        IO::AssetFile loaded;
+        ASSERT_EQ(Serialization::LoadDocument(input, loaded), Serialization::ResultCode::kSuccess);
+        ASSERT_EQ(loaded.m_artifacts.size(), 1);
+        EXPECT_EQ(loaded.m_artifacts.front().m_name, product.m_name);
+        EXPECT_EQ(loaded.m_artifacts.front().m_assetId, product.m_assetId);
+    };
+    Serialization::JsonFormat json;
+    roundTrip(json);
+    Serialization::TaggedBinaryFormat tagged;
+    roundTrip(tagged);
+    Serialization::PackedBinaryFormat packed;
+    roundTrip(packed);
+}

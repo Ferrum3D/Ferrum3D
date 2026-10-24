@@ -27,6 +27,7 @@ namespace FE::Rtti
         }
 
         bool Emplace(const Type& type);
+        bool Copy(const Type& type, const void* value);
 
         void Reset();
 

@@ -9,6 +9,7 @@
 #include <Core/Compression/Compression.h>
 #include <Core/Env/Environment.h>
 #include <Core/IO/Artifact.h>
+#include <Core/IO/AssetFile.h>
 #include <Core/IO/Async.h>
 #include <Core/IO/AsyncImpl.h>
 #include <Core/IO/BaseIO.h>
@@ -347,6 +348,132 @@ namespace FE::Rtti
 
     static TypeRegistrar GTypeRegistrar_174196bd8bfe4049b72e8a07ad372659(&Internal::ExternalTypeReflector<int32_t>::Reflect);
 } // namespace FE::Rtti
+
+
+namespace FE::IO
+{
+    const Rtti::TypeID AssetFile::TypeID = Rtti::TypeID{
+        0x19, 0x6d, 0x6b, 0x77, 0x48, 0x4f, 0x42, 0x9b, 0xa7, 0x4f, 0x0e, 0x99, 0xc4, 0xf3, 0x67, 0xb2,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_196d6b77484f429ba74f0e99c4f367b2()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& AssetFile::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_196d6b77484f429ba74f0e99c4f367b2();
+    }
+
+    void AssetFile::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_196d6b77484f429ba74f0e99c4f367b2();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x19, 0x6d, 0x6b, 0x77, 0x48, 0x4f, 0x42, 0x9b, 0xa7, 0x4f, 0x0e, 0x99, 0xc4, 0xf3, 0x67, 0xb2, // FE::IO::AssetFile
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_sourcePath
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_sourceDependencies
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_artifacts
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_sourcePath = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_sourceDependencies = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_artifacts = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourcePath",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &AssetFile::m_sourcePath,
+                                                        kAttributes_m_sourcePath,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourceDependencies",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &AssetFile::m_sourceDependencies,
+                                                        kAttributes_m_sourceDependencies,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_artifacts",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &AssetFile::m_artifacts,
+                                                        kAttributes_m_artifacts,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<AssetFile>(typeInstance,
+                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                        "FE::IO::AssetFile",
+                                        kBaseClassTypeIDs,
+                                        kAttributes,
+                                        kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_196d6b77484f429ba74f0e99c4f367b2(&AssetFile::Reflect);
+
+    FE::Serialization::ResultCode AssetFile::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_sourcePath", m_sourcePath);
+            object.Field("m_sourceDependencies", m_sourceDependencies);
+            object.Field("m_artifacts", m_artifacts);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode AssetFile::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_sourcePath", m_sourcePath);
+            object.Field("m_sourceDependencies", m_sourceDependencies);
+            object.Field("m_artifacts", m_artifacts);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t AssetFile::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x19, 0x6d, 0x6b, 0x77, 0x48, 0x4f, 0x42, 0x9b, 0xa7, 0x4f, 0x0e, 0x99, 0xc4, 0xf3, 0x67, 0xb2,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_sourcePath", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_sourcePath)>());
+            hasher.Update("m_sourceDependencies", 20);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_sourceDependencies)>());
+            hasher.Update("m_artifacts", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_artifacts)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t AssetFile::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::IO
 
 
 namespace FE
@@ -1487,6 +1614,211 @@ namespace FE
 } // namespace FE
 
 
+namespace FE::IO
+{
+    const Rtti::TypeID AssetFileArtifact::TypeID = Rtti::TypeID{
+        0x5e, 0xc8, 0x9b, 0x68, 0x37, 0x2e, 0x43, 0x88, 0xbd, 0x0d, 0x86, 0x9c, 0x03, 0xc9, 0xc6, 0x5d,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_5ec89b68372e4388bd0d869c03c9c65d()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& AssetFileArtifact::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_5ec89b68372e4388bd0d869c03c9c65d();
+    }
+
+    void AssetFileArtifact::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_5ec89b68372e4388bd0d869c03c9c65d();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x5e, 0xc8, 0x9b, 0x68, 0x37, 0x2e, 0x43, 0x88,
+            0xbd, 0x0d, 0x86, 0x9c, 0x03, 0xc9, 0xc6, 0x5d, // FE::IO::AssetFileArtifact
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[9 * sizeof(Rtti::TypeID)] = {
+            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
+            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_productKey
+            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
+            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_name
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_assetId
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_assetTypeId
+            0xab, 0x67, 0xd9, 0xcb, 0x4c, 0x40, 0x44, 0xe8, 0x8c,
+            0x75, 0xb6, 0x7b, 0x46, 0xb1, 0xb8, 0x68, // FE::Rtti::Any m_buildSettings
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_dependencies
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lastBuildKey
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_builtArtifactId
+            0xdd, 0x3b, 0xa9, 0xbb, 0xe7, 0xd2, 0x42, 0x17, 0xa7,
+            0x97, 0xf7, 0xc8, 0x1e, 0xf3, 0x51, 0xa2, // bool m_isRemoved
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_productKey = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_assetId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_assetTypeId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_buildSettings = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependencies = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lastBuildKey = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_builtArtifactId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_isRemoved = {};
+
+        static const festd::array<Rtti::FieldInfo, 9> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_productKey",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_productKey,
+                                                        kAttributes_m_productKey,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_name,
+                                                        kAttributes_m_name,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_assetId",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_assetId,
+                                                        kAttributes_m_assetId,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_assetTypeId",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_assetTypeId,
+                                                        kAttributes_m_assetTypeId,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buildSettings",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_buildSettings,
+                                                        kAttributes_m_buildSettings,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dependencies",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_dependencies,
+                                                        kAttributes_m_dependencies,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lastBuildKey",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_lastBuildKey,
+                                                        kAttributes_m_lastBuildKey,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_builtArtifactId",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_builtArtifactId,
+                                                        kAttributes_m_builtArtifactId,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_isRemoved",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        &AssetFileArtifact::m_isRemoved,
+                                                        kAttributes_m_isRemoved,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<AssetFileArtifact>(typeInstance,
+                                                Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                "FE::IO::AssetFileArtifact",
+                                                kBaseClassTypeIDs,
+                                                kAttributes,
+                                                kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_5ec89b68372e4388bd0d869c03c9c65d(&AssetFileArtifact::Reflect);
+
+    FE::Serialization::ResultCode AssetFileArtifact::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_productKey", m_productKey);
+            object.Field("m_name", m_name);
+            object.Field("m_assetId", m_assetId);
+            object.Field("m_assetTypeId", m_assetTypeId);
+            object.Field("m_buildSettings", m_buildSettings);
+            object.Field("m_dependencies", m_dependencies);
+            object.Field("m_lastBuildKey", m_lastBuildKey);
+            object.Field("m_builtArtifactId", m_builtArtifactId);
+            object.Field("m_isRemoved", m_isRemoved);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode AssetFileArtifact::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_productKey", m_productKey);
+            object.Field("m_name", m_name);
+            object.Field("m_assetId", m_assetId);
+            object.Field("m_assetTypeId", m_assetTypeId);
+            object.Field("m_buildSettings", m_buildSettings);
+            object.Field("m_dependencies", m_dependencies);
+            object.Field("m_lastBuildKey", m_lastBuildKey);
+            object.Field("m_builtArtifactId", m_builtArtifactId);
+            object.Field("m_isRemoved", m_isRemoved);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t AssetFileArtifact::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x5e, 0xc8, 0x9b, 0x68, 0x37, 0x2e, 0x43, 0x88, 0xbd, 0x0d, 0x86, 0x9c, 0x03, 0xc9, 0xc6, 0x5d,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_productKey", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_productKey)>());
+            hasher.Update("m_name", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_name)>());
+            hasher.Update("m_assetId", 9);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_assetId)>());
+            hasher.Update("m_assetTypeId", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_assetTypeId)>());
+            hasher.Update("m_buildSettings", 15);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_buildSettings)>());
+            hasher.Update("m_dependencies", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_dependencies)>());
+            hasher.Update("m_lastBuildKey", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_lastBuildKey)>());
+            hasher.Update("m_builtArtifactId", 17);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_builtArtifactId)>());
+            hasher.Update("m_isRemoved", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_isRemoved)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t AssetFileArtifact::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::IO
+
+
 namespace FE
 {
     const Rtti::TypeID Sphere::TypeID = Rtti::TypeID{
@@ -2091,6 +2423,133 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_7c4bc48bebd345518f29a88adbed7ce8(
         &Internal::ExternalTypeReflector<FE::RectBase<int>>::Reflect);
 } // namespace FE::Rtti
+
+
+namespace FE::IO
+{
+    const Rtti::TypeID AssetFileDependency::TypeID = Rtti::TypeID{
+        0x7c, 0x65, 0x43, 0xf2, 0x90, 0xa8, 0x45, 0xf5, 0xb9, 0x3d, 0xc7, 0x60, 0x60, 0x6b, 0x31, 0x32,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_7c6543f290a845f5b93dc760606b3132()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& AssetFileDependency::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_7c6543f290a845f5b93dc760606b3132();
+    }
+
+    void AssetFileDependency::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_7c6543f290a845f5b93dc760606b3132();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x7c, 0x65, 0x43, 0xf2, 0x90, 0xa8, 0x45, 0xf5,
+            0xb9, 0x3d, 0xc7, 0x60, 0x60, 0x6b, 0x31, 0x32, // FE::IO::AssetFileDependency
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_assetId
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_expectedTypeId
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_kind
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_assetId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_expectedTypeId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_kind = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_assetId",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &AssetFileDependency::m_assetId,
+                                                        kAttributes_m_assetId,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_expectedTypeId",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &AssetFileDependency::m_expectedTypeId,
+                                                        kAttributes_m_expectedTypeId,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_kind",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &AssetFileDependency::m_kind,
+                                                        kAttributes_m_kind,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<AssetFileDependency>(typeInstance,
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                  "FE::IO::AssetFileDependency",
+                                                  kBaseClassTypeIDs,
+                                                  kAttributes,
+                                                  kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_7c6543f290a845f5b93dc760606b3132(&AssetFileDependency::Reflect);
+
+    FE::Serialization::ResultCode AssetFileDependency::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_assetId", m_assetId);
+            object.Field("m_expectedTypeId", m_expectedTypeId);
+            object.Field("m_kind", m_kind);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode AssetFileDependency::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_assetId", m_assetId);
+            object.Field("m_expectedTypeId", m_expectedTypeId);
+            object.Field("m_kind", m_kind);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t AssetFileDependency::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x7c, 0x65, 0x43, 0xf2, 0x90, 0xa8, 0x45, 0xf5, 0xb9, 0x3d, 0xc7, 0x60, 0x60, 0x6b, 0x31, 0x32,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_assetId", 9);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_assetId)>());
+            hasher.Update("m_expectedTypeId", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_expectedTypeId)>());
+            hasher.Update("m_kind", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_kind)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t AssetFileDependency::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::IO
 
 
 namespace FE::Rtti

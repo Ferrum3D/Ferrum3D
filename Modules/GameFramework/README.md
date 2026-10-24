@@ -2,6 +2,73 @@
 
 `FeGameFramework` is the separate engine-system project. It depends on `FeFramework`, which retains the reusable entity runtime and its GPU-independent tests. GameFramework owns transformation, graphics and streaming components and systems; other engine systems belong here as well. It also depends on Graphics for scene integration.
 
+## Editor
+
+`FE::Editor::Application` derives from `GameFramework::Application`. Include
+`GameFramework/Editor/Application.h`, initialize it with the same catalog/world settings,
+and call `Run()` and `Shutdown()` as for the game application. Override
+`DrawGameEditorWindows()` in the game's shared library to add project-specific tools.
+
+The dock layout contains World, Entity, Asset Browser, and Main Viewport. World visits
+root entities through `TraverseRoots` and follows child links only for expanded nodes.
+Entity edits the selected entity's components through existing RTTI field descriptors and
+submits type-erased component replacement commands. Editor controls identify primitive
+and math types by their existing type IDs. Other field types are listed as unsupported;
+containers, variants, and asset references await a future RTTI rework. Runtime fields are
+read-only. Component types have no dedicated inspector controls.
+
+Type icons come from `FE_META(Rtti::Icon(FE_ICON_MESH))` metadata; `Rtti::DisplayName`
+provides optional display labels. Icons are string-literal macros from `Core/Utils/Icons.h`,
+so ImGui labels can concatenate them directly, for example `FE_ICON_OPEN " Open..."`.
+The ImGui backend merges the bundled Nerd Font into
+its vector font. The editor uses TexPak's palette and DPI-scaled metrics.
+
+Double-click a world tile or choose File > Open (Ctrl+O). The Open window accepts an
+asset-definition path relative to the game asset directory or absolute. Asset Browser
+uses Core's asset records and serialization APIs, supporting JSON, tagged binary, and
+packed binary definitions and metadata. Refresh Assets rescans products and metadata,
+deduplicating logical asset IDs. World content must have cooked artifacts in its catalog.
+
+Hold RMB in the focused viewport and use WASD to fly, Q/E to descend/ascend, and Shift
+to move faster. `Editor::CameraMovementSystem` reads the ordinary WorldInputService
+frame and shares movement math with the gameplay system. Copy the action and mapping
+`.asset` files from `Modules/GameFramework/EditorAssets` into each project's asset directory,
+keeping their asset IDs unchanged. GameSample keeps its copies under `Assets/Editor/Input`.
+Cook these project-local copies into the project's existing catalog manually after building
+FerrumCli; the game and editor use the same catalog:
+
+```powershell
+$cli = "cmake-build/windows-debug-msvc/Debug/ferrum.exe"
+$assets = "Samples/GameSample/Assets"
+$editorAssets = "$assets/Editor/Input"
+New-Item -ItemType Directory -Force $editorAssets | Out-Null
+Copy-Item "Modules/GameFramework/EditorAssets/*.asset" $editorAssets
+foreach ($name in "Move", "Elevate", "Look", "SpeedUp", "Mappings") {
+    & $cli build --asset "$editorAssets/$name.asset" --output $assets
+}
+```
+
+Copying and cooking editor assets are manual project setup steps. CMake does neither.
+
+The editor camera belongs to a transient registry excluded from snapshots. Camera writes
+are declared ECS query accesses, so rendering updates after idle frames as well. A
+separate selection system queries rendered meshes and publishes visibility IDs for GPU
+picking and outlines; it retains the picked frame's bindings until readback completes.
+Click geometry to select it and drag the viewport axes to translate it.
+
+Editor worlds start paused. World services, materialization, transforms, and graphics
+extraction continue every frame; fixed simulation/physics steps are not dispatched.
+`WorldTimeService::GetDeltaSeconds()` and `EntityUpdateContext::m_deltaSeconds` are zero.
+`GetUnpausedDeltaSeconds()` and `m_unpausedDeltaSeconds` expose wall-clock time to tools.
+Gameplay camera movement also respects pause, including mouse rotation.
+
+`fe_add_game_project()` creates `<Name>_Lib`, `<Name>_Editor`, and `<Name>` together.
+Specify `LIBRARY_DIRECTORY`, `GAME_MAIN`, `EDITOR_MAIN`, and `ASSET_DIRECTORY`; optional
+`FOLDER` and `LINK_LIBRARIES` configure project grouping and extra dependencies. Each
+launcher contains only its specified `main.cpp`. The shared library owns all application
+and editor code. Shader sources are copied during configuration; asset cooking remains
+an explicit FerrumCli operation.
+
 ## Stage 7 implementation
 
 - Reflected, serialized `TransformComponent` stores an authoritative `FE::Transform` (translation, quaternion rotation, and uniform scale).

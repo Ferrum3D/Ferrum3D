@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/Math/Octree.h>
 #include <Core/Math/Sphere.h>
 #include <Graphics/Assets/Assets.h>
@@ -122,6 +122,9 @@ namespace FE::Graphics
         }
 
         [[nodiscard]] IO::AssetRead<MeshAsset> FindAsset(DB::Ref<MeshGroupTable> group) const;
+
+        //! Visibility-buffer object identity for this generation-checked instance; zero means absent.
+        [[nodiscard]] uint32_t GetVisibilityID(MeshHandle handle) const;
 
         [[nodiscard]] MeshInstanceTable* GetMeshInstanceTable() const
         {

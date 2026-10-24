@@ -1,0 +1,32 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::IO::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "Move",
+                "m_assetId": "559321CE-41F8-4E63-A724-B5CE390F03C6",
+                "m_assetTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_buildSettings": {
+                    "m_typeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                    "m_value": {
+                        "m_type": 2,
+                        "m_processor": {
+                            "m_typeId": "D93D50DB-32B9-42B4-A49B-3C0AD6E7985A",
+                            "m_value": {}
+                        }
+                    }
+                },
+                "m_dependencies": [],
+                "m_lastBuildKey": "04B55843-EC13-4B8D-B481-3708FBC11E8A",
+                "m_builtArtifactId": "EF7A7240-6DBA-4923-B14E-E6197B0B691A",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

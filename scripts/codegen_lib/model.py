@@ -27,6 +27,7 @@ class FieldFlags(Flag):
     PROTECTED = 1 << 3
     PUBLIC = 1 << 4
     POINTER = 1 << 5
+    TRANSIENT = 1 << 6
 
     def __str__(self) -> str:
         return " | ".join(["Rtti::FieldFlags::k" + (x.name or "None").capitalize() for x in self])
@@ -38,7 +39,7 @@ class FieldInfo:
         self.name = name
         self.attributes = attributes
         self.codegen_attributes = codegen_attributes
-        self.flags = flags
+        self.flags = flags | (FieldFlags.TRANSIENT if "SkipSerializing" in codegen_attributes else FieldFlags.NONE)
         self.type = type
         self.enum_value = enum_value
         self.array_size = array_size
@@ -71,8 +72,8 @@ def get_module_path(type_declaration_file_path: str, project_dir: Path) -> Path:
         if part.parent.name == "Samples":
             return project_dir / part
 
-        if part.name == "Shaders":
-            return project_dir / "Modules/Graphics/Framework"
+        if part.name == "Shaders" and (project_dir / part.parent / "CMakeLists.txt").exists():
+            return project_dir / part.parent
 
         if part.name == "Tests" and (part.parent.name == "FerrumCore" or "Modules" in part.parts):
             return project_dir / part

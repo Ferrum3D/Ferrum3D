@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Framework/Entities/Base.h>
 
 namespace FE::Framework
@@ -11,9 +11,12 @@ namespace FE::Framework
         WorldSystem* m_system = nullptr;
         //! @brief Epoch that admitted this update context.
         uint64_t m_epoch = 0;
-        //! @brief Simulation step for FixedUpdate; zero for normal Update collection.
+        //! @brief Simulation delta; zero while paused, constant during FixedUpdate.
         float m_deltaSeconds = 0;
+        //! @brief Wall-clock frame delta for tools that continue while simulation is paused.
+        float m_unpausedDeltaSeconds = 0;
     };
+
 
     //! @brief Application-owned system that records deferred traversals and remains alive until Shutdown.
     struct WorldSystem

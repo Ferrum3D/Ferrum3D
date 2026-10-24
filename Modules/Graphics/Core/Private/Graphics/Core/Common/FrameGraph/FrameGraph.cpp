@@ -849,7 +849,18 @@ namespace FE::Graphics::Common
         for (Core::ResourceDescriptorInfo& descriptor : m_descriptorViews)
         {
             if (descriptor.m_resource->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted)
+            {
                 descriptor = {};
+                continue;
+            }
+
+            // Empty scenes can reserve a shader view for an upload that no pass consumes.
+            if (const auto* buffer = Rtti::Cast<const Buffer*>(descriptor.m_resource.Get()))
+            {
+                const auto shaderFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite;
+                if (!Bit::AnySet(buffer->GetInstance()->m_bindFlags, shaderFlags))
+                    descriptor = {};
+            }
         }
         m_descriptorManager->PrepareDescriptors(m_descriptorViews);
     }

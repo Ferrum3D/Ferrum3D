@@ -1,15 +1,23 @@
-#pragma once
+﻿#pragma once
 #include <Framework/Entities/EntityWorld.h>
 #include <Framework/Input/WorldInputService.h>
 
 namespace FE::GameFramework
 {
+    struct CameraMovementComponent;
+    struct TransformComponent;
+
+
     struct CameraInput final
     {
         Vector2 m_move{ 0, 0 };
         float m_elevate = 0;
         Vector2 m_look{ 0, 0 };
     };
+
+
+    Framework::QueryWriteResult ApplyCameraMovement(const CameraMovementComponent& movement, TransformComponent& transform,
+                                                    const CameraInput& input, float deltaSeconds, float speedScale = 1);
 
 
     struct CameraMovementSystem final : public Framework::WorldSystem

@@ -1,5 +1,6 @@
 #include <Core/Time/BaseTime.h>
 #include <Framework/Entities/WorldTimeService.h>
+#include <cmath>
 
 namespace FE::Framework
 {
@@ -7,6 +8,7 @@ namespace FE::Framework
     {
         m_previousTicks = Platform::GetTicks();
         m_deltaSeconds = 0;
+        m_unpausedDeltaSeconds = 0;
         m_elapsedSeconds = 0;
     }
 
@@ -16,7 +18,15 @@ namespace FE::Framework
         const uint64_t ticks = Platform::GetTicks();
         const double elapsed = static_cast<double>(ticks - m_previousTicks) * Platform::GetSecondsPerTick();
         m_previousTicks = ticks;
-        m_deltaSeconds = static_cast<float>(elapsed);
-        m_elapsedSeconds += elapsed;
+        Advance(static_cast<float>(elapsed));
+    }
+
+
+    void WorldTimeService::Advance(const float deltaSeconds)
+    {
+        FE_Assert(std::isfinite(deltaSeconds) && deltaSeconds >= 0);
+        m_unpausedDeltaSeconds = deltaSeconds;
+        m_deltaSeconds = m_paused ? 0 : m_unpausedDeltaSeconds;
+        m_elapsedSeconds += m_deltaSeconds;
     }
 } // namespace FE::Framework

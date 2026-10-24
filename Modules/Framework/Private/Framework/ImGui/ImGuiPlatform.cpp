@@ -1,3 +1,4 @@
+﻿#include <Core/IO/BaseIO.h>
 #include <Core/Time/BaseTime.h>
 #include <Framework/Application/Core/PlatformEvent.h>
 #include <Framework/Application/Core/PlatformMonitor.h>
@@ -226,12 +227,28 @@ namespace FE::Framework
         ImGui::SetAllocatorFunctions(&AllocateImGuiMemory, &FreeImGuiMemory);
         m_context = ImGui::CreateContext();
         ImGui::StyleColorsDark();
+        ImGui::GetStyle().FontSizeBase = 14;
+        ImGuiIO& fontIO = ImGui::GetIO();
+        ImFontConfig fontConfig;
+        fontConfig.RasterizerDensity = 4.0f;
+        fontIO.FontDefault = fontIO.Fonts->AddFontDefaultVector(&fontConfig);
+        static constexpr ImWchar kIconRanges[] = { 0xe000, 0xf8ff, 0 };
+        ImFontConfig iconConfig;
+        iconConfig.MergeMode = true;
+        iconConfig.PixelSnapH = true;
+        iconConfig.RasterizerDensity = 4.0f;
+        const char* fontPath = IO::File::Exists("Editor/Fonts/SymbolsNerdFontMono-Regular.ttf")
+            ? "Editor/Fonts/SymbolsNerdFontMono-Regular.ttf"
+            : FE_IMGUI_NERD_FONT_PATH;
+        fontIO.Fonts->AddFontFromFileTTF(fontPath, 0, &iconConfig, kIconRanges);
 
         ImGuiIO& io = ImGui::GetIO();
         io.BackendPlatformName = "Ferrum3D";
         io.BackendPlatformUserData = this;
         io.BackendFlags |= kPlatformBackendFlags;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+        io.ConfigDpiScaleFonts = true;
+        io.ConfigDpiScaleViewports = true;
 
         ImGuiPlatformIO& platformIO = ImGui::GetPlatformIO();
         platformIO.Platform_CreateWindow = &CreateViewportWindow;
@@ -258,6 +275,11 @@ namespace FE::Framework
         };
         platformIO.Platform_GetWindowMinimized = [](ImGuiViewport* viewport) {
             return GetWindow(viewport)->GetShowMode() == Core::PlatformWindowShowMode::kMinimized;
+        };
+        platformIO.Platform_GetWindowDpiScale = [](ImGuiViewport* viewport) {
+            const auto monitors = Get().m_application->GetMonitors();
+            const uint32_t index = GetWindow(viewport)->GetMonitorIndex();
+            return index < monitors.size() ? monitors[index].m_dpiScale : 1.0f;
         };
         platformIO.Platform_SetWindowTitle = [](ImGuiViewport* viewport, const char* title) {
             GetWindow(viewport)->SetTitle(title);
@@ -325,7 +347,8 @@ namespace FE::Framework
 
         // Applies to the next poll: the application reads input before the next UI frame decides its focus.
         const ImGuiIO& io = ImGui::GetIO();
-        m_application->SetInputCapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
+        m_application->SetInputCapture(io.WantCaptureMouse && !m_mousePassthrough,
+                                       io.WantCaptureKeyboard && !m_keyboardPassthrough);
     }
 
 

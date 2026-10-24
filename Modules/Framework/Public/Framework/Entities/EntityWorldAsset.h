@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Utils/Icons.h>
 #include <Framework/Entities/EntityCollection.h>
 #include <Framework/Entities/WorldService.h>
 
@@ -20,7 +21,7 @@ namespace FE::Framework
 
 
     //! @brief Reusable world definition; systems and services are default-constructed through registered reflection.
-    struct EntityWorldAsset final
+    struct FE_META(Rtti::Icon(FE_ICON_WORLD)) EntityWorldAsset final
     {
         //! @brief Reflected, default-constructible WorldSystem types in initialization order.
         festd::vector<Rtti::TypeID> m_systems;

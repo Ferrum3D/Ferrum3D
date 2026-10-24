@@ -1,11 +1,12 @@
 #pragma once
 #include <Core/Math/Transform.h>
+#include <Core/Utils/Icons.h>
 #include <Framework/Entities/EntityComponentRegistry.h>
 
 namespace FE::GameFramework
 {
     //! @brief Authored local translation, rotation, and uniform scale relative to the immediate transform parent.
-    struct TransformComponent final
+    struct FE_META(Rtti::Icon(FE_ICON_COMPONENT)) TransformComponent final
     {
         //! @brief Local transform; changes flow through entity command replacement.
         Transform m_local = Transform::Identity();

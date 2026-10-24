@@ -53,6 +53,8 @@ namespace FE::Framework
         Entity* AllocateEntity(EntityRegistry& registry, Env::Name name, Uuid uuid);
         void DestroyEntity(Entity& entity);
         void Reparent(Entity& entity, Entity* parent);
+        void LinkRoot(Entity& entity);
+        void UnlinkRoot(Entity& entity);
         Archetype* GetArchetype(festd::span<const EntityComponentInfo* const> columns);
         //! @brief Move an entity into a layout; non-null values replace columns and active columns are staged.
         void Migrate(Entity& entity, Archetype& archetype, festd::span<void* const> values);

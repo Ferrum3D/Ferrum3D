@@ -984,6 +984,13 @@ namespace FE::Graphics
     }
 
 
+    uint32_t MeshSceneModule::GetVisibilityID(const MeshHandle handle) const
+    {
+        const auto reference = TranslateHandle(handle);
+        return reference.m_rowIndex != kInvalidIndex ? (m_visibilityType << 28) | (reference.m_rowIndex + 1) : 0;
+    }
+
+
     DB::Ref<MeshInstanceTable> MeshSceneModule::TranslateHandle(const MeshHandle handle) const
     {
         if (handle.IsValid() && handle.m_value < m_instances.size()

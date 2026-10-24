@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/IO/Assets.h>
 #include <Core/Math/Aabb.h>
+#include <Core/Utils/Icons.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Meshlet.h>
 #include <Graphics/Core/Texture.h>
@@ -38,7 +39,7 @@ namespace FE::Graphics
     //!
     //! Payload zero serializes this header. Every following payload stores one LOD and concatenates, for each submesh, packed
     //! vertices, uint32 indices, meshlet headers, packed triangles, and float4 meshlet spheres in that order.
-    struct MeshAsset final
+    struct FE_META(Rtti::Icon(FE_ICON_MESH)) MeshAsset final
     {
         uint32_t m_vertexStride = 0;
         festd::inline_vector<MeshSubmeshAssetInfo, 4> m_submeshes;
@@ -55,7 +56,7 @@ namespace FE::Graphics
 
 
     //! A flattened model with logical references to all imported mesh and texture products.
-    struct ModelAsset final
+    struct FE_META(Rtti::Icon(FE_ICON_MESH)) ModelAsset final
     {
         festd::inline_vector<IO::Link<MeshAsset>, 4> m_meshes;
         festd::inline_vector<IO::Link<TextureAsset>, 4> m_textures;
@@ -70,7 +71,7 @@ namespace FE::Graphics
     //!
     //! m_mipTailOffsets contains one byte offset for every resident mip. Larger mip N is stored in artifact payload
     //! 1 + (N - m_mipTailOffsets.size()).
-    struct TextureAsset final
+    struct FE_META(Rtti::Icon(FE_ICON_IMAGE)) TextureAsset final
     {
         static constexpr uint32_t kMaxMipTailByteSize = 64;
 

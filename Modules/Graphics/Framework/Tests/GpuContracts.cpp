@@ -493,6 +493,8 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             graph->BeginFrame();
             const Core::FenceSyncPoint completion = queue->GetCurrentFence();
             parameters.Update(*graph, completion);
+            // Reserved views without shader consumers must not bind transfer-only storage to a shader descriptor.
+            (void)graph->GetSRV(readback.Get());
             auto* write = graph->AllocatePassData<Stage1Probe::PassDesc>();
             write->m_pipeline = pipeline;
             write->m_constants.m_words = graph->GetUAV(Core::BufferView(arguments.Get()).Slice(16, 12));

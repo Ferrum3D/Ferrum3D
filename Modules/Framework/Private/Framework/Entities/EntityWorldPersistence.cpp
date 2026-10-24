@@ -49,6 +49,9 @@ namespace FE::Framework
         ComponentCopier copier;
         for (EntityRegistry* registry : m_storage.m_registries)
         {
+            if (registry->IsTransient())
+                continue;
+
             EntityWorldRegistrySnapshot group;
             group.m_key = registry->GetKey();
 

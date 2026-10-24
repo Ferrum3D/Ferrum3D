@@ -86,7 +86,7 @@ namespace FE::Input
         if (m_backend)
             m_backend->Update();
 
-        m_deltaSeconds = world.FindService<Framework::WorldTimeService>()->GetDeltaSeconds();
+        m_deltaSeconds = world.FindService<Framework::WorldTimeService>()->GetUnpausedDeltaSeconds();
         ++m_updateNumber;
 
         const Core::Backend& backend = GetBackend();

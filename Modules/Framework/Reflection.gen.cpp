@@ -2300,7 +2300,8 @@ namespace FE::Framework
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_registries
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_WORLD);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_systems = {};
 
@@ -3014,7 +3015,8 @@ namespace FE::Input
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_mappings
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_INPUT);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mappings = {};
 
@@ -3783,7 +3785,8 @@ namespace FE::Input
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_processor
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_INPUT);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_type = {};
 

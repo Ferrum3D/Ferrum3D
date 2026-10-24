@@ -139,7 +139,14 @@ namespace FE::Graphics
         FE_Assert(view != nullptr);
 
         AddViewport(viewport);
-        m_views.push_back({ view, viewport });
+        m_views.push_back({ view, viewport, nullptr });
+    }
+
+
+    void RenderRequest::AddView(View* view, Core::Texture* texture)
+    {
+        FE_Assert(view && texture);
+        m_views.push_back({ view, nullptr, texture });
     }
 
 
@@ -189,7 +196,7 @@ namespace FE::Graphics
     void RendererImpl::RenderAsync(RenderRequest request)
     {
         FE_PROFILER_ZONE();
-        FE_Assert(!request.m_viewports.empty());
+        FE_Assert(!request.m_viewports.empty() || !request.m_views.empty());
         WaitForRender();
         m_request = std::move(request);
         m_sceneReady = WaitGroup::Create();
@@ -264,7 +271,7 @@ namespace FE::Graphics
             if (!desc.m_view->IsEnabled())
                 continue;
 
-            views.push_back({ desc.m_view.Get(), desc.m_viewport.Get(), nullptr });
+            views.push_back({ desc.m_view.Get(), desc.m_viewport.Get(), nullptr, desc.m_texture.Get() });
 
             Scene* scene = desc.m_view->GetScene();
             if (festd::find(scenes.begin(), scenes.end(), scene) == scenes.end())
@@ -339,8 +346,9 @@ namespace FE::Graphics
         Scene& scene = *view.GetScene();
 
         // Acquisition may resize the image later; output passes sample the main targets with normalized coordinates.
-        const Core::ViewportDesc& viewportDesc = frameView.m_viewport->GetDesc();
-        const Vector2UInt resolution(viewportDesc.m_width, viewportDesc.m_height);
+        const Vector2UInt resolution = frameView.m_texture
+            ? frameView.m_texture->GetDesc().GetSize2D()
+            : Vector2UInt(frameView.m_viewport->GetDesc().m_width, frameView.m_viewport->GetDesc().m_height);
 
         RendererViewTargets& targets = blackboard.Add<RendererViewTargets>();
         targets.m_color = Core::Texture::Create(m_device.Get(), "RendererMainColor", Core::Format::kB10G11R11_UFLOAT, resolution);
@@ -351,7 +359,7 @@ namespace FE::Graphics
         viewData.m_view = &view;
         viewData.m_mainColorTarget = targets.m_color.Get();
         viewData.m_mainDepthTarget = targets.m_depth.Get();
-        viewData.m_viewportRect = viewportDesc.GetRect();
+        viewData.m_viewportRect = RectF::FromPosAndSize(Vector2::kZero, Vector2(resolution));
         viewData.m_renderQueueUploader = &m_renderQueueUploader;
 
         ViewData& constants = blackboard.Add<ViewData>();
@@ -380,7 +388,19 @@ namespace FE::Graphics
         GBufferDebug::AddPasses(graph, blackboard);
         DeferredShading::AddPasses(graph, blackboard);
         Tonemap::AddPasses(graph, blackboard);
+        view.GetModules().ForEachActive([&](ViewModuleBase& module) {
+            module.AddRenderPasses(graph, blackboard);
+        });
         ImGuiPass::AddPasses(graph, blackboard);
+
+        // Offscreen output must precede UI passes that sample it in this same graph.
+        if (frameView.m_texture)
+        {
+            ViewOutput& output = blackboard.Add<ViewOutput>();
+            output.m_target = Core::TextureView::Create(frameView.m_texture);
+            Tonemap::AddOutputPasses(graph, blackboard);
+            ImGuiPass::AddOutputPasses(graph, blackboard);
+        }
     }
 
 
@@ -406,6 +426,9 @@ namespace FE::Graphics
         for (uint32_t viewIndex = 0; viewIndex < views.size(); ++viewIndex)
         {
             const FrameView& view = views[viewIndex];
+            if (view.m_texture)
+                continue;
+
             const auto target = festd::find_if(viewports.begin(), viewports.end(), [&view](const FrameViewport& viewport) {
                 return viewport.m_viewport == view.m_viewport;
             });

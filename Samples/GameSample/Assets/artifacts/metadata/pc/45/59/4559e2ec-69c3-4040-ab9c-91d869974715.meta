@@ -1,0 +1,53 @@
+{
+    "$type": "BFCD80E4-DB85-41F2-B43D-F08EA62AA6EC",
+    "$typename": "FE::IO::ArtifactRecord",
+    "$version": 0,
+    "$schema": "0x4d3ae890a4a739c5",
+    "$value": {
+        "m_artifactId": "CE598A59-1400-466A-AD21-EB3B6308193E",
+        "m_assetId": "4559E2EC-69C3-4040-AB9C-91D869974715",
+        "m_assetTypeId": "C27E593F-6199-41FB-AFFD-8E73F51ECCFE",
+        "m_payloads": [
+            {
+                "m_resolvedDataSource": {
+                    "m_filePath": "",
+                    "m_byteOffset": 0,
+                    "m_byteSize": 473
+                },
+                "m_chunks": [
+                    {
+                        "m_offsetInPayload": 0,
+                        "m_compressedSize": 473,
+                        "m_uncompressedSize": 1550,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 208883733
+                        }
+                    }
+                ]
+            }
+        ],
+        "m_dependencies": [
+            {
+                "m_assetId": "559321CE-41F8-4E63-A724-B5CE390F03C6",
+                "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "03FBBFEC-D4F0-4928-A827-971843FA5F33",
+                "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "D4C27B61-45AF-4DF8-9902-B7CDC730EB6C",
+                "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "8F8777F1-1F5F-482C-9AFA-391687E54DD7",
+                "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                "m_kind": 0
+            }
+        ]
+    }
+}

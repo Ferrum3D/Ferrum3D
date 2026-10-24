@@ -3,6 +3,7 @@
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Core/Threading/Thread.h>
 #include <Framework/Entities/EntityWorldInternal.h>
+#include <Framework/Entities/WorldTimeService.h>
 #include <algorithm>
 
 namespace FE::Framework
@@ -159,7 +160,10 @@ namespace FE::Framework
         m_state = State::kCollecting;
         for (auto* system : m_systems)
         {
-            EntityUpdateContext context{ m_world.m_owner, system, m_epoch, fixedDeltaSeconds };
+            const auto* time = m_world.m_owner.FindService<WorldTimeService>();
+            const float deltaSeconds = fixed ? fixedDeltaSeconds : (time ? time->GetDeltaSeconds() : 0);
+            const float unpausedDeltaSeconds = fixed ? fixedDeltaSeconds : (time ? time->GetUnpausedDeltaSeconds() : 0);
+            EntityUpdateContext context{ m_world.m_owner, system, m_epoch, deltaSeconds, unpausedDeltaSeconds };
             if (fixed)
                 system->FixedUpdate(context);
             else

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Framework/Entities/EntityResidencySet.h>
 
 namespace FE::Framework
@@ -6,6 +6,17 @@ namespace FE::Framework
     //! @brief World-owned ownership and asset residency group, not a simulation boundary.
     struct EntityRegistry final
     {
+        //! Exclude this runtime ownership group from world snapshots.
+        void SetTransient(const bool transient)
+        {
+            m_transient = transient;
+        }
+
+        [[nodiscard]] bool IsTransient() const
+        {
+            return m_transient;
+        }
+
         [[nodiscard]] EntityWorld& GetWorld() const
         {
             return *m_world;
@@ -37,6 +48,7 @@ namespace FE::Framework
         EntityWorld* m_world;
         const uint32_t m_id;
         bool m_unloading = false;
+        bool m_transient = false;
         const Uuid m_key;
         EntityResidencySet m_residency;
 

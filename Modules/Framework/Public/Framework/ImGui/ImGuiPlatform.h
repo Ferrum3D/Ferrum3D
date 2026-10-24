@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Framework/Application/Core/PlatformApplication.h>
 #include <Framework/Application/Core/PlatformWindow.h>
 
@@ -25,6 +25,13 @@ namespace FE::Framework
         //! @brief Render the ImGui frame, then create, update and destroy the platform windows of its viewports.
         void EndFrame();
 
+        //! @brief Let an embedded game/editor viewport receive the engine's platform input.
+        void SetInputPassthrough(bool mouse, bool keyboard)
+        {
+            m_mousePassthrough = mouse;
+            m_keyboardPassthrough = keyboard;
+        }
+
     private:
         struct ViewportData;
 
@@ -45,5 +52,7 @@ namespace FE::Framework
         ImGuiContext* m_context = nullptr;
         uint64_t m_previousFrameTicks = 0;
         bool m_areMonitorsDirty = true;
+        bool m_mousePassthrough = false;
+        bool m_keyboardPassthrough = false;
     };
 } // namespace FE::Framework

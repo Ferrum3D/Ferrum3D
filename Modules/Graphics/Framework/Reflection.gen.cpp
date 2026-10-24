@@ -1842,7 +1842,8 @@ namespace FE::Graphics
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_textures
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MESH);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshes = {};
 
@@ -2462,7 +2463,8 @@ namespace FE::Graphics
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_residentLod
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MESH);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_vertexStride = {};
 
@@ -2496,17 +2498,20 @@ namespace FE::Graphics
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &MeshAsset::m_buffer,
                                                         kAttributes_m_buffer,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_currentOperation",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &MeshAsset::m_currentOperation,
                                                         kAttributes_m_currentOperation,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_residentLod",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &MeshAsset::m_residentLod,
                                                         kAttributes_m_residentLod,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<MeshAsset>(typeInstance,
@@ -2639,7 +2644,8 @@ namespace FE::Graphics
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_runtime
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MATERIAL);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_material = {};
 
@@ -2669,7 +2675,8 @@ namespace FE::Graphics
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &MaterialInstanceAsset::m_runtime,
                                                         kAttributes_m_runtime,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<MaterialInstanceAsset>(typeInstance,
@@ -4095,7 +4102,8 @@ namespace FE::Graphics
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_descriptorIndex
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_IMAGE);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_desc = {};
 
@@ -4131,22 +4139,26 @@ namespace FE::Graphics
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &TextureAsset::m_texture,
                                                         kAttributes_m_texture,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_currentOperation",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &TextureAsset::m_currentOperation,
                                                         kAttributes_m_currentOperation,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_residentMip",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &TextureAsset::m_residentMip,
                                                         kAttributes_m_residentMip,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_descriptorIndex",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
                                                         &TextureAsset::m_descriptorIndex,
                                                         kAttributes_m_descriptorIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                            | Rtti::FieldFlags::kTransient),
         };
 
         context.ReflectClass<TextureAsset>(typeInstance,
@@ -5028,7 +5040,8 @@ namespace FE::Graphics
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_techniques
         };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        static constexpr auto kAttributeValues = Rtti::Icon(FE_ICON_MATERIAL);
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
 

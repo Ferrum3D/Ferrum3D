@@ -1,4 +1,5 @@
 #include <Framework/Entities/Query.h>
+#include <Framework/Entities/WorldTimeService.h>
 #include <GameFramework/Components/CameraComponent.h>
 #include <GameFramework/Components/CameraMovementComponent.h>
 #include <GameFramework/Components/TransformComponents.h>
@@ -7,8 +8,8 @@
 
 namespace FE::GameFramework
 {
-    static Framework::QueryWriteResult ApplyMovement(const CameraMovementComponent& movement, TransformComponent& transform,
-                                                     const CameraInput& input, const float deltaSeconds)
+    Framework::QueryWriteResult ApplyCameraMovement(const CameraMovementComponent& movement, TransformComponent& transform,
+                                                    const CameraInput& input, const float deltaSeconds, const float speedScale)
     {
         FE_Assert(deltaSeconds >= 0);
 
@@ -28,7 +29,7 @@ namespace FE::GameFramework
 
         const Vector3 localMotion{ input.m_move.x, 0, input.m_move.y };
         const Vector3 motion = Math::Rotate(localMotion, rotation) + Vector3{ 0, input.m_elevate, 0 };
-        const Vector3 position = transform.m_local.Translation() + motion * (movement.m_moveSpeed * deltaSeconds);
+        const Vector3 position = transform.m_local.Translation() + motion * (movement.m_moveSpeed * deltaSeconds * speedScale);
         transform.m_local = Transform::Create(position, rotation, transform.m_local.Scale());
         return Framework::QueryWriteResult::kChanged;
     }
@@ -44,6 +45,10 @@ namespace FE::GameFramework
     {
         FE_PROFILER_ZONE();
 
+        const auto* time = context.m_world.FindService<Framework::WorldTimeService>();
+        if (time && time->IsPaused())
+            return;
+
         auto* inputService = context.m_world.FindService<Input::WorldInputService>();
         FE_Assert(inputService != nullptr, "Camera movement requires WorldInputService");
 
@@ -55,7 +60,7 @@ namespace FE::GameFramework
                                           .m_elevate = frame.Read(movement.m_elevateAction),
                                           .m_look = frame.Read(movement.m_lookAction) };
 
-                return ApplyMovement(movement, transform, values, inputService->GetDeltaSeconds());
+                return ApplyCameraMovement(movement, transform, values, inputService->GetDeltaSeconds());
             };
 
         using Query = Framework::Query<const CameraMovementComponent, const CameraComponent, TransformComponent>;

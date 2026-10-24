@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/IO/Assets.h>
 #include <Core/Math/Vector2.h>
+#include <Core/Utils/Icons.h>
 
 namespace FE::Input
 {
@@ -54,7 +55,7 @@ namespace FE::Input
         FE_RTTI_Serialize();
 
         float m_holdTime = 1;
-        
+
         ActionState Process(ActionProcessorContext& context) const override;
 
         [[nodiscard]] bool Validate() const override
@@ -85,7 +86,7 @@ namespace FE::Input
     };
 
 
-    struct Action final
+    struct FE_META(Rtti::Icon(FE_ICON_INPUT)) Action final
     {
         FE_RTTI_Reflect("E6382DFF-E9F2-42F7-8FF7-C044F968AAA7");
         FE_RTTI_Serialize();

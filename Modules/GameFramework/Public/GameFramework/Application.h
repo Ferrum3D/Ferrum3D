@@ -34,6 +34,7 @@ namespace FE::GameFramework
         Vector2Int m_windowSize{ 1280, 720 };
         //! @brief Graphics backend used to create the device.
         Graphics::Core::GraphicsApi m_graphicsApi = Graphics::Core::GraphicsApi::kVulkan;
+        bool m_startPaused = false;
     };
 
 
@@ -46,14 +47,37 @@ namespace FE::GameFramework
         ~Application() override;
 
         //! @brief Create the window and graphics services, then request the initial world without waiting for assets.
-        bool Initialize(const ApplicationSettings& settings);
+        virtual bool Initialize(const ApplicationSettings& settings);
         void Shutdown();
 
         //! @brief Run until the window closes, or for a bounded frame count after world readiness; loading frames still render.
         int32_t Run(uint32_t maxFrames = 0);
         [[nodiscard]] Framework::EntityWorld& GetWorld();
+        //! Request a replacement world; the current world remains alive while its definition loads.
+        bool OpenWorld(IO::AssetID world);
+        [[nodiscard]] festd::string_view GetWorldLoadError() const
+        {
+            return m_worldLoadError;
+        }
+        [[nodiscard]] bool IsWorldLoading() const
+        {
+            return m_worldLoadPending;
+        }
 
     protected:
+        virtual void PrepareWorldDefinition(Framework::EntityWorldAsset&) {}
+        virtual void OnWorldLoaded() {}
+        virtual void OnWorldUnloading() {}
+        virtual void BeforeWorldUpdate() {}
+        void AddImGuiViews(Graphics::RenderRequest& request);
+        [[nodiscard]] Graphics::Core::Device* GetDevice() const
+        {
+            return m_device.Get();
+        }
+        [[nodiscard]] Graphics::Core::PipelineFactory* GetPipelineFactory() const
+        {
+            return m_pipelineFactory.Get();
+        }
         //! @brief Order default transform/extraction phases; override to insert application phases or stages.
         virtual void ScheduleWorldUpdate(Framework::EntityWorld& world);
         //! @brief Order phases for each fixed step, independently of the per-frame schedule.
@@ -80,7 +104,10 @@ namespace FE::GameFramework
         festd::unique_ptr<Graphics::ImGuiRenderer> m_imguiRenderer;
         festd::unique_ptr<Framework::EntityWorldInstance> m_world;
         IO::AssetRequest m_worldRequest;
+        festd::inline_string m_worldLoadError;
         bool m_worldDefinitionLoaded = false;
+        bool m_worldLoadPending = false;
+        bool m_startPaused = false;
         uint64_t m_previousUpdateTicks = 0;
         Graphics::MaterialStreamer* m_materialStreamer = nullptr;
         Graphics::MeshStreamer* m_meshStreamer = nullptr;

@@ -10,12 +10,16 @@
 #include <GameFramework/Components/CameraComponent.h>
 #include <GameFramework/Components/CameraMovementComponent.h>
 #include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Editor/CameraMovementSystem.h>
+#include <GameFramework/Editor/Controls.h>
+#include <GameFramework/Editor/Gizmos.h>
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <GameFramework/Systems/CameraMovementSystem.h>
 #include <GameFramework/Systems/CameraSystem.h>
 #include <GameFramework/Systems/MeshSystem.h>
 #include <GameFramework/Systems/TransformationSystem.h>
 #include <gtest/gtest.h>
+#include <imgui.h>
 
 using namespace FE;
 using namespace FE::Framework;
@@ -373,6 +377,182 @@ TEST_F(GraphicsFixture, AuthoredInputMovesEveryCameraBeforeTransformAndGraphicsE
     EXPECT_EQ(backend->m_updates, 2);
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 2);
     EXPECT_TRUE(Math::CmpEqual(CameraView().GetViewMatrix(), view));
+
+    backend->m_keyboard.m_keyDownMap.set(87);
+    time.SetPaused(true);
+    m_world.BeginUpdate();
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::Input));
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::Transformation));
+    ASSERT_TRUE(m_world.SchedulePhase(GameFramework::Phases::GraphicsExtraction));
+    ASSERT_TRUE(m_world.ExecuteSchedule());
+    ASSERT_TRUE(m_world.EndUpdate());
+    EXPECT_FLOAT_EQ(time.GetDeltaSeconds(), 0);
+    EXPECT_GT(input.GetFrame().Read(movement.m_moveAction).y, 0);
+    EXPECT_TRUE(Math::CmpEqual(CameraView().GetViewMatrix(), view));
+}
+
+
+TEST_F(GraphicsFixture, EditorCameraUsesMappedInputWhilePausedAndPublishesAfterIdle)
+{
+    const IO::Path directory = IO::Path(FE_GAME_ASSET_TEST_OUTPUT) / Fmt::Format("EditorInput-{}", Uuid::Random());
+    Input::Action move;
+    move.m_type = Input::ActionType::kVector2;
+    move.m_processor = Memory::DefaultNew<Input::ContinuousActionProcessor>();
+    const auto moveLink = BuildCameraInputAsset(directory, "move.asset", move);
+    Input::Action boost;
+    boost.m_type = Input::ActionType::kBoolean;
+    boost.m_processor = Memory::DefaultNew<Input::ContinuousActionProcessor>();
+    const auto boostLink = BuildCameraInputAsset(directory, "boost.asset", boost);
+    Input::MappingTable table;
+    Input::ActionMapping mapping;
+    mapping.m_action = moveLink;
+    mapping.m_bindings = { Input::Binding::WASD() };
+    mapping.m_bindings.front().m_conditions = { Input::Control::MouseButton(1) };
+    table.m_mappings.push_back(mapping);
+    mapping.m_action = boostLink;
+    Input::Binding binding;
+    binding.m_source = Input::ButtonBinding{ Input::Control::Key(Input::Core::Key::kLeftShift) };
+    mapping.m_bindings = { binding };
+    table.m_mappings.push_back(mapping);
+    const auto tableLink = BuildCameraInputAsset(directory, "mappings.asset", table);
+    IO::ArtifactStore::SetCatalogSource(directory);
+    IO::AssetManager::Init();
+    WorldTimeService time;
+    Input::WorldInputService input;
+    Editor::CameraMovementSystem movementSystem;
+    auto* backend = Memory::DefaultNew<CameraInputBackend>();
+    input.SetBackend(festd::unique_ptr<Input::Core::Backend>(backend));
+    m_world.AddService(time);
+    m_world.AddService(input);
+    m_world.AddSystem(movementSystem);
+    const auto cleanup = festd::defer([&] {
+        m_world.Clear();
+        m_world.RemoveSystem(movementSystem);
+        m_world.RemoveService(input);
+        m_world.RemoveService(time);
+        IO::AssetManager::Shutdown();
+    });
+    (void)input.Activate(tableLink);
+    auto request = IO::AssetManager::LoadAsset(tableLink);
+    for (uint32_t iteration = 0; iteration < 5000 && !request.IsCompleted(); ++iteration)
+    {
+        IO::AssetManager::Tick();
+        Threading::Sleep(1);
+    }
+
+    ASSERT_EQ(request.GetResult(), IO::AssetLoadResult::kSucceeded);
+    Editor::CameraMovementComponent movement;
+    movement.m_movement.m_moveAction = moveLink;
+    movement.m_speedUpAction = boostLink;
+    EntityCommandList commands(m_world);
+    commands.AddComponent(m_world.Find(m_cameraUuid)->GetID(), movement);
+    m_world.Submit(std::move(commands));
+    time.SetPaused(true);
+    movementSystem.m_inputEnabled = true;
+    movementSystem.m_viewportSize = Vector2UInt(800, 600);
+    const auto update = [&] {
+        IO::AssetManager::Tick();
+        m_world.BeginUpdate();
+        m_world.SchedulePhase(GameFramework::Phases::Input);
+        m_world.SchedulePhase(GameFramework::Phases::Transformation);
+        m_world.SchedulePhase(GameFramework::Phases::GraphicsExtraction);
+        EXPECT_TRUE(m_world.ExecuteSchedule());
+        EXPECT_TRUE(m_world.EndUpdate());
+        EXPECT_FLOAT_EQ(time.GetDeltaSeconds(), 0);
+    };
+    for (uint32_t iteration = 0; iteration < 5000; ++iteration)
+    {
+        update();
+        if (m_world.Find(m_cameraUuid)->FindComponent<const CameraComponent>()->m_aspectRatio == 800.0f / 600.0f)
+            break;
+
+        Threading::Sleep(1);
+    }
+
+    ASSERT_NE(m_world.Find(m_cameraUuid)->FindComponent<const Editor::CameraMovementComponent>(), nullptr);
+    ASSERT_FLOAT_EQ(m_world.Find(m_cameraUuid)->FindComponent<const CameraComponent>()->m_aspectRatio, 800.0f / 600.0f);
+    update();
+    const Transform before = CameraView().GetCameraTransform();
+    backend->m_keyboard.m_keyDownMap.set(festd::to_underlying(Input::Core::Key::kW));
+    update();
+    EXPECT_EQ(CameraView().GetCameraTransform(), before);
+    backend->m_mouse.m_buttonDownMap.set(1);
+    Threading::Sleep(5);
+    update();
+    EXPECT_GT(CameraView().GetCameraTransform().Translation().z, before.Translation().z);
+    const float distance = input.GetDeltaSeconds() * movement.m_movement.m_moveSpeed;
+    EXPECT_NEAR(CameraView().GetCameraTransform().Translation().z, before.Translation().z + distance, 0.00001f);
+    const Transform moved = CameraView().GetCameraTransform();
+    backend->m_keyboard.m_keyDownMap.set(festd::to_underlying(Input::Core::Key::kLeftShift));
+    Threading::Sleep(5);
+    update();
+    EXPECT_NEAR(CameraView().GetCameraTransform().Translation().z,
+                moved.Translation().z + input.GetDeltaSeconds() * movement.m_movement.m_moveSpeed * movement.m_speedUpFactor,
+                0.00001f);
+    const Transform boosted = CameraView().GetCameraTransform();
+    const Matrix4x4 projection = CameraView().GetProjectionMatrix();
+    movementSystem.m_inputEnabled = false;
+    movementSystem.m_viewportSize = Vector2UInt(1600, 600);
+    update();
+    EXPECT_EQ(CameraView().GetCameraTransform(), boosted);
+    EXPECT_FALSE(Math::CmpEqual(CameraView().GetProjectionMatrix(), projection));
+}
+
+
+TEST_F(GraphicsFixture, EditorGizmoDragsPublishTransformEdits)
+{
+    Tick();
+    ImGui::SetAllocatorFunctions(
+        [](size_t size, void*) {
+            return Memory::DefaultAllocate(size);
+        },
+        [](void* pointer, void*) {
+            Memory::DefaultFree(pointer);
+        });
+    ImGuiContext* context = ImGui::CreateContext();
+    const auto destroy = festd::defer([context] {
+        ImGui::DestroyContext(context);
+    });
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.DisplaySize = ImVec2(800, 600);
+    io.DeltaTime = 1.0f / 60.0f;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+    auto* entity = m_world.Find(m_meshUuid);
+    const Transform before = entity->FindComponent<const TransformComponent>()->m_local;
+    Vector2 origin(0, 0);
+    const Vector2 size(640, 480);
+    const auto frame = [&] {
+        Tick();
+        ImGui::NewFrame();
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(800, 600));
+        ImGui::Begin("Gizmo test", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
+        const ImVec2 cursor = ImGui::GetCursorScreenPos();
+        origin = Vector2(cursor.x, cursor.y);
+        ImGui::Dummy(ImVec2(size.x, size.y));
+        const bool active = Editor::DrawTranslationGizmo(*entity, CameraView(), origin, size);
+        ImGui::End();
+        ImGui::EndFrame();
+        return active;
+    };
+
+    EXPECT_FALSE(frame());
+    const Vector3 position = before.Translation();
+    const float distance = Math::Length(position - CameraView().GetCameraTransform().Translation());
+    const float length = Math::Max(0.25f, distance * 0.12f);
+    const Vector4 clip = Vector4(position + Vector3(length, 0, 0), 1) * CameraView().GetViewProjectionMatrix();
+    const Vector2 endpoint = origin + Vector2(clip.x / clip.w * 0.5f + 0.5f, 0.5f - clip.y / clip.w * 0.5f) * size;
+    io.AddMousePosEvent(endpoint.x, endpoint.y);
+    EXPECT_FALSE(frame());
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+    EXPECT_TRUE(frame());
+    io.AddMousePosEvent(endpoint.x + 20, endpoint.y);
+    EXPECT_TRUE(frame());
+    Tick();
+    EXPECT_GT(entity->FindComponent<const TransformComponent>()->m_local.Translation().x, position.x);
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+    EXPECT_FALSE(frame());
 }
 
 

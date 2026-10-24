@@ -18,6 +18,8 @@ namespace FE::Framework
             uint32_t m_generation = 1;
         };
 
+        Entity* m_firstRoot = nullptr;
+        Entity* m_lastRoot = nullptr;
         Memory::Pool<Entity> m_entities{ "Entity/WorldPool" };
         festd::vector<Slot> m_slots;
         festd::vector<uint32_t> m_freeSlots;

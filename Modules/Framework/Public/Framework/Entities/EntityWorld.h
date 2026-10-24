@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Framework/Entities/Archetype.h>
 #include <Framework/Entities/Entity.h>
 #include <Framework/Entities/EntityCollection.h>
@@ -156,20 +156,35 @@ namespace FE::Framework
         [[nodiscard]] Entity* Find(EntityID id) const;
         [[nodiscard]] Entity* Find(Uuid uuid, bool activeOnly = true) const;
 
+        //! @brief Visit roots at a closed main-thread boundary; descendants are available through Entity child links.
+        template<class Callable>
+        void TraverseRoots(Callable&& callable) const
+        {
+            using Function = std::remove_reference_t<Callable>;
+            TraverseRoots(const_cast<void*>(static_cast<const void*>(&callable)), [](void* context, Entity& entity) {
+                return (*static_cast<Function*>(context))(entity);
+            });
+        }
+
+        [[nodiscard]] festd::span<const EntityComponentInfo* const> GetComponents(const Entity& entity) const;
+
         //! @brief Create a world-owned residency group at a main-thread safe point.
         EntityRegistry& CreateRegistry(Uuid key = Uuid::kNull);
         //! @brief Find a live ownership group by persistent key.
         [[nodiscard]] EntityRegistry* FindRegistry(Uuid key) const;
+
         //! @brief Load concrete entities without remapping UUIDs or creating an extra root.
         MaterializationToken LoadEntities(EntityRegistry& registry, const EntityCollection& entities);
         //! @brief Load a definition into an empty world after application systems have registered its component types.
         bool LoadDefinition(const EntityWorldAsset& definition, festd::vector<MaterializationToken>* operations = nullptr);
         //! @brief Capture settled concrete values; leaves output untouched on failure.
         bool CaptureSnapshot(EntityWorldSnapshotAsset& snapshot) const;
+
         //! @brief Restore into an empty world; transient columns are regenerated from registered companions.
         bool RestoreSnapshot(const EntityWorldSnapshotAsset& snapshot, festd::vector<MaterializationToken>* operations = nullptr);
         //! @brief Cancel its pending work and destroy its entities; the registry reference becomes invalid.
         void RemoveRegistry(EntityRegistry& registry);
+
         //! @brief Remove all registries and cancel pending materializations while retaining system registrations.
         void Clear();
 
@@ -323,6 +338,7 @@ namespace FE::Framework
         struct Impl;
         Impl* m_impl;
 
+        void TraverseRoots(void* context, bool (*visit)(void*, Entity&)) const;
         Rc<WaitGroup> RecordStage(const StageDesc& desc);
         void* FindService(Rtti::TypeID type) const;
         bool RunFixedUpdates(double deltaSeconds, float fixedDeltaSeconds, uint32_t maxSteps,

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/Env/Environment.h>
 #include <Core/Math/Transform.h>
 #include <Graphics/Base/Base.h>
@@ -39,6 +39,9 @@ namespace FE::Graphics
         ~ViewModuleBase() override = default;
 
         virtual void Update(Core::FrameGraphBlackboard& blackboard) = 0;
+
+        //! Optional feature passes after scene shading and before presentation.
+        virtual void AddRenderPasses(Core::FrameGraph&, Core::FrameGraphBlackboard&) {}
 
         //! @brief Diagnostic visualizations implemented by this module, identified by command-line and UI names.
         [[nodiscard]] virtual festd::span<const Env::Name> GetDebugModes() const

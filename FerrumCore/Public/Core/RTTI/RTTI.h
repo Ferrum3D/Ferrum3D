@@ -51,6 +51,17 @@ namespace FE::Rtti
     };
 
 
+    struct Icon final : MetaAttributeBase
+    {
+        constexpr explicit Icon(const festd::ascii_view glyph)
+            : m_glyph(glyph)
+        {
+        }
+
+        festd::ascii_view m_glyph;
+    };
+
+
     struct IntRange final : public MetaAttributeBase
     {
         constexpr IntRange(const int64_t min, const int64_t max)

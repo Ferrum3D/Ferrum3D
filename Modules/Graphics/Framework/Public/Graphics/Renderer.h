@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/Jobs/WaitGroup.h>
 #include <Graphics/Base/Base.h>
 #include <Graphics/Base/BaseModuleList.h>
@@ -16,6 +16,7 @@ namespace FE::Graphics
     {
         Rc<View> m_view;
         Rc<Core::Viewport> m_viewport;
+        Rc<Core::Texture> m_texture;
     };
 
 
@@ -32,6 +33,9 @@ namespace FE::Graphics
 
         //! @brief Render the view into the viewport after the views added before it; disabled views are skipped.
         void AddView(View* view, Core::Viewport* viewport);
+
+        //! @brief Render into a caller-owned texture, e.g. an editor viewport displayed by ImGui.
+        void AddView(View* view, Core::Texture* texture);
 
         //! @brief Render every view of the scene into the viewport; a null scene presents a cleared frame.
         [[nodiscard]] static RenderRequest CreateForScene(Scene* scene, Core::Viewport* viewport);

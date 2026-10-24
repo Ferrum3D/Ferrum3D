@@ -1,5 +1,20 @@
 # GameSample
 
+The sample is split into `GameSample_Lib` (all game and game-specific editor code),
+`GameSample` (the game launcher), and `GameSample_Editor` (the editor launcher).
+Each launcher has exactly one `main.cpp`; `fe_add_game_project()` creates all three targets
+in one call. Both executables use the existing `Assets` catalog.
+
+Run `cmake-build/windows-debug-msvc/Debug/GameSample_Editor.exe` for the paused editor.
+Its dock layout provides an World and Entity windows with RTTI component inspection and transform
+controls, an asset grid, and a scene viewport. Double-click a world asset or use File > Open
+(Ctrl+O) to load it. Click geometry to select, drag axis handles to translate, and hold RMB
+with WASD/QE to fly the editor camera (Shift speeds up movement). The camera is transient
+and the authored world remains paused without physics simulation.
+
+`GameSample_Editor.exe --smoke` renders eight ready frames and exercises selection
+outline and pixel picking. The regular `GameSample.exe --smoke` remains available.
+
 Visibility rasterization, GBuffer evaluation and deferred compute shading are the default pipeline. Each stage has its own view module and exchanges targets through the FrameGraph blackboard. The forward path has been removed. See [Stage 5 notes](../../VISIBILITY_BUFFER_STAGE5.md).
 
 Validation is disabled by default. Add `--ecs-validation` to check ECS schedules. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Leave validation disabled for performance measurements and Nsight captures. The former `--no-api-validation` flag only hid validation messages and did not disable validation.
@@ -69,3 +84,8 @@ Input contexts are authored in the input service descriptor in `World.asset`. Ca
 ## Debug UI
 
 The sample draws a Dear ImGui "Rendering" window. Its debug mode list is built from the modes published by the camera view's modules (`Visibility::DebugViewModule` for reconstruction modes, `GBufferDebug::ViewModule` for surface modes); the selection applies to every camera view at runtime. `--visibility-debug <mode>` selects the initial mode (`deferred` keeps lit output). Docking and multi-viewports are enabled: dragging a window outside the main window gives it its own platform window and swapchain. `--detach-debug-window` places the window outside the main viewport, which exercises that path in smoke runs. Window layout persists in `imgui.ini` next to the sample's build directory.
+
+The project's editor input assets live under `Assets/Editor/Input`, manually copied from
+`Modules/GameFramework/EditorAssets` with their asset IDs preserved. Cook these copies into
+`Assets`, the same catalog used by the game, as described in `Modules/GameFramework/README.md`.
+CMake does not copy or cook editor assets. Gameplay input assets remain under `Assets/Input`.

@@ -250,6 +250,19 @@ namespace FE::Framework
     }
 
 
+    bool EntityCommandList::ReplaceComponent(const EntityTarget target, const Rtti::Type& type, const void* value)
+    {
+        const auto* info = Components().Find(type.m_id);
+        if (!info || !type.m_copyConstructor || !value)
+            return false;
+
+        void* storage = AllocatePayload(type.m_size, type.m_alignment);
+        type.m_copyConstructor(storage, value);
+        RecordComponent(target, *info, storage);
+        return true;
+    }
+
+
     void EntityCommandList::RecordComponent(const EntityTarget target, const EntityComponentInfo& info, void* storage)
     {
         Command command{ CommandKind::kComponent, target };

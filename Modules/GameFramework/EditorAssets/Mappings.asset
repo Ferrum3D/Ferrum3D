@@ -1,0 +1,174 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::IO::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Serialized/Primary",
+                "m_name": "Editor Camera",
+                "m_assetId": "4559E2EC-69C3-4040-AB9C-91D869974715",
+                "m_assetTypeId": "C27E593F-6199-41FB-AFFD-8E73F51ECCFE",
+                "m_buildSettings": {
+                    "m_typeId": "C27E593F-6199-41FB-AFFD-8E73F51ECCFE",
+                    "m_value": {
+                        "m_mappings": [
+                            {
+                                "m_action": "559321CE-41F8-4E63-A724-B5CE390F03C6",
+                                "m_bindings": [
+                                    {
+                                        "m_source": {
+                                            "m_type": 2,
+                                            "m_value": {
+                                                "m_left": {
+                                                    "m_code": 65
+                                                },
+                                                "m_right": {
+                                                    "m_code": 68
+                                                },
+                                                "m_back": {
+                                                    "m_code": 83
+                                                },
+                                                "m_forward": {
+                                                    "m_code": 87
+                                                }
+                                            }
+                                        },
+                                        "m_conditions": [
+                                            {
+                                                "m_code": 257
+                                            }
+                                        ],
+                                        "m_scale": {
+                                            "x": "0000803f",
+                                            "y": "0000803f"
+                                        },
+                                        "m_sensitivity": "0000803f",
+                                        "m_integrate": false
+                                    }
+                                ],
+                                "m_operation": 0,
+                                "m_clampMagnitude": true,
+                                "m_consume": false
+                            },
+                            {
+                                "m_action": "03FBBFEC-D4F0-4928-A827-971843FA5F33",
+                                "m_bindings": [
+                                    {
+                                        "m_source": {
+                                            "m_type": 1,
+                                            "m_value": {
+                                                "m_negative": {
+                                                    "m_code": 81
+                                                },
+                                                "m_positive": {
+                                                    "m_code": 69
+                                                }
+                                            }
+                                        },
+                                        "m_conditions": [
+                                            {
+                                                "m_code": 257
+                                            }
+                                        ],
+                                        "m_scale": {
+                                            "x": "0000803f",
+                                            "y": "0000803f"
+                                        },
+                                        "m_sensitivity": "0000803f",
+                                        "m_integrate": false
+                                    }
+                                ],
+                                "m_operation": 0,
+                                "m_clampMagnitude": false,
+                                "m_consume": false
+                            },
+                            {
+                                "m_action": "D4C27B61-45AF-4DF8-9902-B7CDC730EB6C",
+                                "m_bindings": [
+                                    {
+                                        "m_source": {
+                                            "m_type": 3,
+                                            "m_value": {}
+                                        },
+                                        "m_conditions": [
+                                            {
+                                                "m_code": 257
+                                            }
+                                        ],
+                                        "m_scale": {
+                                            "x": "0000803f",
+                                            "y": "0000803f"
+                                        },
+                                        "m_sensitivity": "a69b443b",
+                                        "m_integrate": false
+                                    }
+                                ],
+                                "m_operation": 0,
+                                "m_clampMagnitude": false,
+                                "m_consume": false
+                            },
+                            {
+                                "m_action": "8F8777F1-1F5F-482C-9AFA-391687E54DD7",
+                                "m_bindings": [
+                                    {
+                                        "m_source": {
+                                            "m_type": 0,
+                                            "m_value": {
+                                                "m_control": {
+                                                    "m_code": 160
+                                                }
+                                            }
+                                        },
+                                        "m_conditions": [
+                                            {
+                                                "m_code": 257
+                                            }
+                                        ],
+                                        "m_scale": {
+                                            "x": "0000803f",
+                                            "y": "0000803f"
+                                        },
+                                        "m_sensitivity": "0000803f",
+                                        "m_integrate": false
+                                    }
+                                ],
+                                "m_operation": 0,
+                                "m_clampMagnitude": false,
+                                "m_consume": false
+                            }
+                        ]
+                    }
+                },
+                "m_dependencies": [
+                    {
+                        "m_assetId": "559321CE-41F8-4E63-A724-B5CE390F03C6",
+                        "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "03FBBFEC-D4F0-4928-A827-971843FA5F33",
+                        "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "D4C27B61-45AF-4DF8-9902-B7CDC730EB6C",
+                        "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "8F8777F1-1F5F-482C-9AFA-391687E54DD7",
+                        "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                        "m_kind": 0
+                    }
+                ],
+                "m_lastBuildKey": "FA220E74-555C-49BA-8BAB-25711221A577",
+                "m_builtArtifactId": "CE598A59-1400-466A-AD21-EB3B6308193E",
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

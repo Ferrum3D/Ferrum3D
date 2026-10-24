@@ -3,26 +3,13 @@
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
+#include <Graphics/Scene/RenderViewData.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
 #include <Shaders/Scene/ViewData.h>
 
 namespace FE::Graphics
 {
-    struct RendererViewData final
-    {
-        Scene* m_scene = nullptr;
-        View* m_view = nullptr;
-        Core::Texture* m_mainColorTarget = nullptr;
-        Core::Texture* m_mainDepthTarget = nullptr;
-        RectF m_viewportRect{ kForceInit };
-        Core::RingUploader* m_renderQueueUploader = nullptr;
-        Rc<Core::Buffer> m_constants;
-        //! Set by the module that writes every pixel of the main color target; readers clear it otherwise.
-        bool m_isMainColorWritten = false;
-    };
-
-
     void ClearMainTargets(Core::FrameGraph& graph, const RendererViewData& view);
 
 

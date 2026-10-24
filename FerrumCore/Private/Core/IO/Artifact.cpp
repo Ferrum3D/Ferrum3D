@@ -2,7 +2,7 @@
 #include <Core/IO/MemoryStream.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/RTTI/Reflection.h>
-#include <Core/Serialization/JsonSerialization.h>
+#include <Core/Serialization/Document.h>
 #include <Core/Serialization/Serialization.h>
 
 namespace FE::IO
@@ -123,18 +123,15 @@ namespace FE::IO
 
         // Decode stage: ArtifactStore, rather than AssetManager, owns selection and use of the metadata serialization format.
         ReadOnlyMemoryStream stream(bytes);
-        Serialization::JsonFormat format;
-        Serialization::DeserializationContext deserializationContext(&stream, format);
-
         ArtifactRecord result;
-        const Serialization::ResultCode deserializeResult = deserializationContext.Load(result);
+        const Serialization::ResultCode deserializeResult = Serialization::LoadDocument(stream, result);
         if (deserializeResult != Serialization::ResultCode::kSuccess)
         {
             const ArtifactMetadataErrorCode code = MapSerializationError(deserializeResult);
-            return Fail(context, code, "metadata does not match the JSON artifact schema");
+            return Fail(context, code, "metadata does not match the artifact schema");
         }
 
-        // Identity/type stage: reject valid JSON that belongs to another request or cannot be constructed by this runtime.
+        // Identity/type stage: reject valid metadata that belongs to another request or cannot be constructed by this runtime.
         if (result.m_assetId != context.m_assetId)
             return Fail(context, ArtifactMetadataErrorCode::kIdentityMismatch, "asset does not match the requested asset");
 

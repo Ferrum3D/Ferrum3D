@@ -75,6 +75,20 @@ namespace FE::Rtti
     }
 
 
+    bool Any::Copy(const Type& type, const void* value)
+    {
+        if (!type.m_copyConstructor || !type.m_destructor || !value)
+            return false;
+
+        Any copy;
+        copy.m_type = &type;
+        copy.m_value = Memory::DefaultAllocate(type.m_size, type.m_alignment);
+        type.m_copyConstructor(copy.m_value, value);
+        *this = std::move(copy);
+        return true;
+    }
+
+
     void Any::Reset()
     {
         if (m_value == nullptr)

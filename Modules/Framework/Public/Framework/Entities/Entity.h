@@ -87,6 +87,8 @@ namespace FE::Framework
         ArchetypeChunk* m_chunk = nullptr;
         EntityResources* m_resources = nullptr;
 
+        Entity* m_previousRoot = nullptr;
+        Entity* m_nextRoot = nullptr;
         Memory::ShortPtr<Entity> m_parent{ nullptr };
         Memory::ShortPtr<Entity> m_firstChild{ nullptr };
         Memory::ShortPtr<Entity> m_lastChild{ nullptr };

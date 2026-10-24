@@ -87,6 +87,28 @@ namespace FE::Framework
     }
 
 
+    void EntityWorld::TraverseRoots(void* context, bool (*visit)(void*, Entity&)) const
+    {
+        FE_AssertDebug(Threading::IsMainThread() && !m_impl->m_schedule.IsUpdating());
+        for (Entity* root = m_impl->m_storage.m_firstRoot; root; root = root->m_nextRoot)
+        {
+            if (!visit(context, *root))
+                break;
+        }
+    }
+
+
+    festd::span<const EntityComponentInfo* const> EntityWorld::GetComponents(const Entity& entity) const
+    {
+        FE_AssertDebug(&entity.GetWorld() == this && !m_impl->m_schedule.IsUpdating());
+
+        if (entity.m_chunk)
+            return entity.m_chunk->m_archetype.m_columns;
+
+        return {};
+    }
+
+
     EntityRegistry& EntityWorld::Impl::CreateRegistry(Uuid key)
     {
         FE_AssertDebug(Threading::IsMainThread(), "Entity world safe points must execute on the main thread");
@@ -217,7 +239,38 @@ namespace FE::Framework
         Entity* entity = ::new (m_storage.m_entities.AllocateMemory()) Entity(registry, entityId, uuid, name);
         slot.m_entity = entity;
         m_storage.m_uuidLookup.emplace(uuid, entity);
+        LinkRoot(*entity);
         return entity;
+    }
+
+
+    void EntityWorld::Impl::LinkRoot(Entity& entity)
+    {
+        entity.m_previousRoot = m_storage.m_lastRoot;
+        entity.m_nextRoot = nullptr;
+        if (m_storage.m_lastRoot)
+            m_storage.m_lastRoot->m_nextRoot = &entity;
+        else
+            m_storage.m_firstRoot = &entity;
+
+        m_storage.m_lastRoot = &entity;
+    }
+
+
+    void EntityWorld::Impl::UnlinkRoot(Entity& entity)
+    {
+        if (entity.m_previousRoot)
+            entity.m_previousRoot->m_nextRoot = entity.m_nextRoot;
+        else
+            m_storage.m_firstRoot = entity.m_nextRoot;
+
+        if (entity.m_nextRoot)
+            entity.m_nextRoot->m_previousRoot = entity.m_previousRoot;
+        else
+            m_storage.m_lastRoot = entity.m_previousRoot;
+
+        entity.m_previousRoot = nullptr;
+        entity.m_nextRoot = nullptr;
     }
 
 
@@ -242,7 +295,13 @@ namespace FE::Framework
         else if (entity.m_parent)
             entity.m_parent->m_lastChild = entity.m_previousSibling;
 
+        if (!entity.m_parent)
+            UnlinkRoot(entity);
+
         entity.m_parent = parent;
+        if (!parent)
+            LinkRoot(entity);
+
         entity.m_previousSibling = parent ? parent->m_lastChild.Get() : nullptr;
         entity.m_nextSibling = nullptr;
 
@@ -276,6 +335,7 @@ namespace FE::Framework
 
         entity.m_chunk = nullptr;
         Reparent(entity, nullptr);
+        UnlinkRoot(entity);
         m_storage.m_uuidLookup.erase(entity.m_uuid);
 
         auto& slot = m_storage.m_slots[entity.m_id.Slot()];

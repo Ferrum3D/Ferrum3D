@@ -107,6 +107,8 @@ namespace FE::Framework
             return AddComponent(target, std::forward<T>(value));
         }
 
+        bool ReplaceComponent(EntityTarget target, const Rtti::Type& type, const void* value);
+
     private:
         friend EntityWorld;
         struct Impl;
