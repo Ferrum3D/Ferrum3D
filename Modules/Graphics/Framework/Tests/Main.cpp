@@ -1,6 +1,7 @@
 #include "Reflection.gen.h"
 #include <Core/Env/Environment.h>
 #include <Core/Jobs/Jobs.h>
+#include <Graphics/Core/ShaderSourceDirectory.h>
 #include <gtest/gtest.h>
 
 int main(int argc, char** argv)
@@ -9,6 +10,7 @@ int main(int argc, char** argv)
     info.m_name = "FerrumGraphicsTests";
     FE::Env::Init(info, argc, const_cast<const char**>(argv));
     FE::CallLinkerAnchor_GraphicsTests();
+    FE::Graphics::Core::AddShaderSourceDirectory(FE_GRAPHICS_TESTS_SHADER_DIRECTORY, "Shaders/Tests");
     testing::InitGoogleTest(&argc, argv);
 
     int result = 0;

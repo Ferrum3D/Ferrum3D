@@ -141,8 +141,11 @@ namespace FE::IO
     {
         FE_PROFILER_ZONE_TEXT("%.*s", path.size(), path.data());
 
+        // The parameters only reference the path, so it must outlive the iteration.
+        const Path absolutePath = GetAbsolutePath(path);
+
         Platform::DirectoryIterationParams params;
-        params.m_path = GetAbsolutePath(path);
+        params.m_path = absolutePath;
         params.m_pattern = pattern;
         params.m_callbackData = reinterpret_cast<uintptr_t>(&f);
         params.m_callback = [](const uintptr_t callbackData, const DirectoryEntry& entry) {

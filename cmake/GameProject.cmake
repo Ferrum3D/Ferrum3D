@@ -1,6 +1,6 @@
 # All game and game-specific editor code belongs in the shared library directory.
 function(fe_add_game_project NAME)
-    cmake_parse_arguments(GAME "" "LIBRARY_DIRECTORY;GAME_MAIN;EDITOR_MAIN;ASSET_DIRECTORY;FOLDER" "LINK_LIBRARIES" ${ARGN})
+    cmake_parse_arguments(GAME "" "LIBRARY_DIRECTORY;GAME_MAIN;EDITOR_MAIN;ASSET_DIRECTORY;SHADER_DIRECTORY;FOLDER" "LINK_LIBRARIES" ${ARGN})
     foreach(REQUIRED LIBRARY_DIRECTORY GAME_MAIN EDITOR_MAIN ASSET_DIRECTORY)
         if(NOT GAME_${REQUIRED})
             message(FATAL_ERROR "fe_add_game_project(${NAME}): ${REQUIRED} is required")
@@ -25,16 +25,13 @@ function(fe_add_game_project NAME)
         FE_GAME_ASSET_DIRECTORY="${ASSET_DIRECTORY}"
         FE_GAME_RUNTIME_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}")
 
-    # Runtime shader sources are copied at configure time; assets are still cooked manually with FerrumCli.
-    foreach(SHADER_ROOT
-            "${FE_PROJECT_ROOT}/Modules/Graphics/Framework/Shaders"
-            "${FE_PROJECT_ROOT}/Modules/GameFramework/Shaders")
-        file(GLOB_RECURSE SHADERS CONFIGURE_DEPENDS LIST_DIRECTORIES false RELATIVE "${SHADER_ROOT}"
-            "${SHADER_ROOT}/*.h" "${SHADER_ROOT}/*.hlsl" "${SHADER_ROOT}/*.hlsli")
-        foreach(SHADER ${SHADERS})
-            configure_file("${SHADER_ROOT}/${SHADER}" "${CMAKE_CURRENT_BINARY_DIR}/Shaders/${SHADER}" COPYONLY)
-        endforeach()
-    endforeach()
+    # Engine modules register their own shader directories. A game with shaders passes SHADER_DIRECTORY and registers
+    # FE_GAME_SHADER_DIRECTORY with Graphics::Core::AddShaderSourceDirectory during startup.
+    if(GAME_SHADER_DIRECTORY)
+        get_filename_component(SHADER_DIRECTORY "${GAME_SHADER_DIRECTORY}" ABSOLUTE)
+        target_include_directories(${NAME}_Lib PUBLIC "${SHADER_DIRECTORY}")
+        target_compile_definitions(${NAME}_Lib PRIVATE FE_GAME_SHADER_DIRECTORY="${SHADER_DIRECTORY}")
+    endif()
 
     configure_file("${FE_PROJECT_ROOT}/ThirdParty/nerd-fonts/SymbolsNerdFontMono-Regular.ttf"
         "${CMAKE_CURRENT_BINARY_DIR}/Editor/Fonts/SymbolsNerdFontMono-Regular.ttf" COPYONLY)

@@ -70,8 +70,13 @@ Gameplay camera movement also respects pause, including mouse rotation.
 Specify `LIBRARY_DIRECTORY`, `GAME_MAIN`, `EDITOR_MAIN`, and `ASSET_DIRECTORY`; optional
 `FOLDER` and `LINK_LIBRARIES` configure project grouping and extra dependencies. Each
 launcher contains only its specified `main.cpp`. The shared library owns all application
-and editor code. Shader sources are copied during configuration; asset cooking remains
-an explicit FerrumCli operation.
+and editor code. Asset cooking remains an explicit FerrumCli operation.
+
+Shaders are read from their source directories at runtime; nothing is copied into the build tree.
+Engine modules register their own directories. A game with shaders passes `SHADER_DIRECTORY` and
+calls `Graphics::Core::AddShaderSourceDirectory(FE_GAME_SHADER_DIRECTORY)` before creating pipelines.
+Compiled shaders and the Vulkan pipeline cache are stored in `ShaderCache/` next to the executables;
+deleting that directory only costs a recompile.
 
 ## Stage 7 implementation
 

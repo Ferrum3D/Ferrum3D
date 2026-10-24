@@ -1,4 +1,6 @@
+#include <Core/IO/FileStream.h>
 #include <Core/Jobs/Jobs.h>
+#include <Graphics/Core/Common/ShaderCache.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
@@ -10,6 +12,58 @@
 
 namespace FE::Graphics::Vulkan
 {
+    namespace
+    {
+        //! Read a pipeline cache saved for the same adapter and driver, or return empty data.
+        festd::vector<std::byte> LoadPipelineCacheData(const IO::Path& path, const VkPhysicalDeviceProperties& adapterProperties)
+        {
+            festd::vector<std::byte> data;
+
+            auto stream = IO::FileStream::Open(path, IO::OpenMode::kReadOnly);
+            if (!stream)
+                return data;
+
+            data.resize(static_cast<uint32_t>(stream.value()->Length()));
+            if (stream.value()->ReadToBuffer(data.data(), data.size()) != data.size())
+                return {};
+
+            // Drivers are required to reject foreign caches, but checking the header avoids relying on that.
+            VkPipelineCacheHeaderVersionOne header;
+            if (data.size() < sizeof(header))
+                return {};
+
+            memcpy(&header, data.data(), sizeof(header));
+            if (header.headerVersion != VK_PIPELINE_CACHE_HEADER_VERSION_ONE)
+                return {};
+
+            if (header.vendorID != adapterProperties.vendorID || header.deviceID != adapterProperties.deviceID)
+                return {};
+
+            if (memcmp(header.pipelineCacheUUID, adapterProperties.pipelineCacheUUID, VK_UUID_SIZE) != 0)
+                return {};
+
+            return data;
+        }
+
+
+        void SavePipelineCacheData(const VkDevice device, const VkPipelineCache pipelineCache, const IO::Path& path)
+        {
+            FE_PROFILER_ZONE();
+
+            size_t dataSize = 0;
+            if (vkGetPipelineCacheData(device, pipelineCache, &dataSize, nullptr) != VK_SUCCESS || dataSize == 0)
+                return;
+
+            festd::vector<std::byte> data(static_cast<uint32_t>(dataSize));
+            if (vkGetPipelineCacheData(device, pipelineCache, &dataSize, data.data()) != VK_SUCCESS)
+                return;
+
+            if (!Core::WriteShaderCacheFile(path, festd::span{ data.data(), static_cast<uint32_t>(dataSize) }))
+                Logger::LogWarning("Failed to save pipeline cache '{}'", path);
+        }
+    } // namespace
+
+
     PipelineFactory::PipelineFactory(Core::Device* device, Core::DescriptorManager* bindlessManager)
         : m_descriptorManager(ImplCast(bindlessManager))
     {
@@ -20,10 +74,16 @@ namespace FE::Graphics::Vulkan
 
         Logger::LogTrace("Creating Pipeline Factory");
 
+        const VkPhysicalDeviceProperties& adapterProperties = ImplCast(device)->GetAdapterProperties();
+        m_pipelineCachePath = Core::GetShaderCacheDirectory()
+            / Fmt::FixedFormat("PipelineCache_{}_{}.bin", adapterProperties.vendorID, adapterProperties.deviceID);
+
+        const festd::vector<std::byte> initialData = LoadPipelineCacheData(m_pipelineCachePath, adapterProperties);
+
         VkPipelineCacheCreateInfo pipelineCacheCI{};
         pipelineCacheCI.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-        pipelineCacheCI.initialDataSize = 0;
-        pipelineCacheCI.pInitialData = nullptr;
+        pipelineCacheCI.initialDataSize = initialData.size();
+        pipelineCacheCI.pInitialData = initialData.data();
 
         VerifyVk(vkCreatePipelineCache(NativeCast(device), &pipelineCacheCI, nullptr, &m_pipelineCache));
 
@@ -49,7 +109,10 @@ namespace FE::Graphics::Vulkan
         }
 
         if (m_pipelineCache)
+        {
+            SavePipelineCacheData(NativeCast(m_device), m_pipelineCache, m_pipelineCachePath);
             vkDestroyPipelineCache(NativeCast(m_device), m_pipelineCache, nullptr);
+        }
     }
 
 

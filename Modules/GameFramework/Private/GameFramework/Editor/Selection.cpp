@@ -1,6 +1,6 @@
 #include <GameFramework/Editor/Selection.h>
 #include <Graphics/Core/GraphicsQueue.h>
-#include <Graphics/Core/PipelineFactory.h>
+#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
@@ -9,19 +9,30 @@
 
 namespace FE::Editor
 {
+    namespace
+    {
+        struct SelectionPipeline final : public Graphics::Core::ComputePipelineVariantSet
+        {
+            FE_DECLARE_PIPELINE_SET(SelectionPipeline);
+
+        private:
+            [[nodiscard]] Graphics::Core::PipelineSetDomainFlags GetDomain() const override
+            {
+                return Graphics::Core::PipelineSetDomainFlags::kEditor;
+            }
+
+            void SetupRequest(uint32_t, Graphics::Core::ComputePipelineRequest& request) override
+            {
+                request.m_desc.SetComputeShader("Shaders/Editor/Selection.cs.hlsl");
+            }
+        };
+        FE_IMPLEMENT_PIPELINE_SET(SelectionPipeline);
+    } // namespace
+
+
     SelectionViewModule::SelectionViewModule(Graphics::View* view)
         : ViewModuleBase(view)
     {
-    }
-
-
-    void SelectionViewModule::Initialize(Graphics::Core::PipelineFactory* factory)
-    {
-        Graphics::Core::ComputePipelineRequest request;
-        request.m_desc.SetComputeShader("Shaders/Editor/Selection.cs.hlsl");
-        m_pipeline = factory->CreateComputePipeline(request);
-        m_pipeline->GetCompletionWaitGroup()->Wait();
-        FE_Assert(m_pipeline->IsReady(), "Editor selection shader failed to compile");
     }
 
 
@@ -62,8 +73,12 @@ namespace FE::Editor
     {
         using namespace Graphics;
 
+        Core::ComputePipeline* pipeline = SelectionPipeline::GetPipeline();
+        if (pipeline == nullptr || !pipeline->IsReady())
+            return;
+
         const auto* visibility = blackboard.TryGet<Visibility::Output>();
-        if (!m_pipeline || !visibility || (m_selected.empty() && !m_pickRequested))
+        if (!visibility || (m_selected.empty() && !m_pickRequested))
             return;
 
         const auto& view = blackboard.Get<RendererViewData>();
@@ -85,7 +100,7 @@ namespace FE::Editor
 
         auto result = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), "EditorPick", 1);
         auto* pass = graph.AllocatePassData<SelectionPassDesc>();
-        pass->m_pipeline = m_pipeline;
+        pass->m_pipeline = pipeline;
         pass->m_constants.m_visibility = graph.GetSRV(visibility->m_target.Get());
         pass->m_constants.m_color = graph.GetUAV(view.m_mainColorTarget);
         pass->m_constants.m_selected = graph.GetSRV(selected.Get());

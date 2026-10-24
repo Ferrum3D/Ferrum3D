@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/IO/Path.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Core/PipelineFactory.h>
 #include <Graphics/Core/ShaderCompiler.h>
@@ -34,6 +35,7 @@ namespace FE::Graphics::Vulkan
         Rc<ShaderLibrary> m_shaderLibrary;
         DescriptorManager* m_descriptorManager = nullptr;
         VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+        IO::Path m_pipelineCachePath;
         festd::unordered_dense_map<uint64_t, GraphicsPipeline*> m_graphicsPipelinesMap;
         festd::unordered_dense_map<uint64_t, ComputePipeline*> m_computePipelinesMap;
     };

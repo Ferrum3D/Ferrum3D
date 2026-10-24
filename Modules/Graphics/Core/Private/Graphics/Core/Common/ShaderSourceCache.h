@@ -1,80 +1,76 @@
 #pragma once
-#include <Core/IO/Async.h>
-#include <Core/Jobs/Base.h>
-#include <Core/Memory/PoolAllocator.h>
+#include <Core/IO/BaseIO.h>
+#include <Core/Memory/RefCount.h>
 #include <Core/Threading/SharedSpinLock.h>
-#include <Graphics/Core/ShaderStage.h>
 #include <festd/unordered_map.h>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Core
 {
-    struct ShaderSourceCache;
-
+    //! @brief Immutable contents of one shader source file, identified by its virtual path.
     struct ShaderSourceFile final : public Memory::RefCountedObjectBase
     {
-        ShaderSourceFile(Memory::Pool<ShaderSourceFile>& pool)
-            : m_pool(pool)
+        //! @brief Take ownership of the file contents; a null terminator is appended.
+        ShaderSourceFile(Env::Name path, festd::pmr::vector<std::byte>&& source);
+
+        [[nodiscard]] Env::Name GetPath() const
         {
+            return m_path;
         }
 
-        ~ShaderSourceFile() override;
+        //! @brief Get the file contents. The returned view is null-terminated.
+        [[nodiscard]] festd::string_view GetSource() const
+        {
+            return festd::string_view{ reinterpret_cast<const char*>(m_source.data()), m_source.size() - 1 };
+        }
 
-        [[nodiscard]] ShaderStage GetStage() const;
-        [[nodiscard]] festd::string_view GetSource() const;
+        [[nodiscard]] uint64_t GetContentHash() const
+        {
+            return m_contentHash;
+        }
 
     private:
-        friend ShaderSourceCache;
-
         void DoRelease() override;
 
-        Memory::Pool<ShaderSourceFile>& m_pool;
-        ShaderSourceCache* m_sourceCache = nullptr;
-        char* m_source = nullptr;
-        uint32_t m_sourceSize = 0;
-        ShaderStage m_stage = ShaderStage::kUndefined;
+        Env::Name m_path;
+        festd::pmr::vector<std::byte> m_source;
+        uint64_t m_contentHash = 0;
     };
 
 
+    enum class ShaderSourceReadMode : uint32_t
+    {
+        //! Read through the asynchronous I/O scheduler and suspend the calling fiber until the read completes.
+        kAsync,
+
+        //! Read on the calling thread without switching fibers. Required inside shader compiler callbacks: DXC keeps
+        //! per-thread state for the duration of a compilation, so its thread must not run another fiber meanwhile.
+        kBlocking,
+    };
+
+
+    //! @brief Lazily loads shader sources from the directories registered with AddShaderSourceDirectory.
+    //!
+    //! A file is read on its first request and stays unchanged for the lifetime of the cache, so all compilations see the
+    //! same version of a shared header. Missing files are remembered too, because the compiler probes several candidate
+    //! paths for every include.
     struct ShaderSourceCache final : public Memory::RefCountedObjectBase
     {
         FE_RTTI("FE08F0A8-40B4-4C17-B152-8220DC1BF5F6");
 
-        ShaderSourceCache();
+        festd::expected<Rc<ShaderSourceFile>, IO::ResultCode> GetSource(Env::Name path,
+                                                                        ShaderSourceReadMode mode = ShaderSourceReadMode::kAsync);
 
-        [[nodiscard]] bool IsLoading() const;
-
-        festd::expected<Rc<ShaderSourceFile>, IO::ResultCode> GetSource(Env::Name path);
+        //! @brief Read every path that is not cached yet with parallel asynchronous reads.
+        void Prefetch(festd::span<const Env::Name> paths);
 
     private:
-        void ReadDirectory(Jobs::Graph& jobGraph, const IO::Path& path);
-        void OnFileLoaded(const IO::Async::IController* controller, festd::string_view fullPath, Env::Name shaderName,
-                          char* source, uint32_t sourceSize);
+        festd::optional<Rc<ShaderSourceFile>> TryGetCached(Env::Name path);
+        static festd::expected<Rc<ShaderSourceFile>, IO::ResultCode> MakeResult(const Rc<ShaderSourceFile>& file);
 
         void DoRelease() override;
 
-        Memory::Pool<ShaderSourceFile> m_filePool;
-        festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;
         Threading::SharedSpinLock m_lock;
-        std::atomic<uint32_t> m_loadingJobCount;
+        festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;
     };
-
-
-    inline ShaderStage ShaderSourceFile::GetStage() const
-    {
-        FE_Assert(!m_sourceCache->IsLoading());
-        return m_stage;
-    }
-
-
-    inline festd::string_view ShaderSourceFile::GetSource() const
-    {
-        FE_Assert(!m_sourceCache->IsLoading());
-        return m_source;
-    }
-
-
-    inline bool ShaderSourceCache::IsLoading() const
-    {
-        return m_loadingJobCount.load(std::memory_order_acquire) > 0;
-    }
 } // namespace FE::Graphics::Core

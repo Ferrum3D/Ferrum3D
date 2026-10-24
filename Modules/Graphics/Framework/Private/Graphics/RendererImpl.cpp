@@ -6,6 +6,7 @@
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/ResourcePool.h>
+#include <Graphics/Core/ShaderSourceDirectory.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
@@ -65,6 +66,9 @@ namespace FE::Graphics
 
     void Renderer::Init(Core::Device* device)
     {
+        Core::AddShaderSourceDirectory(FE_GRAPHICS_SHADER_DIRECTORY);
+        Core::AddShaderSourceDirectory(FE_GRAPHICS_SHADER_DIRECTORY "/ThirdParty/FidelityFX");
+
         GRenderer = Memory::DefaultNew<RendererImpl>(device);
     }
 

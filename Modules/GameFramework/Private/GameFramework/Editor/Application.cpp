@@ -16,6 +16,7 @@
 #include <GameFramework/Systems/CameraSystem.h>
 #include <GameFramework/Systems/MeshSystem.h>
 #include <GameFramework/Systems/TransformationSystem.h>
+#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Renderer.h>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -58,6 +59,9 @@ namespace FE::Editor
         editorSettings.m_startPaused = true;
         if (!GameFramework::Application::Initialize(editorSettings))
             return false;
+
+        Graphics::Core::CompileGlobalPipelineSets(GetPipelineFactory(), Graphics::Core::PipelineSetDomainFlags::kEditor);
+        Graphics::Core::WaitForGlobalPipelineSets();
 
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         ImGui::GetIO().IniFilename = "editor.ini";
@@ -196,10 +200,7 @@ namespace FE::Editor
             return;
 
         if (!view->GetModules().Contains<SelectionViewModule>())
-        {
             view->GetModules().Add<SelectionViewModule>();
-            view->GetModules().Find<SelectionViewModule>().Initialize(GetPipelineFactory());
-        }
 
         uint32_t picked = 0;
         if (view->GetModules().Find<SelectionViewModule>().ConsumePick(picked))

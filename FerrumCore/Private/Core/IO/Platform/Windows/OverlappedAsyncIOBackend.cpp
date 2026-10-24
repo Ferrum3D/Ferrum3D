@@ -96,9 +96,11 @@ namespace FE::IO::Async
         FE_PROFILER_ZONE_TEXT("%.*s", filePath.size(), filePath.data());
 
         const Str::Utf8ToUtf16 widePath{ filePath.data(), filePath.size() };
+        // Handles stay in the open file cache after a read completes. Sharing writes and deletes lets tools save or
+        // atomically replace files, e.g. shader sources and cooked artifacts, while the cache still holds them.
         const HANDLE nativeFileHandle = CreateFileW(widePath.ToWideString(),
                                                     GENERIC_READ,
-                                                    FILE_SHARE_READ,
+                                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                                     nullptr,
                                                     OPEN_EXISTING,
                                                     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,

@@ -30,6 +30,7 @@ namespace FE::IO::Async
     struct ReadGroup final
     {
         Path m_sourcePath;
+        Rc<CachedFile> m_file; //!< Keeps the handle open until the read completes, even if the cache drops it.
         Operation* m_operation = nullptr;
         AsyncReadHandle m_handle;
         void* m_stagingMemory = nullptr;
@@ -127,6 +128,7 @@ namespace FE::IO::Async
         void DoRelease() override;
 
         Memory::SpinLockedPool<CachedFile>& m_pool;
+        bool m_isCached = true;
         uint64_t m_lastUseTime = 0;
         uint64_t m_nameHash = 0;
         Path m_path;
@@ -144,6 +146,7 @@ namespace FE::IO::Async
         void CollectGarbage();
 
     private:
+        [[nodiscard]] festd::expected<Rc<CachedFile>, ResultCode> OpenUncachedFile(festd::string_view path);
         void DeleteEntry(uint32_t entryIndex);
 
         IAsyncIOBackend* m_backend = nullptr;

@@ -26,12 +26,14 @@ namespace FE::Graphics::Core
     }
 
 
-    void CompileGlobalPipelineSets(PipelineFactory* factory)
+    void CompileGlobalPipelineSets(PipelineFactory* factory, const PipelineSetDomainFlags domains)
     {
         PipelineVariantSetBase* pipelineSet = GPipelineSetList;
         while (pipelineSet)
         {
-            pipelineSet->Compile(factory);
+            if (Bit::AnySet(domains, pipelineSet->GetDomain()))
+                pipelineSet->Compile(factory);
+
             pipelineSet = pipelineSet->m_next;
         }
     }

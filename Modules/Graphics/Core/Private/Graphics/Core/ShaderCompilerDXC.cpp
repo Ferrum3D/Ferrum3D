@@ -27,9 +27,13 @@ namespace FE::Graphics::Core
                                                   "-fspv-reflect",
                                                   "-fvk-use-dx-layout",
                                                   "-fvk-use-dx-position-w",
-                                                  "-Od",
-                                                  "-Zi",
                                                   "-Zpr" };
+
+        constexpr const char* kDebugCompilerArgs[] = { "-Od", "-Zi" };
+        constexpr const char* kOptimizedCompilerArgs[] = { "-O3" };
+
+        //! Bump when compiled shaders change without a change of the compiler or its arguments.
+        constexpr uint64_t kShaderCacheVersion = 1;
 
 
         LPWSTR ConvertString(std::pmr::memory_resource* allocator, const festd::string_view source)
@@ -66,12 +70,31 @@ namespace FE::Graphics::Core
         }
 
 
+        //! Resolves includes through the source cache and records every file used by one compilation.
         struct DxcIncludeHandler final : public IDxcIncludeHandler
         {
             explicit DxcIncludeHandler(IDxcUtils* dxcUtils, ShaderSourceCache* shaderSourceCache)
                 : m_dxcUtils(dxcUtils)
                 , m_shaderSourceCache(shaderSourceCache)
             {
+            }
+
+            void AddDependency(const ShaderSourceFile* sourceFile)
+            {
+                for (const ShaderCacheDependency& dependency : m_dependencies)
+                {
+                    if (dependency.m_path == sourceFile->GetPath())
+                        return;
+                }
+
+                ShaderCacheDependency& dependency = m_dependencies.emplace_back();
+                dependency.m_path = sourceFile->GetPath();
+                dependency.m_contentHash = sourceFile->GetContentHash();
+            }
+
+            [[nodiscard]] festd::span<const ShaderCacheDependency> GetDependencies() const
+            {
+                return festd::span{ m_dependencies.data(), m_dependencies.size() };
             }
 
             HRESULT STDMETHODCALLTYPE LoadSource(const LPCWSTR filenameWide, IDxcBlob** includeSource) override
@@ -82,7 +105,7 @@ namespace FE::Graphics::Core
                 const IO::Path path = IO::NormalizePath({ pathUtf8.data(), pathUtf8.size() });
 
                 const Env::Name name{ path };
-                if (const festd::expected result = m_shaderSourceCache->GetSource(name))
+                if (const festd::expected result = m_shaderSourceCache->GetSource(name, ShaderSourceReadMode::kBlocking))
                 {
                     const Rc<ShaderSourceFile>& sourceFile = result.value();
                     const festd::string_view source = sourceFile->GetSource();
@@ -92,6 +115,7 @@ namespace FE::Graphics::Core
                         m_dxcUtils->CreateBlobFromPinned(source.data(), source.size(), DXC_CP_UTF8, blobEncoding.GetAddressOf());
                     if (SUCCEEDED(hr))
                     {
+                        AddDependency(sourceFile.Get());
                         *includeSource = blobEncoding.Detach();
                         return S_OK;
                     }
@@ -124,12 +148,47 @@ namespace FE::Graphics::Core
         private:
             IDxcUtils* m_dxcUtils = nullptr;
             ShaderSourceCache* m_shaderSourceCache = nullptr;
+            festd::inline_vector<ShaderCacheDependency, 16> m_dependencies;
             std::atomic<ULONG> m_refCount = 0;
         };
+
+
+        uint64_t GetCompilerVersionHash(IDxcCompiler3* compiler)
+        {
+            Hasher hasher;
+
+            Rc<IDxcVersionInfo> versionInfo;
+            if (SUCCEEDED(compiler->QueryInterface(IID_PPV_ARGS(versionInfo.GetAddressOf()))))
+            {
+                UINT32 major = 0;
+                UINT32 minor = 0;
+                if (SUCCEEDED(versionInfo->GetVersion(&major, &minor)))
+                    hasher.UpdateRaw(major).UpdateRaw(minor);
+            }
+
+            Rc<IDxcVersionInfo2> commitInfo;
+            if (SUCCEEDED(compiler->QueryInterface(IID_PPV_ARGS(commitInfo.GetAddressOf()))))
+            {
+                UINT32 commitCount = 0;
+                char* commitHash = nullptr;
+                if (SUCCEEDED(commitInfo->GetCommitInfo(&commitCount, &commitHash)))
+                {
+                    hasher.UpdateRaw(commitCount);
+                    if (commitHash != nullptr)
+                    {
+                        hasher.Update(commitHash, strlen(commitHash));
+                        CoTaskMemFree(commitHash);
+                    }
+                }
+            }
+
+            return hasher.Finalize();
+        }
     } // namespace
 
 
     ShaderCompilerDXC::ShaderCompilerDXC()
+        : m_shaderCache(GetShaderCacheDirectory())
     {
         FE_PROFILER_ZONE();
 
@@ -145,7 +204,7 @@ namespace FE::Graphics::Core
         FE_Assert(SUCCEEDED(hrCompiler), "Failed to create DXC compiler");
 
         m_shaderSourceCache = Memory::DefaultNew<ShaderSourceCache>();
-        m_dxcIncludeHandler = Memory::DefaultNew<DxcIncludeHandler>(m_dxcUtils.Get(), m_shaderSourceCache.Get());
+        m_compilerVersionHash = GetCompilerVersionHash(m_dxcCompiler.Get());
     }
 
 
@@ -205,11 +264,34 @@ namespace FE::Graphics::Core
             compilerArgs.push_back(ConvertString(&temp, arg));
         }
 
+        festd::span<const char* const> configArgs = kOptimizedCompilerArgs;
+        if (Build::IsDebug())
+            configArgs = kDebugCompilerArgs;
+
+        for (const char* arg : configArgs)
+        {
+            compilerArgs.push_back(ConvertString(&temp, arg));
+        }
+
+        Hasher lookupKeyHasher;
+        lookupKeyHasher.UpdateRaw(kShaderCacheVersion).UpdateRaw(m_compilerVersionHash).UpdateRaw(args.m_shaderName.GetHash());
+        for (const LPCWSTR arg : compilerArgs)
+            lookupKeyHasher.Update(arg, wcslen(arg) * sizeof(WCHAR));
+
+        const uint64_t lookupKey = lookupKeyHasher.Finalize();
+
+        ShaderCompilerResult cachedResult;
+        if (m_shaderCache.TryLoad(lookupKey, *m_shaderSourceCache, args.m_binaryAllocator, cachedResult))
+            return cachedResult;
+
+        const Rc includeHandler = Memory::DefaultNew<DxcIncludeHandler>(m_dxcUtils.Get(), m_shaderSourceCache.Get());
+        includeHandler->AddDependency(sourceFile.Get());
+
         Rc<IDxcResult> result;
         HRESULT hr = m_dxcCompiler->Compile(&sourceBuffer,
                                             compilerArgs.data(),
                                             compilerArgs.size(),
-                                            m_dxcIncludeHandler.Get(),
+                                            includeHandler.Get(),
                                             IID_PPV_ARGS(result.GetAddressOf()));
 
         if (FAILED(hr))
@@ -248,41 +330,28 @@ namespace FE::Graphics::Core
             pdbStream->WriteFromBuffer(pdb->GetBufferPointer(), pdb->GetBufferSize());
         }
 
-        ShaderCompilerResult compilerResult;
-
-        // Get hash
-        {
-            Rc<IDxcBlob> hash;
-            hr = result->GetOutput(DXC_OUT_SHADER_HASH, IID_PPV_ARGS(hash.GetAddressOf()), nullptr);
-
-            if (SUCCEEDED(hr) && hash)
-            {
-                const auto* hashData = static_cast<DxcShaderHash*>(hash->GetBufferPointer());
-                compilerResult.m_hash = DefaultHash(hashData->HashDigest, sizeof(hashData->HashDigest));
-                compilerResult.m_hashValid = true;
-            }
-        }
-
         Rc<IDxcBlob> binary;
         hr = result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(binary.GetAddressOf()), nullptr);
         FE_Assert(SUCCEEDED(hr), "Failed to get binary");
         FE_Assert(binary);
 
-        if (!compilerResult.m_hashValid)
-        {
-            compilerResult.m_hash = DefaultHash(binary->GetBufferPointer(), binary->GetBufferSize());
-            compilerResult.m_hashValid = true;
-        }
-
         const uint32_t binarySize = static_cast<uint32_t>(binary->GetBufferSize());
+        const festd::span binaryBytes{ static_cast<const std::byte*>(binary->GetBufferPointer()), binarySize };
+
+        // The hash of the bytecode is used so that cached and freshly compiled results are identified the same way.
+        ShaderCompilerResult compilerResult;
+        compilerResult.m_hash = DefaultHash(binaryBytes.data(), binarySize);
+        compilerResult.m_hashValid = true;
+
         const uint32_t bufferSizeDwordAligned = AlignUp<sizeof(uint32_t)>(binarySize);
         compilerResult.m_byteCode = ByteBuffer(bufferSizeDwordAligned, args.m_binaryAllocator);
-        memcpy(compilerResult.m_byteCode.data(), binary->GetBufferPointer(), binarySize);
+        memcpy(compilerResult.m_byteCode.data(), binaryBytes.data(), binarySize);
         memset(compilerResult.m_byteCode.data() + binarySize, 0, bufferSizeDwordAligned - binarySize);
 
         compilerResult.m_codeValid = true;
         compilerResult.m_byteCodeSize = binarySize;
 
+        m_shaderCache.Store(lookupKey, includeHandler->GetDependencies(), binaryBytes);
         return compilerResult;
     }
 } // namespace FE::Graphics::Core

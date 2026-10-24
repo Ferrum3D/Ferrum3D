@@ -11,8 +11,6 @@ namespace FE::Editor
 
         explicit SelectionViewModule(Graphics::View* view);
 
-        void Initialize(Graphics::Core::PipelineFactory* factory);
-
         void Update(Graphics::Core::FrameGraphBlackboard& blackboard) override;
         void AddRenderPasses(Graphics::Core::FrameGraph& graph, Graphics::Core::FrameGraphBlackboard& blackboard) override;
 
@@ -32,7 +30,6 @@ namespace FE::Editor
         void DoRelease() override;
 
         festd::vector<uint32_t> m_selected;
-        Graphics::Core::ComputePipeline* m_pipeline = nullptr;
         Rc<Graphics::Core::Buffer> m_readback;
         Graphics::Core::FenceSyncPoint m_pickFence;
         Vector2UInt m_pickPosition{ 0, 0 };

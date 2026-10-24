@@ -30,8 +30,15 @@ namespace FE::Graphics::Vulkan
         WaitGroup* waitGroup = context.m_shaderLibrary->GetCompletionWaitGroup(shaderHandle);
         waitGroup->Wait();
 
-        const Core::ShaderReflection* reflection = context.m_shaderLibrary->GetReflection(shaderHandle);
         const ShaderModuleInfo shaderModuleInfo = context.m_shaderLibrary->GetShaderModule(shaderHandle);
+        if (shaderModuleInfo.m_shaderModule == VK_NULL_HANDLE)
+        {
+            Logger::LogError("Failed to create compute pipeline: shader {} was not valid", shaderName);
+            m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
+            return;
+        }
+
+        const Core::ShaderReflection* reflection = context.m_shaderLibrary->GetReflection(shaderHandle);
 
         VkPipelineShaderStageCreateInfo shaderStageCI = {};
         shaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

@@ -272,6 +272,10 @@ namespace FE::IO::Async
 
     void CachedFile::DoRelease()
     {
+        // Cached entries are closed by the cache; uncached ones by their last reader.
+        if (!m_isCached && m_fileHandle)
+            Platform::CloseFile(m_fileHandle);
+
         m_pool.Delete(this);
     }
 
@@ -297,6 +301,11 @@ namespace FE::IO::Async
     festd::expected<Rc<CachedFile>, ResultCode> OpenFileCache::CreateFile(const festd::string_view path)
     {
         FE_AssertDebug(m_cacheSize > 0 && m_backend != nullptr);
+
+        // Tools rewrite and replace sources and cooked artifacts while development builds run. A cached handle would keep
+        // such a file locked and keep serving its old contents, so every operation opens the file again instead.
+        if (Build::IsDevelopment())
+            return OpenUncachedFile(path);
 
         const uint64_t hash = DefaultHash(path);
         for (uint32_t entryIndex = 0; entryIndex < m_entries.size(); ++entryIndex)
@@ -335,6 +344,19 @@ namespace FE::IO::Async
         newEntry->m_fileHandle = openFileResult.value();
         m_entries.push_back(newEntry);
         return newEntry;
+    }
+
+
+    festd::expected<Rc<CachedFile>, ResultCode> OpenFileCache::OpenUncachedFile(const festd::string_view path)
+    {
+        const festd::expected openFileResult = m_backend->OpenFile(path);
+        if (!openFileResult.has_value())
+            return festd::unexpected(openFileResult.error());
+
+        Rc entry = m_entryPool.New();
+        entry->m_isCached = false;
+        entry->m_fileHandle = openFileResult.value();
+        return entry;
     }
 
 
@@ -557,6 +579,7 @@ namespace FE::IO::Async
 
             auto* group = m_groupPool.New();
             group->m_sourcePath = dataSource.m_filePath;
+            group->m_file = file;
             group->m_operation = operation;
             group->m_destination = destination;
             group->m_destinationSize = command.m_uncompressedSize;

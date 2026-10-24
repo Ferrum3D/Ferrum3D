@@ -46,8 +46,8 @@ namespace FE
     {
         FE_PROFILER_ZONE();
 
-        DWORD pathLength = 0;
         WCHAR buffer[MAX_PATH + 1];
+        DWORD pathLength = festd::size(buffer);
         FE_Verify(::QueryFullProcessImageNameW(::GetCurrentProcess(), 0, buffer, &pathLength));
         return ConvertWideString<IO::Path>({ buffer, pathLength });
     }

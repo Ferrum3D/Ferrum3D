@@ -22,6 +22,7 @@
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/Reflection.gen.h>
 #include <Graphics/Core/ResourcePool.h>
+#include <Graphics/Core/ShaderSourceDirectory.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Features/ImGui/ImGuiRenderer.h>
 #include <Graphics/Materials/MaterialInstance.h>
@@ -67,6 +68,7 @@ namespace FE::GameFramework
         FE_Assert(!adapters.empty());
         m_device = factory.CreateDevice(adapters.front().m_name);
         Renderer::Init(m_device.Get());
+        Core::AddShaderSourceDirectory(FE_GAME_FRAMEWORK_SHADER_DIRECTORY);
         auto& renderer = Renderer::Get();
         auto* pool = renderer.GetResourcePool();
         auto* graphicsQueue = renderer.GetGraphicsQueue();

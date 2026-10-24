@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Core/Base/PlatformInclude.h>
 #include <Core/Env/LibraryLoader.h>
+#include <Graphics/Core/Common/ShaderCache.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/ShaderCompiler.h>
 
@@ -24,9 +25,10 @@ namespace FE::Graphics::Core
 
         LibraryLoader m_module;
         Rc<ShaderSourceCache> m_shaderSourceCache;
+        ShaderCache m_shaderCache;
+        uint64_t m_compilerVersionHash = 0;
 
         Rc<IDxcUtils> m_dxcUtils;
         Rc<IDxcCompiler3> m_dxcCompiler;
-        Rc<IDxcIncludeHandler> m_dxcIncludeHandler;
     };
 } // namespace FE::Graphics::Core

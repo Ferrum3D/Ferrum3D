@@ -48,6 +48,7 @@ set_source_files_properties(Private/Graphics/Features/Lighting/HosekSkyModel.cpp
     PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 target_include_directories(FeGraphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
 target_include_directories(FeGraphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/ThirdParty/FidelityFX")
+target_compile_definitions(FeGraphics PRIVATE FE_GRAPHICS_SHADER_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
 
 set_target_properties(FeGraphics PROPERTIES FOLDER "Modules/Graphics")
 target_link_libraries(FeGraphics FeGraphicsCore TracyClient imgui)

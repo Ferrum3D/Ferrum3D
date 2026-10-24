@@ -13,6 +13,7 @@
 #include <Graphics/Core/Common/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Common/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Common/ResourceInstance.h>
+#include <Graphics/Core/Common/ShaderCache.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/ComputePipeline.h>
@@ -5265,6 +5266,142 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
+namespace FE::Graphics::Core
+{
+    const Rtti::TypeID ShaderCacheEntry::TypeID = Rtti::TypeID{
+        0xdb, 0x75, 0xfc, 0x0f, 0x7e, 0x1b, 0x4e, 0x5a, 0x80, 0x82, 0x95, 0xd6, 0x8c, 0xfd, 0xb5, 0xee,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_db75fc0f7e1b4e5a808295d68cfdb5ee(ShaderCacheEntry* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xdb, 0x75, 0xfc, 0x0f, 0x7e, 0x1b, 0x4e, 0x5a,
+                0x80, 0x82, 0x95, 0xd6, 0x8c, 0xfd, 0xb5, 0xee, // FE::Graphics::Core::ShaderCacheEntry (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_db75fc0f7e1b4e5a808295d68cfdb5ee()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ShaderCacheEntry::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_db75fc0f7e1b4e5a808295d68cfdb5ee();
+    }
+
+    void ShaderCacheEntry::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_db75fc0f7e1b4e5a808295d68cfdb5ee();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xdb, 0x75, 0xfc, 0x0f, 0x7e, 0x1b, 0x4e, 0x5a,
+            0x80, 0x82, 0x95, 0xd6, 0x8c, 0xfd, 0xb5, 0xee, // FE::Graphics::Core::ShaderCacheEntry
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependencies = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_byteCodeHash = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_byteCodeSize = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_dependencies",
+                                                     &ShaderCacheEntry::m_dependencies,
+                                                     kAttributes_m_dependencies,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_byteCodeHash",
+                                                     &ShaderCacheEntry::m_byteCodeHash,
+                                                     kAttributes_m_byteCodeHash,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_byteCodeSize",
+                                                     &ShaderCacheEntry::m_byteCodeSize,
+                                                     kAttributes_m_byteCodeSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ShaderCacheEntry>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Graphics::Core::ShaderCacheEntry",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_db75fc0f7e1b4e5a808295d68cfdb5ee(static_cast<ShaderCacheEntry*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_db75fc0f7e1b4e5a808295d68cfdb5ee(&ShaderCacheEntry::Reflect);
+
+    FE::Serialization::ResultCode ShaderCacheEntry::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_dependencies", m_dependencies);
+            object.Field("m_byteCodeHash", m_byteCodeHash);
+            object.Field("m_byteCodeSize", m_byteCodeSize);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ShaderCacheEntry::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_dependencies", m_dependencies);
+            object.Field("m_byteCodeHash", m_byteCodeHash);
+            object.Field("m_byteCodeSize", m_byteCodeSize);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ShaderCacheEntry::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xdb, 0x75, 0xfc, 0x0f, 0x7e, 0x1b, 0x4e, 0x5a, 0x80, 0x82, 0x95, 0xd6, 0x8c, 0xfd, 0xb5, 0xee,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_dependencies", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_dependencies)>());
+            hasher.Update("m_byteCodeHash", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_byteCodeHash)>());
+            hasher.Update("m_byteCodeSize", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_byteCodeSize)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ShaderCacheEntry::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics::Core
+
+
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID ShaderLibrary::TypeID = Rtti::TypeID{
@@ -5671,6 +5808,132 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
+namespace FE::Graphics::Core
+{
+    const Rtti::TypeID ShaderCacheDependency::TypeID = Rtti::TypeID{
+        0xf1, 0x4d, 0xa6, 0x66, 0x76, 0x7d, 0x4a, 0x71, 0x8d, 0x83, 0xb6, 0x37, 0xf5, 0x77, 0x07, 0x9d,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f14da666767d4a718d83b637f577079d(ShaderCacheDependency* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xf1, 0x4d, 0xa6, 0x66, 0x76, 0x7d, 0x4a, 0x71,
+                0x8d, 0x83, 0xb6, 0x37, 0xf5, 0x77, 0x07, 0x9d, // FE::Graphics::Core::ShaderCacheDependency (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_f14da666767d4a718d83b637f577079d()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ShaderCacheDependency::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_f14da666767d4a718d83b637f577079d();
+    }
+
+    void ShaderCacheDependency::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_f14da666767d4a718d83b637f577079d();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xf1, 0x4d, 0xa6, 0x66, 0x76, 0x7d, 0x4a, 0x71,
+            0x8d, 0x83, 0xb6, 0x37, 0xf5, 0x77, 0x07, 0x9d, // FE::Graphics::Core::ShaderCacheDependency
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_path = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_contentHash = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_path",
+                                                     &ShaderCacheDependency::m_path,
+                                                     kAttributes_m_path,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_contentHash",
+                                                     &ShaderCacheDependency::m_contentHash,
+                                                     kAttributes_m_contentHash,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ShaderCacheDependency>(typeInstance,
+                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                    "FE::Graphics::Core::ShaderCacheDependency",
+                                                    kBaseClassTypeIDs,
+                                                    kAttributes,
+                                                    kFields,
+                                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_f14da666767d4a718d83b637f577079d(static_cast<ShaderCacheDependency*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_f14da666767d4a718d83b637f577079d(&ShaderCacheDependency::Reflect);
+
+    FE::Serialization::ResultCode ShaderCacheDependency::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_path", m_path);
+            object.Field("m_contentHash", m_contentHash);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ShaderCacheDependency::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_path", m_path);
+            object.Field("m_contentHash", m_contentHash);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ShaderCacheDependency::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xf1, 0x4d, 0xa6, 0x66, 0x76, 0x7d, 0x4a, 0x71, 0x8d, 0x83, 0xb6, 0x37, 0xf5, 0x77, 0x07, 0x9d,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_path", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_path)>());
+            hasher.Update("m_contentHash", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_contentHash)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ShaderCacheDependency::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics::Core
+
+
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID CommandBuffer::TypeID = Rtti::TypeID{
@@ -5844,6 +6107,122 @@ namespace FE::Graphics::Core
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f3d5e2841dbf40cc97907d97fa69b18d(&ShaderCompiler::Reflect);
+} // namespace FE::Graphics::Core
+
+
+namespace FE::Graphics::Core
+{
+    const Rtti::TypeID ShaderCacheIndex::TypeID = Rtti::TypeID{
+        0xf8, 0x48, 0x9b, 0xb4, 0x97, 0x41, 0x4e, 0x8d, 0xab, 0x16, 0x30, 0x25, 0x72, 0xb4, 0x3d, 0xf0,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f8489bb497414e8dab16302572b43df0(ShaderCacheIndex* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xf8, 0x48, 0x9b, 0xb4, 0x97, 0x41, 0x4e, 0x8d,
+                0xab, 0x16, 0x30, 0x25, 0x72, 0xb4, 0x3d, 0xf0, // FE::Graphics::Core::ShaderCacheIndex (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_f8489bb497414e8dab16302572b43df0()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ShaderCacheIndex::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_f8489bb497414e8dab16302572b43df0();
+    }
+
+    void ShaderCacheIndex::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_f8489bb497414e8dab16302572b43df0();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xf8, 0x48, 0x9b, 0xb4, 0x97, 0x41, 0x4e, 0x8d,
+            0xab, 0x16, 0x30, 0x25, 0x72, 0xb4, 0x3d, 0xf0, // FE::Graphics::Core::ShaderCacheIndex
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_entries = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_entries",
+                                                     &ShaderCacheIndex::m_entries,
+                                                     kAttributes_m_entries,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ShaderCacheIndex>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Graphics::Core::ShaderCacheIndex",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_f8489bb497414e8dab16302572b43df0(static_cast<ShaderCacheIndex*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_f8489bb497414e8dab16302572b43df0(&ShaderCacheIndex::Reflect);
+
+    FE::Serialization::ResultCode ShaderCacheIndex::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_entries", m_entries);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ShaderCacheIndex::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_entries", m_entries);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ShaderCacheIndex::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xf8, 0x48, 0x9b, 0xb4, 0x97, 0x41, 0x4e, 0x8d, 0xab, 0x16, 0x30, 0x25, 0x72, 0xb4, 0x3d, 0xf0,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_entries", 9);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_entries)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ShaderCacheIndex::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::Graphics::Core
 
 
