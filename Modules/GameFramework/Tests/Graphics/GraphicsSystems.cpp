@@ -20,6 +20,7 @@
 #include <GameFramework/Systems/TransformationSystem.h>
 #include <gtest/gtest.h>
 #include <imgui.h>
+#include <limits>
 
 using namespace FE;
 using namespace FE::Framework;
@@ -664,6 +665,100 @@ TEST_F(GraphicsFixture, CopiesAndSerializationExcludeRuntimeOwnership)
     EXPECT_EQ(restoredCamera.m_scene, nullptr);
     EXPECT_FALSE(restoredCamera.m_view);
     EXPECT_EQ(restoredCamera.m_fovY, camera.m_fovY);
+}
+
+
+TEST(GlobalLighting, RejectsInvalidPhysicalParameters)
+{
+    Graphics::GlobalLightingParameters parameters;
+    ASSERT_TRUE(parameters.Validate());
+    parameters.m_atmosphere.m_mieExtinctionPerKm = 0;
+    EXPECT_FALSE(parameters.Validate());
+    parameters = {};
+    parameters.m_atmosphere.m_mieAnisotropy = 1;
+    EXPECT_FALSE(parameters.Validate());
+    parameters = {};
+    parameters.m_atmosphere.m_rayleighScaleHeightKm = 0;
+    EXPECT_FALSE(parameters.Validate());
+    parameters = {};
+    parameters.m_directionalLightOrientation = Quaternion::kZero;
+    EXPECT_FALSE(parameters.Validate());
+    parameters = {};
+    parameters.m_directionalLightIlluminanceLux = -1;
+    EXPECT_FALSE(parameters.Validate());
+    parameters = {};
+    parameters.m_directionalLightColor.x = std::numeric_limits<float>::quiet_NaN();
+    EXPECT_FALSE(parameters.Validate());
+}
+
+
+TEST(GlobalLighting, PacksOrientationAndPhysicalUnitsForGpu)
+{
+    Graphics::GlobalLightingParameters parameters;
+    parameters.m_directionalLightOrientation = Quaternion::RotationY(1.57079632679f) * 2.0f;
+    parameters.m_directionalLightColor = PackedVector3F(0.25f, 0.5f, 1);
+    parameters.m_directionalLightIlluminanceLux = 32000;
+    parameters.m_atmosphere.m_rayleighScaleHeightKm = 7;
+    const auto data = parameters.BuildRenderData();
+    EXPECT_NEAR(data.m_directionIlluminance.x, 1, 0.00001f);
+    EXPECT_NEAR(data.m_directionIlluminance.y, 0, 0.00001f);
+    EXPECT_NEAR(data.m_directionIlluminance.z, 0, 0.00001f);
+    EXPECT_FLOAT_EQ(data.m_directionIlluminance.w, 32000);
+    EXPECT_FLOAT_EQ(data.m_colorSunRadius.x, 0.25f);
+    EXPECT_FLOAT_EQ(data.m_rayleighScaleHeight.w, 7);
+    EXPECT_FLOAT_EQ(data.m_planetAtmosphereOzone.x, 6360);
+}
+
+
+TEST(GlobalLighting, ServiceConfigurationRoundTripsAndAppliesAtRuntime)
+{
+    Graphics::GlobalLightingParameters parameters;
+    parameters.m_directionalLightIlluminanceLux = 25000;
+    parameters.m_directionalLightColor = PackedVector3F(1, 0.8f, 0.5f);
+    parameters.m_atmosphere.m_mieAnisotropy = 0.7f;
+    const auto descriptor = WorldServiceDescriptor::Create<WorldGraphicsSceneService>(parameters);
+    IO::WriteOnlyMemoryStream stream;
+    Serialization::TaggedBinaryFormat format;
+    Serialization::SerializationContext writer(&stream, format);
+    ASSERT_EQ(writer.Store(descriptor), Serialization::ResultCode::kSuccess);
+
+    festd::pmr::vector<std::byte> bytes;
+    stream.DumpAll(bytes);
+    IO::ReadOnlyMemoryStream input(bytes);
+    Serialization::DeserializationContext reader(&input, format);
+    WorldServiceDescriptor restored;
+    ASSERT_EQ(reader.Load(restored), Serialization::ResultCode::kSuccess);
+    EXPECT_EQ(restored.m_type, Rtti::GetTypeID<WorldGraphicsSceneService>());
+
+    TestSceneService service;
+    const Rtti::Type& type = Rtti::GetType<WorldGraphicsSceneService>();
+    ASSERT_TRUE(type.m_configure);
+    ASSERT_TRUE(type.m_captureConfiguration);
+    ASSERT_TRUE(type.m_applyConfiguration);
+    ASSERT_TRUE(type.m_configure(&service, restored.m_configuration));
+    EntityWorld world;
+    world.AddService(service);
+    ASSERT_EQ(world.GetServices().size(), 1);
+    EXPECT_EQ(world.GetServices().front(), &service);
+    EXPECT_FLOAT_EQ(service.CaptureConfiguration().m_directionalLightIlluminanceLux, 25000);
+
+    parameters.m_directionalLightIlluminanceLux = 9000;
+    Rtti::Any changed;
+    changed.Emplace<Graphics::GlobalLightingParameters>(parameters);
+    EXPECT_TRUE(type.m_applyConfiguration(&service, changed));
+    const auto captured = type.m_captureConfiguration(&service);
+    ASSERT_TRUE(captured.Is<Graphics::GlobalLightingParameters>());
+    EXPECT_FLOAT_EQ(captured.TryGet<Graphics::GlobalLightingParameters>()->m_directionalLightIlluminanceLux, 9000);
+
+    parameters.m_atmosphere.m_planetRadiusKm = -1;
+    changed.Emplace<Graphics::GlobalLightingParameters>(parameters);
+    EXPECT_FALSE(type.m_applyConfiguration(&service, changed));
+    EXPECT_FLOAT_EQ(service.CaptureConfiguration().m_atmosphere.m_planetRadiusKm, 6360);
+    Rtti::Any wrongType;
+    wrongType.Emplace<CameraComponent>();
+    EXPECT_FALSE(type.m_applyConfiguration(&service, wrongType));
+    world.RemoveService(service);
+    EXPECT_TRUE(world.GetServices().empty());
 }
 
 

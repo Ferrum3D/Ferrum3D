@@ -12,12 +12,42 @@
 
 namespace FE::GameFramework
 {
+    bool WorldGraphicsSceneService::Configure(const Configuration& settings)
+    {
+        FE_Assert(!m_scene, "Configure services before Init");
+        return ApplyConfiguration(settings);
+    }
+
+
+    bool WorldGraphicsSceneService::ApplyConfiguration(const Configuration& settings)
+    {
+        if (!settings.Validate())
+            return false;
+
+        m_configuration = settings;
+        if (m_scene)
+        {
+            if (auto* lighting = m_scene->GetModules().TryFind<Graphics::GlobalLightingSceneModule>())
+                FE_Verify(lighting->SetParameters(settings));
+        }
+
+        return true;
+    }
+
+
+    WorldGraphicsSceneService::Configuration WorldGraphicsSceneService::CaptureConfiguration() const
+    {
+        return m_configuration;
+    }
+
+
     void WorldGraphicsSceneService::Init(Framework::EntityWorld&)
     {
         FE_PROFILER_ZONE();
 
         FE_Assert(!m_scene);
         m_scene = CreateScene();
+        FE_Verify(ApplyConfiguration(m_configuration));
         m_meshes.reset(CreateMeshBridge(*m_scene));
     }
 
@@ -31,6 +61,8 @@ namespace FE::GameFramework
 
         if (m_scene->GetModules().Contains<Graphics::MeshSceneModule>())
             m_scene->GetModules().Remove<Graphics::MeshSceneModule>();
+        if (m_scene->GetModules().Contains<Graphics::GlobalLightingSceneModule>())
+            m_scene->GetModules().Remove<Graphics::GlobalLightingSceneModule>();
         if (Graphics::Renderer* renderer = m_scene->GetRenderer())
             renderer->DestroyScene(m_scene.Get());
 
@@ -74,6 +106,7 @@ namespace FE::GameFramework
 
         Graphics::Scene* scene = Graphics::Renderer::Get().CreateScene();
         scene->GetModules().Add<Graphics::MeshSceneModule>();
+        scene->GetModules().Add<Graphics::GlobalLightingSceneModule>();
         return scene;
     }
 

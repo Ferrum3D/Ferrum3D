@@ -54,6 +54,8 @@ namespace FE::Graphics::DeferredShading
         auto* initialize = graph.AllocatePassData<DeferredDirectPassDesc>();
         initialize->m_pipeline = InitializeDeferredPipeline::GetPipeline();
         initialize->m_constants.m_view = graph.GetSRV(viewBuffer);
+        if (const auto* lighting = blackboard.TryGet<GlobalLightingBinding>())
+            initialize->m_constants.m_lighting = *lighting;
         initialize->m_constants.m_g0 = graph.GetSRV(Core::TextureView::Create(gBufferTargets[0].Get()));
         initialize->m_constants.m_output = graph.GetUAV(Core::TextureView::Create(view.m_mainColorTarget));
         initialize->m_constants.m_resolution = resolution;
@@ -94,6 +96,7 @@ namespace FE::Graphics::DeferredShading
             shading->m_arguments =
                 Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
             shading->m_constants.m_view = graph.GetSRV(viewBuffer);
+            shading->m_constants.m_lighting = initialize->m_constants.m_lighting;
             shading->m_constants.m_g0 = graph.GetSRV(gBufferTargets[0].Get());
             shading->m_constants.m_g1 = graph.GetSRV(gBufferTargets[1].Get());
             shading->m_constants.m_g2 = graph.GetSRV(gBufferTargets[2].Get());

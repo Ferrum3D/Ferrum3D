@@ -1,0 +1,11 @@
+import Lighting
+{
+    cpp <Shaders/Lighting/GlobalLighting.h>
+    hlsl <Shaders/Lighting/GlobalLighting.h>
+}
+
+table GlobalLightingTable
+    : Lighting
+{
+    GlobalLightingData m_lighting;
+}

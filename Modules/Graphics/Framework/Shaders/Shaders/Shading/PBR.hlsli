@@ -1,4 +1,5 @@
 #pragma once
+#include <Shaders/Lighting/Atmosphere.hlsli>
 #include <Shaders/Shading/BRDF.hlsli>
 #include <Shaders/Shading/Exposure.hlsli>
 
@@ -30,13 +31,16 @@ namespace Shading
     }
 
 
-    float4 ComputeShading(const MaterialEvaluation material, const float3 worldPosition, const float3 cameraPosition)
+    float4 ComputeShading(const MaterialEvaluation material, const float3 worldPosition, const float3 cameraPosition,
+                          const GlobalLightingData lighting)
     {
         const Surface surface = material.m_surface;
         const float3 viewDirection = normalize(cameraPosition - worldPosition);
-        const float3 lightDirection = normalize(float3(0.4f, 0.7f, -0.6f));
-        const float illuminanceLux = 10000.0f;
-        const float3 preExposedIlluminance = illuminanceLux * kPreExposure;
+        if (lighting.m_directionIlluminance.w <= 0)
+            return float4(material.m_emissive, 1);
+
+        const float3 lightDirection = lighting.m_directionIlluminance.xyz;
+        const float3 preExposedIlluminance = Atmosphere::DirectionalIlluminance(lighting, worldPosition) * kPreExposure;
         const float3 brdf = EvaluateBRDF(surface.m_diffuseAlbedo,
                                          surface.m_f0,
                                          surface.m_perceptualRoughness,

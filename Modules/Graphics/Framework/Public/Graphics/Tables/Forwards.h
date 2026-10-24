@@ -7,6 +7,7 @@
 
 namespace FE::Graphics
 {
+    struct GlobalLightingTable;
     struct MeshLodInfoTable;
     struct MaterialInstanceTable;
     struct MeshGroupTable;

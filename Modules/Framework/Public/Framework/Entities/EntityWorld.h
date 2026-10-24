@@ -250,6 +250,9 @@ namespace FE::Framework
         //! @brief Shut down and detach a service after clearing entities, outside an update epoch.
         void RemoveService(WorldService& service);
 
+        //! @brief Borrow registered services for inspection at a closed main-thread boundary.
+        [[nodiscard]] festd::span<WorldService* const> GetServices() const;
+
         //! @brief Find a registered service by reflected type or base; the pointer is borrowed until removal.
         template<class T>
             requires std::derived_from<T, WorldService>

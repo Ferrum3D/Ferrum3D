@@ -5,6 +5,7 @@
 
 #pragma once
 
+struct GlobalLightingTable;
 struct MeshLodInfoTable;
 struct MaterialInstanceTable;
 struct MeshGroupTable;

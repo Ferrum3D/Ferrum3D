@@ -115,7 +115,7 @@ namespace FE::Graphics::DeferredProbe
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[10 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[11 * sizeof(Rtti::TypeID)] = {
             0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
             0xaa, 0xdf, 0x74, 0x82, 0x7c, 0xd4, 0x35, 0x1e, // FE::Graphics::TextureUAVDescriptor m_g0
             0x39, 0x28, 0x7d, 0x51, 0xe5, 0x73, 0x44, 0x28,
@@ -132,6 +132,8 @@ namespace FE::Graphics::DeferredProbe
             0xa4, 0x75, 0x63, 0x1c, 0xdc, 0x59, 0xbe, 0xdd, // FE::Graphics::BufferUAVDescriptor m_stats
             0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
             0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
+            0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
+            0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_expectedLighting
             0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
             0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_resolution
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
@@ -155,11 +157,13 @@ namespace FE::Graphics::DeferredProbe
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_expectedLighting = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_empty = {};
 
-        static const festd::array<Rtti::FieldInfo, 10> kFields = {
+        static const festd::array<Rtti::FieldInfo, 11> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &Constants::m_g0,
@@ -200,13 +204,18 @@ namespace FE::Graphics::DeferredProbe
                                                         &Constants::m_view,
                                                         kAttributes_m_view,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_expectedLighting",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        &Constants::m_expectedLighting,
+                                                        kAttributes_m_expectedLighting,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
                                                         &Constants::m_resolution,
                                                         kAttributes_m_resolution,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_empty",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
                                                         &Constants::m_empty,
                                                         kAttributes_m_empty,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),

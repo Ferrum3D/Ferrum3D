@@ -24,8 +24,10 @@ After initial asset loading, requested mesh LODs and texture mips stream in the 
 Base color and emissive are sampled through sRGB formats; ORM and normals remain linear.
 The source normal DDS uses the glTF/MikkTSpace +Y convention and is imported without conversion.
 The PBR shader uses GGX, height-correlated Smith visibility, Schlick Fresnel, and energy-conserving Lambert diffuse.
-A fixed directional light supplies 10,000 lux, emissive texels modulate 1,000 cd/m^2, and EV100 12 pre-exposure
-is applied before writing HDR. There is no IBL; AO is reserved for future indirect lighting.
+`GlobalLightingSceneModule` supplies a sun with 10,000 lux perpendicular illuminance before atmospheric attenuation,
+and a spherical Rayleigh/Mie/ozone sky atmosphere. The sample configures this module explicitly; GameSample authors the same
+settings in its world asset. Emissive texels modulate 1,000 cd/m^2, and fixed EV100 12 pre-exposure is applied before writing HDR.
+The sky and sun disc fill background pixels in HDR before tonemapping. There is no IBL; AO is reserved for future indirect lighting.
 The final pass uses the Narkowicz ACES filmic fit followed by the sRGB transfer function into a UNORM swapchain
 with the sRGB nonlinear presentation color space.
 

@@ -42,7 +42,7 @@ namespace FE::Graphics
             const Vector2UInt size = clearPass->m_colorTarget.m_target.GetBaseDesc().GetSize2D();
             clearPass->m_viewport = RectF::FromPosAndSize(Vector2::kZero, Vector2(size));
             graph.AddPass("ClearViewport", clearPass, [](Core::FrameGraphContext& context) {
-                context.ClearColorTarget(0, Colors::kDarkSlateBlue);
+                context.ClearColorTarget(0, Colors::kBlack);
                 context.ClearRenderTargets();
             });
         }
@@ -56,7 +56,7 @@ namespace FE::Graphics
         clearPass->m_depthTarget = Core::TextureView::Create(view.m_mainDepthTarget);
         clearPass->m_viewport = view.m_viewportRect;
         graph.AddPass("ClearRendererTargets", clearPass, [](Core::FrameGraphContext& context) {
-            context.ClearColorTarget(0, Colors::kDarkSlateBlue);
+            context.ClearColorTarget(0, Colors::kBlack);
             context.ClearDepthStencilTarget(0.0f, 0);
             context.ClearRenderTargets();
         });
@@ -370,7 +370,7 @@ namespace FE::Graphics
 
         const RectF rect = viewData.m_viewportRect;
         constants.m_viewport = PackedVector4F(rect.left, rect.top, rect.Width(), rect.Height());
-        constants.m_backgroundColor = PackedVector4F(Vector4(Colors::kDarkSlateBlue));
+        constants.m_backgroundColor = PackedVector4F(Vector4(Colors::kBlack));
         viewData.m_constants = Core::Buffer::CreateStructured<ViewData>(graph.GetDevice(), "View", 1);
         FE_Verify(m_renderQueueUploader.Upload(graph, viewData.m_constants.Get(), constants));
 

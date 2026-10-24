@@ -177,6 +177,8 @@ namespace FE::Rtti
         Deserialize m_deserialize = nullptr;
         bool (*m_validate)(const void*) = nullptr;
         bool (*m_configure)(void*, const Any&) = nullptr;
+        //! Apply settings at a world safe point after initialization; absent for startup-only configuration.
+        bool (*m_applyConfiguration)(void*, const Any&) = nullptr;
         Any (*m_captureConfiguration)(const void*) = nullptr;
         festd::span<const TypeID> m_baseTypes;
         festd::span<const Attribute> m_attributes;

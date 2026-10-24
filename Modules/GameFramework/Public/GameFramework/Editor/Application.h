@@ -38,12 +38,14 @@ namespace FE::Editor
         Graphics::View* GetEditorView();
         void DrawWorldWindow();
         void DrawEntityWindow();
+        void DrawServicesWindow();
         void DrawEntity(Framework::Entity& entity, uint32_t depth);
         void DrawViewport();
         void DrawOpenWorld();
 
         AssetBrowser m_assets;
         IO::Path m_assetDirectory;
+        festd::string m_serviceSettingsError;
         Uuid m_cameraUuid = Uuid::kNull;
         Framework::EntityID m_selected;
         Transform m_initialCamera = Transform::Translation(Vector3(0, 2, -6));

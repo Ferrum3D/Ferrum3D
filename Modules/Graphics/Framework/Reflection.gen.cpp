@@ -9,6 +9,7 @@
 #include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Features/ImGui/ImGuiSceneModule.h>
+#include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
@@ -26,6 +27,7 @@
 #include <Graphics/Scene/SceneImpl.h>
 #include <Graphics/Scene/View.h>
 #include <Graphics/Scene/ViewImpl.h>
+#include <Graphics/Tables/GlobalLightingTable.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshBatchTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
@@ -3142,6 +3144,153 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID GlobalLightingParameters::TypeID = Rtti::TypeID{
+        0x49, 0x16, 0xec, 0x59, 0x74, 0x2a, 0x49, 0x8c, 0x99, 0xdd, 0xdc, 0x07, 0x64, 0x00, 0x17, 0x91,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_4916ec59742a498c99dddc0764001791()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& GlobalLightingParameters::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_4916ec59742a498c99dddc0764001791();
+    }
+
+    void GlobalLightingParameters::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_4916ec59742a498c99dddc0764001791();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x49, 0x16, 0xec, 0x59, 0x74, 0x2a, 0x49, 0x8c,
+            0x99, 0xdd, 0xdc, 0x07, 0x64, 0x00, 0x17, 0x91, // FE::Graphics::GlobalLightingParameters
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0xe9, 0xa0, 0xd3, 0xb6, 0xe0, 0x43, 0x47, 0xe6,
+            0x86, 0x07, 0x7b, 0x36, 0x2c, 0xed, 0x07, 0x7e, // FE::Quaternion m_directionalLightOrientation
+            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
+            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_directionalLightColor
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_directionalLightIlluminanceLux
+            0x60, 0xb4, 0xbd, 0x91, 0x0a, 0x5f, 0x4f, 0x4a,
+            0x84, 0xfe, 0x90, 0x01, 0xab, 0xd1, 0x7e, 0x4a, // FE::Graphics::SkyAtmosphereParameters m_atmosphere
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr auto kAttributeValues_m_directionalLightOrientation = Rtti::DisplayName("Sun orientation");
+        static constexpr auto kAttributes_m_directionalLightOrientation =
+            Rtti::DescribeAttributes(kAttributeValues_m_directionalLightOrientation);
+
+        static constexpr auto kAttributeValues_m_directionalLightColor = Rtti::DisplayName("Sun color (linear RGB)");
+        static constexpr auto kAttributes_m_directionalLightColor =
+            Rtti::DescribeAttributes(kAttributeValues_m_directionalLightColor);
+
+        static constexpr auto kAttributeValues_m_directionalLightIlluminanceLux = Rtti::DisplayName("Sun illuminance (lux)");
+        static constexpr auto kAttributes_m_directionalLightIlluminanceLux =
+            Rtti::DescribeAttributes(kAttributeValues_m_directionalLightIlluminanceLux);
+
+        static constexpr auto kAttributeValues_m_atmosphere = Rtti::DisplayName("Sky atmosphere");
+        static constexpr auto kAttributes_m_atmosphere = Rtti::DescribeAttributes(kAttributeValues_m_atmosphere);
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_directionalLightOrientation",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &GlobalLightingParameters::m_directionalLightOrientation,
+                                                        kAttributes_m_directionalLightOrientation,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_directionalLightColor",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &GlobalLightingParameters::m_directionalLightColor,
+                                                        kAttributes_m_directionalLightColor,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_directionalLightIlluminanceLux",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &GlobalLightingParameters::m_directionalLightIlluminanceLux,
+                                                        kAttributes_m_directionalLightIlluminanceLux,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_atmosphere",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &GlobalLightingParameters::m_atmosphere,
+                                                        kAttributes_m_atmosphere,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<GlobalLightingParameters>(typeInstance,
+                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                       "FE::Graphics::GlobalLightingParameters",
+                                                       kBaseClassTypeIDs,
+                                                       kAttributes,
+                                                       kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_4916ec59742a498c99dddc0764001791(&GlobalLightingParameters::Reflect);
+
+    FE::Serialization::ResultCode GlobalLightingParameters::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_directionalLightOrientation", m_directionalLightOrientation);
+            object.Field("m_directionalLightColor", m_directionalLightColor);
+            object.Field("m_directionalLightIlluminanceLux", m_directionalLightIlluminanceLux);
+            object.Field("m_atmosphere", m_atmosphere);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode GlobalLightingParameters::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_directionalLightOrientation", m_directionalLightOrientation);
+            object.Field("m_directionalLightColor", m_directionalLightColor);
+            object.Field("m_directionalLightIlluminanceLux", m_directionalLightIlluminanceLux);
+            object.Field("m_atmosphere", m_atmosphere);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t GlobalLightingParameters::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x49, 0x16, 0xec, 0x59, 0x74, 0x2a, 0x49, 0x8c, 0x99, 0xdd, 0xdc, 0x07, 0x64, 0x00, 0x17, 0x91,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_directionalLightOrientation", 29);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_directionalLightOrientation)>());
+            hasher.Update("m_directionalLightColor", 23);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_directionalLightColor)>());
+            hasher.Update("m_directionalLightIlluminanceLux", 32);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_directionalLightIlluminanceLux)>());
+            hasher.Update("m_atmosphere", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_atmosphere)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t GlobalLightingParameters::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::ImGuiPass
 {
     const Rtti::TypeID TextureUploadConstants::TypeID = Rtti::TypeID{
@@ -3731,6 +3880,280 @@ namespace FE::Graphics::Tools::DepthPyramid
 } // namespace FE::Graphics::Tools::DepthPyramid
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID SkyAtmosphereParameters::TypeID = Rtti::TypeID{
+        0x60, 0xb4, 0xbd, 0x91, 0x0a, 0x5f, 0x4f, 0x4a, 0x84, 0xfe, 0x90, 0x01, 0xab, 0xd1, 0x7e, 0x4a,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_60b4bd910a5f4f4a84fe9001abd17e4a()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SkyAtmosphereParameters::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_60b4bd910a5f4f4a84fe9001abd17e4a();
+    }
+
+    void SkyAtmosphereParameters::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_60b4bd910a5f4f4a84fe9001abd17e4a();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x60, 0xb4, 0xbd, 0x91, 0x0a, 0x5f, 0x4f, 0x4a,
+            0x84, 0xfe, 0x90, 0x01, 0xab, 0xd1, 0x7e, 0x4a, // FE::Graphics::SkyAtmosphereParameters
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[13 * sizeof(Rtti::TypeID)] = {
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_planetRadiusKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_atmosphereHeightKm
+            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
+            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_rayleighScatteringPerKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_rayleighScaleHeightKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieScatteringPerKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieExtinctionPerKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieScaleHeightKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_mieAnisotropy
+            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
+            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_ozoneAbsorptionPerKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_ozoneCenterHeightKm
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_ozoneHalfWidthKm
+            0x0c, 0x3e, 0x32, 0xa0, 0xef, 0xcc, 0x45, 0xdb,
+            0x8a, 0x4b, 0xb4, 0xc4, 0xef, 0xed, 0x2b, 0x0d, // FE::PackedVector3F m_groundAlbedo
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47,
+            0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_sunAngularRadius
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr auto kAttributeValues_m_planetRadiusKm = Rtti::DisplayName("Planet radius (km)");
+        static constexpr auto kAttributes_m_planetRadiusKm = Rtti::DescribeAttributes(kAttributeValues_m_planetRadiusKm);
+
+        static constexpr auto kAttributeValues_m_atmosphereHeightKm = Rtti::DisplayName("Atmosphere height (km)");
+        static constexpr auto kAttributes_m_atmosphereHeightKm = Rtti::DescribeAttributes(kAttributeValues_m_atmosphereHeightKm);
+
+        static constexpr auto kAttributeValues_m_rayleighScatteringPerKm = Rtti::DisplayName("Rayleigh scattering (1/km)");
+        static constexpr auto kAttributes_m_rayleighScatteringPerKm =
+            Rtti::DescribeAttributes(kAttributeValues_m_rayleighScatteringPerKm);
+
+        static constexpr auto kAttributeValues_m_rayleighScaleHeightKm = Rtti::DisplayName("Rayleigh scale height (km)");
+        static constexpr auto kAttributes_m_rayleighScaleHeightKm =
+            Rtti::DescribeAttributes(kAttributeValues_m_rayleighScaleHeightKm);
+
+        static constexpr auto kAttributeValues_m_mieScatteringPerKm = Rtti::DisplayName("Mie scattering (1/km)");
+        static constexpr auto kAttributes_m_mieScatteringPerKm = Rtti::DescribeAttributes(kAttributeValues_m_mieScatteringPerKm);
+
+        static constexpr auto kAttributeValues_m_mieExtinctionPerKm = Rtti::DisplayName("Mie extinction (1/km)");
+        static constexpr auto kAttributes_m_mieExtinctionPerKm = Rtti::DescribeAttributes(kAttributeValues_m_mieExtinctionPerKm);
+
+        static constexpr auto kAttributeValues_m_mieScaleHeightKm = Rtti::DisplayName("Mie scale height (km)");
+        static constexpr auto kAttributes_m_mieScaleHeightKm = Rtti::DescribeAttributes(kAttributeValues_m_mieScaleHeightKm);
+
+        static constexpr auto kAttributeValues_m_mieAnisotropy = Rtti::DisplayName("Mie anisotropy");
+        static constexpr auto kAttributes_m_mieAnisotropy = Rtti::DescribeAttributes(kAttributeValues_m_mieAnisotropy);
+
+        static constexpr auto kAttributeValues_m_ozoneAbsorptionPerKm = Rtti::DisplayName("Ozone absorption (1/km)");
+        static constexpr auto kAttributes_m_ozoneAbsorptionPerKm =
+            Rtti::DescribeAttributes(kAttributeValues_m_ozoneAbsorptionPerKm);
+
+        static constexpr auto kAttributeValues_m_ozoneCenterHeightKm = Rtti::DisplayName("Ozone center height (km)");
+        static constexpr auto kAttributes_m_ozoneCenterHeightKm =
+            Rtti::DescribeAttributes(kAttributeValues_m_ozoneCenterHeightKm);
+
+        static constexpr auto kAttributeValues_m_ozoneHalfWidthKm = Rtti::DisplayName("Ozone half width (km)");
+        static constexpr auto kAttributes_m_ozoneHalfWidthKm = Rtti::DescribeAttributes(kAttributeValues_m_ozoneHalfWidthKm);
+
+        static constexpr auto kAttributeValues_m_groundAlbedo = Rtti::DisplayName("Ground albedo");
+        static constexpr auto kAttributes_m_groundAlbedo = Rtti::DescribeAttributes(kAttributeValues_m_groundAlbedo);
+
+        static constexpr auto kAttributeValues_m_sunAngularRadius = Rtti::DisplayName("Sun angular radius (radians)");
+        static constexpr auto kAttributes_m_sunAngularRadius = Rtti::DescribeAttributes(kAttributeValues_m_sunAngularRadius);
+
+        static const festd::array<Rtti::FieldInfo, 13> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_planetRadiusKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_planetRadiusKm,
+                                                        kAttributes_m_planetRadiusKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_atmosphereHeightKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_atmosphereHeightKm,
+                                                        kAttributes_m_atmosphereHeightKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_rayleighScatteringPerKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_rayleighScatteringPerKm,
+                                                        kAttributes_m_rayleighScatteringPerKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_rayleighScaleHeightKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_rayleighScaleHeightKm,
+                                                        kAttributes_m_rayleighScaleHeightKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieScatteringPerKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_mieScatteringPerKm,
+                                                        kAttributes_m_mieScatteringPerKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieExtinctionPerKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_mieExtinctionPerKm,
+                                                        kAttributes_m_mieExtinctionPerKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieScaleHeightKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_mieScaleHeightKm,
+                                                        kAttributes_m_mieScaleHeightKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mieAnisotropy",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_mieAnisotropy,
+                                                        kAttributes_m_mieAnisotropy,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ozoneAbsorptionPerKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_ozoneAbsorptionPerKm,
+                                                        kAttributes_m_ozoneAbsorptionPerKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ozoneCenterHeightKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_ozoneCenterHeightKm,
+                                                        kAttributes_m_ozoneCenterHeightKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_ozoneHalfWidthKm",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_ozoneHalfWidthKm,
+                                                        kAttributes_m_ozoneHalfWidthKm,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_groundAlbedo",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_groundAlbedo,
+                                                        kAttributes_m_groundAlbedo,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sunAngularRadius",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
+                                                        &SkyAtmosphereParameters::m_sunAngularRadius,
+                                                        kAttributes_m_sunAngularRadius,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SkyAtmosphereParameters>(typeInstance,
+                                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                      "FE::Graphics::SkyAtmosphereParameters",
+                                                      kBaseClassTypeIDs,
+                                                      kAttributes,
+                                                      kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_60b4bd910a5f4f4a84fe9001abd17e4a(&SkyAtmosphereParameters::Reflect);
+
+    FE::Serialization::ResultCode SkyAtmosphereParameters::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_planetRadiusKm", m_planetRadiusKm);
+            object.Field("m_atmosphereHeightKm", m_atmosphereHeightKm);
+            object.Field("m_rayleighScatteringPerKm", m_rayleighScatteringPerKm);
+            object.Field("m_rayleighScaleHeightKm", m_rayleighScaleHeightKm);
+            object.Field("m_mieScatteringPerKm", m_mieScatteringPerKm);
+            object.Field("m_mieExtinctionPerKm", m_mieExtinctionPerKm);
+            object.Field("m_mieScaleHeightKm", m_mieScaleHeightKm);
+            object.Field("m_mieAnisotropy", m_mieAnisotropy);
+            object.Field("m_ozoneAbsorptionPerKm", m_ozoneAbsorptionPerKm);
+            object.Field("m_ozoneCenterHeightKm", m_ozoneCenterHeightKm);
+            object.Field("m_ozoneHalfWidthKm", m_ozoneHalfWidthKm);
+            object.Field("m_groundAlbedo", m_groundAlbedo);
+            object.Field("m_sunAngularRadius", m_sunAngularRadius);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode SkyAtmosphereParameters::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_planetRadiusKm", m_planetRadiusKm);
+            object.Field("m_atmosphereHeightKm", m_atmosphereHeightKm);
+            object.Field("m_rayleighScatteringPerKm", m_rayleighScatteringPerKm);
+            object.Field("m_rayleighScaleHeightKm", m_rayleighScaleHeightKm);
+            object.Field("m_mieScatteringPerKm", m_mieScatteringPerKm);
+            object.Field("m_mieExtinctionPerKm", m_mieExtinctionPerKm);
+            object.Field("m_mieScaleHeightKm", m_mieScaleHeightKm);
+            object.Field("m_mieAnisotropy", m_mieAnisotropy);
+            object.Field("m_ozoneAbsorptionPerKm", m_ozoneAbsorptionPerKm);
+            object.Field("m_ozoneCenterHeightKm", m_ozoneCenterHeightKm);
+            object.Field("m_ozoneHalfWidthKm", m_ozoneHalfWidthKm);
+            object.Field("m_groundAlbedo", m_groundAlbedo);
+            object.Field("m_sunAngularRadius", m_sunAngularRadius);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t SkyAtmosphereParameters::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x60, 0xb4, 0xbd, 0x91, 0x0a, 0x5f, 0x4f, 0x4a, 0x84, 0xfe, 0x90, 0x01, 0xab, 0xd1, 0x7e, 0x4a,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_planetRadiusKm", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_planetRadiusKm)>());
+            hasher.Update("m_atmosphereHeightKm", 20);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_atmosphereHeightKm)>());
+            hasher.Update("m_rayleighScatteringPerKm", 25);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_rayleighScatteringPerKm)>());
+            hasher.Update("m_rayleighScaleHeightKm", 23);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_rayleighScaleHeightKm)>());
+            hasher.Update("m_mieScatteringPerKm", 20);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieScatteringPerKm)>());
+            hasher.Update("m_mieExtinctionPerKm", 20);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieExtinctionPerKm)>());
+            hasher.Update("m_mieScaleHeightKm", 18);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieScaleHeightKm)>());
+            hasher.Update("m_mieAnisotropy", 15);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieAnisotropy)>());
+            hasher.Update("m_ozoneAbsorptionPerKm", 22);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_ozoneAbsorptionPerKm)>());
+            hasher.Update("m_ozoneCenterHeightKm", 21);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_ozoneCenterHeightKm)>());
+            hasher.Update("m_ozoneHalfWidthKm", 18);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_ozoneHalfWidthKm)>());
+            hasher.Update("m_groundAlbedo", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_groundAlbedo)>());
+            hasher.Update("m_sunAngularRadius", 18);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_sunAngularRadius)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t SkyAtmosphereParameters::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::Tools::Blit
 {
     const Rtti::TypeID PassDesc::TypeID = Rtti::TypeID{
@@ -3805,6 +4228,96 @@ namespace FE::Graphics::Tools::Blit
 
     static Rtti::TypeRegistrar GTypeRegistrar_631d3d7c40ef4b50a8f642eb2861045a(&PassDesc::Reflect);
 } // namespace FE::Graphics::Tools::Blit
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID GlobalLightingSceneModule::TypeID = Rtti::TypeID{
+        0x63, 0x6c, 0x5c, 0x42, 0xd0, 0x46, 0x48, 0xe5, 0x99, 0x1e, 0x90, 0xab, 0x33, 0x0a, 0xd0, 0xd0,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_636c5c42d04648e5991e90ab330ad0d0(GlobalLightingSceneModule* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0x63, 0x6c, 0x5c, 0x42, 0xd0, 0x46, 0x48, 0xe5,
+                0x99, 0x1e, 0x90, 0xab, 0x33, 0x0a, 0xd0, 0xd0, // FE::Graphics::GlobalLightingSceneModule (this type)
+                0x77, 0x29, 0xe6, 0x83, 0x86, 0x38, 0x47, 0x12,
+                0x81, 0xd3, 0xb1, 0xc7, 0x8b, 0x16, 0xbf, 0xe3, // FE::Graphics::SceneModuleBase
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::SceneModuleBase*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_636c5c42d04648e5991e90ab330ad0d0()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& GlobalLightingSceneModule::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_636c5c42d04648e5991e90ab330ad0d0();
+    }
+
+    void* FE_VECTORCALL GlobalLightingSceneModule::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_636c5c42d04648e5991e90ab330ad0d0(this, typeID);
+    }
+
+    const void* FE_VECTORCALL GlobalLightingSceneModule::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_636c5c42d04648e5991e90ab330ad0d0(const_cast<GlobalLightingSceneModule*>(this), typeID);
+    }
+    void GlobalLightingSceneModule::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_636c5c42d04648e5991e90ab330ad0d0();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x63, 0x6c, 0x5c, 0x42, 0xd0, 0x46, 0x48, 0xe5,
+            0x99, 0x1e, 0x90, 0xab, 0x33, 0x0a, 0xd0, 0xd0, // FE::Graphics::GlobalLightingSceneModule
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x77, 0x29, 0xe6, 0x83, 0x86, 0x38, 0x47, 0x12,
+            0x81, 0xd3, 0xb1, 0xc7, 0x8b, 0x16, 0xbf, 0xe3, // FE::Graphics::SceneModuleBase
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<GlobalLightingSceneModule>(typeInstance,
+                                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                        "FE::Graphics::GlobalLightingSceneModule",
+                                                        kBaseClassTypeIDs,
+                                                        kAttributes,
+                                                        kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<GlobalLightingSceneModule*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_636c5c42d04648e5991e90ab330ad0d0(&GlobalLightingSceneModule::Reflect);
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Visibility
@@ -6236,6 +6749,96 @@ namespace FE::Graphics::Visibility
 } // namespace FE::Graphics::Visibility
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID GlobalLightingTable::TypeID = Rtti::TypeID{
+        0x92, 0x1d, 0x75, 0x4b, 0x9a, 0x7e, 0x56, 0x3c, 0x86, 0xf9, 0x37, 0x21, 0x97, 0xa3, 0x8c, 0x92,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_921d754b9a7e563c86f9372197a38c92(GlobalLightingTable* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0x92, 0x1d, 0x75, 0x4b, 0x9a, 0x7e, 0x56, 0x3c,
+                0x86, 0xf9, 0x37, 0x21, 0x97, 0xa3, 0x8c, 0x92, // FE::Graphics::GlobalLightingTable (this type)
+                0xb0, 0xb2, 0x92, 0x17, 0x3d, 0x30, 0x4b, 0x35,
+                0x80, 0x26, 0x9d, 0x0e, 0xb9, 0x1b, 0x8f, 0xd2, // FE::Graphics::DB::TableBase
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::DB::TableBase*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_921d754b9a7e563c86f9372197a38c92()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& GlobalLightingTable::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_921d754b9a7e563c86f9372197a38c92();
+    }
+
+    void* FE_VECTORCALL GlobalLightingTable::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_921d754b9a7e563c86f9372197a38c92(this, typeID);
+    }
+
+    const void* FE_VECTORCALL GlobalLightingTable::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_921d754b9a7e563c86f9372197a38c92(const_cast<GlobalLightingTable*>(this), typeID);
+    }
+    void GlobalLightingTable::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_921d754b9a7e563c86f9372197a38c92();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x92, 0x1d, 0x75, 0x4b, 0x9a, 0x7e, 0x56, 0x3c,
+            0x86, 0xf9, 0x37, 0x21, 0x97, 0xa3, 0x8c, 0x92, // FE::Graphics::GlobalLightingTable
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xb0, 0xb2, 0x92, 0x17, 0x3d, 0x30, 0x4b, 0x35,
+            0x80, 0x26, 0x9d, 0x0e, 0xb9, 0x1b, 0x8f, 0xd2, // FE::Graphics::DB::TableBase
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<GlobalLightingTable>(typeInstance,
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                  "FE::Graphics::GlobalLightingTable",
+                                                  kBaseClassTypeIDs,
+                                                  kAttributes,
+                                                  kFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<GlobalLightingTable*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_921d754b9a7e563c86f9372197a38c92(&GlobalLightingTable::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::Tonemap
 {
     const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{
@@ -7115,9 +7718,11 @@ namespace FE::Graphics::Visibility
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[14 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[15 * sizeof(Rtti::TypeID)] = {
             0x9f, 0xfd, 0xeb, 0x45, 0x46, 0x43, 0x43, 0xd9,
             0x85, 0x9b, 0x89, 0x5c, 0x5e, 0x80, 0x12, 0xcf, // FE::Graphics::BufferSRVDescriptor m_view
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lighting
             0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
             0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_g0
             0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
@@ -7149,6 +7754,8 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_view = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lighting = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g0 = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g1 = {};
@@ -7175,74 +7782,79 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderCount = {};
 
-        static const festd::array<Rtti::FieldInfo, 14> kFields = {
+        static const festd::array<Rtti::FieldInfo, 15> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_view",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &DeferredConstants::m_view,
                                                         kAttributes_m_view,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lighting",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &DeferredConstants::m_lighting,
+                                                        kAttributes_m_lighting,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_g0",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &DeferredConstants::m_g0,
                                                         kAttributes_m_g0,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_g1",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &DeferredConstants::m_g1,
                                                         kAttributes_m_g1,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_g2",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &DeferredConstants::m_g2,
                                                         kAttributes_m_g2,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_g3",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &DeferredConstants::m_g3,
                                                         kAttributes_m_g3,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_depth",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
                                                         &DeferredConstants::m_depth,
                                                         kAttributes_m_depth,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
                                                         &DeferredConstants::m_output,
                                                         kAttributes_m_output,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixels",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
                                                         &DeferredConstants::m_pixels,
                                                         kAttributes_m_pixels,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_waves",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
                                                         &DeferredConstants::m_waves,
                                                         kAttributes_m_waves,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_ranges",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
                                                         &DeferredConstants::m_ranges,
                                                         kAttributes_m_ranges,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolution",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 10 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
                                                         &DeferredConstants::m_resolution,
                                                         kAttributes_m_resolution,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_tilesPerRow",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 11 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
                                                         &DeferredConstants::m_tilesPerRow,
                                                         kAttributes_m_tilesPerRow,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderSlot",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 12 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
                                                         &DeferredConstants::m_shaderSlot,
                                                         kAttributes_m_shaderSlot,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 13 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 14 * sizeof(TypeID)),
                                                         &DeferredConstants::m_shaderCount,
                                                         kAttributes_m_shaderCount,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),

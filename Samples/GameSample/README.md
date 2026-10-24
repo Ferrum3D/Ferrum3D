@@ -81,6 +81,23 @@ Application opens a shared materialization budget once per rendered frame: 32 co
 
 Input contexts are authored in the input service descriptor in `World.asset`. Cameras reference movement, elevation, and look action assets; RMB look sensitivity is authored in the mouse-delta binding.
 
+Global lighting is also authored in `World.asset`, in the `WorldGraphicsSceneService` configuration. It specifies the sun's
+orientation, linear RGB color and perpendicular illuminance in lux, plus the atmosphere's planet radius, Rayleigh/Mie density
+profiles, ozone absorption, ground albedo and sun angular radius. Distances and scattering coefficients use kilometers and
+inverse kilometers; world positions use meters. Local +Z of the sun orientation points towards the sun. The planet touches the
+world origin with its center on -Y.
+
+The graphics service owns `GlobalLightingSceneModule`, which uploads these settings to the GPU database. Both PBR and simple
+lit materials use this light. Background pixels integrate single atmospheric scattering and the sun disc into the HDR target
+before tonemapping; clear colors are black. Exposure and pre-exposure remain fixed at EV100 12. Multiple scattering, indirect
+skylight on geometry and aerial perspective are not implemented. The scattering and phase equations follow
+[Bruneton's atmosphere reference](https://ebruneton.github.io/precomputed_atmospheric_scattering/atmosphere/functions.glsl).
+
+The editor's **Services** window lists registered world services and their captured configuration. Lighting settings, including
+the nested atmosphere parameters, can be changed live even while paused; invalid values are rejected. Settings for services
+without a runtime configuration API are read-only. Live edits last for the current world session; author persistent values in
+the world asset and rebuild it with FerrumCli.
+
 ## Debug UI
 
 The "Culling" section toggles instance frustum and occlusion culling, meshlet frustum and occlusion culling, and LOD selection, sets the LOD error threshold in pixels, and freezes the culling camera. While frozen, all culling (frustum, LOD selection, instance and meshlet occlusion against the depth pyramid captured when the freeze started) uses the camera of that frame, and its frustum is drawn in yellow, so moving away shows exactly what that camera would render. "Culling statistics" shows the first view's instances, meshlets and triangles tested, culled and rendered, and rendered instances per LOD. "Color meshes by LOD" (debug mode `lod`) colors meshes by their selected LOD, from green (most detailed) through yellow and red to blue. `--no-occlusion-culling` and `--no-lod-selection` set the initial settings; smoke runs log the statistics.

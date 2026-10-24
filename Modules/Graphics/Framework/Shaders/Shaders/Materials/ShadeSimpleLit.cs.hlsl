@@ -1,6 +1,7 @@
 #include <Shaders/Deferred/DeferredCommon.hlsli>
+#include <Shaders/Lighting/Atmosphere.hlsli>
 
-FE_NUM_THREADS(EVALUATION_LANES * kSurfaceWavesPerGroup, 1, 1)
+FE_NUM_THREADS(EVALUATION_LANES* kSurfaceWavesPerGroup, 1, 1)
 void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
 {
     uint2 pixel;
@@ -16,8 +17,12 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
 
     packed.m_g1 = GConstants.m_g1.Load(location);
     const GBuffer::Unpacked surface = GBuffer::Decode(packed);
-    const float3 lightDirection = normalize(float3(0.4f, 0.7f, -0.2f));
-    const float nDotL = max(dot(surface.m_normal, lightDirection), 0);
-    const float lighting = 0.15f + 0.85f * nDotL;
-    GConstants.m_output.Store(pixel, surface.m_color * lighting);
+    const GlobalLightingData lighting = LoadGlobalLighting(GConstants.m_lighting);
+    const ViewData view = GConstants.m_view.Load(0);
+    const float2 ndc = ((float2(pixel) + 0.5f - view.m_viewport.xy) / view.m_viewport.zw) * float2(2, -2) + float2(-1, 1);
+    const float depth = GConstants.m_depth.Load(location);
+    const float4 world = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
+    const float nDotL = saturate(dot(surface.m_normal, lighting.m_directionIlluminance.xyz));
+    const float3 illuminance = Atmosphere::DirectionalIlluminance(lighting, world.xyz / world.w);
+    GConstants.m_output.Store(pixel, surface.m_color * illuminance * (nDotL * Shading::kPreExposure / Atmosphere::kPi));
 }

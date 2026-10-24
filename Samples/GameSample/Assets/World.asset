@@ -1,6 +1,6 @@
 {
     "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
-    "$typename": "FE::AssetBuilder::AssetFile",
+    "$typename": "FE::IO::AssetFile",
     "$version": 0,
     "$schema": "0xe4105f5e8b39350b",
     "$value": {
@@ -53,7 +53,48 @@
                             {
                                 "m_type": "09F03B91-8406-485F-A7D1-A2063CA48020",
                                 "m_configuration": {
-                                    "m_typeId": "00000000-0000-0000-0000-000000000000"
+                                    "m_typeId": "4916EC59-742A-498C-99DD-DC0764001791",
+                                    "m_value": {
+                                        "m_directionalLightOrientation": {
+                                            "x": "969e46bf",
+                                            "y": "62fee23e",
+                                            "z": "00000000",
+                                            "w": "f5d2e53e"
+                                        },
+                                        "m_directionalLightColor": {
+                                            "x": "0000803f",
+                                            "y": "0000803f",
+                                            "z": "0000803f"
+                                        },
+                                        "m_directionalLightIlluminanceLux": "00401c46",
+                                        "m_atmosphere": {
+                                            "m_planetRadiusKm": "00c0c645",
+                                            "m_atmosphereHeightKm": "0000c842",
+                                            "m_rayleighScatteringPerKm": {
+                                                "x": "b41ebe3b",
+                                                "y": "60225e3c",
+                                                "z": "de93073d"
+                                            },
+                                            "m_rayleighScaleHeightKm": "00000041",
+                                            "m_mieScatteringPerKm": "e1f0823b",
+                                            "m_mieExtinctionPerKm": "6b7d913b",
+                                            "m_mieScaleHeightKm": "9a99993f",
+                                            "m_mieAnisotropy": "cdcc4c3f",
+                                            "m_ozoneAbsorptionPerKm": {
+                                                "x": "c3642a3a",
+                                                "y": "e38bf63a",
+                                                "z": "0742b238"
+                                            },
+                                            "m_ozoneCenterHeightKm": "0000c841",
+                                            "m_ozoneHalfWidthKm": "00007041",
+                                            "m_groundAlbedo": {
+                                                "x": "cdcccc3d",
+                                                "y": "cdcccc3d",
+                                                "z": "cdcccc3d"
+                                            },
+                                            "m_sunAngularRadius": "be30993b"
+                                        }
+                                    }
                                 }
                             },
                             {
@@ -4273,8 +4314,8 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "82CF2412-D5B2-4405-8E2E-6D7119EE7862",
-                "m_builtArtifactId": "A604E811-C385-4934-AF59-6F2173D7538C",
+                "m_lastBuildKey": "04B3A83A-4CC4-49B6-B7F5-CD54AE174921",
+                "m_builtArtifactId": "EEECEC5C-927E-4FD2-BDDE-6E6D7635B9B4",
                 "m_isRemoved": false
             }
         ]

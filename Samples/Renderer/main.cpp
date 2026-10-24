@@ -14,6 +14,7 @@
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Viewport.h>
+#include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
@@ -62,6 +63,7 @@ namespace
             m_device->WaitIdle();
 
             m_scene->GetModules().Remove<MeshSceneModule>();
+            m_scene->GetModules().Remove<GlobalLightingSceneModule>();
             m_view.Reset();
             m_scene.Reset();
             m_viewport.Reset();
@@ -145,6 +147,11 @@ namespace
             Core::WaitForGlobalPipelineSets();
 
             m_scene->GetModules().Add<MeshSceneModule>();
+            m_scene->GetModules().Add<GlobalLightingSceneModule>();
+            GlobalLightingParameters lighting;
+            lighting.m_directionalLightOrientation = Quaternion(-0.77585731f, 0.44334703f, 0.0f, 0.44887509f);
+            lighting.m_directionalLightIlluminanceLux = 10000.0f;
+            FE_Verify(m_scene->GetModules().Find<GlobalLightingSceneModule>().SetParameters(lighting));
             m_view = m_scene->CreateView();
             m_view->GetModules().Add<Visibility::ViewModule>();
             m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();

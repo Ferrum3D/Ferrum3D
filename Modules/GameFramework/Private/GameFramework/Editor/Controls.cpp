@@ -18,14 +18,42 @@ namespace FE::Editor
         template<class T, ImGuiDataType TDataType>
         bool DrawScalar(const char* label, void* value)
         {
-            return ImGui::DragScalar(label, TDataType, static_cast<T*>(value), 0.05f);
+            if constexpr (std::same_as<T, float>)
+            {
+                const float speed = Math::Max(std::abs(*static_cast<float*>(value)) * 0.01f, 0.000001f);
+                return ImGui::DragScalar(label, TDataType, value, speed, nullptr, nullptr, "%.6g");
+            }
+            else
+            {
+                return ImGui::DragScalar(label, TDataType, static_cast<T*>(value), 0.05f);
+            }
         }
 
 
         template<class T, uint32_t TCount, ImGuiDataType TDataType = ImGuiDataType_Float>
         bool DrawVector(const char* label, void* value)
         {
-            return ImGui::DragScalarN(label, TDataType, static_cast<T*>(value)->m_values, TCount, 0.05f);
+            if constexpr (TDataType == ImGuiDataType_Float)
+            {
+                const auto* values = static_cast<T*>(value)->m_values;
+                float magnitude = 0;
+                for (uint32_t index = 0; index < TCount; ++index)
+                    magnitude = Math::Max(magnitude, std::abs(values[index]));
+
+                const float speed = Math::Max(magnitude * 0.01f, 0.000001f);
+                return ImGui::DragScalarN(label,
+                                          TDataType,
+                                          static_cast<T*>(value)->m_values,
+                                          TCount,
+                                          speed,
+                                          nullptr,
+                                          nullptr,
+                                          "%.6g");
+            }
+            else
+            {
+                return ImGui::DragScalarN(label, TDataType, static_cast<T*>(value)->m_values, TCount, 0.05f);
+            }
         }
 
 
@@ -226,7 +254,24 @@ namespace FE::Editor
                 }
                 else
                 {
-                    ImGui::TextDisabled("%s (unsupported type)", name.c_str());
+                    const Rtti::Type* nested = isSingleValue ? Rtti::TypeRegistry::FindType(field.m_type) : nullptr;
+                    if (nested && !nested->m_fields.empty())
+                    {
+                        ImGui::BeginDisabled(transient);
+                        if (ImGui::TreeNode(name.c_str()))
+                        {
+                            const void* nestedRuntime =
+                                runtimeValue ? static_cast<const std::byte*>(runtimeValue) + field.m_offset : nullptr;
+                            changed |= DrawFields(*nested, fieldValue, true, nestedRuntime);
+                            ImGui::TreePop();
+                        }
+
+                        ImGui::EndDisabled();
+                    }
+                    else
+                    {
+                        ImGui::TextDisabled("%s (unsupported type)", name.c_str());
+                    }
                 }
 
                 ImGui::PopID();

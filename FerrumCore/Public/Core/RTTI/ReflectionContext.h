@@ -31,6 +31,15 @@ namespace FE::Rtti
                 configuration.Emplace<typename T::Configuration>(static_cast<const T*>(storage)->CaptureConfiguration());
                 return configuration;
             };
+            if constexpr (requires(T& value, const typename T::Configuration& configuration) {
+                              { value.ApplyConfiguration(configuration) } -> std::same_as<bool>;
+                          })
+            {
+                type.m_applyConfiguration = [](void* storage, const Any& configuration) {
+                    const auto* typed = configuration.TryGet<typename T::Configuration>();
+                    return typed != nullptr && static_cast<T*>(storage)->ApplyConfiguration(*typed);
+                };
+            }
         }
 
         using namespace Serialization;

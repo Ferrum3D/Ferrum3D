@@ -586,6 +586,12 @@ namespace FE::Framework
     }
 
 
+    festd::span<WorldService* const> EntityWorld::GetServices() const
+    {
+        return { m_impl->m_services.data(), m_impl->m_services.size() };
+    }
+
+
     void* EntityWorld::FindService(const Rtti::TypeID type) const
     {
         for (WorldService* service : m_impl->m_services)

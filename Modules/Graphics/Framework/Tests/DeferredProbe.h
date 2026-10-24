@@ -11,6 +11,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::DeferredProbe)
         Texture2DDescriptor<float3> m_color;
         RWStructuredBufferDescriptor<uint32_t> m_stats;
         StructuredBufferDescriptor<ViewData> m_view;
+        StructuredBufferDescriptor<GlobalLightingData> m_expectedLighting;
         uint2 m_resolution;
         uint32_t m_empty;
         FE_RTTI_Reflect("446E9FDE-3F29-4ACD-9343-DFF9F07B87D1");

@@ -1,6 +1,7 @@
 #pragma once
 #include <Framework/Entities/EntityWorld.h>
 #include <GameFramework/Graphics/MeshSceneBridge.h>
+#include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
 
 namespace FE::GameFramework
 {
@@ -8,6 +9,11 @@ namespace FE::GameFramework
     struct WorldGraphicsSceneService : Framework::WorldService
     {
         FE_RTTI("09F03B91-8406-485F-A7D1-A2063CA48020");
+
+        using Configuration = Graphics::GlobalLightingParameters;
+        bool Configure(const Configuration& settings);
+        bool ApplyConfiguration(const Configuration& settings);
+        [[nodiscard]] Configuration CaptureConfiguration() const;
 
         void Init(Framework::EntityWorld& world) override;
         void Shutdown(Framework::EntityWorld& world) override;
@@ -25,6 +31,7 @@ namespace FE::GameFramework
         virtual MeshSceneBridge* CreateMeshBridge(Graphics::Scene& scene);
 
     private:
+        Configuration m_configuration;
         Rc<Graphics::Scene> m_scene;
         festd::unique_ptr<MeshSceneBridge> m_meshes;
     };

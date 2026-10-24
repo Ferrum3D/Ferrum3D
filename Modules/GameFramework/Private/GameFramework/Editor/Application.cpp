@@ -134,6 +134,7 @@ namespace FE::Editor
 
     void Application::OnWorldUnloading()
     {
+        m_serviceSettingsError.clear();
         m_selected = {};
         m_cameraUuid = Uuid::kNull;
         if (m_editorSystemsRegistered)
@@ -300,6 +301,55 @@ namespace FE::Editor
     }
 
 
+    void Application::DrawServicesWindow()
+    {
+        if (ImGui::Begin("Services"))
+        {
+            for (Framework::WorldService* service : GetWorld().GetServices())
+            {
+                const Rtti::Type& type = service->RTTI_GetDynamicType();
+                ImGui::PushID(service);
+                const auto label = Fmt::FixedFormat("{}", GetDisplayName(type));
+                if (ImGui::CollapsingHeader(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    void* object = service->RTTI_GetDynamicObject();
+                    Rtti::Any settings;
+                    if (type.m_captureConfiguration)
+                        settings = type.m_captureConfiguration(object);
+
+                    if (!settings.HasValue())
+                    {
+                        ImGui::TextDisabled("No settings");
+                    }
+                    else
+                    {
+                        const bool readOnly = type.m_applyConfiguration == nullptr;
+                        if (readOnly)
+                            ImGui::TextDisabled("These settings apply when the world starts.");
+
+                        const Rtti::Type& configurationType = *settings.GetType();
+                        if (DrawReflectedFields(configurationType, settings.GetValue(), readOnly) && !readOnly)
+                        {
+                            const bool valid = !configurationType.m_validate || configurationType.m_validate(settings.GetValue());
+                            if (valid && type.m_applyConfiguration(object, settings))
+                                m_serviceSettingsError.clear();
+                            else
+                                m_serviceSettingsError = "Settings were rejected. Check the parameter ranges.";
+                        }
+                    }
+                }
+
+                ImGui::PopID();
+            }
+
+            if (!m_serviceSettingsError.empty())
+                ImGui::TextColored(ImVec4(1, 0.4f, 0.3f, 1), "%s", m_serviceSettingsError.c_str());
+        }
+
+        ImGui::End();
+    }
+
+
     void Application::DrawViewport()
     {
         m_viewportHovered = false;
@@ -449,6 +499,7 @@ namespace FE::Editor
             const ImGuiID inspector = ImGui::DockBuilderSplitNode(left, ImGuiDir_Down, 0.6f, nullptr, &left);
             ImGui::DockBuilderDockWindow("World", left);
             ImGui::DockBuilderDockWindow("Entity", inspector);
+            ImGui::DockBuilderDockWindow("Services", inspector);
             ImGui::DockBuilderDockWindow("Asset Browser", bottom);
             ImGui::DockBuilderDockWindow("Main Viewport", center);
             ImGui::DockBuilderFinish(dock);
@@ -456,6 +507,7 @@ namespace FE::Editor
 
         DrawWorldWindow();
         DrawEntityWindow();
+        DrawServicesWindow();
         if (ImGui::Begin("Asset Browser"))
         {
             if (const auto world = m_assets.Draw(Rtti::GetTypeID<Framework::EntityWorldAsset>()); world.IsValid())

@@ -1,7 +1,7 @@
 #include <Shaders/Deferred/DeferredCommon.hlsli>
 #include <Shaders/Shading/PBR.hlsli>
 
-FE_NUM_THREADS(EVALUATION_LANES * kSurfaceWavesPerGroup, 1, 1)
+FE_NUM_THREADS(EVALUATION_LANES* kSurfaceWavesPerGroup, 1, 1)
 void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
 {
     uint2 pixel;
@@ -26,6 +26,7 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
     const float depth = GConstants.m_depth.Load(uint3(pixel, 0));
     const float4 homogeneousWorld = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
     const float3 worldPosition = homogeneousWorld.xyz / homogeneousWorld.w;
-    const float3 color = Shading::ComputeShading(material, worldPosition, view.m_cameraPosition.xyz).rgb;
+    const GlobalLightingData lighting = LoadGlobalLighting(GConstants.m_lighting);
+    const float3 color = Shading::ComputeShading(material, worldPosition, view.m_cameraPosition.xyz, lighting).rgb;
     GConstants.m_output.Store(pixel, color);
 }

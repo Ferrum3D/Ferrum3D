@@ -3,6 +3,52 @@
 #include <Shaders/Tests/DeferredProbe.h>
 [[vk::push_constant]] Constants GConstants;
 
+bool CheckAtmosphereLimits(GlobalLightingData lighting)
+{
+    if (lighting.m_directionIlluminance.w <= 0)
+        return true;
+
+    lighting.m_directionIlluminance.xyz = float3(0, 1, 0);
+    const float radius = lighting.m_planetAtmosphereOzone.x;
+    const float3 origin = float3(0, radius + 0.001f, 0);
+    const float3 transmittance = Atmosphere::SunTransmittance(lighting, origin);
+    const float3 verticalOpticalDepth = lighting.m_rayleighScaleHeight.rgb * lighting.m_rayleighScaleHeight.w
+        + lighting.m_mieExtinctionAnisotropy.rgb * lighting.m_mieScatteringScaleHeight.w
+        + lighting.m_ozoneAbsorptionCenter.rgb * lighting.m_planetAtmosphereOzone.z;
+    const float3 analytic = exp(-verticalOpticalDepth);
+    if (any(abs(transmittance - analytic) > 0.03f))
+        return false;
+
+    const float3 sky = Atmosphere::SkyLuminance(lighting, 0, float3(0, 0.8f, 0.6f));
+    const float3 horizon = Atmosphere::SkyLuminance(lighting, 0, float3(0, 0, 1));
+    if (!all(isfinite(horizon)) || !all(horizon > 0))
+        return false;
+
+    lighting.m_directionIlluminance.w *= 2;
+    const float3 brighter = Atmosphere::SkyLuminance(lighting, 0, float3(0, 0.8f, 0.6f));
+    if (!all(isfinite(sky)) || !all(sky > 0) || any(abs(brighter - sky * 2) > 0.001f))
+        return false;
+
+    lighting.m_directionIlluminance.xyz = float3(0, -1, 0);
+    if (any(Atmosphere::DirectionalIlluminance(lighting, 0) != 0))
+        return false;
+
+    lighting.m_directionIlluminance.xyz = float3(0, 1, 0);
+    lighting.m_rayleighScaleHeight.rgb = 0;
+    lighting.m_mieScatteringScaleHeight.rgb = 0;
+    lighting.m_mieExtinctionAnisotropy.rgb = 0;
+    lighting.m_ozoneAbsorptionCenter.rgb = 0;
+    if (any(Atmosphere::SkyLuminance(lighting, 0, float3(0, 0, 1)) != 0))
+        return false;
+
+    const float sineRadius = sin(lighting.m_colorSunRadius.w);
+    const float3 expectedDisc =
+        lighting.m_colorSunRadius.rgb * lighting.m_directionIlluminance.w / (Atmosphere::kPi * sineRadius * sineRadius);
+    const float3 disc = Atmosphere::SkyLuminance(lighting, 0, float3(0, 1, 0));
+    return all(abs(disc - expectedDisc) / max(expectedDisc, 0.001f) < 0.0001f);
+}
+
+
 FE_NUM_THREADS(8, 8, 1)
 void main(uint3 dispatch : SV_DispatchThreadID)
 {
@@ -12,16 +58,29 @@ void main(uint3 dispatch : SV_DispatchThreadID)
 
     const uint index = pixel.x + pixel.y * GConstants.m_resolution.x;
     const ViewData view = GConstants.m_view.Load(0);
+    const GlobalLightingData lighting = GConstants.m_expectedLighting.Load(0);
+    if (index == 0 && !CheckAtmosphereLimits(lighting))
+        InterlockedAdd(GConstants.m_stats.Get()[3], 1);
     const float3 sourceColor = float3(0.4f, 0.6f, 0.8f);
     const float3 encodedColor = round(pow(sourceColor, 1.0f / 2.2f) * 255) / 255.0f;
     const float3 baseColor = pow(encodedColor, 2.2f);
-    float3 expected = view.m_backgroundColor.rgb;
+    const float2 screenNdc = ((float2(pixel) + 0.5f - view.m_viewport.xy) / view.m_viewport.zw) * float2(2, -2) + float2(-1, 1);
+    const float4 skyWorld = mul(float4(screenNdc, 0.5f, 1), view.m_inverseViewProjection);
+    const float3 skyDirection = normalize(skyWorld.xyz / skyWorld.w - view.m_cameraPosition.xyz);
+    float3 expected = Atmosphere::SkyLuminance(lighting, view.m_cameraPosition.xyz, skyDirection) * Shading::kPreExposure;
+    expected = min(expected, Shading::kMaxStoredLuminance);
     if (GConstants.m_empty == 0 && index % 7 != 0)
     {
         if (index % 11 == 0 || index % 13 == 0)
             expected = float3(1, 0, 1);
         else if (index % 5 != 0)
-            expected = baseColor * (0.15f + 0.85f * dot(float3(0, 0, -1), normalize(float3(0.4f, 0.7f, -0.2f))));
+        {
+            const float depth = 0.2f + 0.6f * float(pixel.x) / float(GConstants.m_resolution.x);
+            const float4 world = mul(float4(screenNdc, depth, 1), view.m_inverseViewProjection);
+            const float nDotL = saturate(dot(float3(0, 0, -1), lighting.m_directionIlluminance.xyz));
+            expected = baseColor * Atmosphere::DirectionalIlluminance(lighting, world.xyz / world.w)
+                * (nDotL * Shading::kPreExposure / Atmosphere::kPi);
+        }
         else
         {
             Shading::MaterialEvaluation material;
@@ -49,7 +108,7 @@ void main(uint3 dispatch : SV_DispatchThreadID)
             const float4 world = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
             const float3 worldPosition = world.xyz / world.w;
 #endif
-            expected = Shading::ComputeShading(material, worldPosition, view.m_cameraPosition.xyz).rgb;
+            expected = Shading::ComputeShading(material, worldPosition, view.m_cameraPosition.xyz, lighting).rgb;
         }
     }
 

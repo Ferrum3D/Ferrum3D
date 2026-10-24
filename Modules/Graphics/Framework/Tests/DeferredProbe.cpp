@@ -5,6 +5,7 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
+#include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
@@ -131,6 +132,10 @@ namespace FE::Graphics::DeferredProbe
 
         Rc<Core::Texture> depth = Core::Texture::Create(device, "DeferredProbeDepth", Core::Format::kR32_SFLOAT, resolution);
         Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<ViewData>(device, "DeferredProbeView", 1);
+        DB::Database database(device, pool);
+        Rc<GlobalLightingTable> lightingTable = Memory::DefaultNew<GlobalLightingTable>(&database);
+        const auto lightingRow = lightingTable->AllocateRow();
+        Rc<Core::Buffer> expectedLighting = Core::Buffer::CreateStructured<GlobalLightingData>(device, "ExpectedLighting", 1);
         Rc<Core::Buffer> stats = Core::Buffer::CreateByteAddress(device, "DeferredProbeStats", 16);
         Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "DeferredProbeReadback", 16);
         Rc<Core::Buffer> argsReadback = Core::Buffer::CreateByteAddress(device, "DeferredProbeArgsReadback", 36);
@@ -156,11 +161,11 @@ namespace FE::Graphics::DeferredProbe
         view.m_inverseViewProjection.m_rows[3] = Vector4(0.1f, -0.2f, 0.3f, 1.5f);
         view.m_cameraPosition = PackedVector4F(0, 0, -2, 1);
         view.m_viewport = PackedVector4F(3, 5, 251, 119);
-        view.m_backgroundColor = PackedVector4F(0.1f, 0.2f, 0.3f, 1);
+        view.m_backgroundColor = PackedVector4F(0, 0, 0, 1);
         const Visibility::SurfaceBinding bindings[] = { { 0, 0 }, { 1, 1 }, { 2, 2 } };
         Visibility::SurfaceWork work;
         auto routing = Visibility::CreateSurfaceRouting(device, bindings, 3, 3);
-        for (uint32_t testCase = 0; testCase < 4; ++testCase)
+        for (uint32_t testCase = 0; testCase < 5; ++testCase)
         {
             SCOPED_TRACE(testCase);
             const bool empty = testCase == 2;
@@ -189,6 +194,21 @@ namespace FE::Graphics::DeferredProbe
                 pipeline("Shaders/Materials/ShadeStandardPBR.cs.hlsl", Env::Name(Fmt::Format("EVALUATION_LANES={}", lanes)));
             queue->BeginFrame();
             graph->BeginFrame();
+            GlobalLightingParameters lighting;
+            lighting.m_directionalLightOrientation = Quaternion(-0.77585731f, 0.44334703f, 0, 0.44887509f);
+            lighting.m_directionalLightIlluminanceLux = testCase == 1 ? 27000.0f : 10000.0f;
+            lighting.m_directionalLightColor = testCase == 1 ? PackedVector3F(0.3f, 0.7f, 1) : PackedVector3F(1, 1, 1);
+            if (testCase == 1)
+                lighting.m_directionalLightOrientation = Quaternion::RotationY(2.4f);
+
+            const GlobalLightingData lightingData = testCase == 4 ? GlobalLightingData{} : lighting.BuildRenderData();
+            lightingTable->WriteRow(lightingRow).m_lighting.Get() = lightingData;
+            database.Update(*graph, queue->GetCurrentFence());
+
+            GlobalLightingBinding lightingBinding;
+            lightingBinding.m_table = lightingTable->GetDeviceAddress();
+            lightingBinding.m_row = testCase == 4 ? kInvalidIndex : lightingRow.m_rowIndex;
+            FE_Verify(uploader.Upload(*graph, expectedLighting.Get(), lightingData));
             FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
             auto* seed = graph->AllocatePassData<PassDesc>();
             seed->m_pipeline = seedPipeline;
@@ -204,6 +224,7 @@ namespace FE::Graphics::DeferredProbe
             auto* initialize = graph->AllocatePassData<Visibility::DeferredDirectPassDesc>();
             initialize->m_pipeline = initializePipeline;
             initialize->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
+            initialize->m_constants.m_lighting = lightingBinding;
             initialize->m_constants.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
             initialize->m_constants.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
             initialize->m_constants.m_resolution = resolution;
@@ -216,6 +237,7 @@ namespace FE::Graphics::DeferredProbe
                 shade->m_pipeline = slot == 0 ? simple : pbr;
                 shade->m_arguments = Core::BufferView(work.m_arguments.Get()).Slice(slot * 12, 12);
                 shade->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
+                shade->m_constants.m_lighting = lightingBinding;
                 shade->m_constants.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
                 shade->m_constants.m_g1 = graph->GetSRV(Core::TextureView::Create(planes[1].Get()));
                 shade->m_constants.m_g2 = graph->GetSRV(Core::TextureView::Create(planes[2].Get()));
@@ -236,6 +258,7 @@ namespace FE::Graphics::DeferredProbe
             auto* inspect = graph->AllocatePassData<PassDesc>();
             inspect->m_pipeline = inspectPipeline;
             inspect->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
+            inspect->m_constants.m_expectedLighting = graph->GetSRV(expectedLighting.Get());
             inspect->m_constants.m_color = graph->GetSRV(Core::TextureView::Create(color.Get()));
             inspect->m_constants.m_stats = graph->GetUAV(stats.Get());
             inspect->m_constants.m_resolution = resolution;
@@ -256,6 +279,7 @@ namespace FE::Graphics::DeferredProbe
             EXPECT_EQ(result[0], 0u);
             EXPECT_LT(std::bit_cast<float>(result[1]), wideHDR ? 0.0012f : 0.032f);
             EXPECT_EQ(result[2], resolution.x * resolution.y);
+            EXPECT_EQ(result[3], 0u);
             readback->Unmap();
             const uint32_t* args = static_cast<const uint32_t*>(argsReadback->Map());
             argsReadback->InvalidateMappedRange(0, 36);
@@ -270,6 +294,7 @@ namespace FE::Graphics::DeferredProbe
         }
 
         graph.Reset();
+        lightingTable->Free(lightingRow);
         uploader.Shutdown();
     }
 } // namespace FE::Graphics::DeferredProbe

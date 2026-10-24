@@ -18,7 +18,10 @@ int main(int argc, const char** argv)
                             "FE::GameFramework::PhysicsSystem",
                             "FE::GameFramework::PhysicsBodyComponent",
                             "FE::GameFramework::PhysicsShapeAsset",
-                            "FE::GameFramework::WorldPhysicsService" };
+                            "FE::GameFramework::WorldPhysicsService",
+                            "FE::Graphics::GlobalLightingParameters",
+                            "FE::Graphics::SkyAtmosphereParameters",
+                            "FE::Graphics::GlobalLightingSceneModule" };
     int32_t exitCode = 0;
     for (const char* name : names)
     {
