@@ -156,48 +156,59 @@ namespace FE::Editor
 
         using DrawControl = bool (*)(const char*, void*);
 
+
+        struct Control final
+        {
+            Rtti::TypeID m_type;
+            DrawControl m_draw;
+        };
+
+
+        //! Controls edit a byte copy of the field, so their types must be trivially copyable and fit a FieldEdit.
+        template<class T>
+        Control MakeControl(const DrawControl draw)
+        {
+            static_assert(std::is_trivially_copyable_v<T> && sizeof(T) <= FieldEdit::kMaxSize && alignof(T) <= 16);
+            return { Rtti::GetTypeID<T>(), draw };
+        }
+
+
         DrawControl FindControl(const Rtti::TypeID type)
         {
-            struct Control final
-            {
-                Rtti::TypeID m_type;
-                DrawControl m_draw;
-            };
-
             static const Control kControls[] = {
-                { Rtti::GetTypeID<bool>(), DrawBool },
-                { Rtti::GetTypeID<int8_t>(), DrawScalar<int8_t, ImGuiDataType_S8> },
-                { Rtti::GetTypeID<uint8_t>(), DrawScalar<uint8_t, ImGuiDataType_U8> },
-                { Rtti::GetTypeID<int16_t>(), DrawScalar<int16_t, ImGuiDataType_S16> },
-                { Rtti::GetTypeID<uint16_t>(), DrawScalar<uint16_t, ImGuiDataType_U16> },
-                { Rtti::GetTypeID<int32_t>(), DrawScalar<int32_t, ImGuiDataType_S32> },
-                { Rtti::GetTypeID<uint32_t>(), DrawScalar<uint32_t, ImGuiDataType_U32> },
-                { Rtti::GetTypeID<int64_t>(), DrawScalar<int64_t, ImGuiDataType_S64> },
-                { Rtti::GetTypeID<uint64_t>(), DrawScalar<uint64_t, ImGuiDataType_U64> },
-                { Rtti::GetTypeID<float>(), DrawScalar<float, ImGuiDataType_Float> },
-                { Rtti::GetTypeID<double>(), DrawScalar<double, ImGuiDataType_Double> },
-                { Rtti::GetTypeID<Vector2>(), DrawVector<Vector2, 2> },
-                { Rtti::GetTypeID<Vector2Int>(), DrawVector<Vector2Int, 2, ImGuiDataType_S32> },
-                { Rtti::GetTypeID<Vector2UInt>(), DrawVector<Vector2UInt, 2, ImGuiDataType_U32> },
-                { Rtti::GetTypeID<Vector3>(), DrawVector<Vector3, 3> },
-                { Rtti::GetTypeID<Vector3Int>(), DrawVector<Vector3Int, 3, ImGuiDataType_S32> },
-                { Rtti::GetTypeID<Vector3UInt>(), DrawVector<Vector3UInt, 3, ImGuiDataType_U32> },
-                { Rtti::GetTypeID<Vector4>(), DrawVector<Vector4, 4> },
-                { Rtti::GetTypeID<PackedVector3F>(), DrawVector<PackedVector3F, 3> },
-                { Rtti::GetTypeID<PackedVector3Int>(), DrawVector<PackedVector3Int, 3, ImGuiDataType_S32> },
-                { Rtti::GetTypeID<PackedVector3UInt>(), DrawVector<PackedVector3UInt, 3, ImGuiDataType_U32> },
-                { Rtti::GetTypeID<PackedVector4F>(), DrawVector<PackedVector4F, 4> },
-                { Rtti::GetTypeID<RectF>(), DrawVector<RectF, 4> },
-                { Rtti::GetTypeID<RectInt>(), DrawVector<RectInt, 4, ImGuiDataType_S32> },
-                { Rtti::GetTypeID<RectUInt>(), DrawVector<RectUInt, 4, ImGuiDataType_U32> },
-                { Rtti::GetTypeID<Color4F>(), DrawColor },
-                { Rtti::GetTypeID<Quaternion>(), DrawQuaternion },
-                { Rtti::GetTypeID<Transform>(), DrawTransform },
-                { Rtti::GetTypeID<Matrix4x4>(), DrawMatrix },
-                { Rtti::GetTypeID<Aabb>(), DrawBounds<Aabb> },
-                { Rtti::GetTypeID<PackedAabb>(), DrawBounds<PackedAabb> },
-                { Rtti::GetTypeID<Obb>(), DrawObb },
-                { Rtti::GetTypeID<Sphere>(), DrawSphere },
+                MakeControl<bool>(DrawBool),
+                MakeControl<int8_t>(DrawScalar<int8_t, ImGuiDataType_S8>),
+                MakeControl<uint8_t>(DrawScalar<uint8_t, ImGuiDataType_U8>),
+                MakeControl<int16_t>(DrawScalar<int16_t, ImGuiDataType_S16>),
+                MakeControl<uint16_t>(DrawScalar<uint16_t, ImGuiDataType_U16>),
+                MakeControl<int32_t>(DrawScalar<int32_t, ImGuiDataType_S32>),
+                MakeControl<uint32_t>(DrawScalar<uint32_t, ImGuiDataType_U32>),
+                MakeControl<int64_t>(DrawScalar<int64_t, ImGuiDataType_S64>),
+                MakeControl<uint64_t>(DrawScalar<uint64_t, ImGuiDataType_U64>),
+                MakeControl<float>(DrawScalar<float, ImGuiDataType_Float>),
+                MakeControl<double>(DrawScalar<double, ImGuiDataType_Double>),
+                MakeControl<Vector2>(DrawVector<Vector2, 2>),
+                MakeControl<Vector2Int>(DrawVector<Vector2Int, 2, ImGuiDataType_S32>),
+                MakeControl<Vector2UInt>(DrawVector<Vector2UInt, 2, ImGuiDataType_U32>),
+                MakeControl<Vector3>(DrawVector<Vector3, 3>),
+                MakeControl<Vector3Int>(DrawVector<Vector3Int, 3, ImGuiDataType_S32>),
+                MakeControl<Vector3UInt>(DrawVector<Vector3UInt, 3, ImGuiDataType_U32>),
+                MakeControl<Vector4>(DrawVector<Vector4, 4>),
+                MakeControl<PackedVector3F>(DrawVector<PackedVector3F, 3>),
+                MakeControl<PackedVector3Int>(DrawVector<PackedVector3Int, 3, ImGuiDataType_S32>),
+                MakeControl<PackedVector3UInt>(DrawVector<PackedVector3UInt, 3, ImGuiDataType_U32>),
+                MakeControl<PackedVector4F>(DrawVector<PackedVector4F, 4>),
+                MakeControl<RectF>(DrawVector<RectF, 4>),
+                MakeControl<RectInt>(DrawVector<RectInt, 4, ImGuiDataType_S32>),
+                MakeControl<RectUInt>(DrawVector<RectUInt, 4, ImGuiDataType_U32>),
+                MakeControl<Color4F>(DrawColor),
+                MakeControl<Quaternion>(DrawQuaternion),
+                MakeControl<Transform>(DrawTransform),
+                MakeControl<Matrix4x4>(DrawMatrix),
+                MakeControl<Aabb>(DrawBounds<Aabb>),
+                MakeControl<PackedAabb>(DrawBounds<PackedAabb>),
+                MakeControl<Obb>(DrawObb),
+                MakeControl<Sphere>(DrawSphere),
             };
             for (const auto& control : kControls)
             {
@@ -209,23 +220,67 @@ namespace FE::Editor
         }
 
 
-        bool DrawFields(const Rtti::Type& type, void* value, const bool includeBases, const void* runtimeValue)
+        //! Draw one field from a copy; on change, record it relative to the start of the drawn root value.
+        bool DrawField(const Rtti::FieldInfo& field, const void* storage, const uint32_t rootOffset, FieldEdit& edit)
         {
+            const auto* display = field.TryGetAttribute<Rtti::DisplayName>();
+            const festd::inline_string name(display ? display->m_name : field.m_name);
+            const bool isSingleValue = field.m_arraySize == 1 && !Bit::AnySet(field.m_flags, Rtti::FieldFlags::kPointer);
+            const auto draw = isSingleValue ? FindControl(field.m_type) : nullptr;
+            if (!draw)
+            {
+                ImGui::TextDisabled("%s (unsupported type)", name.c_str());
+                return false;
+            }
+
+            FE_AssertDebug(field.m_size <= FieldEdit::kMaxSize);
+            alignas(16) std::byte copy[FieldEdit::kMaxSize];
+            memcpy(copy, static_cast<const std::byte*>(storage) + field.m_offset, field.m_size);
+
+            const bool transient = Bit::AnySet(field.m_flags, Rtti::FieldFlags::kTransient);
+            ImGui::BeginDisabled(transient);
+            const bool changed = draw(name.c_str(), copy) && !transient;
+            ImGui::EndDisabled();
+            if (!changed)
+                return false;
+
+            edit.m_offset = rootOffset + field.m_offset;
+            edit.m_size = field.m_size;
+            memcpy(edit.m_value, copy, field.m_size);
+            return true;
+        }
+
+
+        //! Base subobject address; the cast only adjusts the pointer and never writes through it.
+        const void* CastToBase(const Rtti::Type& type, const void* value, const Rtti::TypeID baseId)
+        {
+            return value ? type.m_cast(const_cast<void*>(value), baseId) : nullptr;
+        }
+
+
+        bool DrawFields(const Rtti::Type& type, const void* value, const bool includeBases, const void* runtimeValue,
+                        const uint32_t rootOffset, FieldEdit& edit)
+        {
+            // At most one control is active at a time; a later change in the same frame is dropped.
+            FieldEdit ignored;
             bool changed = false;
             if (includeBases && type.m_cast)
             {
                 for (const auto baseId : type.m_baseTypes)
                 {
                     const auto* base = Rtti::TypeRegistry::FindType(baseId);
-                    void* baseValue = type.m_cast(value, baseId);
+                    const void* baseValue = CastToBase(type, value, baseId);
                     if (!base || !baseValue)
                         continue;
 
                     ImGui::PushID(Fmt::FixedFormat("{}", baseId).c_str());
                     if (ImGui::TreeNode(festd::inline_string(GetDisplayName(*base)).c_str()))
                     {
-                        const void* runtimeBase = runtimeValue ? type.m_cast(const_cast<void*>(runtimeValue), baseId) : nullptr;
-                        changed |= DrawFields(*base, baseValue, false, runtimeBase);
+                        const auto baseOffset = static_cast<uint32_t>(static_cast<const std::byte*>(baseValue)
+                                                                      - static_cast<const std::byte*>(value));
+                        const void* runtimeBase = CastToBase(type, runtimeValue, baseId);
+                        changed |=
+                            DrawFields(*base, baseValue, false, runtimeBase, rootOffset + baseOffset, changed ? ignored : edit);
                         ImGui::TreePop();
                     }
 
@@ -238,42 +293,10 @@ namespace FE::Editor
                 if (!Bit::AnySet(field.m_flags, Rtti::FieldFlags::kInstance))
                     continue;
 
-                ImGui::PushID(static_cast<int>(field.m_offset));
-                const auto* display = field.TryGetAttribute<Rtti::DisplayName>();
-                const festd::inline_string name(display ? display->m_name : field.m_name);
                 const bool transient = Bit::AnySet(field.m_flags, Rtti::FieldFlags::kTransient);
-                const auto* storage = transient && runtimeValue ? runtimeValue : value;
-                void* fieldValue = const_cast<std::byte*>(static_cast<const std::byte*>(storage)) + field.m_offset;
-                const bool isSingleValue = field.m_arraySize == 1 && !Bit::AnySet(field.m_flags, Rtti::FieldFlags::kPointer);
-                const auto draw = isSingleValue ? FindControl(field.m_type) : nullptr;
-                if (draw)
-                {
-                    ImGui::BeginDisabled(transient);
-                    changed |= draw(name.c_str(), fieldValue);
-                    ImGui::EndDisabled();
-                }
-                else
-                {
-                    const Rtti::Type* nested = isSingleValue ? Rtti::TypeRegistry::FindType(field.m_type) : nullptr;
-                    if (nested && !nested->m_fields.empty())
-                    {
-                        ImGui::BeginDisabled(transient);
-                        if (ImGui::TreeNode(name.c_str()))
-                        {
-                            const void* nestedRuntime =
-                                runtimeValue ? static_cast<const std::byte*>(runtimeValue) + field.m_offset : nullptr;
-                            changed |= DrawFields(*nested, fieldValue, true, nestedRuntime);
-                            ImGui::TreePop();
-                        }
-
-                        ImGui::EndDisabled();
-                    }
-                    else
-                    {
-                        ImGui::TextDisabled("%s (unsupported type)", name.c_str());
-                    }
-                }
-
+                const void* storage = transient && runtimeValue ? runtimeValue : value;
+                ImGui::PushID(static_cast<int>(field.m_offset));
+                changed |= DrawField(field, storage, rootOffset, changed ? ignored : edit);
                 ImGui::PopID();
             }
 
@@ -282,10 +305,11 @@ namespace FE::Editor
     } // namespace
 
 
-    bool DrawReflectedFields(const Rtti::Type& type, void* value, const bool readOnly, const void* runtimeValue)
+    bool DrawReflectedFields(const Rtti::Type& type, const void* value, FieldEdit& edit, const bool readOnly,
+                             const void* runtimeValue)
     {
         ImGui::BeginDisabled(readOnly);
-        const bool changed = DrawFields(type, value, true, runtimeValue);
+        const bool changed = DrawFields(type, value, true, runtimeValue, 0, edit);
         ImGui::EndDisabled();
         return changed && !readOnly;
     }

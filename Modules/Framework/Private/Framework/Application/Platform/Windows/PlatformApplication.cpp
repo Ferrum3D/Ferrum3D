@@ -430,6 +430,14 @@ namespace FE::Framework::Windows
             app->RecordEvent(Core::PlatformEvent::MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam) / static_cast<float>(WHEEL_DELTA)));
             break;
 
+        case WM_MOUSEHWHEEL:
+            {
+                // Touchpads and tilt wheels report positive values when scrolling right.
+                const float delta = GET_WHEEL_DELTA_WPARAM(wParam) / static_cast<float>(WHEEL_DELTA);
+                app->RecordEvent(Core::PlatformEvent::MouseWheel(0.0f, delta));
+            }
+            break;
+
         case WM_DESTROY:
             if (app->m_mouseTrackWindow == hWnd && app->m_mouseTrackArea != MouseTrackArea::kNone)
             {
@@ -644,7 +652,9 @@ namespace FE::Framework::Windows
     {
         FE_PROFILER_ZONE();
 
-        m_events.clear();
+        // Windows sends some messages synchronously between polls, e.g. focus changes from SetFocus or window creation.
+        // They were recorded after the previous poll returned and belong to this one.
+        m_events.erase(m_events.begin(), m_events.begin() + m_deliveredEventCount);
 
         MSG msg;
         while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -659,6 +669,7 @@ namespace FE::Framework::Windows
         const float elapsed = m_previousPollSeconds == 0 ? 0 : static_cast<float>(now - m_previousPollSeconds);
         m_inputBackend.ProcessEvents(FilterCapturedInput(), elapsed, now);
         m_previousPollSeconds = now;
+        m_deliveredEventCount = m_events.size();
     }
 
 
@@ -763,7 +774,7 @@ namespace FE::Framework::Windows
 
     festd::span<const Core::PlatformEvent> PlatformApplication::GetEvents() const
     {
-        return m_events;
+        return festd::span(m_events.data(), m_deliveredEventCount);
     }
 
 

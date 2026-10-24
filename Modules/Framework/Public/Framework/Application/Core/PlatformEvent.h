@@ -56,7 +56,10 @@ namespace FE::Framework::Core
 
         struct MouseWheelPayload final
         {
+            //! Vertical notches, positive away from the user.
             float m_delta;
+            //! Horizontal notches, positive to the right.
+            float m_horizontalDelta;
         };
 
         struct MouseMovePayload final
@@ -162,11 +165,12 @@ namespace FE::Framework::Core
             return event;
         }
 
-        static PlatformEvent MouseWheel(const float delta)
+        static PlatformEvent MouseWheel(const float delta, const float horizontalDelta = 0.0f)
         {
             PlatformEvent event;
             event.m_type = PlatformEventType::kMouseWheel;
             event.m_mouseWheelPayload.m_delta = delta;
+            event.m_mouseWheelPayload.m_horizontalDelta = horizontalDelta;
             return event;
         }
 

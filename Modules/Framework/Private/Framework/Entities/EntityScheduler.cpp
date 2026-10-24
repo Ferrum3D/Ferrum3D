@@ -157,12 +157,13 @@ namespace FE::Framework
         m_compiled = false;
         m_executed = false;
 
+        const auto* time = m_world.m_owner.FindService<WorldTimeService>();
+        const float deltaSeconds = fixed ? fixedDeltaSeconds : (time ? time->GetDeltaSeconds() : 0);
+        const float unpausedDeltaSeconds = fixed ? fixedDeltaSeconds : (time ? time->GetUnpausedDeltaSeconds() : 0);
+
         m_state = State::kCollecting;
         for (auto* system : m_systems)
         {
-            const auto* time = m_world.m_owner.FindService<WorldTimeService>();
-            const float deltaSeconds = fixed ? fixedDeltaSeconds : (time ? time->GetDeltaSeconds() : 0);
-            const float unpausedDeltaSeconds = fixed ? fixedDeltaSeconds : (time ? time->GetUnpausedDeltaSeconds() : 0);
             EntityUpdateContext context{ m_world.m_owner, system, m_epoch, deltaSeconds, unpausedDeltaSeconds };
             if (fixed)
                 system->FixedUpdate(context);

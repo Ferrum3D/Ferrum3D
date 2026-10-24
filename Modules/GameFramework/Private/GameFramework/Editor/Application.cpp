@@ -24,6 +24,10 @@ namespace FE::Editor
 {
     namespace
     {
+        //! Edits are submitted before the next world update and commit at its start; one extra frame is a safety margin.
+        constexpr int32_t kComponentEditSettleFrames = 2;
+
+
         template<class T>
         void RequireSystem(Framework::EntityWorldAsset& definition)
         {
@@ -135,7 +139,11 @@ namespace FE::Editor
     void Application::OnWorldUnloading()
     {
         m_serviceSettingsError.clear();
+
+        // Entity IDs of the next world may reuse slots, so pending edits of this one are dropped.
         m_selected = {};
+        m_componentEdit = {};
+        m_gizmo = {};
         m_cameraUuid = Uuid::kNull;
         if (m_editorSystemsRegistered)
         {
@@ -180,7 +188,9 @@ namespace FE::Editor
 
     void Application::BeforeWorldUpdate()
     {
-        Graphics::Renderer::Get().WaitForRender();
+        SubmitPendingEdits();
+
+        // The frame loop already joined scene reads; view modules finished pass setup before the scene was released.
         auto* view = GetEditorView();
         if (!view)
             return;
@@ -266,38 +276,79 @@ namespace FE::Editor
             if (auto* entity = GetWorld().Find(m_selected))
             {
                 for (const auto* component : GetWorld().GetComponents(*entity))
-                {
-                    const auto& type = *component->m_type;
-                    const auto label = Fmt::FixedFormat("{} {}", GetIcon(&type), GetDisplayName(type));
-                    ImGui::PushID(Fmt::FixedFormat("{}", type.m_id).c_str());
-                    if (ImGui::CollapsingHeader(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-                    {
-                        Rtti::Any candidate;
-                        const void* value = entity->FindComponent(type.m_id);
-                        if (candidate.Copy(type, value))
-                        {
-                            if (DrawReflectedFields(type, candidate.GetValue(), component->m_policy.m_transient, value))
-                            {
-                                Framework::EntityCommandList commands(GetWorld());
-                                if ((!type.m_validate || type.m_validate(candidate.GetValue()))
-                                    && commands.ReplaceComponent(entity->GetID(), type, candidate.GetValue()))
-                                {
-                                    GetWorld().Submit(std::move(commands));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            DrawReflectedFields(type, const_cast<void*>(value), true);
-                        }
-                    }
-
-                    ImGui::PopID();
-                }
+                    DrawComponent(*entity, *component);
             }
         }
 
         ImGui::End();
+
+        // Live values show the last edit once its replacement committed and no control holds the session.
+        const bool isSettled = ImGui::GetFrameCount() - m_componentEdit.m_lastEditFrame > kComponentEditSettleFrames;
+        const bool canEndEdit = isSettled && !m_componentEdit.m_isPending && !ImGui::IsAnyItemActive();
+        if (m_componentEdit.m_value.HasValue() && canEndEdit)
+            m_componentEdit = {};
+    }
+
+
+    void Application::DrawComponent(Framework::Entity& entity, const Framework::EntityComponentInfo& component)
+    {
+        const Rtti::Type& type = *component.m_type;
+        const auto label = Fmt::FixedFormat("{} {}", GetIcon(&type), GetDisplayName(type));
+        ImGui::PushID(Fmt::FixedFormat("{}", type.m_id).c_str());
+        const auto popID = festd::defer([] {
+            ImGui::PopID();
+        });
+
+        if (!ImGui::CollapsingHeader(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            return;
+
+        // Controls draw from the pending edit while one exists, because submitted replacements commit later.
+        const void* live = entity.FindComponent(type.m_id);
+        const bool isEditing = m_componentEdit.m_entity == entity.GetID() && m_componentEdit.m_type == &type;
+        const void* value = isEditing ? m_componentEdit.m_value.GetValue() : live;
+        const bool readOnly = component.m_policy.m_transient || !type.m_copyConstructor || !type.m_destructor;
+
+        FieldEdit edit;
+        if (!DrawReflectedFields(type, value, edit, readOnly, live))
+            return;
+
+        if (!isEditing)
+        {
+            // Another component's edit is submitted before the next world update; replacing it now would drop it.
+            if (m_componentEdit.m_isPending)
+                return;
+
+            Rtti::Any started;
+            if (!started.Copy(type, live))
+                return;
+
+            m_componentEdit.m_entity = entity.GetID();
+            m_componentEdit.m_type = &type;
+            m_componentEdit.m_value = std::move(started);
+        }
+
+        void* candidate = m_componentEdit.m_value.GetValue();
+        edit.Apply(candidate);
+        m_componentEdit.m_lastEditFrame = ImGui::GetFrameCount();
+        m_componentEdit.m_isPending = !type.m_validate || type.m_validate(candidate);
+    }
+
+
+    void Application::SubmitPendingEdits()
+    {
+        auto& world = GetWorld();
+        Framework::EntityCommandList commands(world);
+        bool hasCommands = m_gizmo.RecordPendingEdit(world, commands);
+
+        ComponentEdit& edit = m_componentEdit;
+        if (edit.m_isPending && world.Find(edit.m_entity))
+            hasCommands |= commands.ReplaceComponent(edit.m_entity, *edit.m_type, edit.m_value.GetValue());
+
+        edit.m_isPending = false;
+
+        // One list per world update: independent lists replacing the same component conflict at commit.
+        if (hasCommands)
+            world.Submit(std::move(commands));
     }
 
 
@@ -328,8 +379,10 @@ namespace FE::Editor
                             ImGui::TextDisabled("These settings apply when the world starts.");
 
                         const Rtti::Type& configurationType = *settings.GetType();
-                        if (DrawReflectedFields(configurationType, settings.GetValue(), readOnly) && !readOnly)
+                        FieldEdit edit;
+                        if (DrawReflectedFields(configurationType, settings.GetValue(), edit, readOnly) && !readOnly)
                         {
+                            edit.Apply(settings.GetValue());
                             const bool valid = !configurationType.m_validate || configurationType.m_validate(settings.GetValue());
                             if (valid && type.m_applyConfiguration(object, settings))
                                 m_serviceSettingsError.clear();
@@ -384,12 +437,7 @@ namespace FE::Editor
                 {
                     bool gizmo = false;
                     if (auto* selected = GetWorld().Find(m_selected))
-                    {
-                        gizmo = DrawTranslationGizmo(*selected,
-                                                     *view,
-                                                     Vector2(origin.x, origin.y),
-                                                     Vector2(available.x, available.y));
-                    }
+                        gizmo = m_gizmo.Draw(*selected, *view, Vector2(origin.x, origin.y), Vector2(available.x, available.y));
 
                     if (m_viewportHovered && !gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
                     {
@@ -411,7 +459,6 @@ namespace FE::Editor
 
         ImGui::End();
         ImGui::PopStyleVar();
-        m_imgui->SetInputPassthrough(m_viewportHovered, m_viewportHovered && m_viewportFocused);
     }
 
 
@@ -484,7 +531,8 @@ namespace FE::Editor
             ImGui::EndMainMenuBar();
         }
 
-        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O))
+        // Routed shortcuts are not delivered while a text field owns the keyboard.
+        if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_O, ImGuiInputFlags_RouteGlobal))
             m_openWorldDialog = true;
 
         const ImGuiID dock = ImGui::GetID("FerrumEditorDock2");
@@ -518,6 +566,7 @@ namespace FE::Editor
         DrawViewport();
         DrawOpenWorld();
         DrawGameEditorWindows();
+
         const bool popup = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
         if (popup)
         {
@@ -533,9 +582,7 @@ namespace FE::Editor
     {
         request.AddViewport(GetMainViewport());
         if (auto* view = GetEditorView(); view && m_viewportTexture)
-        {
             request.AddView(view, m_viewportTexture.Get());
-        }
 
         AddImGuiViews(request);
     }

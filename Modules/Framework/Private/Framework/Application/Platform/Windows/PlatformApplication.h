@@ -79,6 +79,8 @@ namespace FE::Framework::Windows
         Core::PlatformCursor m_cursor = Core::PlatformCursor::kArrow;
         festd::inline_vector<Core::PlatformWindow*> m_windows;
         festd::vector<Core::PlatformEvent> m_events;
+        //! Prefix of m_events returned by the latest poll; later entries were recorded between polls.
+        uint32_t m_deliveredEventCount = 0;
         festd::vector<Core::PlatformEvent> m_inputEvents;
         festd::vector<Core::PlatformMonitorInfo> m_monitors;
     };

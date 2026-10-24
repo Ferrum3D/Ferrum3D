@@ -337,6 +337,7 @@ namespace
         }
     };
 
+
     struct GameSampleApplication final : GameFramework::Application
     {
         RenderingControls m_controls;

@@ -131,6 +131,27 @@ namespace FE::Framework
         }
 
 
+        //! Bit of a left or right modifier key in ImGuiPlatform::m_heldModifierSides; zero for other keys.
+        uint32_t GetModifierSideBit(const ImGuiKey key)
+        {
+            switch (key)
+            {
+                // clang-format off
+            case ImGuiKey_LeftCtrl: return 1 << 0;
+            case ImGuiKey_RightCtrl: return 1 << 1;
+            case ImGuiKey_LeftShift: return 1 << 2;
+            case ImGuiKey_RightShift: return 1 << 3;
+            case ImGuiKey_LeftAlt: return 1 << 4;
+            case ImGuiKey_RightAlt: return 1 << 5;
+            case ImGuiKey_LeftSuper: return 1 << 6;
+            case ImGuiKey_RightSuper: return 1 << 7;
+                // clang-format on
+            default:
+                return 0;
+            }
+        }
+
+
         ImGuiKey GetOtherModifierSide(const ImGuiKey key)
         {
             switch (key)
@@ -453,6 +474,10 @@ namespace FE::Framework
 
             case Core::PlatformEventType::kWindowFocus:
             case Core::PlatformEventType::kWindowUnfocus:
+                // ImGui releases all keys on focus loss; releases of keys held at that point go to other windows.
+                if (event.m_type == Core::PlatformEventType::kWindowUnfocus)
+                    m_heldModifierSides = 0;
+
                 io.AddFocusEvent(event.m_type == Core::PlatformEventType::kWindowFocus);
                 break;
 
@@ -465,10 +490,7 @@ namespace FE::Framework
 
                     const bool isDown = event.m_type == Core::PlatformEventType::kKeyboardKeyDown;
                     io.AddKeyEvent(key, isDown);
-
-                    // Either side holds a modifier; Windows reports both sides separately.
-                    if (const ImGuiKey modifier = GetModifier(key); modifier != ImGuiKey_None)
-                        io.AddKeyEvent(modifier, isDown || ImGui::IsKeyDown(GetOtherModifierSide(key)));
+                    UpdateModifier(key, isDown);
                 }
                 break;
 
@@ -486,7 +508,8 @@ namespace FE::Framework
                 break;
 
             case Core::PlatformEventType::kMouseWheel:
-                io.AddMouseWheelEvent(0.0f, event.m_mouseWheelPayload.m_delta);
+                // ImGui scrolls left for positive horizontal wheel values.
+                io.AddMouseWheelEvent(-event.m_mouseWheelPayload.m_horizontalDelta, event.m_mouseWheelPayload.m_delta);
                 break;
 
             case Core::PlatformEventType::kMouseMove:
@@ -505,6 +528,21 @@ namespace FE::Framework
                 break;
             }
         }
+    }
+
+
+    void ImGuiPlatform::UpdateModifier(const ImGuiKey key, const bool isDown)
+    {
+        const ImGuiKey modifier = GetModifier(key);
+        if (modifier == ImGuiKey_None)
+            return;
+
+        // Windows reports releases of both sides, and ImGui's key state lags queued events, so sides are tracked here.
+        const uint32_t side = GetModifierSideBit(key);
+        m_heldModifierSides = isDown ? (m_heldModifierSides | side) : (m_heldModifierSides & ~side);
+
+        const uint32_t bothSides = side | GetModifierSideBit(GetOtherModifierSide(key));
+        ImGui::GetIO().AddKeyEvent(modifier, (m_heldModifierSides & bothSides) != 0);
     }
 
 

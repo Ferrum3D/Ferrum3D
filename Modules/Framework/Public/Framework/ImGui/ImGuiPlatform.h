@@ -4,6 +4,7 @@
 
 struct ImGuiContext;
 struct ImGuiViewport;
+enum ImGuiKey : int;
 
 namespace FE::Framework
 {
@@ -44,6 +45,7 @@ namespace FE::Framework
         static void UpdateViewportWindow(ImGuiViewport* viewport);
 
         void ProcessEvents();
+        void UpdateModifier(ImGuiKey key, bool isDown);
         void UpdateMonitors();
         void UpdateCursor();
 
@@ -51,6 +53,8 @@ namespace FE::Framework
         Rc<Core::PlatformWindow> m_mainWindow;
         ImGuiContext* m_context = nullptr;
         uint64_t m_previousFrameTicks = 0;
+        //! Held left and right modifier keys, which ImGui reports as one modifier.
+        uint32_t m_heldModifierSides = 0;
         bool m_areMonitorsDirty = true;
         bool m_mousePassthrough = false;
         bool m_keyboardPassthrough = false;

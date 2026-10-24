@@ -523,8 +523,20 @@ TEST_F(GraphicsFixture, EditorGizmoDragsPublishTransformEdits)
     const Transform before = entity->FindComponent<const TransformComponent>()->m_local;
     Vector2 origin(0, 0);
     const Vector2 size(640, 480);
-    const auto frame = [&] {
+    Editor::TranslationGizmo gizmo;
+    const auto update = [&] {
+        EntityCommandList commands(m_world);
+        if (gizmo.RecordPendingEdit(m_world, commands))
+            m_world.Submit(std::move(commands));
+
         Tick();
+    };
+
+    bool tickBeforeFrame = true;
+    const auto frame = [&] {
+        if (tickBeforeFrame)
+            update();
+
         ImGui::NewFrame();
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImVec2(800, 600));
@@ -532,7 +544,7 @@ TEST_F(GraphicsFixture, EditorGizmoDragsPublishTransformEdits)
         const ImVec2 cursor = ImGui::GetCursorScreenPos();
         origin = Vector2(cursor.x, cursor.y);
         ImGui::Dummy(ImVec2(size.x, size.y));
-        const bool active = Editor::DrawTranslationGizmo(*entity, CameraView(), origin, size);
+        const bool active = gizmo.Draw(*entity, CameraView(), origin, size);
         ImGui::End();
         ImGui::EndFrame();
         return active;
@@ -544,14 +556,30 @@ TEST_F(GraphicsFixture, EditorGizmoDragsPublishTransformEdits)
     const float length = Math::Max(0.25f, distance * 0.12f);
     const Vector4 clip = Vector4(position + Vector3(length, 0, 0), 1) * CameraView().GetViewProjectionMatrix();
     const Vector2 endpoint = origin + Vector2(clip.x / clip.w * 0.5f + 0.5f, 0.5f - clip.y / clip.w * 0.5f) * size;
+    const Vector4 centerClip = Vector4(position, 1) * CameraView().GetViewProjectionMatrix();
+    const Vector2 center =
+        origin + Vector2(centerClip.x / centerClip.w * 0.5f + 0.5f, 0.5f - centerClip.y / centerClip.w * 0.5f) * size;
     io.AddMousePosEvent(endpoint.x, endpoint.y);
     EXPECT_FALSE(frame());
     io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
     EXPECT_TRUE(frame());
     io.AddMousePosEvent(endpoint.x + 20, endpoint.y);
     EXPECT_TRUE(frame());
-    Tick();
+    update();
     EXPECT_GT(entity->FindComponent<const TransformComponent>()->m_local.Translation().x, position.x);
+
+    // Without world updates between frames, the drag keeps its total offset and records only the latest result.
+    tickBeforeFrame = false;
+    io.AddMousePosEvent(endpoint.x + 30, endpoint.y);
+    EXPECT_TRUE(frame());
+    io.AddMousePosEvent(endpoint.x + 40, endpoint.y);
+    EXPECT_TRUE(frame());
+    tickBeforeFrame = true;
+    update();
+    const Vector2 direction = endpoint - center;
+    const float expected = position.x + 40 * direction.x / Math::Dot(direction, direction) * length;
+    EXPECT_NEAR(entity->FindComponent<const TransformComponent>()->m_local.Translation().x, expected, 1e-3f);
+
     io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
     EXPECT_FALSE(frame());
 }
