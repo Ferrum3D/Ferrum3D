@@ -173,6 +173,14 @@ namespace FE::IO
         //! The root is converted to an absolute path and must remain unchanged while asset operations are active.
         static void SetCatalogSource(festd::string_view assetDirectoryPath);
 
+        //! @brief Get the absolute artifact root set by SetCatalogSource, or an empty path if none was set.
+        static festd::string_view GetCatalogSource();
+
+        //! @brief Recover the asset identity from a normalized path in the layout produced by ResolveMeta.
+        //!
+        //! @return Null for paths that are not metadata files of the configured catalog.
+        static AssetID ParseMetaPath(festd::string_view normalizedPath);
+
     private:
         struct Impl;
         static Impl* GImpl;

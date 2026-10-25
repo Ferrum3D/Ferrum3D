@@ -13,7 +13,7 @@ namespace FE
 
         Uuid result{ kForceInit };
         if (BCryptGenRandom(nullptr, result.data(), sizeof(result.m_bytes), BCRYPT_USE_SYSTEM_PREFERRED_RNG) < 0)
-            return kNull;
+            return result;
 
         result.m_bytes[6] = (result.m_bytes[6] & 0x0f) | 0x40;
         result.m_bytes[8] = (result.m_bytes[8] & 0x3f) | 0x80;

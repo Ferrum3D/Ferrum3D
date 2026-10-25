@@ -172,4 +172,36 @@ namespace FE::IO
 
         GImpl->m_assetDirectoryPath = GetAbsolutePath(assetDirectoryPath);
     }
+
+
+    festd::string_view ArtifactStore::GetCatalogSource()
+    {
+        if (GImpl == nullptr)
+            return {};
+
+        return GImpl->m_assetDirectoryPath;
+    }
+
+
+    AssetID ArtifactStore::ParseMetaPath(const festd::string_view normalizedPath)
+    {
+        if (GImpl == nullptr || GImpl->m_assetDirectoryPath.empty())
+            return AssetID::kNull;
+
+        const PathView path{ normalizedPath };
+        if (path.extension() != ".meta")
+            return AssetID::kNull;
+
+        const festd::string_view stem = path.stem();
+        const AssetID assetId = AssetID::Parse(festd::ascii_view{ stem.data(), stem.size() });
+        if (!assetId.IsValid())
+            return AssetID::kNull;
+
+        // Only the sharded, canonically formatted location produced by ResolveMeta is a metadata file.
+        const Path expectedPath = NormalizePath(ResolveMeta(assetId).m_filePath);
+        if (festd::string_view{ expectedPath.data(), expectedPath.size() } != normalizedPath)
+            return AssetID::kNull;
+
+        return assetId;
+    }
 } // namespace FE::IO

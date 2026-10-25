@@ -21,6 +21,7 @@ namespace FE::Graphics
         void CancelFinalize(IO::AssetSlot& assetSlot, void* candidate) override;
         void OnAssetDestroyed(IO::AssetSlot& assetSlot, void* asset) override;
         bool RequiresFinalizedDependencies() const override;
+        IO::DependencyReloadPolicy GetDependencyReloadPolicy(Rtti::TypeID dependencyTypeId) const override;
 
     private:
         MaterialParameterAllocator* m_allocator = nullptr;

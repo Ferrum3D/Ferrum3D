@@ -14,6 +14,20 @@ namespace FE::IO
     };
 
 
+    //! @brief How a published asset reacts when a hard dependency publishes a new generation during hot reload.
+    enum class DependencyReloadPolicy : uint8_t
+    {
+        //! The asset reads the dependency through its handle each time and sees the new generation by itself.
+        kNone,
+
+        //! Streamer::OnDependencyReplaced updates the published asset in place.
+        kNotify,
+
+        //! The asset is reloaded after the dependency, so that it finalizes against the new generation.
+        kReload,
+    };
+
+
     //! @brief Type-specific publication/finalization hook for decoded asset candidates.
     //!
     //! Hooks execute from AssetManager::Tick on the main thread. Pending work is polled on later ticks, and failure prevents
@@ -52,6 +66,15 @@ namespace FE::IO
         {
             return false;
         }
+
+        //! @brief Choose how assets of this type react to a replaced hard dependency of the given type.
+        virtual DependencyReloadPolicy GetDependencyReloadPolicy(Rtti::TypeID) const
+        {
+            return DependencyReloadPolicy::kNone;
+        }
+
+        //! @brief Update a published asset after a hard dependency published a new generation. Called for kNotify only.
+        virtual void OnDependencyReplaced(AssetSlot&, void*, AssetSlot&) {}
     };
 
 
@@ -89,8 +112,8 @@ namespace FE::IO
 #if FE_DEVELOPMENT
         //! @brief Explicitly build and publish a fresh acyclic generation while preserving the usable current generation on failure.
         //!
-        //! The asset must already have a published generation. Automatic file watching, cyclic-group replacement, and reload
-        //! propagation remain outside this milestone. An invalid request is returned when those preconditions are not met.
+        //! The asset must already have a published generation, and must not be part of a reference cycle. An invalid request is
+        //! returned when those preconditions are not met. Dependents are not affected; see Tick for automatic reloads.
         [[nodiscard]] static AssetRequest ReloadAsset(AssetID assetId);
 #endif
 
@@ -114,6 +137,10 @@ namespace FE::IO
         }
 
         //! @brief Execute main-thread finalization and publication work.
+        //!
+        //! In development builds this also watches the catalog's artifacts directory. A replaced metadata file, or a replaced
+        //! data file used by a published generation, reloads that asset; dependents then follow their streamer's
+        //! DependencyReloadPolicy.
         static void Tick();
 
 #if FE_DEVELOPMENT

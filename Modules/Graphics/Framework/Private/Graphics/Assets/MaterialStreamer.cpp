@@ -49,4 +49,14 @@ namespace FE::Graphics
     {
         return true;
     }
+
+
+    IO::DependencyReloadPolicy MaterialStreamer::GetDependencyReloadPolicy(const Rtti::TypeID dependencyTypeId) const
+    {
+        // The runtime is built from the material at finalization, while textures are read through their handles every frame.
+        if (dependencyTypeId == Rtti::GetTypeID<MaterialAsset>())
+            return IO::DependencyReloadPolicy::kReload;
+
+        return IO::DependencyReloadPolicy::kNone;
+    }
 } // namespace FE::Graphics

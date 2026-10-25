@@ -2,14 +2,16 @@
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/IO/Async.h>
+#include <Core/IO/DirectoryWatcher.h>
 #include <Core/IO/MemoryStream.h>
-#include <Core/IO/StreamBase.h>
 #include <Core/Jobs/Jobs.h>
+#include <Core/Logging/Logger.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Serialization/JsonSerialization.h>
 #include <Core/Threading/FiberMutex.h>
 #include <Core/Threading/Mutex.h>
 #include <Core/Threading/Thread.h>
+#include <Core/Time/BaseTime.h>
 #include <festd/unordered_map.h>
 #include <festd/vector.h>
 
@@ -119,6 +121,20 @@ namespace FE::IO
             result.m_message = message;
             return result;
         }
+
+
+#if FE_DEVELOPMENT
+        //! Tools often publish several files in quick succession, so wait until the artifacts directory has been quiet.
+        constexpr double kArtifactReloadDelaySeconds = 0.2;
+
+
+        //! A hot reload started by the artifact watcher or by reload propagation.
+        struct ActiveReload final
+        {
+            AssetID m_assetId;
+            AssetRequest m_request;
+        };
+#endif
     } // namespace
 
 
@@ -144,6 +160,15 @@ namespace FE::IO
 #if FE_DEVELOPMENT
         Rc<WaitGroup> m_entered;
         Rc<WaitGroup> m_resume;
+
+        // Hot reload state is only used from the main thread.
+        Path m_watchedCatalog;
+        Rc<DirectoryWatcher> m_artifactWatcher;
+        festd::vector<Path> m_changedArtifactFiles;
+        uint64_t m_lastArtifactChangeTicks = 0;
+        bool m_artifactChangesDropped = false;
+        festd::unordered_dense_set<AssetID> m_pendingReloads;
+        festd::vector<ActiveReload> m_activeReloads;
 #endif
 
         ~Impl();
@@ -168,6 +193,13 @@ namespace FE::IO
         void Tick();
 #if FE_DEVELOPMENT
         AssetRequest Reload(AssetID id);
+        void UpdateHotReload();
+        void PollArtifactChanges();
+        void QueueChangedAssets();
+        void CompleteReloads();
+        void PropagateReload(AssetID id);
+        void StartPendingReloads();
+        [[nodiscard]] bool IsReloadActive(AssetID id) const;
 #endif
     };
 
@@ -1390,6 +1422,266 @@ namespace FE::IO
         StartMetadata(*operation);
         return AssetRequest(request);
     }
+
+
+    void AssetManager::Impl::UpdateHotReload()
+    {
+        FE_PROFILER_ZONE();
+
+        PollArtifactChanges();
+        CompleteReloads();
+        StartPendingReloads();
+    }
+
+
+    void AssetManager::Impl::PollArtifactChanges()
+    {
+        FE_PROFILER_ZONE();
+
+        const Path catalog = ArtifactStore::GetCatalogSource();
+        if (catalog != m_watchedCatalog)
+        {
+            // Changes reported for a previous catalog do not refer to assets of the new one.
+            m_watchedCatalog = catalog;
+            m_changedArtifactFiles.clear();
+            m_artifactChangesDropped = false;
+            m_artifactWatcher.Reset();
+            if (!catalog.empty())
+                m_artifactWatcher = DirectoryWatcher::Create(catalog / "artifacts");
+        }
+
+        if (!m_artifactWatcher)
+            return;
+
+        const uint32_t previousChangeCount = m_changedArtifactFiles.size();
+        const bool isComplete = m_artifactWatcher->PollChanges(m_changedArtifactFiles);
+        if (!isComplete)
+            m_artifactChangesDropped = true;
+
+        if (!isComplete || m_changedArtifactFiles.size() != previousChangeCount)
+            m_lastArtifactChangeTicks = Platform::GetTicks();
+
+        if (m_changedArtifactFiles.empty() && !m_artifactChangesDropped)
+            return;
+
+        const double secondsSinceChange =
+            static_cast<double>(Platform::GetTicks() - m_lastArtifactChangeTicks) * Platform::GetSecondsPerTick();
+        if (secondsSinceChange < kArtifactReloadDelaySeconds)
+            return;
+
+        QueueChangedAssets();
+        m_changedArtifactFiles.clear();
+        m_artifactChangesDropped = false;
+    }
+
+
+    void AssetManager::Impl::QueueChangedAssets()
+    {
+        FE_PROFILER_ZONE();
+
+        festd::vector<Path> changedDataFiles;
+        for (const Path& file : m_changedArtifactFiles)
+        {
+            const AssetID assetId = ArtifactStore::ParseMetaPath(festd::string_view{ file.data(), file.size() });
+            if (assetId.IsValid())
+                m_pendingReloads.insert(assetId);
+            else
+                changedDataFiles.push_back(file);
+        }
+
+        if (changedDataFiles.empty() && !m_artifactChangesDropped)
+            return;
+
+        // Data files are immutable once published, so a write to one means it was replaced by hand. Only generations that are
+        // published now read it again; everything else picks up the file when it next loads.
+        std::lock_guard lock{ m_mutex };
+        for (const auto& [assetId, operation] : m_operations)
+        {
+            if (operation->m_state != State::kPublished)
+                continue;
+
+            if (m_artifactChangesDropped)
+            {
+                m_pendingReloads.insert(assetId);
+                continue;
+            }
+
+            for (const ArtifactPayloadRecord& payload : operation->m_record.m_payloads)
+            {
+                const Path payloadFile = NormalizePath(payload.m_resolvedDataSource.m_filePath);
+                if (festd::find_index(changedDataFiles, payloadFile) != kInvalidIndex)
+                {
+                    m_pendingReloads.insert(assetId);
+                    break;
+                }
+            }
+        }
+
+        if (m_artifactChangesDropped)
+            Logger::LogWarning("Artifact change notifications were dropped, reloading every published asset");
+    }
+
+
+    void AssetManager::Impl::CompleteReloads()
+    {
+        FE_PROFILER_ZONE();
+
+        for (uint32_t index = 0; index < m_activeReloads.size();)
+        {
+            ActiveReload& reload = m_activeReloads[index];
+            if (!reload.m_request.IsCompleted())
+            {
+                ++index;
+                continue;
+            }
+
+            const AssetID assetId = reload.m_assetId;
+            const AssetLoadResult result = reload.m_request.GetResult();
+            if (result == AssetLoadResult::kSucceeded)
+                Logger::LogInfo("Reloaded asset {}", assetId);
+            else if (result == AssetLoadResult::kFailed)
+                Logger::LogError("Failed to reload asset {}: {}", assetId, reload.m_request.GetError());
+
+            // Releasing the request takes the manager lock, which is not held here.
+            reload = std::move(m_activeReloads.back());
+            m_activeReloads.pop_back();
+
+            if (result == AssetLoadResult::kSucceeded)
+                PropagateReload(assetId);
+        }
+    }
+
+
+    void AssetManager::Impl::PropagateReload(const AssetID id)
+    {
+        FE_PROFILER_ZONE();
+
+        festd::inline_vector<Operation*, 8> notifiedOperations;
+        festd::inline_vector<Streamer*, 8> notifiedStreamers;
+        AssetSlot* dependencySlot = nullptr;
+        {
+            std::lock_guard lock{ m_mutex };
+            dependencySlot = &Slot(id);
+            for (const auto& [dependentId, operation] : m_operations)
+            {
+                if (operation->m_state != State::kPublished)
+                    continue;
+
+                for (const ArtifactDependencyRecord& dependency : operation->m_record.m_dependencies)
+                {
+                    if (dependency.m_kind != DependencyKind::kHard || dependency.m_assetId != id)
+                        continue;
+
+                    Streamer& streamer = GetStreamer(*operation);
+                    const DependencyReloadPolicy policy = streamer.GetDependencyReloadPolicy(dependency.m_expectedTypeId);
+                    if (policy == DependencyReloadPolicy::kReload)
+                    {
+                        m_pendingReloads.insert(dependentId);
+                    }
+                    else if (policy == DependencyReloadPolicy::kNotify)
+                    {
+                        notifiedOperations.push_back(operation);
+                        notifiedStreamers.push_back(&streamer);
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        // Streamer callbacks run without the manager lock. Published generations retire only in Tick on this thread, so the
+        // instances stay valid during the callbacks.
+        for (uint32_t index = 0; index < notifiedOperations.size(); ++index)
+        {
+            AssetSlot& dependentSlot = *notifiedOperations[index]->m_slot;
+            void* instance = dependentSlot.m_instance.load(std::memory_order_acquire);
+            notifiedStreamers[index]->OnDependencyReplaced(dependentSlot, instance, *dependencySlot);
+        }
+    }
+
+
+    void AssetManager::Impl::StartPendingReloads()
+    {
+        FE_PROFILER_ZONE();
+
+        if (m_pendingReloads.empty())
+            return;
+
+        festd::inline_vector<AssetID, 8> starts;
+        festd::inline_vector<AssetID, 8> finished;
+        {
+            std::lock_guard lock{ m_mutex };
+            for (const AssetID assetId : m_pendingReloads)
+            {
+                if (IsReloadActive(assetId))
+                    continue;
+
+                const auto current = m_operations.find(assetId);
+                if (current == m_operations.end())
+                {
+                    finished.push_back(assetId);
+                    continue;
+                }
+
+                // A generation that is still loading may have read the previous files; reload it once it is published.
+                const Operation* operation = current->second;
+                const bool isLoading = operation->m_state == State::kMetadata || operation->m_state == State::kPayload
+                    || operation->m_state == State::kCandidate || operation->m_state == State::kFinalizing;
+                if (isLoading)
+                    continue;
+
+                if (operation->m_state != State::kPublished)
+                {
+                    finished.push_back(assetId);
+                    continue;
+                }
+
+                if (operation->m_publicationGroup)
+                {
+                    Logger::LogWarning("Asset {} is part of a reference cycle and cannot be reloaded", assetId);
+                    finished.push_back(assetId);
+                    continue;
+                }
+
+                // Dependencies reload first, so that the dependent finalizes against their new generations.
+                bool isWaitingForDependency = false;
+                for (const ArtifactDependencyRecord& dependency : operation->m_record.m_dependencies)
+                {
+                    const bool isReloading =
+                        m_pendingReloads.contains(dependency.m_assetId) || IsReloadActive(dependency.m_assetId);
+                    isWaitingForDependency |= dependency.m_kind == DependencyKind::kHard && isReloading;
+                }
+
+                if (isWaitingForDependency)
+                    continue;
+
+                starts.push_back(assetId);
+                finished.push_back(assetId);
+            }
+
+            for (const AssetID assetId : finished)
+                m_pendingReloads.erase(assetId);
+        }
+
+        for (const AssetID assetId : starts)
+        {
+            AssetRequest request = Reload(assetId);
+            if (request.IsValid())
+                m_activeReloads.push_back({ assetId, std::move(request) });
+        }
+    }
+
+
+    bool AssetManager::Impl::IsReloadActive(const AssetID id) const
+    {
+        for (const ActiveReload& reload : m_activeReloads)
+        {
+            if (reload.m_assetId == id)
+                return true;
+        }
+
+        return false;
+    }
 #endif
 
 
@@ -1467,6 +1759,14 @@ namespace FE::IO
         FE_PROFILER_ZONE();
 
         FE_Assert(GImpl && Threading::IsMainThread());
+
+#if FE_DEVELOPMENT
+        // Hot reload requests are released like any other request, before the manager stops accepting work.
+        GImpl->m_activeReloads.clear();
+        GImpl->m_pendingReloads.clear();
+        GImpl->m_artifactWatcher.Reset();
+#endif
+
         {
             std::lock_guard lock{ GImpl->m_mutex };
             GImpl->m_shuttingDown = true;
@@ -1485,6 +1785,7 @@ namespace FE::IO
             }
             WaitGroup::WaitAll(jobs);
         }
+
         GImpl->Tick();
         {
             std::lock_guard lock{ GImpl->m_mutex };
@@ -1500,6 +1801,7 @@ namespace FE::IO
                 if (request->m_externalRefs.load() == 0)
                     abandoned.push_back(request);
             }
+
             GImpl->m_waiters.clear();
             for (Internal::AssetAcquisition* request : abandoned)
             {
@@ -1507,6 +1809,7 @@ namespace FE::IO
                 Memory::DefaultDelete(request);
             }
         }
+
         Memory::DefaultDelete(GImpl);
         GImpl = nullptr;
     }
@@ -1613,6 +1916,10 @@ namespace FE::IO
             streamer->Tick();
 
         GImpl->Tick();
+
+#if FE_DEVELOPMENT
+        GImpl->UpdateHotReload();
+#endif
     }
 
 
@@ -1739,6 +2046,7 @@ namespace FE::IO
         if (this != &other)
         {
             Reset();
+
             m_acquisition = other.m_acquisition;
             other.m_acquisition = nullptr;
         }
