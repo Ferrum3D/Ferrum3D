@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <Core/Base/BaseMath.h>
 #include <Core/Base/BaseTypes.h>
 #include <Core/Base/Hash.h>
 #include <Core/RTTI/RTTI.h>
@@ -164,9 +165,24 @@ namespace FE::Env
     inline const Name Name::kEmpty;
 
 
+    //! @brief Kinds of application that code can be restricted to.
+    //!
+    //! Code exists in every executable that links it, which does not tell whether the executable needs it. Features that only
+    //! some applications use, such as editor-only pipelines, check the current domain instead.
+    enum class DomainFlags : uint32_t
+    {
+        kNone = 0,
+        kRuntime = 1 << 0,
+        kEditor = 1 << 1,
+    };
+
+    FE_ENUM_OPERATORS(DomainFlags);
+
+
     struct ApplicationInfo final
     {
         const char* m_name = nullptr;
+        DomainFlags m_domains = DomainFlags::kRuntime;
     };
 
     void Init(const ApplicationInfo& info, int32_t argc, const char** argv);

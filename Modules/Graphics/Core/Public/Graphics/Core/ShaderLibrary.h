@@ -15,6 +15,8 @@ namespace FE::Graphics::Core
         FE_RTTI("BE44FCFD-5540-49F6-AECE-569BE88A8450");
 
         virtual ShaderHandle GetShader(Env::Name name, Env::Name defines) = 0;
-        virtual const ShaderReflection* GetCompiledReflection(Env::Name name, Env::Name defines) = 0;
+
+        //! @brief Compile a shader if needed and wait for it. Returns null if it failed to compile.
+        virtual Rc<ShaderReflection> GetCompiledReflection(Env::Name name, Env::Name defines) = 0;
     };
 } // namespace FE::Graphics::Core

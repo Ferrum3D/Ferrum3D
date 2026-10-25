@@ -32,7 +32,14 @@ namespace FE::Graphics
             uint32_t m_waveLaneCount = 32;
         };
 
-        void MergeShaderLayouts(Env::Name shader, Env::Name defines);
+        [[nodiscard]] bool MergeTechniqueLayouts(Core::ShaderStructLayout& materialLayout,
+                                                 Core::ShaderStructLayout& instanceLayout) const;
+        [[nodiscard]] bool MergeShaderLayouts(Env::Name shader, Env::Name defines, Core::ShaderStructLayout& materialLayout,
+                                              Core::ShaderStructLayout& instanceLayout) const;
+
+        //! Re-merge parameter layouts after shader hot reload, keeping the current ones if the new ones cannot be applied.
+        void RefreshLayouts();
+        [[nodiscard]] bool HasAllParameters(const Core::ShaderStructLayout& layout, MaterialParameterScope scope) const;
         const MaterialTechniqueDesc* FindTechnique(Env::Name role) const;
         const MaterialParameterValue* FindValue(Env::Name name) const;
         festd::vector<std::byte> PackParameters(MaterialParameterScope scope) const;
@@ -44,6 +51,7 @@ namespace FE::Graphics
         Core::PipelineFactory* m_pipelineFactory = nullptr;
         Core::ShaderStructLayout m_materialLayout;
         Core::ShaderStructLayout m_instanceLayout;
+        uint32_t m_shaderReloadGeneration = 0;
         MaterialParameterAllocator::Allocation m_materialAllocation;
         festd::vector<MaterialParameterAllocator::Allocation> m_instanceAllocations;
         festd::vector<std::byte> m_materialBytes;

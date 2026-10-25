@@ -391,9 +391,10 @@ int FE::GameSample::Run(const int argc, const char** argv, const bool editor)
 {
     Env::ApplicationInfo info;
     info.m_name = editor ? "Ferrum3D - Game Sample Editor" : "Ferrum3D - Game Sample";
+    info.m_domains = editor ? Env::DomainFlags::kRuntime | Env::DomainFlags::kEditor : Env::DomainFlags::kRuntime;
     Env::Init(info, argc, argv);
 
-    // The shader cache resolves engine sources relative to the sample build directory.
+    // Editor fonts and ImGui settings use paths relative to the sample build directory.
     IO::Directory::SetCurrentDirectory(FE_GAME_RUNTIME_DIRECTORY);
 
     GameFramework::Application* application = nullptr;

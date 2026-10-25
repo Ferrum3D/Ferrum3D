@@ -290,6 +290,33 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void Device::EndFrame()
+    {
+        Common::Device::EndFrame();
+
+        std::lock_guard lock{ m_pipelineFactoriesLock };
+        for (PipelineFactory* factory : m_pipelineFactories)
+            factory->UpdateShaderHotReload();
+    }
+
+
+    void Device::RegisterPipelineFactory(PipelineFactory* factory)
+    {
+        std::lock_guard lock{ m_pipelineFactoriesLock };
+        m_pipelineFactories.push_back(factory);
+    }
+
+
+    void Device::UnregisterPipelineFactory(PipelineFactory* factory)
+    {
+        std::lock_guard lock{ m_pipelineFactoriesLock };
+
+        const uint32_t index = festd::find_index(festd::span{ m_pipelineFactories.data(), m_pipelineFactories.size() }, factory);
+        FE_Assert(index != kInvalidIndex);
+        m_pipelineFactories.erase(m_pipelineFactories.begin() + index);
+    }
+
+
     Rc<Core::ResourcePool> Device::CreateResourcePool(Core::GraphicsQueue* graphicsQueue, Core::AsyncCopyQueue* asyncCopyQueue)
     {
         return Memory::DefaultNew<ResourcePool>(this, graphicsQueue, asyncCopyQueue);

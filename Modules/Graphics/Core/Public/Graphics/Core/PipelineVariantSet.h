@@ -4,22 +4,8 @@
 
 namespace FE::Graphics::Core
 {
-    //! @brief Applications that compile a pipeline set.
-    //!
-    //! A set exists in every executable that links its object file, which does not tell whether the executable needs it.
-    //! Sets compile for the runtime by default; editor-only sets are compiled only by the editor.
-    enum class PipelineSetDomainFlags : uint32_t
-    {
-        kNone = 0,
-        kRuntime = 1 << 0,
-        kEditor = 1 << 1,
-    };
-
-    FE_ENUM_OPERATORS(PipelineSetDomainFlags);
-
-
-    //! @brief Start compiling every variant of every global pipeline set in the requested domains.
-    void CompileGlobalPipelineSets(PipelineFactory* factory, PipelineSetDomainFlags domains = PipelineSetDomainFlags::kRuntime);
+    //! @brief Start compiling every variant of every global pipeline set whose domain matches Env::DomainFlags.
+    void CompileGlobalPipelineSets(PipelineFactory* factory);
 
     //! @brief Wait for all global pipeline set variants that have been requested so far.
     void WaitForGlobalPipelineSets();
@@ -46,9 +32,10 @@ namespace FE::Graphics::Core
             return false;
         }
 
-        [[nodiscard]] virtual PipelineSetDomainFlags GetDomain() const
+        //! @brief Applications that need this set. Sets compile for the runtime by default.
+        [[nodiscard]] virtual Env::DomainFlags GetDomain() const
         {
-            return PipelineSetDomainFlags::kRuntime;
+            return Env::DomainFlags::kRuntime;
         }
 
         PipelineVariantSetBase();
@@ -57,7 +44,7 @@ namespace FE::Graphics::Core
         PipelineVariantSetBase* m_next = nullptr;
 
     private:
-        friend void CompileGlobalPipelineSets(PipelineFactory* factory, PipelineSetDomainFlags domains);
+        friend void CompileGlobalPipelineSets(PipelineFactory* factory);
         friend void WaitForGlobalPipelineSets();
 
         void Compile(PipelineFactory* factory);

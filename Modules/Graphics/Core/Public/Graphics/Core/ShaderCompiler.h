@@ -22,6 +22,10 @@ namespace FE::Graphics::Core
         uint32_t m_byteCodeSize = 0; //!< Unaligned shader bytecode size in bytes.
         bool m_codeValid = false;    //!< True if shader was successfully compiled.
         bool m_hashValid = false;    //!< True if hash was successfully calculated.
+
+        //! Virtual paths of the source files the result was compiled from. Filled for failed compilations too, so a fix in
+        //! any of them can trigger a recompile.
+        festd::inline_vector<Env::Name, 16> m_dependencies;
     };
 
 

@@ -30,21 +30,21 @@ namespace FE::Graphics::Vulkan
         WaitGroup* waitGroup = context.m_shaderLibrary->GetCompletionWaitGroup(shaderHandle);
         waitGroup->Wait();
 
-        const ShaderModuleInfo shaderModuleInfo = context.m_shaderLibrary->GetShaderModule(shaderHandle);
-        if (shaderModuleInfo.m_shaderModule == VK_NULL_HANDLE)
+        const Rc shader = context.m_shaderLibrary->GetVersion(shaderHandle);
+        if (!shader)
         {
             Logger::LogError("Failed to create compute pipeline: shader {} was not valid", shaderName);
             m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
             return;
         }
 
-        const Core::ShaderReflection* reflection = context.m_shaderLibrary->GetReflection(shaderHandle);
+        const Core::ShaderReflection* reflection = shader->GetReflection();
 
         VkPipelineShaderStageCreateInfo shaderStageCI = {};
         shaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStageCI.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        shaderStageCI.module = shaderModuleInfo.m_shaderModule;
-        shaderStageCI.pName = shaderModuleInfo.m_entryPoint;
+        shaderStageCI.module = shader->GetModule();
+        shaderStageCI.pName = shader->GetEntryPoint();
 
         uint32_t specializationConstantOffset = 0;
         festd::fixed_vector<VkSpecializationMapEntry, Limits::kMaxSpecializationConstants> specializationMapEntries;
@@ -129,7 +129,7 @@ namespace FE::Graphics::Vulkan
 
         pipelineCI.layout = m_layout;
         if (const VkResult result =
-                vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
+                vkCreateComputePipelines(device, context.m_pipelineCache, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
             result != VK_SUCCESS)
         {
             Logger::LogError("Failed to create graphics pipeline: {}", ResultToString(result));
@@ -141,14 +141,27 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void ComputePipeline::SwapNative(ComputePipeline& other)
+    {
+        FE_Assert(other.m_desc.GetHash() == m_desc.GetHash());
+
+        eastl::swap(m_layout, other.m_layout);
+        eastl::swap(m_nativePipeline, other.m_nativePipeline);
+
+        const Core::PipelineStatus status = m_status.load(std::memory_order_acquire);
+        m_status.store(other.m_status.load(std::memory_order_acquire), std::memory_order_release);
+        other.m_status.store(status, std::memory_order_release);
+    }
+
+
     ComputePipeline::~ComputePipeline()
     {
-        if (IsReady())
-        {
-            const VkDevice device = NativeCast(m_device);
+        // A failed creation or a swapped-out version may own only some of the objects.
+        const VkDevice device = NativeCast(m_device);
+        if (m_nativePipeline != VK_NULL_HANDLE)
             vkDestroyPipeline(device, m_nativePipeline, nullptr);
+        if (m_layout != VK_NULL_HANDLE)
             vkDestroyPipelineLayout(device, m_layout, nullptr);
-        }
 
         m_status.store(Core::PipelineStatus::kNotReady, std::memory_order_release);
     }

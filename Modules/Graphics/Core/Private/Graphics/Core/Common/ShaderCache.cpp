@@ -207,6 +207,9 @@ namespace FE::Graphics::Core
             result.m_hash = entry.m_byteCodeHash;
             result.m_hashValid = true;
             result.m_codeValid = true;
+            for (const ShaderCacheDependency& dependency : entry.m_dependencies)
+                result.m_dependencies.push_back(dependency.m_path);
+
             return true;
         }
 

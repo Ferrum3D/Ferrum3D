@@ -16,9 +16,9 @@ namespace FE::Editor
             FE_DECLARE_PIPELINE_SET(SelectionPipeline);
 
         private:
-            [[nodiscard]] Graphics::Core::PipelineSetDomainFlags GetDomain() const override
+            [[nodiscard]] Env::DomainFlags GetDomain() const override
             {
-                return Graphics::Core::PipelineSetDomainFlags::kEditor;
+                return Env::DomainFlags::kEditor;
             }
 
             void SetupRequest(uint32_t, Graphics::Core::ComputePipelineRequest& request) override

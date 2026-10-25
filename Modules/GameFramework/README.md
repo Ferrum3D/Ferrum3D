@@ -78,6 +78,10 @@ calls `Graphics::Core::AddShaderSourceDirectory(FE_GAME_SHADER_DIRECTORY)` befor
 Compiled shaders and the Vulkan pipeline cache are stored in `ShaderCache/` next to the executables;
 deleting that directory only costs a recompile.
 
+In development builds, editing a shader or any header it includes while the game or editor runs recompiles the
+affected shaders and replaces their pipelines at the end of a frame. Compile errors are logged and the previous
+pipelines stay in use.
+
 ## Stage 7 implementation
 
 - Reflected, serialized `TransformComponent` stores an authoritative `FE::Transform` (translation, quaternion rotation, and uniform scale).

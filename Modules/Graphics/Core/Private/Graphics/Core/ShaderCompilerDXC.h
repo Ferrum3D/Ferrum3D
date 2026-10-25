@@ -17,6 +17,11 @@ namespace FE::Graphics::Core
 
         ShaderCompilerResult CompileShader(const ShaderCompilerArgs& args) override;
 
+        [[nodiscard]] ShaderSourceCache* GetSourceCache() const
+        {
+            return m_shaderSourceCache.Get();
+        }
+
     private:
         void DoRelease() override
         {

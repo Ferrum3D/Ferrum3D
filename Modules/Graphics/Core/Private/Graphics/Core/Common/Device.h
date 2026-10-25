@@ -20,6 +20,7 @@ namespace FE::Graphics::Common
 
         void DisposePending();
         void ForceReleasePendingDisposers();
+        void EndFrame() override;
 
     private:
         struct PendingDisposer final
@@ -40,7 +41,6 @@ namespace FE::Graphics::Common
         void QueueObjectDispose(Core::DeviceObject* object) override;
         uint32_t RegisterResource(Core::Resource* resource) override;
         void UnregisterResource(uint32_t id, Core::Resource* resource) override;
-        void EndFrame() override;
         festd::pmr::vector<Core::DeviceObject*> GetObjectsToDispose(std::pmr::memory_resource* allocator, bool force);
     };
 } // namespace FE::Graphics::Common

@@ -21,6 +21,18 @@ namespace FE::Graphics
 
             return true;
         }
+
+
+        bool HasMember(const Core::ShaderStructLayout& layout, const Env::Name name)
+        {
+            for (const Core::ShaderStructMember& member : layout.m_members)
+            {
+                if (member.m_name == name)
+                    return true;
+            }
+
+            return false;
+        }
     } // namespace
 
 
@@ -33,6 +45,22 @@ namespace FE::Graphics
         , m_pipelineFactory(pipelineFactory)
     {
         FE_Assert(material && instance && allocator && pipelineFactory);
+
+        // Read the generation first, so that a reload finishing meanwhile is applied on the next refresh.
+        m_shaderReloadGeneration = m_pipelineFactory->GetShaderReloadGeneration();
+        FE_Verify(MergeTechniqueLayouts(m_materialLayout, m_instanceLayout), "Failed to build material parameter layouts");
+
+        m_materialBytes = PackParameters(MaterialParameterScope::kMaterial);
+        m_instanceBytes = PackParameters(MaterialParameterScope::kInstance);
+        m_materialAllocation = m_allocator->Allocate(m_materialBytes.size());
+        m_allocator->Write(m_materialAllocation, m_materialBytes.data(), m_materialBytes.size());
+        m_allocator->Register(this);
+    }
+
+
+    bool MaterialInstanceRuntime::MergeTechniqueLayouts(Core::ShaderStructLayout& materialLayout,
+                                                        Core::ShaderStructLayout& instanceLayout) const
+    {
         for (const MaterialTechniqueDesc& technique : m_material->m_techniques)
         {
             if (technique.m_permutationKey != m_instance->m_permutationKey)
@@ -47,39 +75,97 @@ namespace FE::Graphics
                                           technique.m_computeShader };
             for (const Env::Name shader : shaders)
             {
-                if (shader.IsValid())
-                    MergeShaderLayouts(shader, defines);
+                if (shader.IsValid() && !MergeShaderLayouts(shader, defines, materialLayout, instanceLayout))
+                    return false;
             }
         }
 
-        m_materialBytes = PackParameters(MaterialParameterScope::kMaterial);
-        m_instanceBytes = PackParameters(MaterialParameterScope::kInstance);
-        m_materialAllocation = m_allocator->Allocate(m_materialBytes.size());
-        m_allocator->Write(m_materialAllocation, m_materialBytes.data(), m_materialBytes.size());
-        m_allocator->Register(this);
+        return true;
     }
 
 
-    void MaterialInstanceRuntime::MergeShaderLayouts(const Env::Name shader, const Env::Name defines)
+    bool MaterialInstanceRuntime::MergeShaderLayouts(const Env::Name shader, const Env::Name defines,
+                                                     Core::ShaderStructLayout& materialLayout,
+                                                     Core::ShaderStructLayout& instanceLayout) const
     {
-        const Core::ShaderReflection* reflection = m_pipelineFactory->GetShaderLibrary()->GetCompiledReflection(shader, defines);
-        FE_Assert(reflection != nullptr, "Failed to compile material shader");
+        const Rc reflection = m_pipelineFactory->GetShaderLibrary()->GetCompiledReflection(shader, defines);
+        if (!reflection)
+        {
+            Logger::LogError("Material '{}': shader '{}' failed to compile", m_material->m_name, shader);
+            return false;
+        }
 
         for (const Core::ShaderStructLayout& layout : reflection->GetStructLayouts())
         {
+            Core::ShaderStructLayout* mergedLayout = nullptr;
             if (layout.m_name == Env::Name("MaterialParameters"))
-            {
-                FE_Assert(m_materialLayout.m_byteSize == 0 || LayoutsMatch(m_materialLayout, layout),
-                          "Material parameter layouts differ between techniques");
-                m_materialLayout = layout;
-            }
+                mergedLayout = &materialLayout;
             else if (layout.m_name == Env::Name("InstanceParameters"))
+                mergedLayout = &instanceLayout;
+            else
+                continue;
+
+            if (mergedLayout->m_byteSize != 0 && !LayoutsMatch(*mergedLayout, layout))
             {
-                FE_Assert(m_instanceLayout.m_byteSize == 0 || LayoutsMatch(m_instanceLayout, layout),
-                          "Instance parameter layouts differ between techniques");
-                m_instanceLayout = layout;
+                Logger::LogError("Material '{}': layout '{}' differs between techniques", m_material->m_name, layout.m_name);
+                return false;
+            }
+
+            *mergedLayout = layout;
+        }
+
+        return true;
+    }
+
+
+    void MaterialInstanceRuntime::RefreshLayouts()
+    {
+        const uint32_t generation = m_pipelineFactory->GetShaderReloadGeneration();
+        if (generation == m_shaderReloadGeneration)
+            return;
+
+        m_shaderReloadGeneration = generation;
+
+        Core::ShaderStructLayout materialLayout;
+        Core::ShaderStructLayout instanceLayout;
+        if (!MergeTechniqueLayouts(materialLayout, instanceLayout))
+            return;
+
+        if (!HasAllParameters(materialLayout, MaterialParameterScope::kMaterial))
+            return;
+
+        if (!HasAllParameters(instanceLayout, MaterialParameterScope::kInstance))
+            return;
+
+        // Instances reference their parameter blocks, so the blocks cannot be reallocated here.
+        if (materialLayout.m_byteSize > m_materialBytes.size() || instanceLayout.m_byteSize > m_instanceBytes.size())
+        {
+            Logger::LogError("Material '{}': reloaded shaders need larger parameter blocks; reload the material to apply them",
+                             m_material->m_name);
+            return;
+        }
+
+        m_materialLayout = materialLayout;
+        m_instanceLayout = instanceLayout;
+    }
+
+
+    bool MaterialInstanceRuntime::HasAllParameters(const Core::ShaderStructLayout& layout,
+                                                   const MaterialParameterScope scope) const
+    {
+        for (const MaterialParameterDesc& parameter : m_material->m_parameters)
+        {
+            if (parameter.m_scope != scope)
+                continue;
+
+            if (!HasMember(layout, parameter.m_name))
+            {
+                Logger::LogError("Material '{}': reloaded shaders lack parameter '{}'", m_material->m_name, parameter.m_name);
+                return false;
             }
         }
+
+        return true;
     }
 
 
@@ -192,6 +278,8 @@ namespace FE::Graphics
 
     void MaterialInstanceRuntime::RefreshDescriptors()
     {
+        RefreshLayouts();
+
         const festd::vector<std::byte> materialBytes = PackParameters(MaterialParameterScope::kMaterial);
         if (materialBytes.size() != m_materialBytes.size()
             || memcmp(materialBytes.data(), m_materialBytes.data(), materialBytes.size()) != 0)

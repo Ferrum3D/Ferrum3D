@@ -1,7 +1,9 @@
 #pragma once
 #include <Core/IO/BaseIO.h>
+#include <Core/IO/DirectoryWatcher.h>
 #include <Core/Memory/RefCount.h>
 #include <Core/Threading/SharedSpinLock.h>
+#include <Core/Threading/SpinLock.h>
 #include <festd/unordered_map.h>
 #include <festd/vector.h>
 
@@ -51,9 +53,9 @@ namespace FE::Graphics::Core
 
     //! @brief Lazily loads shader sources from the directories registered with AddShaderSourceDirectory.
     //!
-    //! A file is read on its first request and stays unchanged for the lifetime of the cache, so all compilations see the
-    //! same version of a shared header. Missing files are remembered too, because the compiler probes several candidate
-    //! paths for every include.
+    //! A file is read on its first request. Its version only changes when Refresh replaces it, and compilations that already
+    //! hold a ShaderSourceFile keep using that version. Missing files are remembered too, because the compiler probes several
+    //! candidate paths for every include.
     struct ShaderSourceCache final : public Memory::RefCountedObjectBase
     {
         FE_RTTI("FE08F0A8-40B4-4C17-B152-8220DC1BF5F6");
@@ -64,13 +66,35 @@ namespace FE::Graphics::Core
         //! @brief Read every path that is not cached yet with parallel asynchronous reads.
         void Prefetch(festd::span<const Env::Name> paths);
 
+        //! @brief Re-read cached paths and replace the ones whose contents or existence changed.
+        //!
+        //! Paths that were never requested are ignored, since nothing can depend on them yet.
+        void Refresh(festd::span<const Env::Name> paths, festd::vector<Env::Name>& changedPaths);
+
+        //! @brief Collect the virtual paths of files changed in the registered directories since the previous call.
+        //!
+        //! Starts watching newly registered directories. The first call only starts watching. If notifications were lost,
+        //! every cached path is reported.
+        void PollChangedPaths(festd::vector<Env::Name>& paths);
+
     private:
+        struct WatchedDirectory final
+        {
+            IO::Path m_directory;
+            Rc<IO::DirectoryWatcher> m_watcher;
+        };
+
         festd::optional<Rc<ShaderSourceFile>> TryGetCached(Env::Name path);
         static festd::expected<Rc<ShaderSourceFile>, IO::ResultCode> MakeResult(const Rc<ShaderSourceFile>& file);
+        void WatchRegisteredDirectories();
+        [[nodiscard]] bool IsWatched(const IO::Path& directory) const;
 
         void DoRelease() override;
 
         Threading::SharedSpinLock m_lock;
         festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;
+
+        Threading::SpinLock m_watchersLock;
+        festd::vector<WatchedDirectory> m_watchedDirectories;
     };
 } // namespace FE::Graphics::Core

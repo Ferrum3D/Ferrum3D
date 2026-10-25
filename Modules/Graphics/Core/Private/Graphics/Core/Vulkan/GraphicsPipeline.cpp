@@ -83,6 +83,7 @@ namespace FE::Graphics::Vulkan
         WaitGroup::WaitAll(shaderWaitGroups);
 
         festd::fixed_vector<const Core::ShaderReflection*, kMaxShaderCount> shaderReflections;
+        festd::array<Rc<ShaderVersion>, kMaxShaderCount> shaders;
         for (uint32_t shaderStageIndex = 0; shaderStageIndex < festd::size(m_desc.m_shaders); ++shaderStageIndex)
         {
             const Env::Name shaderName = m_desc.m_shaders[shaderStageIndex];
@@ -90,22 +91,24 @@ namespace FE::Graphics::Vulkan
                 continue;
 
             const Core::ShaderHandle shaderHandle = shaderHandles[shaderStageIndex];
-            const ShaderModuleInfo shaderModuleInfo = context.m_shaderLibrary->GetShaderModule(shaderHandle);
-            if (shaderModuleInfo.m_shaderModule == VK_NULL_HANDLE)
+            const Rc shader = context.m_shaderLibrary->GetVersion(shaderHandle);
+            if (!shader)
             {
                 Logger::LogError("Failed to create graphics pipeline: shader {} was not valid", shaderName);
                 m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
                 return;
             }
 
-            ShaderReflection* reflection = context.m_shaderLibrary->GetReflection(shaderHandle);
+            // Keep the version alive until the pipeline is created, even if a recompilation replaces it meanwhile.
+            shaders[shaderStageIndex] = shader;
+            ShaderReflection* reflection = shader->GetReflection();
             shaderReflections.push_back(reflection);
 
             VkPipelineShaderStageCreateInfo& shaderStageCI = shaderStages.push_back();
             shaderStageCI = {};
             shaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            shaderStageCI.module = shaderModuleInfo.m_shaderModule;
-            shaderStageCI.pName = shaderModuleInfo.m_entryPoint;
+            shaderStageCI.module = shader->GetModule();
+            shaderStageCI.pName = shader->GetEntryPoint();
             shaderStageCI.stage = Translate(static_cast<Core::ShaderStage>(shaderStageIndex));
 
             uint32_t specializationConstantCount = 0;
@@ -193,8 +196,7 @@ namespace FE::Graphics::Vulkan
                 VkVertexInputBindingDescription& binding = vertexBindings[bindingIndex];
                 binding.stride = Math::Max(binding.stride, channel.m_offset + formatInfo.m_texelByteSize);
 
-                const Core::ShaderHandle vsHandle = shaderHandles[festd::to_underlying(Core::ShaderStage::kVertex)];
-                const ShaderReflection* vsReflection = context.m_shaderLibrary->GetReflection(vsHandle);
+                const ShaderReflection* vsReflection = shaders[festd::to_underlying(Core::ShaderStage::kVertex)]->GetReflection();
 
                 const Core::ShaderSemantic channelSemantic{ channel.m_shaderSemanticName, channel.m_shaderSemanticIndex };
 
@@ -319,7 +321,7 @@ namespace FE::Graphics::Vulkan
 
         pipelineCI.layout = m_layout;
         if (const VkResult result =
-                vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
+                vkCreateGraphicsPipelines(device, context.m_pipelineCache, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
             result != VK_SUCCESS)
         {
             Logger::LogError("Failed to create graphics pipeline: {}", ResultToString(result));
@@ -331,14 +333,27 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void GraphicsPipeline::SwapNative(GraphicsPipeline& other)
+    {
+        FE_Assert(other.m_desc.GetHash() == m_desc.GetHash());
+
+        eastl::swap(m_layout, other.m_layout);
+        eastl::swap(m_nativePipeline, other.m_nativePipeline);
+
+        const Core::PipelineStatus status = m_status.load(std::memory_order_acquire);
+        m_status.store(other.m_status.load(std::memory_order_acquire), std::memory_order_release);
+        other.m_status.store(status, std::memory_order_release);
+    }
+
+
     GraphicsPipeline::~GraphicsPipeline()
     {
-        if (IsReady())
-        {
-            const VkDevice device = NativeCast(m_device);
+        // A failed creation or a swapped-out version may own only some of the objects.
+        const VkDevice device = NativeCast(m_device);
+        if (m_nativePipeline != VK_NULL_HANDLE)
             vkDestroyPipeline(device, m_nativePipeline, nullptr);
+        if (m_layout != VK_NULL_HANDLE)
             vkDestroyPipelineLayout(device, m_layout, nullptr);
-        }
 
         m_status.store(Core::PipelineStatus::kNotReady, std::memory_order_release);
     }

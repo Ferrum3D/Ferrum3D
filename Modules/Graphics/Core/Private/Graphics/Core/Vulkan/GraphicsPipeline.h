@@ -30,6 +30,12 @@ namespace FE::Graphics::Vulkan
 
         void InitInternal(const GraphicsPipelineInitContext& context);
 
+        //! @brief Exchange native objects and status with a pipeline built from the same description.
+        //!
+        //! Used by shader hot reload while no commands are being recorded. The other pipeline then owns the previous
+        //! objects, and its deferred destruction keeps them alive while the GPU may still use them.
+        void SwapNative(GraphicsPipeline& other);
+
         [[nodiscard]] VkPipeline GetNative() const
         {
             return m_nativePipeline;

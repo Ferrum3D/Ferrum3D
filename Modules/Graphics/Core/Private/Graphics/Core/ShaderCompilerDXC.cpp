@@ -153,6 +153,16 @@ namespace FE::Graphics::Core
         };
 
 
+        ShaderCompilerResult MakeFailedResult(const festd::span<const ShaderCacheDependency> dependencies)
+        {
+            ShaderCompilerResult result;
+            for (const ShaderCacheDependency& dependency : dependencies)
+                result.m_dependencies.push_back(dependency.m_path);
+
+            return result;
+        }
+
+
         uint64_t GetCompilerVersionHash(IDxcCompiler3* compiler)
         {
             Hasher hasher;
@@ -217,7 +227,10 @@ namespace FE::Graphics::Core
         {
             const festd::string_view resultDesc = IO::GetResultDesc(sourceResult.error());
             Logger::LogError("Failed to load shader source file {}: {}", args.m_shaderName, resultDesc);
-            return {};
+
+            ShaderCompilerResult failedResult;
+            failedResult.m_dependencies.push_back(args.m_shaderName);
+            return failedResult;
         }
 
         const Rc<ShaderSourceFile>& sourceFile = sourceResult.value();
@@ -297,7 +310,7 @@ namespace FE::Graphics::Core
         if (FAILED(hr))
         {
             Logger::LogError("Failed to compile shader: {}", args.m_shaderName);
-            return {};
+            return MakeFailedResult(includeHandler->GetDependencies());
         }
 
         {
@@ -310,7 +323,7 @@ namespace FE::Graphics::Core
         if (FAILED(result->GetStatus(&hr)) || FAILED(hr))
         {
             Logger::LogError("Failed to compile shader: {}", args.m_shaderName);
-            return {};
+            return MakeFailedResult(includeHandler->GetDependencies());
         }
 
         // Save the PDB
@@ -350,6 +363,8 @@ namespace FE::Graphics::Core
 
         compilerResult.m_codeValid = true;
         compilerResult.m_byteCodeSize = binarySize;
+        for (const ShaderCacheDependency& dependency : includeHandler->GetDependencies())
+            compilerResult.m_dependencies.push_back(dependency.m_path);
 
         m_shaderCache.Store(lookupKey, includeHandler->GetDependencies(), binaryBytes);
         return compilerResult;

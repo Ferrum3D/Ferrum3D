@@ -75,6 +75,7 @@ namespace FE::Graphics::Vulkan
 
     struct CommandList;
     struct DeviceFactory;
+    struct PipelineFactory;
 
     struct Device final : public Common::Device
     {
@@ -168,6 +169,12 @@ namespace FE::Graphics::Vulkan
         Core::ComputeCapabilities GetComputeCapabilities() const override;
         void WaitIdle() override;
 
+        //! @brief Finish the frame, then advance shader hot reload of every pipeline factory.
+        void EndFrame() override;
+
+        void RegisterPipelineFactory(PipelineFactory* factory);
+        void UnregisterPipelineFactory(PipelineFactory* factory);
+
     private:
         void DoRelease() override
         {
@@ -185,6 +192,9 @@ namespace FE::Graphics::Vulkan
 
         DeviceFactory* m_deviceFactory = nullptr;
         festd::inline_vector<QueueFamilyData> m_queueFamilyIndices;
+
+        Threading::SpinLock m_pipelineFactoriesLock;
+        festd::inline_vector<PipelineFactory*, 2> m_pipelineFactories;
 
         void FindQueueFamilies();
     };

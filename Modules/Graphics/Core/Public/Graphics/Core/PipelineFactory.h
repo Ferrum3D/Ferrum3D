@@ -67,5 +67,10 @@ namespace FE::Graphics::Core
         virtual GraphicsPipeline* CreateGraphicsPipeline(const GraphicsPipelineRequest& request) = 0;
         virtual ComputePipeline* CreateComputePipeline(const ComputePipelineRequest& request) = 0;
         virtual ShaderLibrary* GetShaderLibrary() const = 0;
+
+        //! @brief Incremented whenever shader hot reload publishes recompiled shaders.
+        //!
+        //! Objects that derive data from shader reflection, e.g. material parameter layouts, compare it to refresh that data.
+        [[nodiscard]] virtual uint32_t GetShaderReloadGeneration() const = 0;
     };
 } // namespace FE::Graphics::Core
