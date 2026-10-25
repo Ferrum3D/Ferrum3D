@@ -8,44 +8,31 @@ bool CheckAtmosphereLimits(GlobalLightingData lighting)
     if (lighting.m_directionIlluminance.w <= 0)
         return true;
 
-    lighting.m_directionIlluminance.xyz = float3(0, 1, 0);
-    const float radius = lighting.m_planetAtmosphereOzone.x;
-    const float3 origin = float3(0, radius + 0.001f, 0);
-    const float3 transmittance = Atmosphere::SunTransmittance(lighting, origin);
-    const float3 verticalOpticalDepth = lighting.m_rayleighScaleHeight.rgb * lighting.m_rayleighScaleHeight.w
-        + lighting.m_mieExtinctionAnisotropy.rgb * lighting.m_mieScatteringScaleHeight.w
-        + lighting.m_ozoneAbsorptionCenter.rgb * lighting.m_planetAtmosphereOzone.z;
-    const float3 analytic = exp(-verticalOpticalDepth);
-    if (any(abs(transmittance - analytic) > 0.03f))
-        return false;
-
     const float3 sky = Atmosphere::SkyLuminance(lighting, 0, float3(0, 0.8f, 0.6f));
     const float3 horizon = Atmosphere::SkyLuminance(lighting, 0, float3(0, 0, 1));
-    if (!all(isfinite(horizon)) || !all(horizon > 0))
+    if (!all(isfinite(horizon)) || !all(horizon >= 0))
         return false;
 
     lighting.m_directionIlluminance.w *= 2;
     const float3 brighter = Atmosphere::SkyLuminance(lighting, 0, float3(0, 0.8f, 0.6f));
-    if (!all(isfinite(sky)) || !all(sky > 0) || any(abs(brighter - sky * 2) > 0.001f))
+    if (!all(isfinite(sky)) || !all(sky >= 0) || any(abs(brighter - sky * 2) > 0.001f))
         return false;
 
-    lighting.m_directionIlluminance.xyz = float3(0, -1, 0);
-    if (any(Atmosphere::DirectionalIlluminance(lighting, 0) != 0))
+    const float3 scale = lighting.m_colorSunRadius.rgb * lighting.m_directionIlluminance.w;
+    const float3 ground = Atmosphere::SkyLuminance(lighting, 0, float3(0, -1, 0));
+    if (any(abs(ground - lighting.m_groundRadiance.rgb * scale) > 0.001f))
         return false;
 
-    lighting.m_directionIlluminance.xyz = float3(0, 1, 0);
-    lighting.m_rayleighScaleHeight.rgb = 0;
-    lighting.m_mieScatteringScaleHeight.rgb = 0;
-    lighting.m_mieExtinctionAnisotropy.rgb = 0;
-    lighting.m_ozoneAbsorptionCenter.rgb = 0;
-    if (any(Atmosphere::SkyLuminance(lighting, 0, float3(0, 0, 1)) != 0))
-        return false;
-
+    lighting.m_skyRadiance = 0;
     const float sineRadius = sin(lighting.m_colorSunRadius.w);
-    const float3 expectedDisc =
-        lighting.m_colorSunRadius.rgb * lighting.m_directionIlluminance.w / (Atmosphere::kPi * sineRadius * sineRadius);
-    const float3 disc = Atmosphere::SkyLuminance(lighting, 0, float3(0, 1, 0));
-    return all(abs(disc - expectedDisc) / max(expectedDisc, 0.001f) < 0.0001f);
+    const float3 expectedDisc = lighting.m_sunIlluminance.rgb * scale / (Atmosphere::kPi * sineRadius * sineRadius);
+    const float3 disc = Atmosphere::SkyLuminance(lighting, 0, lighting.m_directionIlluminance.xyz);
+    if (any(abs(disc - expectedDisc) / max(expectedDisc, 0.001f) > 0.0001f))
+        return false;
+
+    lighting.m_directionIlluminance.w = 0;
+    return all(Atmosphere::SkyLuminance(lighting, 0, float3(0, 1, 0)) == 0)
+        && all(Atmosphere::DirectionalIlluminance(lighting, 0) == 0);
 }
 
 

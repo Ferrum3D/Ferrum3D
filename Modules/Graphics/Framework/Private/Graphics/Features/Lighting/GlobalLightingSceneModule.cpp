@@ -1,4 +1,5 @@
 #include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
+#include <Graphics/Features/Lighting/HosekSky.h>
 #include <Graphics/RendererImpl.h>
 #include <cmath>
 
@@ -22,22 +23,7 @@ namespace FE::Graphics
 
     bool SkyAtmosphereParameters::Validate() const
     {
-        if (!IsPositive(m_planetRadiusKm) || !IsPositive(m_atmosphereHeightKm))
-            return false;
-
-        if (!IsPositive(m_rayleighScaleHeightKm) || !IsPositive(m_mieScaleHeightKm) || !IsPositive(m_ozoneHalfWidthKm))
-            return false;
-
-        if (!std::isfinite(m_mieAnisotropy) || std::abs(m_mieAnisotropy) >= 0.99f)
-            return false;
-
-        if (!std::isfinite(m_mieScatteringPerKm) || m_mieScatteringPerKm < 0)
-            return false;
-
-        if (!std::isfinite(m_mieExtinctionPerKm) || m_mieExtinctionPerKm < m_mieScatteringPerKm)
-            return false;
-
-        if (!std::isfinite(m_ozoneCenterHeightKm) || m_ozoneCenterHeightKm < 0)
+        if (!std::isfinite(m_turbidity) || m_turbidity < 1 || m_turbidity > 10)
             return false;
 
         if (!IsPositive(m_sunAngularRadius) || m_sunAngularRadius >= 0.1f)
@@ -46,7 +32,7 @@ namespace FE::Graphics
         if (!IsNonnegative(m_groundAlbedo) || m_groundAlbedo.x > 1 || m_groundAlbedo.y > 1 || m_groundAlbedo.z > 1)
             return false;
 
-        return IsNonnegative(m_rayleighScatteringPerKm) && IsNonnegative(m_ozoneAbsorptionPerKm);
+        return true;
     }
 
 
@@ -72,21 +58,9 @@ namespace FE::Graphics
         GlobalLightingData data{};
         data.m_directionIlluminance = PackedVector4F(Vector4(direction, m_directionalLightIlluminanceLux));
         data.m_colorSunRadius = PackedVector4F(Vector4(Vector3(m_directionalLightColor), atmosphere.m_sunAngularRadius));
-        data.m_rayleighScaleHeight =
-            PackedVector4F(Vector4(Vector3(atmosphere.m_rayleighScatteringPerKm), atmosphere.m_rayleighScaleHeightKm));
-        data.m_mieScatteringScaleHeight = PackedVector4F(atmosphere.m_mieScatteringPerKm,
-                                                         atmosphere.m_mieScatteringPerKm,
-                                                         atmosphere.m_mieScatteringPerKm,
-                                                         atmosphere.m_mieScaleHeightKm);
-        data.m_mieExtinctionAnisotropy = PackedVector4F(atmosphere.m_mieExtinctionPerKm,
-                                                        atmosphere.m_mieExtinctionPerKm,
-                                                        atmosphere.m_mieExtinctionPerKm,
-                                                        atmosphere.m_mieAnisotropy);
-        data.m_ozoneAbsorptionCenter =
-            PackedVector4F(Vector4(Vector3(atmosphere.m_ozoneAbsorptionPerKm), atmosphere.m_ozoneCenterHeightKm));
-        data.m_planetAtmosphereOzone =
-            PackedVector4F(atmosphere.m_planetRadiusKm, atmosphere.m_atmosphereHeightKm, atmosphere.m_ozoneHalfWidthKm, 0);
-        data.m_groundAlbedo = PackedVector4F(Vector4(Vector3(atmosphere.m_groundAlbedo), 0));
+        if (m_directionalLightIlluminanceLux > 0)
+            PrecomputeHosekSky(atmosphere, direction, data);
+
         return data;
     }
 

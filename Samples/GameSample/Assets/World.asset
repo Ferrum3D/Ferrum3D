@@ -68,25 +68,7 @@
                                         },
                                         "m_directionalLightIlluminanceLux": "00401c46",
                                         "m_atmosphere": {
-                                            "m_planetRadiusKm": "00c0c645",
-                                            "m_atmosphereHeightKm": "0000c842",
-                                            "m_rayleighScatteringPerKm": {
-                                                "x": "b41ebe3b",
-                                                "y": "60225e3c",
-                                                "z": "de93073d"
-                                            },
-                                            "m_rayleighScaleHeightKm": "00000041",
-                                            "m_mieScatteringPerKm": "e1f0823b",
-                                            "m_mieExtinctionPerKm": "6b7d913b",
-                                            "m_mieScaleHeightKm": "9a99993f",
-                                            "m_mieAnisotropy": "cdcc4c3f",
-                                            "m_ozoneAbsorptionPerKm": {
-                                                "x": "c3642a3a",
-                                                "y": "e38bf63a",
-                                                "z": "0742b238"
-                                            },
-                                            "m_ozoneCenterHeightKm": "0000c841",
-                                            "m_ozoneHalfWidthKm": "00007041",
+                                            "m_turbidity": "00000040",
                                             "m_groundAlbedo": {
                                                 "x": "cdcccc3d",
                                                 "y": "cdcccc3d",
@@ -4314,8 +4296,8 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "04B3A83A-4CC4-49B6-B7F5-CD54AE174921",
-                "m_builtArtifactId": "EEECEC5C-927E-4FD2-BDDE-6E6D7635B9B4",
+                "m_lastBuildKey": "96B8D06E-8086-41FF-9FDE-658F5357C473",
+                "m_builtArtifactId": "32A51D2A-1AA0-4304-A174-0F768A753EBE",
                 "m_isRemoved": false
             }
         ]

@@ -3987,42 +3987,8 @@ namespace FE::Graphics
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
-        static constexpr auto kAttributeValues_m_planetRadiusKm = Rtti::DisplayName("Planet radius (km)");
-        static constexpr auto kAttributes_m_planetRadiusKm = Rtti::DescribeAttributes(kAttributeValues_m_planetRadiusKm);
-
-        static constexpr auto kAttributeValues_m_atmosphereHeightKm = Rtti::DisplayName("Atmosphere height (km)");
-        static constexpr auto kAttributes_m_atmosphereHeightKm = Rtti::DescribeAttributes(kAttributeValues_m_atmosphereHeightKm);
-
-        static constexpr auto kAttributeValues_m_rayleighScatteringPerKm = Rtti::DisplayName("Rayleigh scattering (1/km)");
-        static constexpr auto kAttributes_m_rayleighScatteringPerKm =
-            Rtti::DescribeAttributes(kAttributeValues_m_rayleighScatteringPerKm);
-
-        static constexpr auto kAttributeValues_m_rayleighScaleHeightKm = Rtti::DisplayName("Rayleigh scale height (km)");
-        static constexpr auto kAttributes_m_rayleighScaleHeightKm =
-            Rtti::DescribeAttributes(kAttributeValues_m_rayleighScaleHeightKm);
-
-        static constexpr auto kAttributeValues_m_mieScatteringPerKm = Rtti::DisplayName("Mie scattering (1/km)");
-        static constexpr auto kAttributes_m_mieScatteringPerKm = Rtti::DescribeAttributes(kAttributeValues_m_mieScatteringPerKm);
-
-        static constexpr auto kAttributeValues_m_mieExtinctionPerKm = Rtti::DisplayName("Mie extinction (1/km)");
-        static constexpr auto kAttributes_m_mieExtinctionPerKm = Rtti::DescribeAttributes(kAttributeValues_m_mieExtinctionPerKm);
-
-        static constexpr auto kAttributeValues_m_mieScaleHeightKm = Rtti::DisplayName("Mie scale height (km)");
-        static constexpr auto kAttributes_m_mieScaleHeightKm = Rtti::DescribeAttributes(kAttributeValues_m_mieScaleHeightKm);
-
-        static constexpr auto kAttributeValues_m_mieAnisotropy = Rtti::DisplayName("Mie anisotropy");
-        static constexpr auto kAttributes_m_mieAnisotropy = Rtti::DescribeAttributes(kAttributeValues_m_mieAnisotropy);
-
-        static constexpr auto kAttributeValues_m_ozoneAbsorptionPerKm = Rtti::DisplayName("Ozone absorption (1/km)");
-        static constexpr auto kAttributes_m_ozoneAbsorptionPerKm =
-            Rtti::DescribeAttributes(kAttributeValues_m_ozoneAbsorptionPerKm);
-
-        static constexpr auto kAttributeValues_m_ozoneCenterHeightKm = Rtti::DisplayName("Ozone center height (km)");
-        static constexpr auto kAttributes_m_ozoneCenterHeightKm =
-            Rtti::DescribeAttributes(kAttributeValues_m_ozoneCenterHeightKm);
-
-        static constexpr auto kAttributeValues_m_ozoneHalfWidthKm = Rtti::DisplayName("Ozone half width (km)");
-        static constexpr auto kAttributes_m_ozoneHalfWidthKm = Rtti::DescribeAttributes(kAttributeValues_m_ozoneHalfWidthKm);
+        static constexpr auto kAttributeValues_m_turbidity = Rtti::DisplayName("Turbidity (1-10)");
+        static constexpr auto kAttributes_m_turbidity = Rtti::DescribeAttributes(kAttributeValues_m_turbidity);
 
         static constexpr auto kAttributeValues_m_groundAlbedo = Rtti::DisplayName("Ground albedo");
         static constexpr auto kAttributes_m_groundAlbedo = Rtti::DescribeAttributes(kAttributeValues_m_groundAlbedo);
@@ -4030,50 +3996,10 @@ namespace FE::Graphics
         static constexpr auto kAttributeValues_m_sunAngularRadius = Rtti::DisplayName("Sun angular radius (radians)");
         static constexpr auto kAttributes_m_sunAngularRadius = Rtti::DescribeAttributes(kAttributeValues_m_sunAngularRadius);
 
-        static const festd::array<Rtti::FieldInfo, 13> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo("m_planetRadiusKm",
-                                                     &SkyAtmosphereParameters::m_planetRadiusKm,
-                                                     kAttributes_m_planetRadiusKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_atmosphereHeightKm",
-                                                     &SkyAtmosphereParameters::m_atmosphereHeightKm,
-                                                     kAttributes_m_atmosphereHeightKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_rayleighScatteringPerKm",
-                                                     &SkyAtmosphereParameters::m_rayleighScatteringPerKm,
-                                                     kAttributes_m_rayleighScatteringPerKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_rayleighScaleHeightKm",
-                                                     &SkyAtmosphereParameters::m_rayleighScaleHeightKm,
-                                                     kAttributes_m_rayleighScaleHeightKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_mieScatteringPerKm",
-                                                     &SkyAtmosphereParameters::m_mieScatteringPerKm,
-                                                     kAttributes_m_mieScatteringPerKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_mieExtinctionPerKm",
-                                                     &SkyAtmosphereParameters::m_mieExtinctionPerKm,
-                                                     kAttributes_m_mieExtinctionPerKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_mieScaleHeightKm",
-                                                     &SkyAtmosphereParameters::m_mieScaleHeightKm,
-                                                     kAttributes_m_mieScaleHeightKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_mieAnisotropy",
-                                                     &SkyAtmosphereParameters::m_mieAnisotropy,
-                                                     kAttributes_m_mieAnisotropy,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_ozoneAbsorptionPerKm",
-                                                     &SkyAtmosphereParameters::m_ozoneAbsorptionPerKm,
-                                                     kAttributes_m_ozoneAbsorptionPerKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_ozoneCenterHeightKm",
-                                                     &SkyAtmosphereParameters::m_ozoneCenterHeightKm,
-                                                     kAttributes_m_ozoneCenterHeightKm,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_ozoneHalfWidthKm",
-                                                     &SkyAtmosphereParameters::m_ozoneHalfWidthKm,
-                                                     kAttributes_m_ozoneHalfWidthKm,
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_turbidity",
+                                                     &SkyAtmosphereParameters::m_turbidity,
+                                                     kAttributes_m_turbidity,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_groundAlbedo",
                                                      &SkyAtmosphereParameters::m_groundAlbedo,
@@ -4103,17 +4029,7 @@ namespace FE::Graphics
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("m_planetRadiusKm", m_planetRadiusKm);
-            object.Field("m_atmosphereHeightKm", m_atmosphereHeightKm);
-            object.Field("m_rayleighScatteringPerKm", m_rayleighScatteringPerKm);
-            object.Field("m_rayleighScaleHeightKm", m_rayleighScaleHeightKm);
-            object.Field("m_mieScatteringPerKm", m_mieScatteringPerKm);
-            object.Field("m_mieExtinctionPerKm", m_mieExtinctionPerKm);
-            object.Field("m_mieScaleHeightKm", m_mieScaleHeightKm);
-            object.Field("m_mieAnisotropy", m_mieAnisotropy);
-            object.Field("m_ozoneAbsorptionPerKm", m_ozoneAbsorptionPerKm);
-            object.Field("m_ozoneCenterHeightKm", m_ozoneCenterHeightKm);
-            object.Field("m_ozoneHalfWidthKm", m_ozoneHalfWidthKm);
+            object.Field("m_turbidity", m_turbidity);
             object.Field("m_groundAlbedo", m_groundAlbedo);
             object.Field("m_sunAngularRadius", m_sunAngularRadius);
         }
@@ -4125,17 +4041,7 @@ namespace FE::Graphics
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("m_planetRadiusKm", m_planetRadiusKm);
-            object.Field("m_atmosphereHeightKm", m_atmosphereHeightKm);
-            object.Field("m_rayleighScatteringPerKm", m_rayleighScatteringPerKm);
-            object.Field("m_rayleighScaleHeightKm", m_rayleighScaleHeightKm);
-            object.Field("m_mieScatteringPerKm", m_mieScatteringPerKm);
-            object.Field("m_mieExtinctionPerKm", m_mieExtinctionPerKm);
-            object.Field("m_mieScaleHeightKm", m_mieScaleHeightKm);
-            object.Field("m_mieAnisotropy", m_mieAnisotropy);
-            object.Field("m_ozoneAbsorptionPerKm", m_ozoneAbsorptionPerKm);
-            object.Field("m_ozoneCenterHeightKm", m_ozoneCenterHeightKm);
-            object.Field("m_ozoneHalfWidthKm", m_ozoneHalfWidthKm);
+            object.Field("m_turbidity", m_turbidity);
             object.Field("m_groundAlbedo", m_groundAlbedo);
             object.Field("m_sunAngularRadius", m_sunAngularRadius);
         }
@@ -4151,28 +4057,8 @@ namespace FE::Graphics
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("m_planetRadiusKm", 16);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_planetRadiusKm)>());
-            hasher.Update("m_atmosphereHeightKm", 20);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_atmosphereHeightKm)>());
-            hasher.Update("m_rayleighScatteringPerKm", 25);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_rayleighScatteringPerKm)>());
-            hasher.Update("m_rayleighScaleHeightKm", 23);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_rayleighScaleHeightKm)>());
-            hasher.Update("m_mieScatteringPerKm", 20);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieScatteringPerKm)>());
-            hasher.Update("m_mieExtinctionPerKm", 20);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieExtinctionPerKm)>());
-            hasher.Update("m_mieScaleHeightKm", 18);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieScaleHeightKm)>());
-            hasher.Update("m_mieAnisotropy", 15);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mieAnisotropy)>());
-            hasher.Update("m_ozoneAbsorptionPerKm", 22);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_ozoneAbsorptionPerKm)>());
-            hasher.Update("m_ozoneCenterHeightKm", 21);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_ozoneCenterHeightKm)>());
-            hasher.Update("m_ozoneHalfWidthKm", 18);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_ozoneHalfWidthKm)>());
+            hasher.Update("m_turbidity", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_turbidity)>());
             hasher.Update("m_groundAlbedo", 14);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_groundAlbedo)>());
             hasher.Update("m_sunAngularRadius", 18);

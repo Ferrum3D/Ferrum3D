@@ -6,12 +6,10 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     {
         float4 m_directionIlluminance;
         float4 m_colorSunRadius;
-        float4 m_rayleighScaleHeight;
-        float4 m_mieScatteringScaleHeight;
-        float4 m_mieExtinctionAnisotropy;
-        float4 m_ozoneAbsorptionCenter;
-        float4 m_planetAtmosphereOzone;
-        float4 m_groundAlbedo;
+        float4 m_skyCoefficients[9];
+        float4 m_skyRadiance;
+        float4 m_sunIlluminance;
+        float4 m_groundRadiance;
     };
 
 

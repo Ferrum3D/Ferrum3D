@@ -43,6 +43,9 @@ fe_configure_target(FeGraphics)
 
 target_include_directories(FeGraphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Public")
 target_include_directories(FeGraphics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
+target_include_directories(FeGraphics PRIVATE "${FE_THIRD_PARTY_DIR}/hosek")
+set_source_files_properties(Private/Graphics/Features/Lighting/HosekSkyModel.cpp
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 target_include_directories(FeGraphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
 target_include_directories(FeGraphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/ThirdParty/FidelityFX")
 

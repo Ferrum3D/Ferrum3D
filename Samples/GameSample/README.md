@@ -82,16 +82,18 @@ Application opens a shared materialization budget once per rendered frame: 32 co
 Input contexts are authored in the input service descriptor in `World.asset`. Cameras reference movement, elevation, and look action assets; RMB look sensitivity is authored in the mouse-delta binding.
 
 Global lighting is also authored in `World.asset`, in the `WorldGraphicsSceneService` configuration. It specifies the sun's
-orientation, linear RGB color and perpendicular illuminance in lux, plus the atmosphere's planet radius, Rayleigh/Mie density
-profiles, ozone absorption, ground albedo and sun angular radius. Distances and scattering coefficients use kilometers and
-inverse kilometers; world positions use meters. Local +Z of the sun orientation points towards the sun. The planet touches the
-world origin with its center on -Y.
+orientation, linear RGB tint and reference daylight illuminance in lux, plus Hosek sky turbidity (1-10), ground albedo and
+sun angular radius in radians. Local +Z of the sun orientation points towards the sun; world +Y points up. At 120000 lux the
+model uses its physical daylight scale. Lower values proportionally dim both the sun and sky.
 
-The graphics service owns `GlobalLightingSceneModule`, which uploads these settings to the GPU database. Both PBR and simple
-lit materials use this light. Background pixels integrate single atmospheric scattering and the sun disc into the HDR target
-before tonemapping; clear colors are black. Exposure and pre-exposure remain fixed at EV100 12. Multiple scattering, indirect
-skylight on geometry and aerial perspective are not implemented. The scattering and phase equations follow
-[Bruneton's atmosphere reference](https://ebruneton.github.io/precomputed_atmospheric_scattering/atmosphere/functions.glsl).
+The graphics service owns `GlobalLightingSceneModule`, which precomputes RGB sky coefficients and integrates the spectral
+solar disc on the CPU when lighting settings change. The solar spectrum is converted through CIE XYZ to linear RGB; the
+resulting attenuated sunlight drives both PBR and simple lit materials. Background pixels evaluate the
+[Hosek-Wilkie model](https://github.com/ebruneton/clear-sky-models/tree/master/atmosphere/model/hosek) and a uniform sun disc.
+Changing the displayed sun radius preserves its integrated illuminance. The lower hemisphere uses Lambertian ground
+radiance from CPU-integrated sky and sunlight. The sun and sky switch off below the horizon; night skies, altitude-dependent
+lighting, indirect skylight on geometry and aerial perspective are not implemented. Exposure and pre-exposure remain fixed
+at EV100 12. Clear colors are black.
 
 The editor's **Services** window lists registered world services and their captured configuration. Lighting settings, including
 the nested atmosphere parameters, can be changed live even while paused; invalid values are rejected. Settings for services
