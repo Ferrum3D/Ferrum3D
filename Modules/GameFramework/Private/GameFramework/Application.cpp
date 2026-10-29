@@ -1,3 +1,4 @@
+#include <Core/CLI/CommandLine.h>
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/Reflection.gen.h>
@@ -15,6 +16,7 @@
 #include <GameFramework/Systems/MeshSystem.h>
 #include <GameFramework/Systems/TransformationSystem.h>
 #include <Graphics/Assets/MaterialAssets.h>
+#include <Graphics/Assets/ShaderAssets.h>
 #include <Graphics/Assets/Streamers.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/DeviceFactory.h>
@@ -33,6 +35,13 @@
 namespace FE::GameFramework
 {
     using namespace Graphics;
+
+    namespace
+    {
+        //! Shader package of the GameFramework module, matching its shader source directory.
+        const IO::AssetID kGameFrameworkShaderPackageId{ "54E07397-A31B-4CE7-8CA5-B41778F14817" };
+    } // namespace
+
 
     Application::Application()
     {
@@ -69,6 +78,7 @@ namespace FE::GameFramework
         m_device = factory.CreateDevice(adapters.front().m_name);
         Renderer::Init(m_device.Get());
         Core::AddShaderSourceDirectory(FE_GAME_FRAMEWORK_SHADER_DIRECTORY);
+        Core::AddShaderPackage(kGameFrameworkShaderPackageId);
         auto& renderer = Renderer::Get();
         auto* pool = renderer.GetResourcePool();
         auto* graphicsQueue = renderer.GetGraphicsQueue();
@@ -83,6 +93,7 @@ namespace FE::GameFramework
                                                                 renderer.GetDescriptorManager());
         IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<MeshAsset>(), m_meshStreamer);
         IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<TextureAsset>(), m_textureStreamer);
+        LoadShaderAssets();
 
         m_viewport = m_device->CreateViewport(pool, graphicsQueue);
         m_viewport->Init(Core::ViewportDesc::Create(m_mainWindow->GetClientRect(), m_mainWindow->GetNativeHandle().m_value));
@@ -263,10 +274,13 @@ namespace FE::GameFramework
         m_worldLoadPending = false;
         m_viewport.Reset();
 
+        m_shaderAssetRequests.clear();
         IO::AssetManager::Shutdown();
         Memory::DefaultDelete(m_materialStreamer);
         Memory::DefaultDelete(m_textureStreamer);
         Memory::DefaultDelete(m_meshStreamer);
+        Memory::DefaultDelete(m_shaderPackageStreamer);
+        Memory::DefaultDelete(m_shaderCacheStreamer);
 
         m_pipelineFactory.Reset();
         Renderer::Shutdown();
@@ -276,6 +290,58 @@ namespace FE::GameFramework
         m_materialStreamer = nullptr;
         m_textureStreamer = nullptr;
         m_meshStreamer = nullptr;
+        m_shaderPackageStreamer = nullptr;
+        m_shaderCacheStreamer = nullptr;
+    }
+
+
+    void Application::LoadShaderAssets()
+    {
+        FE_PROFILER_ZONE();
+
+        m_shaderPackageStreamer = Memory::DefaultNew<ShaderPackageStreamer>();
+        m_shaderCacheStreamer = Memory::DefaultNew<ShaderCacheStreamer>();
+        IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<ShaderPackageAsset>(), m_shaderPackageStreamer);
+        IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<ShaderCacheAsset>(), m_shaderCacheStreamer);
+
+        // Shader sources come from the module directories during development. A build without them, or one started with
+        // --shader-packages to test that path, reads the sources from the packages in the catalog instead.
+        const bool isPackageOnly = Cli::Check("--shader-packages");
+        if (isPackageOnly)
+            Core::SetShaderSourceDirectoriesEnabled(false);
+
+        festd::vector<IO::AssetID> assetIds;
+        if (isPackageOnly || !Core::AreShaderSourceDirectoriesAvailable())
+            Core::GetShaderPackages(assetIds);
+
+        assetIds.push_back(kShaderCacheAssetId);
+
+        for (const IO::AssetID assetId : assetIds)
+        {
+            // Catalogs without packages or a shader cache are valid; their shaders are compiled from the directories.
+            if (IO::File::Exists(IO::ArtifactStore::ResolveMeta(assetId).m_filePath))
+                m_shaderAssetRequests.push_back(IO::AssetManager::LoadAsset(assetId));
+        }
+
+        // Pipelines are compiled right after initialization, so the sources and precompiled shaders must be in place first.
+        for (uint32_t iteration = 0; iteration < 10000; ++iteration)
+        {
+            bool isCompleted = true;
+            for (const IO::AssetRequest& request : m_shaderAssetRequests)
+                isCompleted &= request.IsCompleted();
+
+            if (isCompleted)
+                break;
+
+            IO::AssetManager::Tick();
+            Threading::Sleep(1);
+        }
+
+        for (const IO::AssetRequest& request : m_shaderAssetRequests)
+        {
+            if (request.GetResult() != IO::AssetLoadResult::kSucceeded)
+                Logger::LogError("Failed to load shader asset: {}", request.GetError());
+        }
     }
 
 

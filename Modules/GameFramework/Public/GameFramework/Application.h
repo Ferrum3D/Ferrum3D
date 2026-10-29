@@ -11,6 +11,8 @@ namespace FE::Graphics
     struct MaterialStreamer;
     struct MeshStreamer;
     struct RenderRequest;
+    struct ShaderCacheStreamer;
+    struct ShaderPackageStreamer;
     struct TextureStreamer;
 
     namespace Core
@@ -96,6 +98,7 @@ namespace FE::GameFramework
 
     private:
         bool UpdateWorldLoading();
+        void LoadShaderAssets();
         void DoRelease() override;
 
         Rc<Graphics::Core::Device> m_device;
@@ -112,5 +115,8 @@ namespace FE::GameFramework
         Graphics::MaterialStreamer* m_materialStreamer = nullptr;
         Graphics::MeshStreamer* m_meshStreamer = nullptr;
         Graphics::TextureStreamer* m_textureStreamer = nullptr;
+        Graphics::ShaderPackageStreamer* m_shaderPackageStreamer = nullptr;
+        Graphics::ShaderCacheStreamer* m_shaderCacheStreamer = nullptr;
+        festd::vector<IO::AssetRequest> m_shaderAssetRequests;
     };
 } // namespace FE::GameFramework

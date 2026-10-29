@@ -37,3 +37,6 @@ cmake-build/
 
 *.ferrum-test-file.bin
 .luaurc
+
+# Local asset build state, staging and asset server state
+.ferrum-build/

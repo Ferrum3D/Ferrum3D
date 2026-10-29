@@ -156,6 +156,12 @@ namespace FE::IO
     }
 
 
+    bool Directory::Exists(const festd::string_view path)
+    {
+        return Bit::AnySet(Platform::GetFileAttributeFlags(path), FileAttributeFlags::kDirectory);
+    }
+
+
     ResultCode Directory::Create(const festd::string_view path)
     {
         FE_PROFILER_ZONE_TEXT("%.*s", path.size(), path.data());

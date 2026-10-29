@@ -35,24 +35,18 @@ deduplicating logical asset IDs. World content must have cooked artifacts in its
 
 Hold RMB in the focused viewport and use WASD to fly, Q/E to descend/ascend, and Shift
 to move faster. `Editor::CameraMovementSystem` reads the ordinary WorldInputService
-frame and shares movement math with the gameplay system. Copy the action and mapping
-`.asset` files from `Modules/GameFramework/EditorAssets` into each project's asset directory,
-keeping their asset IDs unchanged. GameSample keeps its copies under `Assets/Editor/Input`.
-Cook these project-local copies into the project's existing catalog manually after building
-FerrumCli; the game and editor use the same catalog:
+frame and shares movement math with the gameplay system. The action and mapping `.asset`
+files live in `Modules/GameFramework/Assets/Input`, next to the module's shader package. A
+project adds that directory to the depots it builds into its catalog, so the game and the
+editor use the same catalog and nothing is copied:
 
 ```powershell
 $cli = "cmake-build/windows-debug-msvc/Debug/ferrum.exe"
-$assets = "Samples/GameSample/Assets"
-$editorAssets = "$assets/Editor/Input"
-New-Item -ItemType Directory -Force $editorAssets | Out-Null
-Copy-Item "Modules/GameFramework/EditorAssets/*.asset" $editorAssets
-foreach ($name in "Move", "Elevate", "Look", "SpeedUp", "Mappings") {
-    & $cli build --asset "$editorAssets/$name.asset" --output $assets
-}
+$depots = "Samples/GameSample/Assets;Modules/GameFramework/Assets;Modules/Graphics/Framework/Assets"
+& $cli build --all --depot $depots --output Samples/GameSample/Assets
 ```
 
-Copying and cooking editor assets are manual project setup steps. CMake does neither.
+CMake does not cook assets.
 
 The editor camera belongs to a transient registry excluded from snapshots. Camera writes
 are declared ECS query accesses, so rendering updates after idle frames as well. A

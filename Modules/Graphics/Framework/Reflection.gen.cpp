@@ -7,6 +7,7 @@
 
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
+#include <Graphics/Assets/ShaderAssets.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Features/ImGui/ImGuiSceneModule.h>
 #include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
@@ -1070,6 +1071,148 @@ namespace FE::Graphics
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1784843c50854289aa8204c480e423ee(&MeshSceneModule::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID ShaderPackageAsset::TypeID = Rtti::TypeID{
+        0x17, 0xdb, 0xc8, 0x32, 0x13, 0xc2, 0x40, 0x4e, 0x8d, 0xb8, 0x11, 0x2c, 0xdb, 0x1c, 0x3e, 0xbc,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_17dbc83213c2404e8db8112cdb1c3ebc(ShaderPackageAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x17, 0xdb, 0xc8, 0x32, 0x13, 0xc2, 0x40, 0x4e,
+                0x8d, 0xb8, 0x11, 0x2c, 0xdb, 0x1c, 0x3e, 0xbc, // FE::Graphics::ShaderPackageAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_17dbc83213c2404e8db8112cdb1c3ebc()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ShaderPackageAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_17dbc83213c2404e8db8112cdb1c3ebc();
+    }
+
+    void* FE_VECTORCALL ShaderPackageAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_17dbc83213c2404e8db8112cdb1c3ebc(this, typeID);
+    }
+
+    const void* FE_VECTORCALL ShaderPackageAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_17dbc83213c2404e8db8112cdb1c3ebc(const_cast<ShaderPackageAsset*>(this), typeID);
+    }
+    void ShaderPackageAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_17dbc83213c2404e8db8112cdb1c3ebc();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x17, 0xdb, 0xc8, 0x32, 0x13, 0xc2, 0x40, 0x4e,
+            0x8d, 0xb8, 0x11, 0x2c, 0xdb, 0x1c, 0x3e, 0xbc, // FE::Graphics::ShaderPackageAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mounts = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_files = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runtime = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_mounts",
+                                                     &ShaderPackageAsset::m_mounts,
+                                                     kAttributes_m_mounts,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_files",
+                                                     &ShaderPackageAsset::m_files,
+                                                     kAttributes_m_files,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_runtime",
+                                                     &ShaderPackageAsset::m_runtime,
+                                                     kAttributes_m_runtime,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+        };
+
+        context.ReflectClass<ShaderPackageAsset>(typeInstance,
+                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                 "FE::Graphics::ShaderPackageAsset",
+                                                 kBaseClassTypeIDs,
+                                                 kAttributes,
+                                                 kFields,
+                                                 Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderPackageAsset*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_17dbc83213c2404e8db8112cdb1c3ebc(&ShaderPackageAsset::Reflect);
+
+    FE::Serialization::ResultCode ShaderPackageAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_mounts", m_mounts);
+            object.Field("m_files", m_files);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ShaderPackageAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_mounts", m_mounts);
+            object.Field("m_files", m_files);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ShaderPackageAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x17, 0xdb, 0xc8, 0x32, 0x13, 0xc2, 0x40, 0x4e, 0x8d, 0xb8, 0x11, 0x2c, 0xdb, 0x1c, 0x3e, 0xbc,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_mounts", 8);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mounts)>());
+            hasher.Update("m_files", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_files)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ShaderPackageAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::Graphics
 
 
@@ -2892,6 +3035,138 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID ShaderCacheAsset::TypeID = Rtti::TypeID{
+        0x44, 0x08, 0xc5, 0xfe, 0x3a, 0x99, 0x4f, 0x64, 0x98, 0xed, 0xcc, 0xc2, 0x53, 0x12, 0xfe, 0xef,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_4408c5fe3a994f6498edccc25312feef(ShaderCacheAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x44, 0x08, 0xc5, 0xfe, 0x3a, 0x99, 0x4f, 0x64,
+                0x98, 0xed, 0xcc, 0xc2, 0x53, 0x12, 0xfe, 0xef, // FE::Graphics::ShaderCacheAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_4408c5fe3a994f6498edccc25312feef()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ShaderCacheAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_4408c5fe3a994f6498edccc25312feef();
+    }
+
+    void* FE_VECTORCALL ShaderCacheAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_4408c5fe3a994f6498edccc25312feef(this, typeID);
+    }
+
+    const void* FE_VECTORCALL ShaderCacheAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_4408c5fe3a994f6498edccc25312feef(const_cast<ShaderCacheAsset*>(this), typeID);
+    }
+    void ShaderCacheAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_4408c5fe3a994f6498edccc25312feef();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x44, 0x08, 0xc5, 0xfe, 0x3a, 0x99, 0x4f, 0x64,
+            0x98, 0xed, 0xcc, 0xc2, 0x53, 0x12, 0xfe, 0xef, // FE::Graphics::ShaderCacheAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaders = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runtime = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaders",
+                                                     &ShaderCacheAsset::m_shaders,
+                                                     kAttributes_m_shaders,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_runtime",
+                                                     &ShaderCacheAsset::m_runtime,
+                                                     kAttributes_m_runtime,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+        };
+
+        context.ReflectClass<ShaderCacheAsset>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Graphics::ShaderCacheAsset",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ShaderCacheAsset*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_4408c5fe3a994f6498edccc25312feef(&ShaderCacheAsset::Reflect);
+
+    FE::Serialization::ResultCode ShaderCacheAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_shaders", m_shaders);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ShaderCacheAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_shaders", m_shaders);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ShaderCacheAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x44, 0x08, 0xc5, 0xfe, 0x3a, 0x99, 0x4f, 0x64, 0x98, 0xed, 0xcc, 0xc2, 0x53, 0x12, 0xfe, 0xef,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_shaders", 9);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_shaders)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ShaderCacheAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID MeshAsset::TypeID = Rtti::TypeID{
         0x44, 0xeb, 0xc2, 0x48, 0xfd, 0x5e, 0x4c, 0xf4, 0xab, 0x4c, 0x09, 0x51, 0x1b, 0x78, 0x36, 0x2c,
     };
@@ -4647,6 +4922,132 @@ namespace FE::Graphics::Visibility
 
     static Rtti::TypeRegistrar GTypeRegistrar_6f735fda2c654f81992eb40e13f7fbbf(&CoveragePassDesc::Reflect);
 } // namespace FE::Graphics::Visibility
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID ShaderPackageFile::TypeID = Rtti::TypeID{
+        0x71, 0xa3, 0x20, 0x85, 0xa4, 0x91, 0x45, 0x20, 0x83, 0xd6, 0xa0, 0xd0, 0xd9, 0x51, 0x77, 0x66,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_71a32085a491452083d6a0d0d9517766(ShaderPackageFile* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x71, 0xa3, 0x20, 0x85, 0xa4, 0x91, 0x45, 0x20,
+                0x83, 0xd6, 0xa0, 0xd0, 0xd9, 0x51, 0x77, 0x66, // FE::Graphics::ShaderPackageFile (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_71a32085a491452083d6a0d0d9517766()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ShaderPackageFile::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_71a32085a491452083d6a0d0d9517766();
+    }
+
+    void ShaderPackageFile::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_71a32085a491452083d6a0d0d9517766();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x71, 0xa3, 0x20, 0x85, 0xa4, 0x91, 0x45, 0x20,
+            0x83, 0xd6, 0xa0, 0xd0, 0xd9, 0x51, 0x77, 0x66, // FE::Graphics::ShaderPackageFile
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_path = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_contents = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_path",
+                                                     &ShaderPackageFile::m_path,
+                                                     kAttributes_m_path,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_contents",
+                                                     &ShaderPackageFile::m_contents,
+                                                     kAttributes_m_contents,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ShaderPackageFile>(typeInstance,
+                                                Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                "FE::Graphics::ShaderPackageFile",
+                                                kBaseClassTypeIDs,
+                                                kAttributes,
+                                                kFields,
+                                                Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_71a32085a491452083d6a0d0d9517766(static_cast<ShaderPackageFile*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_71a32085a491452083d6a0d0d9517766(&ShaderPackageFile::Reflect);
+
+    FE::Serialization::ResultCode ShaderPackageFile::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_path", m_path);
+            object.Field("m_contents", m_contents);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ShaderPackageFile::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_path", m_path);
+            object.Field("m_contents", m_contents);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ShaderPackageFile::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x71, 0xa3, 0x20, 0x85, 0xa4, 0x91, 0x45, 0x20, 0x83, 0xd6, 0xa0, 0xd0, 0xd9, 0x51, 0x77, 0x66,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_path", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_path)>());
+            hasher.Update("m_contents", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_contents)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ShaderPackageFile::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics
@@ -7197,6 +7598,132 @@ namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
 
     static Rtti::TypeRegistrar GTypeRegistrar_9fb458cca1de4758b0acd0a818bb01df(&PassDesc::Reflect);
 } // namespace FE::Graphics::MeshPass::FinalizeMeshBuckets
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID ShaderPackageMount::TypeID = Rtti::TypeID{
+        0xa1, 0x86, 0x64, 0xc9, 0xa8, 0x8d, 0x4d, 0x4e, 0xa3, 0x4d, 0xb5, 0x4d, 0x1d, 0xce, 0xcd, 0x52,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_a18664c9a88d4d4ea34db54d1dcecd52(ShaderPackageMount* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xa1, 0x86, 0x64, 0xc9, 0xa8, 0x8d, 0x4d, 0x4e,
+                0xa3, 0x4d, 0xb5, 0x4d, 0x1d, 0xce, 0xcd, 0x52, // FE::Graphics::ShaderPackageMount (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_a18664c9a88d4d4ea34db54d1dcecd52()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ShaderPackageMount::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_a18664c9a88d4d4ea34db54d1dcecd52();
+    }
+
+    void ShaderPackageMount::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_a18664c9a88d4d4ea34db54d1dcecd52();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xa1, 0x86, 0x64, 0xc9, 0xa8, 0x8d, 0x4d, 0x4e,
+            0xa3, 0x4d, 0xb5, 0x4d, 0x1d, 0xce, 0xcd, 0x52, // FE::Graphics::ShaderPackageMount
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_directory = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_virtualPrefix = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_directory",
+                                                     &ShaderPackageMount::m_directory,
+                                                     kAttributes_m_directory,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_virtualPrefix",
+                                                     &ShaderPackageMount::m_virtualPrefix,
+                                                     kAttributes_m_virtualPrefix,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ShaderPackageMount>(typeInstance,
+                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                 "FE::Graphics::ShaderPackageMount",
+                                                 kBaseClassTypeIDs,
+                                                 kAttributes,
+                                                 kFields,
+                                                 Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_a18664c9a88d4d4ea34db54d1dcecd52(static_cast<ShaderPackageMount*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_a18664c9a88d4d4ea34db54d1dcecd52(&ShaderPackageMount::Reflect);
+
+    FE::Serialization::ResultCode ShaderPackageMount::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_directory", m_directory);
+            object.Field("m_virtualPrefix", m_virtualPrefix);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ShaderPackageMount::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_directory", m_directory);
+            object.Field("m_virtualPrefix", m_virtualPrefix);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ShaderPackageMount::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xa1, 0x86, 0x64, 0xc9, 0xa8, 0x8d, 0x4d, 0x4e, 0xa3, 0x4d, 0xb5, 0x4d, 0x1d, 0xce, 0xcd, 0x52,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_directory", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_directory)>());
+            hasher.Update("m_virtualPrefix", 15);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_virtualPrefix)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ShaderPackageMount::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Visibility

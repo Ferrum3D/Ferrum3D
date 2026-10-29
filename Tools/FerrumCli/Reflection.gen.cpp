@@ -321,6 +321,14 @@ namespace FE::FerrumCli
         static constexpr auto kAttributeValues_m_asset = Cli::Description(".asset file to build") + Cli::ValueName("path");
         static constexpr auto kAttributes_m_asset = Rtti::DescribeAttributes(kAttributeValues_m_asset);
 
+        static constexpr auto kAttributeValues_m_all =
+            Cli::Description("Build every .asset file in the depots, in dependency order");
+        static constexpr auto kAttributes_m_all = Rtti::DescribeAttributes(kAttributeValues_m_all);
+
+        static constexpr auto kAttributeValues_m_depot =
+            Cli::Description("Depot directories searched for .asset files, separated by ';'") + Cli::ValueName("directories");
+        static constexpr auto kAttributes_m_depot = Rtti::DescribeAttributes(kAttributeValues_m_depot);
+
         static constexpr auto kAttributeValues_m_sourceRoot =
             Cli::Description("Asset source depot root (required for file-backed assets)") + Cli::ValueName("directory");
         static constexpr auto kAttributes_m_sourceRoot = Rtti::DescribeAttributes(kAttributeValues_m_sourceRoot);
@@ -329,7 +337,7 @@ namespace FE::FerrumCli
             Cli::Description("Artifact output directory") + Cli::ValueName("directory");
         static constexpr auto kAttributes_m_output = Rtti::DescribeAttributes(kAttributeValues_m_output);
 
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_help",
                                                      &Build::m_help,
                                                      kAttributes_m_help,
@@ -337,6 +345,14 @@ namespace FE::FerrumCli
             Rtti::ReflectionContext::CreateFieldInfo("m_asset",
                                                      &Build::m_asset,
                                                      kAttributes_m_asset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_all",
+                                                     &Build::m_all,
+                                                     kAttributes_m_all,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depot",
+                                                     &Build::m_depot,
+                                                     kAttributes_m_depot,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_sourceRoot",
                                                      &Build::m_sourceRoot,
@@ -361,4 +377,384 @@ namespace FE::FerrumCli
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4d105b8d0e84460b98bc8a4c3710a193(&Build::Reflect);
+} // namespace FE::FerrumCli
+
+
+namespace FE::FerrumCli
+{
+    const Rtti::TypeID BuildShaderCache::TypeID = Rtti::TypeID{
+        0xb3, 0xea, 0xb5, 0x19, 0x1b, 0x54, 0x45, 0x8b, 0x8d, 0x47, 0x74, 0x16, 0x9a, 0x92, 0x5f, 0x52,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b3eab5191b54458b8d4774169a925f52(BuildShaderCache* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0xb3, 0xea, 0xb5, 0x19, 0x1b, 0x54, 0x45, 0x8b,
+                0x8d, 0x47, 0x74, 0x16, 0x9a, 0x92, 0x5f, 0x52, // FE::FerrumCli::BuildShaderCache (this type)
+                0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0,
+                0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+                0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4,
+                0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Subcommand*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Command*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_b3eab5191b54458b8d4774169a925f52()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& BuildShaderCache::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_b3eab5191b54458b8d4774169a925f52();
+    }
+
+    void* FE_VECTORCALL BuildShaderCache::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_b3eab5191b54458b8d4774169a925f52(this, typeID);
+    }
+
+    const void* FE_VECTORCALL BuildShaderCache::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_b3eab5191b54458b8d4774169a925f52(const_cast<BuildShaderCache*>(this), typeID);
+    }
+    void BuildShaderCache::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_b3eab5191b54458b8d4774169a925f52();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xb3, 0xea, 0xb5, 0x19, 0x1b, 0x54, 0x45, 0x8b,
+            0x8d, 0x47, 0x74, 0x16, 0x9a, 0x92, 0x5f, 0x52, // FE::FerrumCli::BuildShaderCache
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+            0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+        };
+        static constexpr auto kAttributeValues = Cli::Parent("FE::FerrumCli::CommandLineParser")
+            + Cli::Description("Compile the shader permutation manifest of a catalog into its precompiled shaders");
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
+
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
+
+        static constexpr auto kAttributeValues_m_depot =
+            Cli::Description("Depot directories with the shader packages, separated by ';'") + Cli::ValueName("directories");
+        static constexpr auto kAttributes_m_depot = Rtti::DescribeAttributes(kAttributeValues_m_depot);
+
+        static constexpr auto kAttributeValues_m_sourceRoot =
+            Cli::Description("Asset source depot root, for a single depot") + Cli::ValueName("directory");
+        static constexpr auto kAttributes_m_sourceRoot = Rtti::DescribeAttributes(kAttributeValues_m_sourceRoot);
+
+        static constexpr auto kAttributeValues_m_output =
+            Cli::Description("Artifact output directory with the manifest") + Cli::ValueName("directory");
+        static constexpr auto kAttributes_m_output = Rtti::DescribeAttributes(kAttributeValues_m_output);
+
+        static constexpr auto kAttributeValues_m_debug =
+            Cli::Description("Compile unoptimized shaders with debug information instead of optimized ones");
+        static constexpr auto kAttributes_m_debug = Rtti::DescribeAttributes(kAttributeValues_m_debug);
+
+        static const festd::array<Rtti::FieldInfo, 5> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_help",
+                                                     &BuildShaderCache::m_help,
+                                                     kAttributes_m_help,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depot",
+                                                     &BuildShaderCache::m_depot,
+                                                     kAttributes_m_depot,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sourceRoot",
+                                                     &BuildShaderCache::m_sourceRoot,
+                                                     kAttributes_m_sourceRoot,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &BuildShaderCache::m_output,
+                                                     kAttributes_m_output,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_debug",
+                                                     &BuildShaderCache::m_debug,
+                                                     kAttributes_m_debug,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<BuildShaderCache>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::FerrumCli::BuildShaderCache",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields,
+                                               Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<BuildShaderCache*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_b3eab5191b54458b8d4774169a925f52(&BuildShaderCache::Reflect);
+} // namespace FE::FerrumCli
+
+
+namespace FE::FerrumCli
+{
+    const Rtti::TypeID Status::TypeID = Rtti::TypeID{
+        0xcd, 0xed, 0xac, 0xc0, 0x89, 0x21, 0x43, 0xbc, 0xab, 0x33, 0x78, 0xf8, 0x28, 0x28, 0xcc, 0xe5,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_cdedacc0892143bcab3378f82828cce5(Status* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0xcd, 0xed, 0xac, 0xc0, 0x89, 0x21, 0x43, 0xbc,
+                0xab, 0x33, 0x78, 0xf8, 0x28, 0x28, 0xcc, 0xe5, // FE::FerrumCli::Status (this type)
+                0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0,
+                0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+                0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4,
+                0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Subcommand*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Command*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_cdedacc0892143bcab3378f82828cce5()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Status::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_cdedacc0892143bcab3378f82828cce5();
+    }
+
+    void* FE_VECTORCALL Status::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_cdedacc0892143bcab3378f82828cce5(this, typeID);
+    }
+
+    const void* FE_VECTORCALL Status::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_cdedacc0892143bcab3378f82828cce5(const_cast<Status*>(this), typeID);
+    }
+    void Status::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_cdedacc0892143bcab3378f82828cce5();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xcd, 0xed, 0xac, 0xc0, 0x89, 0x21, 0x43, 0xbc,
+            0xab, 0x33, 0x78, 0xf8, 0x28, 0x28, 0xcc, 0xe5, // FE::FerrumCli::Status
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+            0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+        };
+        static constexpr auto kAttributeValues =
+            Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Print the status of a running asset server");
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
+
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
+
+        static constexpr auto kAttributeValues_m_output =
+            Cli::Description("Artifact output directory of the server") + Cli::ValueName("directory");
+        static constexpr auto kAttributes_m_output = Rtti::DescribeAttributes(kAttributeValues_m_output);
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_help",
+                                                     &Status::m_help,
+                                                     kAttributes_m_help,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &Status::m_output,
+                                                     kAttributes_m_output,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<Status>(typeInstance,
+                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                     "FE::FerrumCli::Status",
+                                     kBaseClassTypeIDs,
+                                     kAttributes,
+                                     kFields,
+                                     Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Status*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_cdedacc0892143bcab3378f82828cce5(&Status::Reflect);
+} // namespace FE::FerrumCli
+
+
+namespace FE::FerrumCli
+{
+    const Rtti::TypeID Serve::TypeID = Rtti::TypeID{
+        0xf2, 0x82, 0x37, 0x5c, 0x2c, 0x98, 0x4c, 0xff, 0xb4, 0x67, 0xd0, 0x5f, 0xd3, 0x82, 0x83, 0xdd,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_f282375c2c984cffb467d05fd38283dd(Serve* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0xf2, 0x82, 0x37, 0x5c, 0x2c, 0x98, 0x4c, 0xff,
+                0xb4, 0x67, 0xd0, 0x5f, 0xd3, 0x82, 0x83, 0xdd, // FE::FerrumCli::Serve (this type)
+                0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0,
+                0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+                0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4,
+                0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Subcommand*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Command*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_f282375c2c984cffb467d05fd38283dd()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Serve::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_f282375c2c984cffb467d05fd38283dd();
+    }
+
+    void* FE_VECTORCALL Serve::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_f282375c2c984cffb467d05fd38283dd(this, typeID);
+    }
+
+    const void* FE_VECTORCALL Serve::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_f282375c2c984cffb467d05fd38283dd(const_cast<Serve*>(this), typeID);
+    }
+    void Serve::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_f282375c2c984cffb467d05fd38283dd();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xf2, 0x82, 0x37, 0x5c, 0x2c, 0x98, 0x4c, 0xff,
+            0xb4, 0x67, 0xd0, 0x5f, 0xd3, 0x82, 0x83, 0xdd, // FE::FerrumCli::Serve
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+            0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+        };
+        static constexpr auto kAttributeValues = Cli::Parent("FE::FerrumCli::CommandLineParser")
+            + Cli::Description("Keep the artifacts of depots up to date while running");
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
+
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
+
+        static constexpr auto kAttributeValues_m_depot =
+            Cli::Description("Depot directories searched for .asset files, separated by ';'") + Cli::ValueName("directories");
+        static constexpr auto kAttributes_m_depot = Rtti::DescribeAttributes(kAttributeValues_m_depot);
+
+        static constexpr auto kAttributeValues_m_sourceRoot =
+            Cli::Description("Asset source depot root, for a single depot") + Cli::ValueName("directory");
+        static constexpr auto kAttributes_m_sourceRoot = Rtti::DescribeAttributes(kAttributeValues_m_sourceRoot);
+
+        static constexpr auto kAttributeValues_m_output =
+            Cli::Description("Artifact output directory") + Cli::ValueName("directory");
+        static constexpr auto kAttributes_m_output = Rtti::DescribeAttributes(kAttributeValues_m_output);
+
+        static constexpr auto kAttributeValues_m_fullScan =
+            Cli::Description("Check every asset at startup instead of only the files changed since the previous run");
+        static constexpr auto kAttributes_m_fullScan = Rtti::DescribeAttributes(kAttributeValues_m_fullScan);
+
+        static constexpr auto kAttributeValues_m_noJournal =
+            Cli::Description("Watch directories instead of reading the volume change journal");
+        static constexpr auto kAttributes_m_noJournal = Rtti::DescribeAttributes(kAttributeValues_m_noJournal);
+
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_help",
+                                                     &Serve::m_help,
+                                                     kAttributes_m_help,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depot",
+                                                     &Serve::m_depot,
+                                                     kAttributes_m_depot,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_sourceRoot",
+                                                     &Serve::m_sourceRoot,
+                                                     kAttributes_m_sourceRoot,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &Serve::m_output,
+                                                     kAttributes_m_output,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_fullScan",
+                                                     &Serve::m_fullScan,
+                                                     kAttributes_m_fullScan,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_noJournal",
+                                                     &Serve::m_noJournal,
+                                                     kAttributes_m_noJournal,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<Serve>(typeInstance,
+                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                    "FE::FerrumCli::Serve",
+                                    kBaseClassTypeIDs,
+                                    kAttributes,
+                                    kFields,
+                                    Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<Serve*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_f282375c2c984cffb467d05fd38283dd(&Serve::Reflect);
 } // namespace FE::FerrumCli

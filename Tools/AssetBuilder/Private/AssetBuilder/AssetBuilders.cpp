@@ -2,6 +2,7 @@
 #include <AssetBuilder/MaterialProcessor.h>
 #include <AssetBuilder/ModelProcessor.h>
 #include <AssetBuilder/PipelineInternal.h>
+#include <AssetBuilder/ShaderProcessor.h>
 #include <AssetBuilder/TextureProcessor.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
@@ -150,6 +151,7 @@ namespace FE::AssetBuilder::Internal
             { Rtti::GetTypeID<TextureAsset>(), { BuildTextureArtifact, 1 } },
             { Rtti::GetTypeID<MaterialAsset>(), { BuildMaterialArtifact, 1 } },
             { Rtti::GetTypeID<MaterialInstanceAsset>(), { BuildMaterialInstanceArtifact, 1 } },
+            { Rtti::GetTypeID<ShaderPackageAsset>(), { BuildShaderPackageArtifact, 2 } },
         };
         for (const BuilderEntry& builder : builders)
         {
@@ -160,6 +162,18 @@ namespace FE::AssetBuilder::Internal
         if (type != nullptr && type->m_serialize != nullptr)
             return { BuildSerializedArtifact, 1 };
         return {};
+    }
+
+
+    void AppendMaterialLibraryFiles(festd::vector<IO::Path>& files)
+    {
+        constexpr const char* modules[] = { "material", "specializer", "technique", "pipeline", "set" };
+        for (const char* module : modules)
+        {
+            IO::Path path(FE_MATERIAL_LIBRARY_DIR);
+            path /= Fmt::FixedFormat("{}.luau", module);
+            files.push_back(IO::NormalizePath(path));
+        }
     }
 
 
@@ -185,17 +199,31 @@ namespace FE::AssetBuilder::Internal
             result.m_logicalInputData = result.m_externalSourceData;
         }
 
+        if (const auto* packageSettings = artifact.m_buildSettings.TryGet<ShaderPackageBuildSettings>())
+        {
+            if (sourceRoot.empty())
+            {
+                Logger::LogError("Shader package product '{}' requires a source depot root", artifact.m_name);
+                return false;
+            }
+
+            result.m_externalSourceData.clear();
+            if (!ReadShaderPackageInputs(*packageSettings, sourceRoot, result.m_externalSourceData))
+                return false;
+
+            result.m_sourceData = result.m_externalSourceData;
+            result.m_logicalInputData = result.m_externalSourceData;
+        }
+
         if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialAsset>())
         {
             if (!AppendLogicalInput(result.m_materialLogicalInput, result.m_logicalInputData))
                 return false;
 
-            constexpr const char* modules[] = { "material", "specializer", "technique", "pipeline", "set" };
-            for (const char* module : modules)
+            festd::vector<IO::Path> libraryFiles;
+            AppendMaterialLibraryFiles(libraryFiles);
+            for (const IO::Path& path : libraryFiles)
             {
-                IO::Path path(FE_MATERIAL_LIBRARY_DIR);
-                path /= Fmt::FixedFormat("{}.luau", module);
-
                 festd::vector<std::byte> bytes;
                 if (!ReadFile(path, bytes) || !AppendLogicalInput(result.m_materialLogicalInput, bytes))
                     return false;

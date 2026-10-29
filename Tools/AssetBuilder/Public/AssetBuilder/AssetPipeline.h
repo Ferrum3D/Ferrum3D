@@ -1,6 +1,8 @@
 #pragma once
+#include <Core/IO/BaseIO.h>
 #include <Core/IO/Path.h>
 #include <Core/RTTI/RTTI.h>
+#include <festd/vector.h>
 
 namespace FE::AssetBuilder
 {
@@ -17,6 +19,9 @@ namespace FE::AssetBuilder
         IO::Path m_assetFile;
         IO::Path m_sourceRoot;
         IO::Path m_outputDirectory;
+
+        //! Optional: receives the products whose artifact was published, as opposed to found up to date.
+        festd::vector<IO::AssetID>* m_publishedProducts = nullptr;
     };
 
 

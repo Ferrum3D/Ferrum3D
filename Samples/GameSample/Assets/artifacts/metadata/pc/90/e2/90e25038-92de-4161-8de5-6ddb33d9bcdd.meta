@@ -4,7 +4,7 @@
     "$version": 0,
     "$schema": "0x4d3ae890a4a739c5",
     "$value": {
-        "m_artifactId": "57224D57-B977-4DFC-B204-E554997A5FE3",
+        "m_artifactId": "24B67F4F-78CB-4463-997B-E7F30A60A697",
         "m_assetId": "90E25038-92DE-4161-8DE5-6DDB33D9BCDD",
         "m_assetTypeId": "78A8F995-B51C-42E0-856D-922999074183",
         "m_payloads": [
@@ -12,16 +12,16 @@
                 "m_resolvedDataSource": {
                     "m_filePath": "",
                     "m_byteOffset": 0,
-                    "m_byteSize": 287
+                    "m_byteSize": 285
                 },
                 "m_chunks": [
                     {
                         "m_offsetInPayload": 0,
-                        "m_compressedSize": 287,
-                        "m_uncompressedSize": 808,
+                        "m_compressedSize": 285,
+                        "m_uncompressedSize": 776,
                         "m_compressionMethod": 2,
                         "m_checksum": {
-                            "m_current": 3905691946
+                            "m_current": 772074116
                         }
                     }
                 ]
@@ -29,7 +29,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 287,
+                    "m_byteOffset": 285,
                     "m_byteSize": 137
                 },
                 "m_chunks": [
@@ -47,7 +47,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 424,
+                    "m_byteOffset": 422,
                     "m_byteSize": 522
                 },
                 "m_chunks": [
@@ -65,7 +65,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 946,
+                    "m_byteOffset": 944,
                     "m_byteSize": 1913
                 },
                 "m_chunks": [
@@ -83,7 +83,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 2859,
+                    "m_byteOffset": 2857,
                     "m_byteSize": 6997
                 },
                 "m_chunks": [
@@ -101,7 +101,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 9856,
+                    "m_byteOffset": 9854,
                     "m_byteSize": 25755
                 },
                 "m_chunks": [
@@ -119,7 +119,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 35611,
+                    "m_byteOffset": 35609,
                     "m_byteSize": 95045
                 },
                 "m_chunks": [
@@ -137,7 +137,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 130656,
+                    "m_byteOffset": 130654,
                     "m_byteSize": 394616
                 },
                 "m_chunks": [
@@ -164,7 +164,7 @@
             {
                 "m_resolvedDataSource": {
                     "m_filePath": "",
-                    "m_byteOffset": 525272,
+                    "m_byteOffset": 525270,
                     "m_byteSize": 1616508
                 },
                 "m_chunks": [

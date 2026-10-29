@@ -1,6 +1,7 @@
 #include <Core/Env/Environment.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Math/Colors.h>
+#include <Graphics/Assets/ShaderAssets.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
@@ -68,6 +69,7 @@ namespace FE::Graphics
     {
         Core::AddShaderSourceDirectory(FE_GRAPHICS_SHADER_DIRECTORY);
         Core::AddShaderSourceDirectory(FE_GRAPHICS_SHADER_DIRECTORY "/ThirdParty/FidelityFX");
+        Core::AddShaderPackage(kGraphicsShaderPackageId);
 
         GRenderer = Memory::DefaultNew<RendererImpl>(device);
     }

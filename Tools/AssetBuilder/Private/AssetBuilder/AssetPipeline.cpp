@@ -1,6 +1,7 @@
 #include <AssetBuilder/ArtifactWriter.h>
 #include <AssetBuilder/AssetFile.h>
 #include <AssetBuilder/AssetPipeline.h>
+#include <AssetBuilder/BuildState.h>
 #include <AssetBuilder/PipelineInternal.h>
 
 #include <Core/IO/FileStream.h>
@@ -9,6 +10,7 @@
 #include <Core/Serialization/JsonSerialization.h>
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Assets/MaterialAssets.h>
+#include <Graphics/Assets/ShaderAssets.h>
 #include <festd/unordered_map.h>
 
 namespace FE::AssetBuilder
@@ -83,6 +85,10 @@ namespace FE::AssetBuilder
             {
                 assetSchemaHash = Serialization::GetSchemaHash<MaterialInstanceAsset>();
             }
+            else if (artifact.m_assetTypeId == Rtti::GetTypeID<ShaderPackageAsset>())
+            {
+                assetSchemaHash = Serialization::GetSchemaHash<ShaderPackageAsset>();
+            }
 
             if (assetSchemaHash != 0)
             {
@@ -141,6 +147,8 @@ namespace FE::AssetBuilder
             festd::span<const std::byte> m_primarySourceData;
             festd::span<const std::byte> m_primaryLogicalInputData;
             festd::unordered_dense_map<IO::AssetID, uint32_t> m_artifactIndices;
+            festd::inline_vector<ProductBuildState, 4> m_buildStates;
+            festd::inline_vector<uint8_t, 4> m_hasBuildState;
             festd::unordered_dense_set<IO::AssetID> m_visiting;
             festd::unordered_dense_set<IO::AssetID> m_built;
             festd::inline_vector<uint32_t, 4> m_changedArtifactIndices;
@@ -223,7 +231,7 @@ namespace FE::AssetBuilder
                     const auto iter = m_artifactIndices.find(dependency.m_assetId);
                     if (iter != m_artifactIndices.end())
                     {
-                        dependencyArtifactIds.push_back(m_assetFile.m_artifacts[iter->second].m_builtArtifactId);
+                        dependencyArtifactIds.push_back(m_buildStates[iter->second].m_artifactId);
                     }
                     else
                     {
@@ -244,17 +252,18 @@ namespace FE::AssetBuilder
                 const IO::BuildKey buildKey =
                     ComputeBuildKey(artifact, inputs.m_logicalInputData, settingsData, dependencyArtifactIds, compiler.m_version);
 
-                const bool dataExists = artifact.m_builtArtifactId.IsValid()
-                    && IO::File::Exists(ArtifactWriter::GetDataPath(m_finalOutputDirectory, artifact.m_builtArtifactId));
+                ProductBuildState& state = m_buildStates[artifactIndex];
+                const bool dataExists = state.m_artifactId.IsValid()
+                    && IO::File::Exists(ArtifactWriter::GetDataPath(m_finalOutputDirectory, state.m_artifactId));
                 const bool metadataExists =
                     IO::File::Exists(ArtifactWriter::GetMetadataPath(m_finalOutputDirectory, artifact.m_assetId));
-                if (artifact.m_lastBuildKey == buildKey && artifact.m_builtArtifactId.IsValid() && dataExists && metadataExists)
+                if (state.m_buildKey == buildKey && dataExists && metadataExists)
                 {
                     m_built.insert(artifact.m_assetId);
                     return true;
                 }
 
-                const IO::ArtifactID previousArtifactId = artifact.m_builtArtifactId;
+                const IO::ArtifactID previousArtifactId = state.m_artifactId;
                 IO::ArtifactID artifactId = IO::ArtifactID::kNull;
                 const BuildRequest request{ artifact,
                                             inputs.m_sourcePath,
@@ -270,8 +279,8 @@ namespace FE::AssetBuilder
                     return false;
                 }
 
-                artifact.m_lastBuildKey = buildKey;
-                artifact.m_builtArtifactId = artifactId;
+                state.m_buildKey = buildKey;
+                state.m_artifactId = artifactId;
                 m_changedArtifactIndices.push_back(artifactIndex);
                 if (previousArtifactId.IsValid() && previousArtifactId != artifactId)
                     m_obsoleteArtifactIds.push_back(previousArtifactId);
@@ -309,11 +318,9 @@ namespace FE::AssetBuilder
         {
             for (const uint32_t artifactIndex : context.m_changedArtifactIndices)
             {
-                const AssetFileArtifact& artifact = context.m_assetFile.m_artifacts[artifactIndex];
-                const IO::Path candidatePath =
-                    ArtifactWriter::GetDataPath(context.m_stagingOutputDirectory, artifact.m_builtArtifactId);
-                const IO::Path finalPath =
-                    ArtifactWriter::GetDataPath(context.m_finalOutputDirectory, artifact.m_builtArtifactId);
+                const IO::ArtifactID artifactId = context.m_buildStates[artifactIndex].m_artifactId;
+                const IO::Path candidatePath = ArtifactWriter::GetDataPath(context.m_stagingOutputDirectory, artifactId);
+                const IO::Path finalPath = ArtifactWriter::GetDataPath(context.m_finalOutputDirectory, artifactId);
                 const IO::ResultCode createResult = IO::Directory::Create(IO::PathView(finalPath).parent_directory());
 
                 if (createResult != IO::ResultCode::kSuccess)
@@ -435,17 +442,18 @@ namespace FE::AssetBuilder
 
         void RemoveStagingDirectory(const BuildContext& context)
         {
-            for (const AssetFileArtifact& artifact : context.m_assetFile.m_artifacts)
+            for (uint32_t index = 0; index < context.m_assetFile.m_artifacts.size(); ++index)
             {
+                const AssetFileArtifact& artifact = context.m_assetFile.m_artifacts[index];
                 const IO::Path pendingPath =
                     ArtifactWriter::GetPendingDataPath(context.m_stagingOutputDirectory, artifact.m_assetId);
                 IO::File::Delete(pendingPath);
                 RemoveEmptyStagingAncestors(pendingPath, context.m_stagingOutputDirectory);
 
-                if (artifact.m_builtArtifactId.IsValid())
+                const IO::ArtifactID artifactId = context.m_buildStates[index].m_artifactId;
+                if (artifactId.IsValid())
                 {
-                    const IO::Path dataPath =
-                        ArtifactWriter::GetDataPath(context.m_stagingOutputDirectory, artifact.m_builtArtifactId);
+                    const IO::Path dataPath = ArtifactWriter::GetDataPath(context.m_stagingOutputDirectory, artifactId);
                     IO::File::Delete(dataPath);
                     RemoveEmptyStagingAncestors(dataPath, context.m_stagingOutputDirectory);
                 }
@@ -456,6 +464,36 @@ namespace FE::AssetBuilder
                 RemoveEmptyStagingAncestors(metadataPath, context.m_stagingOutputDirectory);
             }
             IO::Directory::Delete(context.m_stagingOutputDirectory);
+        }
+
+
+        //! Record the state of every product built or found up to date, and forget the state of removed products.
+        bool RecordBuildStates(BuildContext& context)
+        {
+            const IO::Path& outputDirectory = context.m_finalOutputDirectory;
+            const festd::span changedIndices{ context.m_changedArtifactIndices.data(), context.m_changedArtifactIndices.size() };
+            for (uint32_t index = 0; index < context.m_assetFile.m_artifacts.size(); ++index)
+            {
+                const AssetFileArtifact& artifact = context.m_assetFile.m_artifacts[index];
+                const ProductBuildState& state = context.m_buildStates[index];
+                if (artifact.m_isRemoved)
+                {
+                    if (state.m_artifactId.IsValid())
+                        context.m_obsoleteArtifactIds.push_back(state.m_artifactId);
+
+                    RemoveBuildState(outputDirectory, artifact.m_assetId);
+                    continue;
+                }
+
+                const bool isChanged = festd::find_index(changedIndices, index) != kInvalidIndex;
+                if (!isChanged && context.m_hasBuildState[index] != 0)
+                    continue;
+
+                if (!StoreBuildState(outputDirectory, artifact.m_assetId, state))
+                    return false;
+            }
+
+            return true;
         }
     } // namespace
 
@@ -606,6 +644,13 @@ namespace FE::AssetBuilder
             }
         }
 
+        // Build results live in the output directory; a product without a build state is built.
+        for (const AssetFileArtifact& artifact : assetFile.m_artifacts)
+        {
+            ProductBuildState& state = context.m_buildStates.emplace_back();
+            context.m_hasBuildState.push_back(LoadBuildState(outputDirectory, artifact.m_assetId, state));
+        }
+
         for (uint32_t index = 0; index < assetFile.m_artifacts.size(); ++index)
         {
             if (assetFile.m_artifacts[index].m_isRemoved)
@@ -617,25 +662,24 @@ namespace FE::AssetBuilder
         if (!PublishBuild(context, transactionId))
             return false;
 
-        for (AssetFileArtifact& artifact : assetFile.m_artifacts)
+        if (!RecordBuildStates(context))
         {
-            if (!artifact.m_isRemoved)
-                continue;
-            if (artifact.m_builtArtifactId.IsValid())
-                context.m_obsoleteArtifactIds.push_back(artifact.m_builtArtifactId);
-            artifact.m_lastBuildKey = IO::BuildKey::kNull;
-            artifact.m_builtArtifactId = IO::ArtifactID::kNull;
+            Logger::LogError("Failed to record build results of '{}'", assetFilePath);
+            return false;
         }
 
-        if (!SaveAssetFile(assetFilePath, assetFile))
+        if (settings.m_publishedProducts != nullptr)
         {
-            Logger::LogError("Failed to record build results in '{}'", assetFilePath);
-            return false;
+            for (const uint32_t artifactIndex : context.m_changedArtifactIndices)
+                settings.m_publishedProducts->push_back(assetFile.m_artifacts[artifactIndex].m_assetId);
         }
 
         bool cleanupSucceeded = true;
         for (const IO::ArtifactID obsoleteArtifactId : context.m_obsoleteArtifactIds)
-            cleanupSucceeded &= ArtifactWriter::RemoveArtifact(outputDirectory, obsoleteArtifactId);
+        {
+            if (IO::File::Exists(ArtifactWriter::GetDataPath(outputDirectory, obsoleteArtifactId)))
+                cleanupSucceeded &= ArtifactWriter::RemoveArtifact(outputDirectory, obsoleteArtifactId);
+        }
 
         return cleanupSucceeded;
     }

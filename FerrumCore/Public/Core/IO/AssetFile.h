@@ -27,8 +27,6 @@ namespace FE::IO
         Rtti::TypeID m_assetTypeId = Rtti::TypeID::kNull;
         Rtti::Any m_buildSettings;
         festd::inline_vector<AssetFileDependency, 4> m_dependencies;
-        IO::BuildKey m_lastBuildKey = IO::BuildKey::kNull;
-        IO::ArtifactID m_builtArtifactId = IO::ArtifactID::kNull;
         bool m_isRemoved = false;
 
         FE_RTTI_Reflect("5EC89B68-372E-4388-BD0D-869C03C9C65D");

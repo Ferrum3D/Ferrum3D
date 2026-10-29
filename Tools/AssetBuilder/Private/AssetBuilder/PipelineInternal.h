@@ -4,6 +4,11 @@
 #include <festd/span.h>
 #include <festd/vector.h>
 
+namespace FE::AssetBuilder
+{
+    struct ShaderPackageBuildSettings;
+} // namespace FE::AssetBuilder
+
 namespace FE::AssetBuilder::Internal
 {
     inline constexpr festd::string_view kSourceDepotRootMarker = ".ferrum-source-depot-root";
@@ -50,6 +55,15 @@ namespace FE::AssetBuilder::Internal
 
 
     AssetCompiler FindCompiler(Rtti::TypeID typeId);
+
+    //! Material library modules that every material build reads besides its own source.
+    void AppendMaterialLibraryFiles(festd::vector<IO::Path>& files);
+
+    //! Read the files of a shader package as (relative path, contents) pairs in the AppendLogicalInput format.
+    bool ReadShaderPackageInputs(const ShaderPackageBuildSettings& settings, const IO::Path& sourceRoot,
+                                 festd::vector<std::byte>& result);
+
+    bool BuildShaderPackageArtifact(const BuildRequest& request);
 
 
     struct BuildInputs final

@@ -51,7 +51,8 @@ namespace FE::Graphics::Core
     };
 
 
-    //! @brief Lazily loads shader sources from the directories registered with AddShaderSourceDirectory.
+    //! @brief Lazily loads shader sources from the directories registered with AddShaderSourceDirectory, or else from mounted
+    //! shader source packages.
     //!
     //! A file is read on its first request. Its version only changes when Refresh replaces it, and compilations that already
     //! hold a ShaderSourceFile keep using that version. Missing files are remembered too, because the compiler probes several
@@ -96,5 +97,6 @@ namespace FE::Graphics::Core
 
         Threading::SpinLock m_watchersLock;
         festd::vector<WatchedDirectory> m_watchedDirectories;
+        uint32_t m_seenSourcesGeneration = 0;
     };
 } // namespace FE::Graphics::Core

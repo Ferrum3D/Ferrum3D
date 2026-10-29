@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Core/Base/PlatformInclude.h>
 #include <Core/Env/LibraryLoader.h>
+#include <Core/Threading/Mutex.h>
 #include <Graphics/Core/Common/ShaderCache.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/ShaderCompiler.h>
@@ -28,9 +29,18 @@ namespace FE::Graphics::Core
             Memory::DefaultDelete(this);
         }
 
-        LibraryLoader m_module;
+        //! Load DXC on first use, so that executables whose shaders are all precompiled never need it.
+        bool EnsureCompiler();
+
+        bool TryLoadPrecompiled(const ShaderCompilerArgs& args, ShaderCompilerResult& result) const;
+
         Rc<ShaderSourceCache> m_shaderSourceCache;
         ShaderCache m_shaderCache;
+
+        Threading::Mutex m_compilerLock;
+        std::atomic<bool> m_isCompilerLoaded = false;
+        bool m_hasCompilerFailedToLoad = false;
+        LibraryLoader m_module;
         uint64_t m_compilerVersionHash = 0;
 
         Rc<IDxcUtils> m_dxcUtils;

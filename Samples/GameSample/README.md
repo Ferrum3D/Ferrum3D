@@ -33,39 +33,26 @@ Build the `GameSample` and `FerrumCli` executables. GameSample owns its asset ca
 - `Assets/source/`: bunny model, texture and material scripts copied from Renderer.
 - `Assets/*.asset`: bunny model, texture and three material variants.
 - `Assets/Input/`: source-less movement, elevation, look actions and the world input mapping context.
-- `Assets/artifacts/`: cooked data and metadata produced by FerrumCli.
+- `Assets/artifacts/`: cooked data and metadata produced by FerrumCli, including the engine's shader packages and editor
+  input assets, whose definitions live in `Modules/Graphics/Framework/Assets` and `Modules/GameFramework/Assets`.
 
-Build the assets manually from the repository root, in dependency order:
+The catalog is built from three depots: the sample's own and the two engine module depots. From the repository root:
 
 ```powershell
 $cli = "cmake-build/windows-debug-msvc/Debug/ferrum.exe"
-$assets = "Samples/GameSample/Assets"
-& $cli build --asset "$assets/Helmet/DamagedHelmet.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/Helmet/StandardPBR.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/Helmet/DamagedHelmet_a.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/Helmet/DamagedHelmet_e.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/Helmet/DamagedHelmet_n.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/Helmet/DamagedHelmet_orm.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/Helmet/DamagedHelmetMaterial.asset" --output $assets
-& $cli build --asset "$assets/Input/Move.asset" --output $assets
-& $cli build --asset "$assets/Input/Elevate.asset" --output $assets
-& $cli build --asset "$assets/Input/Look.asset" --output $assets
-& $cli build --asset "$assets/Input/CameraMappings.asset" --output $assets
-& $cli build --asset "$assets/StanfordBunny.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/Textured.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/texture.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/BunnyVariants.asset" --source-root "$assets/source" --output $assets
-& $cli build --asset "$assets/BunnyMaterial.asset" --output $assets
-& $cli build --asset "$assets/BunnyWarm.asset" --output $assets
-& $cli build --asset "$assets/BunnyCool.asset" --output $assets
-& $cli import --asset "$assets/source/Floor.gltf" --output "$assets/Floor.asset"
-& $cli build --asset "$assets/Floor.asset" --source-root "$assets/source" --output $assets
-& $cli import --asset-type 3A4A6717-42D0-4393-9C32-A84949024167 --output "$assets/Sphere.asset"
-& $cli build --asset "$assets/Sphere.asset" --output $assets
-& $cli import --asset-type AB1B29E1-D167-43AA-8718-B3F8693FE184 --output "$assets/World.asset"
-& $cli build --asset "$assets/World.asset" --output $assets
+$depots = "Samples/GameSample/Assets;Modules/GameFramework/Assets;Modules/Graphics/Framework/Assets"
+& $cli build --all --depot $depots --output Samples/GameSample/Assets
 cmake-build/windows-debug-msvc/Debug/GameSample.exe
 ```
+
+`build --all` finds every `.asset` file, builds definitions in dependency order and runs independent builds in parallel.
+Products whose inputs did not change are skipped. While editing assets, run `& $cli serve --depot $depots --output
+Samples/GameSample/Assets` instead: it rebuilds whatever a change affects, and a running game or editor reloads the new
+artifacts. `& $cli status --output Samples/GameSample/Assets` prints the server's build status and errors. Build results
+are kept in `Assets/.ferrum-build`, which is not committed; builds never modify `.asset` files.
+
+New definitions are still created with `import`, e.g. `& $cli import --asset Samples/GameSample/Assets/source/Floor.gltf`
+or `& $cli import --asset-type AB1B29E1-D167-43AA-8718-B3F8693FE184 --output Samples/GameSample/Assets/World.asset`.
 
 CMake builds executables only. The sample loads exclusively from its own `Assets` directory. `World.asset` is a normal source-less serialized asset with reflected component values. To create a new world asset, use `ferrum import --asset-type AB1B29E1-D167-43AA-8718-B3F8693FE184 --output <PATH>` and edit its authored values; reimport preserves those values and refreshes nested asset dependencies.
 
@@ -106,7 +93,8 @@ The "Culling" section toggles instance frustum and occlusion culling, meshlet fr
 
 The sample draws a Dear ImGui "Rendering" window. Its debug mode list is built from the modes published by the camera view's modules (`Visibility::DebugViewModule` for reconstruction modes, `GBufferDebug::ViewModule` for surface modes); the selection applies to every camera view at runtime. `--visibility-debug <mode>` selects the initial mode (`deferred` keeps lit output). Docking and multi-viewports are enabled: dragging a window outside the main window gives it its own platform window and swapchain. `--detach-debug-window` places the window outside the main viewport, which exercises that path in smoke runs. Window layout persists in `imgui.ini` next to the sample's build directory.
 
-The project's editor input assets live under `Assets/Editor/Input`, manually copied from
-`Modules/GameFramework/EditorAssets` with their asset IDs preserved. Cook these copies into
-`Assets`, the same catalog used by the game, as described in `Modules/GameFramework/README.md`.
-CMake does not copy or cook editor assets. Gameplay input assets remain under `Assets/Input`.
+The editor's input assets are defined once in `Modules/GameFramework/Assets` and cooked into `Assets` by the depot build
+above, so the game and the editor use the same catalog. Gameplay input assets remain under `Assets/Input`.
+
+Shader sources come from the module directories during development. `--shader-packages` makes the sample read them only
+from the shader packages in its catalog, as a build without the source tree does.

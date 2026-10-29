@@ -1,4 +1,4 @@
-add_executable(FeGraphicsTests Main.cpp VisibilityContracts.cpp MaterialTechniques.cpp SkyLighting.cpp GpuContracts.cpp GpuProbe.h RasterProbe.cpp RasterProbe.h SurfaceProbe.cpp SurfaceProbe.h DeferredProbe.cpp DeferredProbe.h DepthPyramidProbe.cpp DepthPyramidProbe.h ShaderCacheContracts.cpp ShaderHotReload.cpp Reflection.gen.cpp)
+add_executable(FeGraphicsTests Main.cpp VisibilityContracts.cpp MaterialTechniques.cpp SkyLighting.cpp GpuContracts.cpp GpuProbe.h RasterProbe.cpp RasterProbe.h SurfaceProbe.cpp SurfaceProbe.h DeferredProbe.cpp DeferredProbe.h DepthPyramidProbe.cpp DepthPyramidProbe.h ShaderCacheContracts.cpp ShaderHotReload.cpp ShaderAssets.cpp Reflection.gen.cpp)
 fe_configure_target(FeGraphicsTests)
 target_link_libraries(FeGraphicsTests PRIVATE FeGraphics AssetBuilder gtest)
 target_include_directories(FeGraphicsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

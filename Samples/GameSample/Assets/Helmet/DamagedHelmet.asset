@@ -22,8 +22,6 @@
                     }
                 },
                 "m_dependencies": [],
-                "m_lastBuildKey": "C7D6B068-464E-4C72-83EB-CD4D333972E2",
-                "m_builtArtifactId": "58D29D4C-E47E-4837-AF31-410EC2DE2824",
                 "m_isRemoved": false
             },
             {
@@ -44,8 +42,6 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "93F39082-5E8B-4A46-82B1-9C56BF36BEE2",
-                "m_builtArtifactId": "95315794-A7B2-401F-9943-70A20C4D187B",
                 "m_isRemoved": false
             }
         ]

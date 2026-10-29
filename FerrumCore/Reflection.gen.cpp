@@ -13,6 +13,7 @@
 #include <Core/IO/Async.h>
 #include <Core/IO/AsyncImpl.h>
 #include <Core/IO/BaseIO.h>
+#include <Core/IO/ChangeJournal.h>
 #include <Core/IO/DefaultAsyncIOBackend.h>
 #include <Core/IO/FileStream.h>
 #include <Core/IO/IStream.h>
@@ -1826,13 +1827,9 @@ namespace FE::IO
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependencies = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lastBuildKey = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_builtArtifactId = {};
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_isRemoved = {};
 
-        static const festd::array<Rtti::FieldInfo, 9> kFields = {
+        static const festd::array<Rtti::FieldInfo, 7> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_productKey",
                                                      &AssetFileArtifact::m_productKey,
                                                      kAttributes_m_productKey,
@@ -1856,14 +1853,6 @@ namespace FE::IO
             Rtti::ReflectionContext::CreateFieldInfo("m_dependencies",
                                                      &AssetFileArtifact::m_dependencies,
                                                      kAttributes_m_dependencies,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_lastBuildKey",
-                                                     &AssetFileArtifact::m_lastBuildKey,
-                                                     kAttributes_m_lastBuildKey,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_builtArtifactId",
-                                                     &AssetFileArtifact::m_builtArtifactId,
-                                                     kAttributes_m_builtArtifactId,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_isRemoved",
                                                      &AssetFileArtifact::m_isRemoved,
@@ -1895,8 +1884,6 @@ namespace FE::IO
             object.Field("m_assetTypeId", m_assetTypeId);
             object.Field("m_buildSettings", m_buildSettings);
             object.Field("m_dependencies", m_dependencies);
-            object.Field("m_lastBuildKey", m_lastBuildKey);
-            object.Field("m_builtArtifactId", m_builtArtifactId);
             object.Field("m_isRemoved", m_isRemoved);
         }
 
@@ -1913,8 +1900,6 @@ namespace FE::IO
             object.Field("m_assetTypeId", m_assetTypeId);
             object.Field("m_buildSettings", m_buildSettings);
             object.Field("m_dependencies", m_dependencies);
-            object.Field("m_lastBuildKey", m_lastBuildKey);
-            object.Field("m_builtArtifactId", m_builtArtifactId);
             object.Field("m_isRemoved", m_isRemoved);
         }
 
@@ -1941,10 +1926,6 @@ namespace FE::IO
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_buildSettings)>());
             hasher.Update("m_dependencies", 14);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_dependencies)>());
-            hasher.Update("m_lastBuildKey", 14);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_lastBuildKey)>());
-            hasher.Update("m_builtArtifactId", 17);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_builtArtifactId)>());
             hasher.Update("m_isRemoved", 11);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_isRemoved)>());
             hasher.Update(0);
@@ -2067,6 +2048,132 @@ namespace FE::Rtti
 
     static TypeRegistrar GTypeRegistrar_66d8930b34584847b6f1002c70dc1ed2(&Internal::ExternalTypeReflector<float>::Reflect);
 } // namespace FE::Rtti
+
+
+namespace FE::IO
+{
+    const Rtti::TypeID ChangeJournalCursor::TypeID = Rtti::TypeID{
+        0x6a, 0x27, 0xf8, 0x4c, 0x2e, 0x95, 0x4e, 0x6c, 0x8e, 0x77, 0x98, 0xcd, 0xb0, 0x40, 0xf6, 0x1e,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_6a27f84c2e954e6c8e7798cdb040f61e(ChangeJournalCursor* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x6a, 0x27, 0xf8, 0x4c, 0x2e, 0x95, 0x4e, 0x6c,
+                0x8e, 0x77, 0x98, 0xcd, 0xb0, 0x40, 0xf6, 0x1e, // FE::IO::ChangeJournalCursor (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_6a27f84c2e954e6c8e7798cdb040f61e()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ChangeJournalCursor::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_6a27f84c2e954e6c8e7798cdb040f61e();
+    }
+
+    void ChangeJournalCursor::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_6a27f84c2e954e6c8e7798cdb040f61e();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x6a, 0x27, 0xf8, 0x4c, 0x2e, 0x95, 0x4e, 0x6c,
+            0x8e, 0x77, 0x98, 0xcd, 0xb0, 0x40, 0xf6, 0x1e, // FE::IO::ChangeJournalCursor
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_journalId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_nextRecord = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_journalId",
+                                                     &ChangeJournalCursor::m_journalId,
+                                                     kAttributes_m_journalId,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_nextRecord",
+                                                     &ChangeJournalCursor::m_nextRecord,
+                                                     kAttributes_m_nextRecord,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ChangeJournalCursor>(typeInstance,
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                  "FE::IO::ChangeJournalCursor",
+                                                  kBaseClassTypeIDs,
+                                                  kAttributes,
+                                                  kFields,
+                                                  Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_6a27f84c2e954e6c8e7798cdb040f61e(static_cast<ChangeJournalCursor*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_6a27f84c2e954e6c8e7798cdb040f61e(&ChangeJournalCursor::Reflect);
+
+    FE::Serialization::ResultCode ChangeJournalCursor::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_journalId", m_journalId);
+            object.Field("m_nextRecord", m_nextRecord);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ChangeJournalCursor::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_journalId", m_journalId);
+            object.Field("m_nextRecord", m_nextRecord);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ChangeJournalCursor::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x6a, 0x27, 0xf8, 0x4c, 0x2e, 0x95, 0x4e, 0x6c, 0x8e, 0x77, 0x98, 0xcd, 0xb0, 0x40, 0xf6, 0x1e,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_journalId", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_journalId)>());
+            hasher.Update("m_nextRecord", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_nextRecord)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ChangeJournalCursor::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::IO
 
 
 namespace FE::IO::Async

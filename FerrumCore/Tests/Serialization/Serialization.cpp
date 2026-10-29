@@ -178,6 +178,80 @@ namespace FE::Serialization::Tests
         };
 
 
+        struct NumericArrays final
+        {
+            festd::vector<uint32_t> m_words;
+            festd::inline_vector<float, 2> m_floats;
+            festd::vector<double> m_empty;
+            festd::array<int16_t, 3> m_shorts = {};
+            uint8_t m_bytes[4] = {};
+
+            static ResultCode Serialize(SerializationContext& context, const NumericArrays& value)
+            {
+                if (auto object = context.BeginObject())
+                {
+                    object.Field("m_words", value.m_words)
+                        .Field("m_floats", value.m_floats)
+                        .Field("m_empty", value.m_empty)
+                        .Field("m_shorts", value.m_shorts)
+                        .Field("m_bytes", value.m_bytes);
+                }
+
+                return context.GetResultCode();
+            }
+
+            static ResultCode Deserialize(DeserializationContext& context, NumericArrays& value)
+            {
+                if (auto object = context.BeginObject())
+                {
+                    object.Field("m_words", value.m_words)
+                        .Field("m_floats", value.m_floats)
+                        .Field("m_empty", value.m_empty)
+                        .Field("m_shorts", value.m_shorts)
+                        .Field("m_bytes", value.m_bytes);
+                }
+
+                return context.GetResultCode();
+            }
+        };
+
+
+        NumericArrays CreateNumericArrays()
+        {
+            NumericArrays result;
+            for (uint32_t index = 0; index < 1000; ++index)
+                result.m_words.push_back(index * 2654435761u);
+
+            result.m_floats = { 1.5f, -2.25f, 1e-7f };
+            result.m_shorts = { -3, 0, 32767 };
+            result.m_bytes[0] = 0xff;
+            result.m_bytes[3] = 0x7f;
+            return result;
+        }
+
+
+        template<class TFormat>
+        void TestNumericArraysRoundTrip()
+        {
+            MemoryStream stream;
+            const NumericArrays source = CreateNumericArrays();
+            TFormat format;
+            SerializationContext writer(&stream, format);
+            ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
+
+            stream.Rewind();
+            NumericArrays destination;
+            destination.m_empty = { 1.0 };
+            DeserializationContext reader(&stream, format);
+            ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
+            EXPECT_TRUE(destination.m_words == source.m_words);
+            EXPECT_TRUE(destination.m_floats == source.m_floats);
+            EXPECT_TRUE(destination.m_empty.empty());
+            EXPECT_TRUE(destination.m_shorts == source.m_shorts);
+            EXPECT_EQ(memcmp(destination.m_bytes, source.m_bytes, sizeof(source.m_bytes)), 0);
+        }
+
+
         TestObject CreateObject()
         {
             TestObject result;
@@ -376,6 +450,42 @@ namespace FE::Serialization::Tests
     TEST(Serialization, MathValuesJsonRoundTrip)
     {
         TestMathValuesRoundTrip<JsonFormat>();
+    }
+
+
+    TEST(Serialization, NumericArraysRoundTripInEveryFormat)
+    {
+        TestNumericArraysRoundTrip<PackedBinaryFormat>();
+        TestNumericArraysRoundTrip<TaggedBinaryFormat>();
+        TestNumericArraysRoundTrip<JsonFormat>();
+    }
+
+
+    TEST(Serialization, BinaryFormatsStoreNumericArraysAsOneBlock)
+    {
+        NumericArrays source;
+        source.m_words = { 0x11111111u, 0x22222222u, 0x33333333u };
+
+        constexpr uint32_t kExpected[] = { 3, 0x11111111u, 0x22222222u, 0x33333333u };
+        const festd::span expectedBytes{ reinterpret_cast<const std::byte*>(kExpected), sizeof(kExpected) };
+
+        MemoryStream packedStream;
+        PackedBinaryFormat packed;
+        SerializationContext packedWriter(&packedStream, packed);
+        ASSERT_EQ(packedWriter.Store(source), ResultCode::kSuccess);
+
+        MemoryStream taggedStream;
+        TaggedBinaryFormat tagged;
+        SerializationContext taggedWriter(&taggedStream, tagged);
+        ASSERT_EQ(taggedWriter.Store(source), ResultCode::kSuccess);
+
+        // The size is followed directly by the elements, without per-element framing.
+        for (MemoryStream* stream : { &packedStream, &taggedStream })
+        {
+            const festd::span bytes = stream->GetMutableData();
+            const auto* found = eastl::search(bytes.begin(), bytes.end(), expectedBytes.begin(), expectedBytes.end());
+            EXPECT_NE(found, bytes.end());
+        }
     }
 
 

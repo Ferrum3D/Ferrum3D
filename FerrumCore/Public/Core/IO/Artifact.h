@@ -170,7 +170,8 @@ namespace FE::IO
 
         //! @brief Configure the development artifact root used by subsequent resolution and decode calls.
         //!
-        //! The root is converted to an absolute path and must remain unchanged while asset operations are active.
+        //! The root is converted to an absolute path and must remain unchanged while asset operations are active. An empty path
+        //! removes the catalog.
         static void SetCatalogSource(festd::string_view assetDirectoryPath);
 
         //! @brief Get the absolute artifact root set by SetCatalogSource, or an empty path if none was set.

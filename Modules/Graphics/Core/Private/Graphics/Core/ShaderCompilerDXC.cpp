@@ -3,7 +3,9 @@
 #include <Core/IO/FileStream.h>
 #include <Core/Logging/Trace.h>
 #include <Core/Memory/FiberTempAllocator.h>
+#include <Graphics/Core/PrecompiledShaders.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
+#include <Graphics/Core/ShaderPermutationManifest.h>
 
 #define near
 #define far
@@ -153,12 +155,20 @@ namespace FE::Graphics::Core
         };
 
 
+        void AppendDependencies(ShaderCompilerResult& result, const festd::span<const ShaderCacheDependency> dependencies)
+        {
+            for (const ShaderCacheDependency& dependency : dependencies)
+            {
+                result.m_dependencies.push_back(dependency.m_path);
+                result.m_dependencyHashes.push_back(dependency.m_contentHash);
+            }
+        }
+
+
         ShaderCompilerResult MakeFailedResult(const festd::span<const ShaderCacheDependency> dependencies)
         {
             ShaderCompilerResult result;
-            for (const ShaderCacheDependency& dependency : dependencies)
-                result.m_dependencies.push_back(dependency.m_path);
-
+            AppendDependencies(result, dependencies);
             return result;
         }
 
@@ -197,30 +207,133 @@ namespace FE::Graphics::Core
     } // namespace
 
 
+    ShaderCompilerConfig ResolveShaderCompilerConfig(const ShaderCompilerConfig config)
+    {
+        if (config != ShaderCompilerConfig::kDefault)
+            return config;
+
+        return Build::IsDebug() ? ShaderCompilerConfig::kDebug : ShaderCompilerConfig::kOptimized;
+    }
+
+
+    uint64_t ComputeShaderRequestKey(const ShaderCompilerArgs& args)
+    {
+        // Bump when the meaning of a request changes, e.g. when the compiler arguments of a configuration change.
+        constexpr uint64_t kRequestKeyVersion = 1;
+
+        Hasher hasher;
+        hasher.UpdateRaw(kRequestKeyVersion)
+            .UpdateRaw(args.m_shaderName.GetHash())
+            .UpdateRaw(festd::to_underlying(args.m_stage))
+            .UpdateRaw(festd::to_underlying(ResolveShaderCompilerConfig(args.m_config)));
+
+        for (const ShaderDefine& define : args.m_defines)
+            hasher.UpdateRaw(define.GetHash());
+
+        return hasher.Finalize();
+    }
+
+
+    Rc<ShaderCompiler> CreateShaderCompiler()
+    {
+        return Memory::DefaultNew<ShaderCompilerDXC>();
+    }
+
+
     ShaderCompilerDXC::ShaderCompilerDXC()
         : m_shaderCache(GetShaderCacheDirectory())
     {
+        m_shaderSourceCache = Memory::DefaultNew<ShaderSourceCache>();
+    }
+
+
+    bool ShaderCompilerDXC::EnsureCompiler()
+    {
+        if (m_isCompilerLoaded.load(std::memory_order_acquire))
+            return true;
+
         FE_PROFILER_ZONE();
 
-        FE_Verify(m_module.Load("dxcompiler"), "Failed to load dxcompiler.dll");
+        std::lock_guard lock{ m_compilerLock };
+        if (m_isCompilerLoaded.load(std::memory_order_relaxed))
+            return true;
 
-        const auto dxcCreateInstance = m_module.FindFunction<DxcCreateInstanceProc>("DxcCreateInstance");
-        FE_Assert(dxcCreateInstance, "Failed to find DxcCreateInstance");
+        if (m_hasCompilerFailedToLoad)
+            return false;
 
-        const HRESULT hrUtils = dxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(m_dxcUtils.ReleaseAndGetAddressOf()));
-        FE_Assert(SUCCEEDED(hrUtils), "Failed to create DXC utils");
+        const auto dxcCreateInstance =
+            m_module.Load("dxcompiler") ? m_module.FindFunction<DxcCreateInstanceProc>("DxcCreateInstance") : nullptr;
+        const bool isCreated = dxcCreateInstance != nullptr
+            && SUCCEEDED(dxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(m_dxcUtils.ReleaseAndGetAddressOf())))
+            && SUCCEEDED(dxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(m_dxcCompiler.ReleaseAndGetAddressOf())));
+        if (!isCreated)
+        {
+            Logger::LogError("Failed to load dxcompiler.dll; only precompiled shaders are available");
+            m_hasCompilerFailedToLoad = true;
+            return false;
+        }
 
-        const HRESULT hrCompiler = dxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(m_dxcCompiler.ReleaseAndGetAddressOf()));
-        FE_Assert(SUCCEEDED(hrCompiler), "Failed to create DXC compiler");
-
-        m_shaderSourceCache = Memory::DefaultNew<ShaderSourceCache>();
         m_compilerVersionHash = GetCompilerVersionHash(m_dxcCompiler.Get());
+        m_isCompilerLoaded.store(true, std::memory_order_release);
+        return true;
+    }
+
+
+    bool ShaderCompilerDXC::TryLoadPrecompiled(const ShaderCompilerArgs& args, ShaderCompilerResult& result) const
+    {
+        FE_PROFILER_ZONE();
+
+        const Rc precompiledShaders = GetPrecompiledShaders();
+        if (!precompiledShaders)
+            return false;
+
+        festd::inline_vector<const PrecompiledShader*, 4> candidates;
+        precompiledShaders->Find(ComputeShaderRequestKey(args), candidates);
+
+        for (const PrecompiledShader* candidate : candidates)
+        {
+            const uint32_t alignedSize = AlignUp<sizeof(uint32_t)>(candidate->m_byteCodeSize);
+            if (candidate->m_dependencies.empty() || candidate->m_byteCode.size() * sizeof(uint32_t) != alignedSize)
+                continue;
+
+            bool isCurrent = true;
+            for (const PrecompiledShaderDependency& dependency : candidate->m_dependencies)
+            {
+                const festd::expected source = m_shaderSourceCache->GetSource(dependency.m_path);
+                isCurrent &= source && source.value()->GetContentHash() == dependency.m_contentHash;
+            }
+
+            if (!isCurrent)
+                continue;
+
+            result.m_byteCode = ByteBuffer(alignedSize, args.m_binaryAllocator);
+            memcpy(result.m_byteCode.data(), candidate->m_byteCode.data(), alignedSize);
+            result.m_byteCodeSize = candidate->m_byteCodeSize;
+            result.m_hash = DefaultHash(result.m_byteCode.data(), result.m_byteCodeSize);
+            result.m_hashValid = true;
+            result.m_codeValid = true;
+            for (const PrecompiledShaderDependency& dependency : candidate->m_dependencies)
+            {
+                result.m_dependencies.push_back(dependency.m_path);
+                result.m_dependencyHashes.push_back(dependency.m_contentHash);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
 
     ShaderCompilerResult ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
     {
         FE_PROFILER_ZONE();
+
+        RecordShaderPermutation(args);
+
+        ShaderCompilerResult precompiledResult;
+        if (TryLoadPrecompiled(args, precompiledResult))
+            return precompiledResult;
 
         const festd::expected sourceResult = m_shaderSourceCache->GetSource(args.m_shaderName);
         if (!sourceResult)
@@ -230,10 +343,18 @@ namespace FE::Graphics::Core
 
             ShaderCompilerResult failedResult;
             failedResult.m_dependencies.push_back(args.m_shaderName);
+            failedResult.m_dependencyHashes.push_back(0);
             return failedResult;
         }
 
         const Rc<ShaderSourceFile>& sourceFile = sourceResult.value();
+        if (!EnsureCompiler())
+        {
+            ShaderCompilerResult failedResult;
+            failedResult.m_dependencies.push_back(args.m_shaderName);
+            failedResult.m_dependencyHashes.push_back(sourceFile->GetContentHash());
+            return failedResult;
+        }
         const festd::string_view source = sourceFile->GetSource();
 
         DxcBuffer sourceBuffer;
@@ -278,7 +399,7 @@ namespace FE::Graphics::Core
         }
 
         festd::span<const char* const> configArgs = kOptimizedCompilerArgs;
-        if (Build::IsDebug())
+        if (ResolveShaderCompilerConfig(args.m_config) == ShaderCompilerConfig::kDebug)
             configArgs = kDebugCompilerArgs;
 
         for (const char* arg : configArgs)
@@ -363,8 +484,7 @@ namespace FE::Graphics::Core
 
         compilerResult.m_codeValid = true;
         compilerResult.m_byteCodeSize = binarySize;
-        for (const ShaderCacheDependency& dependency : includeHandler->GetDependencies())
-            compilerResult.m_dependencies.push_back(dependency.m_path);
+        AppendDependencies(compilerResult, includeHandler->GetDependencies());
 
         m_shaderCache.Store(lookupKey, includeHandler->GetDependencies(), binaryBytes);
         return compilerResult;

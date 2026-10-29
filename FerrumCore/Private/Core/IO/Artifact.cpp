@@ -170,7 +170,10 @@ namespace FE::IO
     {
         FE_PROFILER_ZONE();
 
-        GImpl->m_assetDirectoryPath = GetAbsolutePath(assetDirectoryPath);
+        if (assetDirectoryPath.empty())
+            GImpl->m_assetDirectoryPath.clear();
+        else
+            GImpl->m_assetDirectoryPath = GetAbsolutePath(assetDirectoryPath);
     }
 
 

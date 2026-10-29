@@ -255,6 +255,12 @@ namespace FE::Serialization
             return m_format->Record(m_format->StoreStringImpl(value));
         }
 
+        //! @brief Store a block of bytes whose size the reader knows, without a size prefix.
+        ResultCode StoreBytes(const festd::span<const std::byte> bytes)
+        {
+            return m_format->Record(m_format->StoreBytesImpl(bytes.data(), bytes.size()));
+        }
+
         SerializationObject BeginObject();
         SerializationArray BeginArray(uint32_t size);
 
@@ -423,6 +429,12 @@ namespace FE::Serialization
         ResultCode LoadString(const festd::span<char> buffer)
         {
             return m_format->Record(m_format->LoadStringImpl(buffer));
+        }
+
+        //! @brief Load a block of bytes stored with SerializationContext::StoreBytes.
+        ResultCode LoadBytes(const festd::span<std::byte> bytes)
+        {
+            return m_format->Record(m_format->LoadBytesImpl(bytes.data(), bytes.size()));
         }
 
         DeserializationObject BeginObject();
@@ -969,12 +981,71 @@ namespace FE::Serialization
     };
 
 
+    namespace Internal
+    {
+        //! @brief Element types whose arrays binary formats store as one block: the size, then the raw elements.
+        //!
+        //! The packed format already laid these arrays out the same way one element at a time. The tagged format framed each
+        //! element, so these arrays have their own schema hash.
+        template<class T>
+        concept BulkArrayElement = std::is_arithmetic_v<T>;
+
+
+        template<class T>
+        uint64_t GetArrayElementSchemaHash()
+        {
+            if constexpr (BulkArrayElement<T>)
+                return HashCombine(CompileTimeHash("bulk-array"), Serialization::GetSchemaHash<T>());
+            else
+                return Serialization::GetSchemaHash<T>();
+        }
+
+
+        template<BulkArrayElement T>
+        ResultCode StoreBulkArray(SerializationContext& context, const T* data, const uint32_t size)
+        {
+            constexpr uint32_t kElementSize = sizeof(T);
+            if (context.Number(size) != ResultCode::kSuccess)
+                return context.GetResultCode();
+
+            return context.StoreBytes(festd::span{ reinterpret_cast<const std::byte*>(data), size * kElementSize });
+        }
+
+
+        template<BulkArrayElement T>
+        ResultCode LoadBulkArraySize(DeserializationContext& context, uint32_t& size)
+        {
+            if (context.Number(size) != ResultCode::kSuccess)
+                return context.GetResultCode();
+
+            if (size > Constants::kMaxU32 / sizeof(T))
+                return context.ReportError(ResultCode::kMalformedData);
+
+            return ResultCode::kSuccess;
+        }
+
+
+        template<BulkArrayElement T>
+        ResultCode LoadBulkArray(DeserializationContext& context, T* data, const uint32_t size)
+        {
+            constexpr uint32_t kElementSize = sizeof(T);
+            return context.LoadBytes(festd::span{ reinterpret_cast<std::byte*>(data), size * kElementSize });
+        }
+    } // namespace Internal
+
+
     template<class T, size_t TSize>
         requires Internal::HasSerializer<T>
     struct Serializer<T[TSize]>
     {
         static ResultCode Serialize(SerializationContext& context, const T (&value)[TSize])
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                    return Internal::StoreBulkArray(context, value, static_cast<uint32_t>(TSize));
+            }
+
             if (auto array = context.BeginArray(static_cast<uint32_t>(TSize)))
             {
                 for (uint32_t i = 0; i < TSize; ++i)
@@ -988,6 +1059,21 @@ namespace FE::Serialization
 
         static ResultCode Deserialize(DeserializationContext& context, T (&value)[TSize])
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                {
+                    uint32_t size = 0;
+                    if (Internal::LoadBulkArraySize<T>(context, size) != ResultCode::kSuccess)
+                        return context.GetResultCode();
+
+                    if (size != TSize)
+                        return context.ReportError(ResultCode::kMalformedData);
+
+                    return Internal::LoadBulkArray(context, value, size);
+                }
+            }
+
             uint32_t size = 0;
             if (auto array = context.BeginArray(size))
             {
@@ -1007,7 +1093,7 @@ namespace FE::Serialization
         {
             constexpr uint64_t kTypeNameHash = CompileTimeHash("c-array");
             constexpr uint64_t kSizeHash = HashCombine(kTypeNameHash, TSize);
-            static uint64_t schemaHash = HashCombine(kSizeHash, Serialization::GetSchemaHash<T>());
+            static uint64_t schemaHash = HashCombine(kSizeHash, Internal::GetArrayElementSchemaHash<T>());
             return schemaHash;
         }
 
@@ -1024,6 +1110,12 @@ namespace FE::Serialization
     {
         static ResultCode Serialize(SerializationContext& context, const festd::array<T, TSize>& value)
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                    return Internal::StoreBulkArray(context, value.data(), static_cast<uint32_t>(TSize));
+            }
+
             if (auto array = context.BeginArray(static_cast<uint32_t>(TSize)))
             {
                 for (uint32_t i = 0; i < TSize; ++i)
@@ -1037,6 +1129,21 @@ namespace FE::Serialization
 
         static ResultCode Deserialize(DeserializationContext& context, festd::array<T, TSize>& value)
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                {
+                    uint32_t size = 0;
+                    if (Internal::LoadBulkArraySize<T>(context, size) != ResultCode::kSuccess)
+                        return context.GetResultCode();
+
+                    if (size != TSize)
+                        return context.ReportError(ResultCode::kMalformedData);
+
+                    return Internal::LoadBulkArray(context, value.data(), size);
+                }
+            }
+
             uint32_t size = 0;
             if (auto array = context.BeginArray(size))
             {
@@ -1056,7 +1163,7 @@ namespace FE::Serialization
         {
             constexpr uint64_t kTypeNameHash = CompileTimeHash("array");
             constexpr uint64_t kSizeHash = HashCombine(kTypeNameHash, TSize);
-            static uint64_t schemaHash = HashCombine(kSizeHash, Serialization::GetSchemaHash<T>());
+            static uint64_t schemaHash = HashCombine(kSizeHash, Internal::GetArrayElementSchemaHash<T>());
             return schemaHash;
         }
 
@@ -1073,6 +1180,12 @@ namespace FE::Serialization
     {
         static ResultCode Serialize(SerializationContext& context, const eastl::vector<T, TAllocator>& value)
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                    return Internal::StoreBulkArray(context, value.data(), value.size());
+            }
+
             if (auto array = context.BeginArray(static_cast<uint32_t>(value.size())))
             {
                 for (uint32_t i = 0; i < value.size(); ++i)
@@ -1086,6 +1199,19 @@ namespace FE::Serialization
 
         static ResultCode Deserialize(DeserializationContext& context, eastl::vector<T, TAllocator>& value)
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                {
+                    uint32_t size = 0;
+                    if (Internal::LoadBulkArraySize<T>(context, size) != ResultCode::kSuccess)
+                        return context.GetResultCode();
+
+                    value.resize(size);
+                    return Internal::LoadBulkArray(context, value.data(), size);
+                }
+            }
+
             uint32_t size = 0;
             if (auto array = context.BeginArray(size))
             {
@@ -1102,7 +1228,7 @@ namespace FE::Serialization
         static constexpr uint64_t GetSchemaHash()
         {
             constexpr uint64_t kTypeNameHash = CompileTimeHash("vector");
-            static uint64_t schemaHash = HashCombine(kTypeNameHash, Serialization::GetSchemaHash<T>());
+            static uint64_t schemaHash = HashCombine(kTypeNameHash, Internal::GetArrayElementSchemaHash<T>());
             return schemaHash;
         }
 
@@ -1119,6 +1245,12 @@ namespace FE::Serialization
     {
         static ResultCode Serialize(SerializationContext& context, const gch::small_vector<T, TInlineCapacity, TAllocator>& value)
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                    return Internal::StoreBulkArray(context, value.data(), static_cast<uint32_t>(value.size()));
+            }
+
             if (auto array = context.BeginArray(static_cast<uint32_t>(value.size())))
             {
                 for (uint32_t i = 0; i < value.size(); ++i)
@@ -1132,6 +1264,19 @@ namespace FE::Serialization
 
         static ResultCode Deserialize(DeserializationContext& context, gch::small_vector<T, TInlineCapacity, TAllocator>& value)
         {
+            if constexpr (Internal::BulkArrayElement<T>)
+            {
+                if (context.IsBinary())
+                {
+                    uint32_t size = 0;
+                    if (Internal::LoadBulkArraySize<T>(context, size) != ResultCode::kSuccess)
+                        return context.GetResultCode();
+
+                    value.resize(size);
+                    return Internal::LoadBulkArray(context, value.data(), size);
+                }
+            }
+
             uint32_t size = 0;
             if (auto array = context.BeginArray(size))
             {
@@ -1148,7 +1293,7 @@ namespace FE::Serialization
         static constexpr uint64_t GetSchemaHash()
         {
             constexpr uint64_t kTypeNameHash = CompileTimeHash("vector");
-            static uint64_t schemaHash = HashCombine(kTypeNameHash, Serialization::GetSchemaHash<T>());
+            static uint64_t schemaHash = HashCombine(kTypeNameHash, Internal::GetArrayElementSchemaHash<T>());
             return schemaHash;
         }
 

@@ -360,6 +360,9 @@ namespace FE::IO
 
     namespace Directory
     {
+        //! @brief Test whether a directory exists.
+        bool Exists(festd::string_view path);
+
         //! @brief Create a directory and every missing parent directory.
         ResultCode Create(festd::string_view path);
 

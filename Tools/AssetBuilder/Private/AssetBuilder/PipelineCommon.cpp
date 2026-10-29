@@ -145,8 +145,6 @@ namespace FE::AssetBuilder
             {
                 artifact.m_assetId = oldArtifact->m_assetId;
                 artifact.m_buildSettings = oldArtifact->m_buildSettings;
-                artifact.m_lastBuildKey = oldArtifact->m_lastBuildKey;
-                artifact.m_builtArtifactId = oldArtifact->m_builtArtifactId;
             }
             else
             {

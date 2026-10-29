@@ -15,10 +15,23 @@ namespace FE::Graphics::Core
         };
 
 
+        struct MountedShaderPackage final
+        {
+            IO::AssetID m_key;
+            Rc<ShaderSourcePackage> m_package;
+        };
+
+
         struct ShaderSourceDirectoryRegistry final
         {
             Threading::SharedSpinLock m_lock;
             festd::vector<ShaderSourceDirectoryEntry> m_entries;
+            festd::vector<MountedShaderPackage> m_packages;
+            festd::vector<IO::AssetID> m_packageIds;
+            bool m_areDirectoriesEnabled = true;
+
+            //! Incremented whenever the set of visible sources changes other than through a file in a directory.
+            std::atomic<uint32_t> m_sourcesGeneration = 0;
         };
 
 
@@ -37,6 +50,9 @@ namespace FE::Graphics::Core
             std::shared_lock lock{ registry.m_lock };
 
             IO::Path result;
+            if (!registry.m_areDirectoriesEnabled)
+                return result;
+
             for (const ShaderSourceDirectoryEntry& entry : registry.m_entries)
             {
                 const festd::string_view prefix{ entry.m_virtualPrefix };
@@ -57,13 +73,30 @@ namespace FE::Graphics::Core
         }
 
 
+        //! Read a file from the first mounted package that contains it; packages are kept in mount order.
+        Rc<ShaderSourceFile> ReadPackageFile(const Env::Name path)
+        {
+            ShaderSourceDirectoryRegistry& registry = GetDirectoryRegistry();
+            std::shared_lock lock{ registry.m_lock };
+
+            for (const MountedShaderPackage& mounted : registry.m_packages)
+            {
+                festd::pmr::vector<std::byte> contents;
+                if (mounted.m_package->ReadFile(festd::string_view{ path }, contents))
+                    return Memory::DefaultNew<ShaderSourceFile>(path, std::move(contents));
+            }
+
+            return nullptr;
+        }
+
+
         Rc<ShaderSourceFile> ReadSourceFileBlocking(const Env::Name path)
         {
             FE_PROFILER_ZONE();
 
             const IO::Path fullPath = FindSourceFile(path);
             if (fullPath.empty())
-                return nullptr;
+                return ReadPackageFile(path);
 
             const auto stream = IO::FileStream::Open(fullPath, IO::OpenMode::kReadOnly);
             if (!stream)
@@ -110,7 +143,10 @@ namespace FE::Graphics::Core
             {
                 IO::Path fullPath = FindSourceFile(paths[index]);
                 if (fullPath.empty())
+                {
+                    files[index] = ReadPackageFile(paths[index]);
                     continue;
+                }
 
                 PendingSourceRead& read = reads.push_back();
                 read.m_index = index;
@@ -198,6 +234,96 @@ namespace FE::Graphics::Core
         }
 
         registry.m_entries.push_back(std::move(entry));
+    }
+
+
+    bool AreShaderSourceDirectoriesAvailable()
+    {
+        ShaderSourceDirectoryRegistry& registry = GetDirectoryRegistry();
+        std::shared_lock lock{ registry.m_lock };
+
+        for (const ShaderSourceDirectoryEntry& entry : registry.m_entries)
+        {
+            if (!IO::Directory::Exists(entry.m_directory))
+                return false;
+        }
+
+        return true;
+    }
+
+
+    void AddShaderPackage(const IO::AssetID packageId)
+    {
+        ShaderSourceDirectoryRegistry& registry = GetDirectoryRegistry();
+        std::lock_guard lock{ registry.m_lock };
+
+        const festd::span packageIds{ registry.m_packageIds.data(), registry.m_packageIds.size() };
+        if (festd::find_index(packageIds, packageId) == kInvalidIndex)
+            registry.m_packageIds.push_back(packageId);
+    }
+
+
+    void GetShaderPackages(festd::vector<IO::AssetID>& packageIds)
+    {
+        ShaderSourceDirectoryRegistry& registry = GetDirectoryRegistry();
+        std::shared_lock lock{ registry.m_lock };
+
+        packageIds.insert(packageIds.end(), registry.m_packageIds.begin(), registry.m_packageIds.end());
+    }
+
+
+    void MountShaderSourcePackage(const IO::AssetID key, ShaderSourcePackage* package)
+    {
+        FE_Assert(package != nullptr);
+
+        ShaderSourceDirectoryRegistry& registry = GetDirectoryRegistry();
+        std::lock_guard lock{ registry.m_lock };
+
+        bool isReplaced = false;
+        for (MountedShaderPackage& mounted : registry.m_packages)
+        {
+            if (mounted.m_key != key)
+                continue;
+
+            mounted.m_package = package;
+            isReplaced = true;
+        }
+
+        if (!isReplaced)
+            registry.m_packages.push_back({ key, Rc<ShaderSourcePackage>{ package } });
+
+        registry.m_sourcesGeneration.fetch_add(1, std::memory_order_release);
+    }
+
+
+    void UnmountShaderSourcePackage(const IO::AssetID key, const ShaderSourcePackage* package)
+    {
+        ShaderSourceDirectoryRegistry& registry = GetDirectoryRegistry();
+        std::lock_guard lock{ registry.m_lock };
+
+        for (uint32_t index = 0; index < registry.m_packages.size(); ++index)
+        {
+            const MountedShaderPackage& mounted = registry.m_packages[index];
+            if (mounted.m_key == key && mounted.m_package.Get() == package)
+            {
+                registry.m_packages.erase(registry.m_packages.begin() + index);
+                registry.m_sourcesGeneration.fetch_add(1, std::memory_order_release);
+                return;
+            }
+        }
+    }
+
+
+    void SetShaderSourceDirectoriesEnabled(const bool enabled)
+    {
+        ShaderSourceDirectoryRegistry& registry = GetDirectoryRegistry();
+        std::lock_guard lock{ registry.m_lock };
+
+        if (registry.m_areDirectoriesEnabled == enabled)
+            return;
+
+        registry.m_areDirectoriesEnabled = enabled;
+        registry.m_sourcesGeneration.fetch_add(1, std::memory_order_release);
     }
 
 
@@ -302,6 +428,14 @@ namespace FE::Graphics::Core
                 if (directory.m_watcher)
                     isComplete &= directory.m_watcher->PollChanges(changedFiles);
             }
+        }
+
+        // A mounted or replaced package can change any source, and Refresh keeps only the ones whose contents differ.
+        const uint32_t sourcesGeneration = GetDirectoryRegistry().m_sourcesGeneration.load(std::memory_order_acquire);
+        if (sourcesGeneration != m_seenSourcesGeneration)
+        {
+            m_seenSourcesGeneration = sourcesGeneration;
+            isComplete = false;
         }
 
         if (!isComplete)
