@@ -69,7 +69,10 @@ def _extract_compiler_args(entry: dict) -> list[str]:
     index = 1
     while index < len(command_tokens):
         argument = command_tokens[index]
-        if argument in ("-D", "/D", "-I", "/I", "-external:I"):
+        if argument.startswith(("-DEASTL_USER_CONFIG_HEADER", "/DEASTL_USER_CONFIG_HEADER")):
+            # The command carries this for clangd in cl.exe quoting; the script passes its own above
+            pass
+        elif argument in ("-D", "/D", "-I", "/I", "-external:I"):
             index += 1
             if index < len(command_tokens):
                 prefix = "-D" if argument in ("-D", "/D") else "-I"

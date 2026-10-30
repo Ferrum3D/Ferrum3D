@@ -1,6 +1,4 @@
-﻿if (NOT FE_CODEGEN)
-    add_definitions(-DEASTL_USER_CONFIG_HEADER=<${FE_PROJECT_ROOT}/FerrumCore/Private/Core/Base/EASTLConfig.h>)
-endif ()
+add_definitions(-DEASTL_USER_CONFIG_HEADER=<${FE_PROJECT_ROOT}/FerrumCore/Private/Core/Base/EASTLConfig.h>)
 
 set(EASTL_SOURCES
     ${FE_THIRD_PARTY_DIR}/EASTL/source/allocator_eastl.cpp
