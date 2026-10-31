@@ -19,7 +19,6 @@ namespace FE::Graphics
     {
         Rc<Core::Viewport> m_target;
         Rc<View> m_view;
-        bool m_ownsTarget = false;
     };
 
 
@@ -123,7 +122,6 @@ namespace FE::Graphics
         target->Init(Core::ViewportDesc::Create(RectF(0.0f, 0.0f, viewport->Size.x, viewport->Size.y), nativeWindow));
 
         ViewportData* data = self.CreateViewportData(*viewport, target.Get());
-        data->m_ownsTarget = true;
         viewport->RendererUserData = data;
     }
 
@@ -139,8 +137,6 @@ namespace FE::Graphics
         // The previous frame retains views and swapchains; release them before the platform window is destroyed.
         Renderer::Get().WaitForRender();
         Get().m_scene->DestroyView(data->m_view.Get());
-        if (data->m_ownsTarget)
-            data->m_target->SetImmediateDestroyPolicy();
 
         Memory::DefaultDelete(data);
         viewport->RendererUserData = nullptr;

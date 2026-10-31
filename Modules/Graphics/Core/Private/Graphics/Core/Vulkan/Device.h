@@ -2,6 +2,7 @@
 #include <Core/Logging/Trace.h>
 #include <Graphics/Core/Common/Device.h>
 #include <Graphics/Core/DeviceFactory.h>
+#include <Graphics/Core/Fence.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Sampler.h>
 #include <festd/unordered_map.h>
@@ -75,6 +76,7 @@ namespace FE::Graphics::Vulkan
 
     struct CommandList;
     struct DeviceFactory;
+    struct Fence;
     struct PipelineFactory;
 
     struct Device final : public Common::Device
@@ -175,11 +177,40 @@ namespace FE::Graphics::Vulkan
         void RegisterPipelineFactory(PipelineFactory* factory);
         void UnregisterPipelineFactory(PipelineFactory* factory);
 
+        //! @brief Register the fence of a queue whose recorded work retired objects must outlive.
+        //!
+        //! @param lastUsedValue The fence value of the latest work recorded on the queue.
+        //! The queue must be drained before it is unregistered.
+        void RegisterQueueTimeline(Fence* fence, const std::atomic<uint64_t>* lastUsedValue);
+        void UnregisterQueueTimeline(const Fence* fence);
+
+        //! @brief Destroy a native object once every registered queue completes the work recorded so far.
+        void Retire(VkPipeline pipeline);
+        void Retire(VkPipelineLayout pipelineLayout);
+
     private:
+        struct QueueTimeline final
+        {
+            Fence* m_fence = nullptr;
+            const std::atomic<uint64_t>* m_lastUsedValue = nullptr;
+        };
+
+
+        struct RetiredObject final
+        {
+            VkObjectType m_type = VK_OBJECT_TYPE_UNKNOWN;
+            uint64_t m_handle = 0;
+            festd::inline_vector<Core::FenceSyncPoint, 2> m_syncPoints;
+        };
+
         void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }
+
+        void RetireNative(VkObjectType type, uint64_t handle);
+        void CollectRetired(bool force);
+        void DestroyRetired(const RetiredObject& object) const;
 
         VkDevice m_nativeDevice = VK_NULL_HANDLE;
         VkPhysicalDevice m_nativeAdapter = VK_NULL_HANDLE;
@@ -195,6 +226,10 @@ namespace FE::Graphics::Vulkan
 
         Threading::SpinLock m_pipelineFactoriesLock;
         festd::inline_vector<PipelineFactory*, 2> m_pipelineFactories;
+
+        Threading::SpinLock m_retireLock;
+        festd::inline_vector<QueueTimeline, 2> m_queueTimelines;
+        festd::vector<RetiredObject> m_retiredObjects;
 
         void FindQueueFamilies();
     };

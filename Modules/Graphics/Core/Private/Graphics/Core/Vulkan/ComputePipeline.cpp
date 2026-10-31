@@ -157,11 +157,10 @@ namespace FE::Graphics::Vulkan
     ComputePipeline::~ComputePipeline()
     {
         // A failed creation or a swapped-out version may own only some of the objects.
-        const VkDevice device = NativeCast(m_device);
-        if (m_nativePipeline != VK_NULL_HANDLE)
-            vkDestroyPipeline(device, m_nativePipeline, nullptr);
-        if (m_layout != VK_NULL_HANDLE)
-            vkDestroyPipelineLayout(device, m_layout, nullptr);
+        // Swapped-out versions may still be used by submitted work, so the device destroys them once it completes.
+        Device* device = ImplCast(m_device);
+        device->Retire(m_nativePipeline);
+        device->Retire(m_layout);
 
         m_status.store(Core::PipelineStatus::kNotReady, std::memory_order_release);
     }

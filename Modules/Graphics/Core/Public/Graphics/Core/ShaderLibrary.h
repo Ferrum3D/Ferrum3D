@@ -1,5 +1,5 @@
 #pragma once
-#include <Graphics/Core/DeviceObject.h>
+#include <Graphics/Core/Device.h>
 #include <Graphics/Core/ShaderSpecialization.h>
 
 namespace FE::Graphics::Core
@@ -10,7 +10,7 @@ namespace FE::Graphics::Core
     };
 
 
-    struct ShaderLibrary : public DeviceObject
+    struct ShaderLibrary : public Memory::RefCountedObjectBase
     {
         FE_RTTI("BE44FCFD-5540-49F6-AECE-569BE88A8450");
 
@@ -18,5 +18,8 @@ namespace FE::Graphics::Core
 
         //! @brief Compile a shader if needed and wait for it. Returns null if it failed to compile.
         virtual Rc<ShaderReflection> GetCompiledReflection(Env::Name name, Env::Name defines) = 0;
+
+    protected:
+        Device* m_device = nullptr;
     };
 } // namespace FE::Graphics::Core

@@ -18,29 +18,15 @@ namespace FE::Graphics::Common
     protected:
         explicit Device();
 
-        void DisposePending();
-        void ForceReleasePendingDisposers();
-        void EndFrame() override;
-
     private:
-        struct PendingDisposer final
-        {
-            Core::DeviceObject* m_object = nullptr;
-            uint32_t m_framesLeft = 0;
-        };
-
         TracyLockable(Threading::SpinLock, m_resourceListLock);
-        TracyLockable(Threading::SpinLock, m_disposeQueueLock);
 
         festd::intrusive_list<Core::Resource> m_resourceList;
-        festd::vector<PendingDisposer> m_disposeQueue;
 
         uint32_t m_currentResourceId = 0;
         festd::vector<uint32_t> m_resourceIdFreeList;
 
-        void QueueObjectDispose(Core::DeviceObject* object) override;
         uint32_t RegisterResource(Core::Resource* resource) override;
         void UnregisterResource(uint32_t id, Core::Resource* resource) override;
-        festd::pmr::vector<Core::DeviceObject*> GetObjectsToDispose(std::pmr::memory_resource* allocator, bool force);
     };
 } // namespace FE::Graphics::Common

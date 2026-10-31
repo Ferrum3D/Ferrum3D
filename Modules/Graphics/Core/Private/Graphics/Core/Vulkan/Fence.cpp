@@ -32,7 +32,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Fence::DestroyObject()
+    void Fence::DoRelease()
     {
         GFencePool.Delete(this);
     }

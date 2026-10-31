@@ -33,10 +33,8 @@ namespace FE::Graphics::Core
         virtual Rc<PipelineFactory> CreatePipelineFactory(DescriptorManager* descriptorManager) = 0;
 
     private:
-        friend DeviceObject;
         friend Resource;
 
-        virtual void QueueObjectDispose(DeviceObject* object) = 0;
         virtual uint32_t RegisterResource(Resource* resource) = 0;
         virtual void UnregisterResource(uint32_t id, Resource* resource) = 0;
     };

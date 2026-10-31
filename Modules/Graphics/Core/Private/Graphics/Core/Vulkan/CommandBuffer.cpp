@@ -151,7 +151,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void CommandBuffer::DestroyObject()
+    void CommandBuffer::DoRelease()
     {
         GCommandBufferPool.Delete(this);
     }

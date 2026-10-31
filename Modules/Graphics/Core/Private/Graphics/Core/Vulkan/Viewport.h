@@ -39,7 +39,7 @@ namespace FE::Graphics::Vulkan
 
         void ReleaseResources();
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

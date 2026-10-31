@@ -75,7 +75,6 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         m_device = device;
-        SetImmediateDestroyPolicy();
 
         Logger::LogTrace("Creating Pipeline Factory");
 
@@ -111,14 +110,12 @@ namespace FE::Graphics::Vulkan
         for (const auto& [hash, entry] : m_graphicsPipelinesMap)
         {
             FE_AssertDebug(entry.m_pipeline->GetRefCount() == 1);
-            entry.m_pipeline->SetImmediateDestroyPolicy();
             entry.m_pipeline->Release();
         }
 
         for (const auto& [hash, entry] : m_computePipelinesMap)
         {
             FE_AssertDebug(entry.m_pipeline->GetRefCount() == 1);
-            entry.m_pipeline->SetImmediateDestroyPolicy();
             entry.m_pipeline->Release();
         }
 
@@ -412,7 +409,7 @@ namespace FE::Graphics::Vulkan
                 return;
             }
 
-            // The replacement then owns the previous native objects and disposes of them after the GPU is done.
+            // The replacement then owns the previous native objects and retires them to the device when released.
             replacement.m_pipeline->SwapNative(*replacement.m_replacement);
             ++swappedCount;
         };

@@ -9,6 +9,7 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
+#include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/GpuProfiler.h>
 #include <festd/ring_buffer.h>
 
@@ -45,7 +46,7 @@ namespace FE::Graphics::Vulkan
             festd::inline_vector<VmaVirtualAllocation> m_stagingAllocations;
         };
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }
@@ -67,7 +68,7 @@ namespace FE::Graphics::Vulkan
         Rc<Core::Buffer> m_uploadBuffer;
         VmaVirtualBlock m_uploadRingBuffer = VK_NULL_HANDLE;
         std::atomic<uint64_t> m_fenceValue = 0;
-        Rc<Core::Fence> m_fence;
+        Rc<Fence> m_fence;
 
         uint32_t m_commandBufferCounter = 0;
         festd::inline_vector<Rc<CommandBuffer>> m_freeCommandBuffers;

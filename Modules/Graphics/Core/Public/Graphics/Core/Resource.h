@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/Core/DeviceObject.h>
+#include <Graphics/Core/Device.h>
 #include <festd/intrusive_list.h>
 
 namespace FE::Graphics::Core
@@ -32,7 +32,7 @@ namespace FE::Graphics::Core
 
 
     struct Resource
-        : public DeviceObject
+        : public Memory::RefCountedObjectBase
         , public festd::intrusive_list_node
     {
         FE_RTTI("490B70FF-2CE3-4B16-8466-B64997AC87F5");
@@ -57,17 +57,15 @@ namespace FE::Graphics::Core
         virtual void DecommitMemory() = 0;
 
     protected:
+        Device* m_device = nullptr;
         Env::Name m_name;
         uint32_t m_resourceID = kInvalidIndex;
         ResourceType m_type = ResourceType::kUnknown;
 
+        // Releasing a resource only returns its memory to the pool, which destroys it once the GPU is done with it.
         void Register()
         {
             m_resourceID = m_device->RegisterResource(this);
-
-            // Resources are never really destroyed immediately, they are only returned to the pool.
-            // So, it's the pool's responsibility to destroy them when safe.
-            SetImmediateDestroyPolicy();
         }
 
         ~Resource() override

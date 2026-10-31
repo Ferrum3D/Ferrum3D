@@ -58,11 +58,16 @@ namespace FE::Graphics::Core
     };
 
 
-    struct PipelineFactory : public DeviceObject
+    struct PipelineFactory : public Memory::RefCountedObjectBase
     {
         ~PipelineFactory() override = default;
 
         FE_RTTI("CD16508A-5F34-4700-8D23-AF217B55FFD1");
+
+        [[nodiscard]] Device* GetDevice() const
+        {
+            return m_device;
+        }
 
         virtual GraphicsPipeline* CreateGraphicsPipeline(const GraphicsPipelineRequest& request) = 0;
         virtual ComputePipeline* CreateComputePipeline(const ComputePipelineRequest& request) = 0;
@@ -72,5 +77,8 @@ namespace FE::Graphics::Core
         //!
         //! Objects that derive data from shader reflection, e.g. material parameter layouts, compare it to refresh that data.
         [[nodiscard]] virtual uint32_t GetShaderReloadGeneration() const = 0;
+
+    protected:
+        Device* m_device = nullptr;
     };
 } // namespace FE::Graphics::Core

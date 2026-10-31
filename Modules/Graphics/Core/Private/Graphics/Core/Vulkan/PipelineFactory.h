@@ -75,7 +75,7 @@ namespace FE::Graphics::Vulkan
                                          festd::span<const Core::ShaderHandle> shaders) const;
         void ApplyShaderReload();
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

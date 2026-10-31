@@ -2,7 +2,7 @@
 #include <Core/Math/Aabb.h>
 #include <Core/Math/Colors.h>
 #include <Graphics/Core/Buffer.h>
-#include <Graphics/Core/DeviceObject.h>
+#include <Graphics/Core/Device.h>
 #include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Core
@@ -188,7 +188,7 @@ namespace FE::Graphics::Core
     };
 
 
-    struct FrameGraphContext : public DeviceObject
+    struct FrameGraphContext : public Memory::RefCountedObjectBase
     {
         FE_RTTI("261C8B48-9A5F-481A-B31C-AA7D48BC0E33");
 
@@ -258,6 +258,7 @@ namespace FE::Graphics::Core
         virtual bool IsCleanState() const = 0;
 
     protected:
+        Device* m_device = nullptr;
         FrameGraph* m_frameGraph = nullptr;
     };
 } // namespace FE::Graphics::Core

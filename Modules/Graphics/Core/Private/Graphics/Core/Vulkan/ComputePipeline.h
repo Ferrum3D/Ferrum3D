@@ -33,7 +33,7 @@ namespace FE::Graphics::Vulkan
         //! @brief Exchange native objects and status with a pipeline built from the same description.
         //!
         //! Used by shader hot reload while no commands are being recorded. The other pipeline then owns the previous
-        //! objects, and its deferred destruction keeps them alive while the GPU may still use them.
+        //! objects and retires them to the device, which destroys them once submitted work no longer uses them.
         void SwapNative(ComputePipeline& other);
 
         [[nodiscard]] VkPipeline GetNative() const
@@ -47,7 +47,7 @@ namespace FE::Graphics::Vulkan
         }
 
     private:
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

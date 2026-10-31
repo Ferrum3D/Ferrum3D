@@ -12,8 +12,6 @@ namespace FE::Graphics::Vulkan
         m_device = device;
         m_graphicsQueue = ImplCast(graphicsQueue);
         m_asyncCopyQueue = ImplCast(asyncCopyQueue);
-
-        SetImmediateDestroyPolicy();
     }
 
 

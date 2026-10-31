@@ -8,11 +8,16 @@ namespace FE::Graphics::Core
     struct Texture;
     struct Viewport;
 
-    struct GraphicsQueue : public DeviceObject
+    struct GraphicsQueue : public Memory::RefCountedObjectBase
     {
         FE_RTTI("BFA35DB4-E1AA-4914-87FB-D392B0308B34");
 
         ~GraphicsQueue() override = default;
+
+        [[nodiscard]] Device* GetDevice() const
+        {
+            return m_device;
+        }
 
         virtual FenceSyncPoint GetCurrentFence() const = 0;
 
@@ -27,5 +32,8 @@ namespace FE::Graphics::Core
         virtual void SubmitFrame(festd::span<Viewport* const> presentedViewports = {}) = 0;
         virtual FenceSyncPoint CloseFrame() = 0;
         virtual void Drain() = 0;
+
+    protected:
+        Device* m_device = nullptr;
     };
 } // namespace FE::Graphics::Core

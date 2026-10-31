@@ -1,5 +1,4 @@
 ﻿#include <Core/Logging/Trace.h>
-#include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Device.h>
@@ -9,6 +8,7 @@
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
+#include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
@@ -292,11 +292,15 @@ namespace FE::Graphics::Vulkan
 
     void Device::EndFrame()
     {
-        Common::Device::EndFrame();
+        FE_PROFILER_ZONE();
 
-        std::lock_guard lock{ m_pipelineFactoriesLock };
-        for (PipelineFactory* factory : m_pipelineFactories)
-            factory->UpdateShaderHotReload();
+        {
+            std::lock_guard lock{ m_pipelineFactoriesLock };
+            for (PipelineFactory* factory : m_pipelineFactories)
+                factory->UpdateShaderHotReload();
+        }
+
+        CollectRetired(false);
     }
 
 
@@ -314,6 +318,109 @@ namespace FE::Graphics::Vulkan
         const uint32_t index = festd::find_index(festd::span{ m_pipelineFactories.data(), m_pipelineFactories.size() }, factory);
         FE_Assert(index != kInvalidIndex);
         m_pipelineFactories.erase(m_pipelineFactories.begin() + index);
+    }
+
+
+    void Device::RegisterQueueTimeline(Fence* fence, const std::atomic<uint64_t>* lastUsedValue)
+    {
+        FE_Assert(fence && lastUsedValue);
+
+        std::lock_guard lock{ m_retireLock };
+        m_queueTimelines.push_back({ fence, lastUsedValue });
+    }
+
+
+    void Device::UnregisterQueueTimeline(const Fence* fence)
+    {
+        std::lock_guard lock{ m_retireLock };
+
+        const uint32_t index = festd::find_index_if(m_queueTimelines, [fence](const QueueTimeline& timeline) {
+            return timeline.m_fence == fence;
+        });
+
+        FE_Assert(index != kInvalidIndex);
+        m_queueTimelines.erase(m_queueTimelines.begin() + index);
+    }
+
+
+    void Device::Retire(const VkPipeline pipeline)
+    {
+        RetireNative(VK_OBJECT_TYPE_PIPELINE, reinterpret_cast<uint64_t>(pipeline));
+    }
+
+
+    void Device::Retire(const VkPipelineLayout pipelineLayout)
+    {
+        RetireNative(VK_OBJECT_TYPE_PIPELINE_LAYOUT, reinterpret_cast<uint64_t>(pipelineLayout));
+    }
+
+
+    void Device::RetireNative(const VkObjectType type, const uint64_t handle)
+    {
+        if (handle == 0)
+            return;
+
+        std::lock_guard lock{ m_retireLock };
+
+        RetiredObject& object = m_retiredObjects.push_back();
+        object.m_type = type;
+        object.m_handle = handle;
+        for (const QueueTimeline& timeline : m_queueTimelines)
+            object.m_syncPoints.push_back({ timeline.m_fence, timeline.m_lastUsedValue->load(std::memory_order_acquire) });
+    }
+
+
+    void Device::CollectRetired(const bool force)
+    {
+        FE_PROFILER_ZONE();
+
+        std::lock_guard lock{ m_retireLock };
+        if (m_retiredObjects.empty())
+            return;
+
+        // Query each registered fence once; fences of unregistered queues were drained and are queried directly.
+        festd::inline_vector<uint64_t, 3> completedValues;
+        for (const QueueTimeline& timeline : m_queueTimelines)
+            completedValues.push_back(force ? Constants::kMaxU64 : timeline.m_fence->GetCompletedValue());
+
+        const auto isComplete = [&](const Core::FenceSyncPoint& syncPoint) {
+            const uint32_t timelineIndex = festd::find_index_if(m_queueTimelines, [&syncPoint](const QueueTimeline& timeline) {
+                return timeline.m_fence == syncPoint.m_fence.Get();
+            });
+
+            if (timelineIndex == kInvalidIndex)
+                return force || syncPoint.IsReady();
+
+            return completedValues[timelineIndex] >= syncPoint.m_value;
+        };
+
+        const auto destroyIfComplete = [&](const RetiredObject& object) {
+            if (!std::all_of(object.m_syncPoints.begin(), object.m_syncPoints.end(), isComplete))
+                return false;
+
+            DestroyRetired(object);
+            return true;
+        };
+
+        m_retiredObjects.erase(eastl::remove_if(m_retiredObjects.begin(), m_retiredObjects.end(), destroyIfComplete),
+                               m_retiredObjects.end());
+    }
+
+
+    void Device::DestroyRetired(const RetiredObject& object) const
+    {
+        switch (object.m_type)
+        {
+        case VK_OBJECT_TYPE_PIPELINE:
+            vkDestroyPipeline(m_nativeDevice, reinterpret_cast<VkPipeline>(object.m_handle), nullptr);
+            break;
+        case VK_OBJECT_TYPE_PIPELINE_LAYOUT:
+            vkDestroyPipelineLayout(m_nativeDevice, reinterpret_cast<VkPipelineLayout>(object.m_handle), nullptr);
+            break;
+        default:
+            FE_DebugBreak();
+            break;
+        }
     }
 
 
@@ -341,13 +448,16 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         vkDeviceWaitIdle(m_nativeDevice);
-        ForceReleasePendingDisposers();
+        CollectRetired(true);
     }
 
 
     Device::~Device()
     {
-        ForceReleasePendingDisposers();
+        FE_Assert(m_queueTimelines.empty(), "Queues must be destroyed before the device");
+
+        vkDeviceWaitIdle(m_nativeDevice);
+        CollectRetired(true);
 
         m_samplerCache.Shutdown();
 

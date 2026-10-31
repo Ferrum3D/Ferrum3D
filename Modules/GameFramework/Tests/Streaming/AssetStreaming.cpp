@@ -60,7 +60,7 @@ namespace
         }
 
     private:
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

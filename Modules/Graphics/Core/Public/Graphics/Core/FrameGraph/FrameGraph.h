@@ -2,7 +2,7 @@
 #include <Core/Memory/LinearAllocator.h>
 #include <Graphics/Core/Base.h>
 #include <Graphics/Core/Buffer.h>
-#include <Graphics/Core/DeviceObject.h>
+#include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/Blackboard.h>
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/FrameGraph/FrameGraphPass.h>
@@ -16,9 +16,14 @@ namespace FE::Graphics::Core
     struct ResourcePool;
 
 
-    struct FrameGraph : public DeviceObject
+    struct FrameGraph : public Memory::RefCountedObjectBase
     {
         FE_RTTI("EA570124-75F4-4EFC-9C49-69EB5EB0404C");
+
+        [[nodiscard]] Device* GetDevice() const
+        {
+            return m_device;
+        }
 
         std::pmr::memory_resource* GetAllocator()
         {
@@ -134,6 +139,7 @@ namespace FE::Graphics::Core
             Rtti::TypeID m_typeID = Rtti::TypeID::kNull;
         };
 
+        Device* m_device = nullptr;
         DescriptorManager* m_descriptorManager = nullptr;
         ResourcePool* m_resourcePool = nullptr;
 

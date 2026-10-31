@@ -88,7 +88,7 @@ namespace FE::Graphics::Vulkan
         void CompileShader(uint32_t shaderIndex);
         Rc<ShaderVersion> CompileVersion(const ShaderInfo& shaderInfo, festd::inline_vector<Env::Name, 16>& dependencies);
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

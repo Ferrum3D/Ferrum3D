@@ -16,7 +16,7 @@ namespace FE::Graphics::Vulkan
     };
 
 
-    struct CommandBuffer final : public Core::DeviceObject
+    struct CommandBuffer final : public Memory::RefCountedObjectBase
     {
         FE_RTTI("F14E4F22-6734-4747-BB3C-FE3BA6697E46");
 
@@ -75,8 +75,9 @@ namespace FE::Graphics::Vulkan
     private:
         explicit CommandBuffer(Core::Device* device, const CommandBufferDesc& desc);
 
-        void DestroyObject() override;
+        void DoRelease() override;
 
+        Core::Device* m_device = nullptr;
         Memory::LinearAllocator m_linearAllocator;
 
         VkQueue m_nativeQueue = VK_NULL_HANDLE;

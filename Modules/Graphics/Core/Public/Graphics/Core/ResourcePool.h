@@ -14,11 +14,16 @@ namespace FE::Graphics::Core
     };
 
 
-    struct ResourcePool : public DeviceObject
+    struct ResourcePool : public Memory::RefCountedObjectBase
     {
         ~ResourcePool() override = default;
 
         FE_RTTI("389492DC-7AE2-4B58-984C-6A1529EDFB41");
+
+        [[nodiscard]] Device* GetDevice() const
+        {
+            return m_device;
+        }
 
         virtual void CommitTextureMemory(Texture* texture, const ResourceCommitParams& params) = 0;
         virtual void CommitBufferMemory(Buffer* buffer, const ResourceCommitParams& params) = 0;
@@ -27,5 +32,8 @@ namespace FE::Graphics::Core
         virtual void DecommitBufferMemory(Buffer* buffer) = 0;
 
         virtual void EndFrame() = 0;
+
+    protected:
+        Device* m_device = nullptr;
     };
 } // namespace FE::Graphics::Core

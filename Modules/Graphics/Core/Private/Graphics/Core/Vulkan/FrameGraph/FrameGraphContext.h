@@ -37,7 +37,7 @@ namespace FE::Graphics::Vulkan
 
         void BeginRendering(VkCommandBuffer vkCommandBuffer) const;
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

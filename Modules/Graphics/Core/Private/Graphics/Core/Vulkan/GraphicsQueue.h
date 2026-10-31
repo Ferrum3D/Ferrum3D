@@ -57,7 +57,7 @@ namespace FE::Graphics::Vulkan
     private:
         void BeginRecording();
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

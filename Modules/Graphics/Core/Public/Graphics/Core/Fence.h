@@ -1,15 +1,18 @@
 ﻿#pragma once
-#include <Graphics/Core/DeviceObject.h>
+#include <Graphics/Core/Device.h>
 
 namespace FE::Graphics::Core
 {
-    struct Fence : public DeviceObject
+    struct Fence : public Memory::RefCountedObjectBase
     {
         FE_RTTI("D815152F-A41F-45C8-81AB-F921F19E8AA3");
 
         virtual uint64_t GetCompletedValue() = 0;
         virtual void Wait(uint64_t value) = 0;
         virtual void Signal(uint64_t value) = 0;
+
+    protected:
+        Device* m_device = nullptr;
     };
 
 

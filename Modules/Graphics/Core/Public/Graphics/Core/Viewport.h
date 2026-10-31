@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/Math/Rect.h>
-#include <Graphics/Core/DeviceObject.h>
+#include <Graphics/Core/Device.h>
 
 namespace FE::Graphics::Core
 {
@@ -35,7 +35,7 @@ namespace FE::Graphics::Core
     };
 
 
-    struct Viewport : public DeviceObject
+    struct Viewport : public Memory::RefCountedObjectBase
     {
         FE_RTTI("6190EF25-7202-48E9-A4E7-C5B123881D58");
 
@@ -47,5 +47,8 @@ namespace FE::Graphics::Core
         //! Present an acquired image by passing the viewport to GraphicsQueue::SubmitFrame of the same frame.
         [[nodiscard]] virtual bool AcquireNextImage() = 0;
         virtual void PrepareBlit() = 0;
+
+    protected:
+        Device* m_device = nullptr;
     };
 } // namespace FE::Graphics::Core

@@ -174,7 +174,7 @@ namespace FE::Graphics::Common
     }
 
 
-    void Buffer::DestroyObject()
+    void Buffer::DoRelease()
     {
         Core::GBufferPool.Delete(this);
     }

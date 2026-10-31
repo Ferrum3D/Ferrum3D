@@ -42,7 +42,7 @@ namespace FE::Graphics::Vulkan
                                   uint64_t completedGraphicsFence, uint64_t completedTransferFence) const;
         void DestroyResource(uint32_t resourceIndex);
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

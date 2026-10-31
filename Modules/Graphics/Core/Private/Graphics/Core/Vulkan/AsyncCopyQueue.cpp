@@ -601,7 +601,6 @@ namespace FE::Graphics::Vulkan
     AsyncCopyQueue::AsyncCopyQueue(Core::Device* device)
     {
         m_device = device;
-        SetImmediateDestroyPolicy();
 
         m_processingItems.reserve(m_processingItems.get_container().capacity());
 
@@ -619,6 +618,7 @@ namespace FE::Graphics::Vulkan
         Common::ImplCast(m_uploadBuffer.Get())->AssignInstance(bufferInstance);
 
         m_fence = Fence::Create(m_device, 0);
+        ImplCast(m_device)->RegisterQueueTimeline(m_fence.Get(), &m_fenceValue);
 
         VmaVirtualBlockCreateInfo virtualBlockCI = {};
         virtualBlockCI.size = kUploadBufferSize;
@@ -651,6 +651,13 @@ namespace FE::Graphics::Vulkan
         }
 
         Threading::CloseThread(m_thread);
+
+        // The worker exits without waiting for submitted batches; finish them before releasing their resources.
+        m_fence->Wait(m_fenceValue.load());
+        FinalizeFinishedProcessors();
+        FE_Assert(m_processingItems.empty());
+        ImplCast(m_device)->UnregisterQueueTimeline(m_fence.Get());
+
         m_gpuProfiler.Shutdown();
 
         {

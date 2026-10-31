@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/Jobs/WaitGroup.h>
-#include <Graphics/Core/DeviceObject.h>
+#include <Graphics/Core/Device.h>
 
 namespace FE::Graphics::Core
 {
@@ -12,7 +12,7 @@ namespace FE::Graphics::Core
     };
 
 
-    struct PipelineBase : public DeviceObject
+    struct PipelineBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("8D4EC84B-525C-4A21-9FBD-1C304F3471D2");
 
@@ -38,6 +38,7 @@ namespace FE::Graphics::Core
         }
 
     protected:
+        Device* m_device = nullptr;
         std::atomic<PipelineStatus> m_status = PipelineStatus::kNotReady;
         Rc<WaitGroup> m_completionWaitGroup;
     };

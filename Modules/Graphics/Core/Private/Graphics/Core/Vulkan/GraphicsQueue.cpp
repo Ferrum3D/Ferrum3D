@@ -1,4 +1,4 @@
-#include <Graphics/Core/Common/Buffer.h>
+﻿#include <Graphics/Core/Common/Buffer.h>
 #include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/Vulkan/Barrier.h>
 #include <Graphics/Core/Vulkan/Device.h>
@@ -14,6 +14,7 @@ namespace FE::Graphics::Vulkan
         m_device = device;
 
         m_fence = Fence::Create(m_device, 0);
+        ImplCast(device)->RegisterQueueTimeline(m_fence.Get(), &m_trackedFenceValue);
 
         const VkCommandPool commandPool = ImplCast(device)->GetCommandPool(Core::DeviceQueueType::kGraphics);
         const uint32_t queueFamilyIndex = ImplCast(device)->GetQueueFamilyIndex(Core::DeviceQueueType::kGraphics);
@@ -30,8 +31,7 @@ namespace FE::Graphics::Vulkan
             desc.m_commandPool = commandPool;
             desc.m_pageAllocator = &m_sharedPagePool;
 
-            const Rc commandBuffer = CommandBuffer::Create(m_device, desc);
-            commandBuffer->SetImmediateDestroyPolicy();
+            const Rc<CommandBuffer> commandBuffer = CommandBuffer::Create(m_device, desc);
             m_graphicsCommandBuffers.push_back(commandBuffer);
         }
     }
@@ -39,6 +39,10 @@ namespace FE::Graphics::Vulkan
 
     GraphicsQueue::~GraphicsQueue()
     {
+        // Command buffers, the fence and published resources are destroyed with the queue.
+        Drain();
+        ImplCast(m_device)->UnregisterQueueTimeline(m_fence.Get());
+
         m_gpuProfiler.Shutdown();
     }
 

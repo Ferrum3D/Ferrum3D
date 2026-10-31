@@ -211,7 +211,7 @@ namespace FE::Graphics::Common
     }
 
 
-    void Texture::DestroyObject()
+    void Texture::DoRelease()
     {
         Core::GTexturePool.Delete(this);
     }

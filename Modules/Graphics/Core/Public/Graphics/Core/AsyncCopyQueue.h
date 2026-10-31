@@ -166,7 +166,7 @@ namespace FE::Graphics::Core
     };
 
 
-    struct AsyncCopyQueue : public DeviceObject
+    struct AsyncCopyQueue : public Memory::RefCountedObjectBase
     {
         FE_RTTI("2C1855F0-034B-47B7-869A-F9512903212F");
 
@@ -174,5 +174,8 @@ namespace FE::Graphics::Core
 
         virtual void ExecuteCommandList(AsyncCopyCommandList* commandList) = 0;
         virtual void Drain() = 0;
+
+    protected:
+        Device* m_device = nullptr;
     };
 } // namespace FE::Graphics::Core

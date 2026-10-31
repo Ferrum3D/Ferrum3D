@@ -407,7 +407,6 @@ namespace FE::Graphics::Vulkan
             const Env::Name imageName = Fmt::FormatName("Swapchain Color Target {}", i);
 
             const Rc image = Core::Texture::Create(m_device, imageName, colorTargetDesc);
-            image->SetImmediateDestroyPolicy();
 
             constexpr Core::ResourceCommitParams commitParams{ .m_bindFlags = Core::BarrierAccessFlags::kRenderTarget
                                                                    | Core::BarrierAccessFlags::kCopyDest,

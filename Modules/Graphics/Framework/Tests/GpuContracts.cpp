@@ -114,7 +114,6 @@ namespace
         explicit SuspendedRenderViewport(Core::Device* device)
         {
             m_device = device;
-            SetImmediateDestroyPolicy();
         }
 
 
@@ -150,7 +149,7 @@ namespace
         void PrepareBlit() override {}
 
     private:
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

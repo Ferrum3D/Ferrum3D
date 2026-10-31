@@ -45,7 +45,7 @@ namespace FE::Graphics::Common
 
         ResourceInstance* m_instance = nullptr;
 
-        void DestroyObject() override;
+        void DoRelease() override;
     };
 
 

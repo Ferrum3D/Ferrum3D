@@ -2,7 +2,6 @@
 #include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Core/BaseTypes.h>
 #include <Graphics/Core/Device.h>
-#include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
@@ -18,7 +17,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    struct Semaphore final : public Core::DeviceObject
+    struct Semaphore final : public Memory::RefCountedObjectBase
     {
         ~Semaphore() override;
 
@@ -31,8 +30,9 @@ namespace FE::Graphics::Vulkan
 
     private:
         explicit Semaphore(Core::Device* device, Env::Name name);
-        void DestroyObject() override;
+        void DoRelease() override;
 
+        Core::Device* m_device = nullptr;
         VkSemaphore m_nativeSemaphore = VK_NULL_HANDLE;
     };
 } // namespace FE::Graphics::Vulkan

@@ -25,7 +25,7 @@ namespace FE::Graphics::Vulkan
         void ExecutePassBarriersInternal(PassNode& pass) override;
         void EndMarkerInternal() override;
 
-        void DestroyObject() override
+        void DoRelease() override
         {
             Memory::DefaultDelete(this);
         }

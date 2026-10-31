@@ -8,7 +8,6 @@ namespace FE::Graphics::Core
 
     struct Device;
     struct DeviceFactory;
-    struct DeviceObject;
 
     struct Fence;
     struct FenceSyncPoint;

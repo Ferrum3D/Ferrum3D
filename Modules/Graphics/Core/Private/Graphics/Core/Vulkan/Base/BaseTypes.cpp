@@ -44,7 +44,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Semaphore::DestroyObject()
+    void Semaphore::DoRelease()
     {
         GSemaphorePool.Delete(this);
     }

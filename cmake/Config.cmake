@@ -23,14 +23,22 @@ add_compile_definitions(TRACY_DELAYED_INIT)
 add_compile_definitions(TRACY_MANUAL_LIFETIME)
 
 function(fe_configure_target TARGET)
+    # Warnings are not fatal for codegen: that build only feeds libclang and clangd
+    if(FE_CODEGEN)
+        set(FE_WERROR_MSVC "")
+        set(FE_WERROR_CLANG "")
+    else()
+        set(FE_WERROR_MSVC /WX)
+        set(FE_WERROR_CLANG -Werror)
+    endif()
     if(FE_COMPILER_MSVC)
         target_compile_options(${TARGET} PRIVATE
             /EHs-c- /D_HAS_EXCEPTIONS=0 /fp:fast
             /Zc:preprocessor /arch:AVX /utf-8
-            /W4 /WX /wd4324 /wd4201 /wd4127 /wd4373
+            /W4 ${FE_WERROR_MSVC} /wd4324 /wd4201 /wd4127 /wd4373
             $<$<CONFIG:Debug>:/d2Obforceinline>)
     else()
-        target_compile_options(${TARGET} PRIVATE -fno-exceptions -Wall -Werror -mavx -ffast-math
+        target_compile_options(${TARGET} PRIVATE -fno-exceptions -Wall ${FE_WERROR_CLANG} -mavx -ffast-math
 			-Wno-deprecated-builtins -Wno-language-extension-token)
     endif()
 
