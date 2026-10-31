@@ -44,7 +44,7 @@ namespace FE::Graphics
     {
         //! Moved rarely, e.g. by editing; data derived from the transforms may be cached across frames.
         kStatic,
-        //! Moved at runtime. Dynamic batches also carry DrawTags::Dynamic, so passes can select only them.
+        //! Moved at runtime. Batches also carry DrawTags::Static or DrawTags::Dynamic, so passes can select either.
         kDynamic,
     };
 
@@ -174,6 +174,13 @@ namespace FE::Graphics
             return m_evaluationWaveLaneCount;
         }
 
+        //! World bounds where static casters moved, appeared or disappeared before the last Update(), so caches of data
+        //! derived from them can invalidate those regions. Bounds before and after a change are both listed.
+        [[nodiscard]] festd::span<const Aabb> GetStaticChanges() const
+        {
+            return m_staticChanges;
+        }
+
     private:
         void DoRelease() override;
 
@@ -223,6 +230,7 @@ namespace FE::Graphics
         MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
         [[nodiscard]] Aabb CalculateBatchBounds(const MeshBatch* batch) const;
         void UpdateBatchMembership(MeshBatch* batch);
+        void AddStaticChange(const MeshBatch* batch, const Aabb& bounds);
         void CollectCullDispatches(const Culling::PassData& culling);
         void AllocateMeshletVisibility(InstanceRecord& record);
         void FreeMeshletVisibility(InstanceRecord& record);
@@ -246,6 +254,8 @@ namespace FE::Graphics
         festd::bit_vector m_membershipDirty;
         festd::vector<uint32_t> m_dirtyBatches;
         festd::vector<Aabb> m_dirtyBatchBounds;
+        festd::vector<Aabb> m_pendingStaticChanges;
+        festd::vector<Aabb> m_staticChanges;
         festd::vector<MeshPass::CullDispatch> m_cullDispatches[Octree::kMaxTraversalTasks];
         festd::vector<festd::unique_ptr<ViewCullingState>> m_viewCullingStates;
         Memory::BuddyAllocator m_meshletVisibilityAllocator;

@@ -51,3 +51,8 @@ cs Shaders/Shadows/ClearAtlasPages.cs.hlsl
 cs Shaders/Shadows/AllocatePages.cs.hlsl
 cs Shaders/Shadows/MarkPages.cs.hlsl
 cs Shaders/Shadows/ClearPageTable.cs.hlsl
+cs Shaders/Shadows/BuildPageMask.cs.hlsl
+cs Shaders/Shadows/CopyPages.cs.hlsl
+cs Shaders/Shadows/CollectPages.cs.hlsl
+cs Shaders/Shadows/InvalidatePages.cs.hlsl
+cs Shaders/Shadows/UpdatePages.cs.hlsl

@@ -1436,12 +1436,18 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counters = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dirtyPages = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_atlas = {};
 
-        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_counters",
                                                      &SunShadowClearAtlasConstants::m_counters,
                                                      kAttributes_m_counters,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_dirtyPages",
+                                                     &SunShadowClearAtlasConstants::m_dirtyPages,
+                                                     kAttributes_m_dirtyPages,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_atlas",
                                                      &SunShadowClearAtlasConstants::m_atlas,
@@ -2335,18 +2341,18 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID SunShadowClearConstants::TypeID = Rtti::TypeID{
+    const Rtti::TypeID SunShadowUpdateConstants::TypeID = Rtti::TypeID{
         0x28, 0xcb, 0x9d, 0xb3, 0x34, 0xd8, 0x4a, 0xcf, 0x8d, 0x95, 0x62, 0x2b, 0x4f, 0xb7, 0xe5, 0x1d,
     };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_28cb9db334d84acf8d95622b4fb7e51d(SunShadowClearConstants* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_28cb9db334d84acf8d95622b4fb7e51d(SunShadowUpdateConstants* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
                 0x28, 0xcb, 0x9d, 0xb3, 0x34, 0xd8, 0x4a, 0xcf,
-                0x8d, 0x95, 0x62, 0x2b, 0x4f, 0xb7, 0xe5, 0x1d, // FE::Graphics::SunShadowClearConstants (this type)
+                0x8d, 0x95, 0x62, 0x2b, 0x4f, 0xb7, 0xe5, 0x1d, // FE::Graphics::SunShadowUpdateConstants (this type)
             };
 
             __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
@@ -2364,18 +2370,18 @@ namespace FE::Graphics
         }
     } // namespace
 
-    const Rtti::Type& SunShadowClearConstants::RTTI_GetType()
+    const Rtti::Type& SunShadowUpdateConstants::RTTI_GetType()
     {
         return RTTI_GetMutableType_28cb9db334d84acf8d95622b4fb7e51d();
     }
 
-    void SunShadowClearConstants::Reflect(Rtti::ReflectionContext& context)
+    void SunShadowUpdateConstants::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_28cb9db334d84acf8d95622b4fb7e51d();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
             0x28, 0xcb, 0x9d, 0xb3, 0x34, 0xd8, 0x4a, 0xcf,
-            0x8d, 0x95, 0x62, 0x2b, 0x4f, 0xb7, 0xe5, 0x1d, // FE::Graphics::SunShadowClearConstants
+            0x8d, 0x95, 0x62, 0x2b, 0x4f, 0xb7, 0xe5, 0x1d, // FE::Graphics::SunShadowUpdateConstants
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
@@ -2383,38 +2389,56 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageTable = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_owners = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counters = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scroll = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageCount = {};
 
-        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_isReset = {};
+
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_pageTable",
-                                                     &SunShadowClearConstants::m_pageTable,
+                                                     &SunShadowUpdateConstants::m_pageTable,
                                                      kAttributes_m_pageTable,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_owners",
+                                                     &SunShadowUpdateConstants::m_owners,
+                                                     kAttributes_m_owners,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_counters",
-                                                     &SunShadowClearConstants::m_counters,
+                                                     &SunShadowUpdateConstants::m_counters,
                                                      kAttributes_m_counters,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_scroll",
+                                                     &SunShadowUpdateConstants::m_scroll,
+                                                     kAttributes_m_scroll,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_pageCount",
-                                                     &SunShadowClearConstants::m_pageCount,
+                                                     &SunShadowUpdateConstants::m_pageCount,
                                                      kAttributes_m_pageCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_isReset",
+                                                     &SunShadowUpdateConstants::m_isReset,
+                                                     kAttributes_m_isReset,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
-        context.ReflectClass<SunShadowClearConstants>(typeInstance,
-                                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                      "FE::Graphics::SunShadowClearConstants",
-                                                      kBaseClassTypeIDs,
-                                                      kAttributes,
-                                                      kFields,
-                                                      Rtti::TypeFlags::kNone);
+        context.ReflectClass<SunShadowUpdateConstants>(typeInstance,
+                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                       "FE::Graphics::SunShadowUpdateConstants",
+                                                       kBaseClassTypeIDs,
+                                                       kAttributes,
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
-            return RTTI_TryCastImpl_28cb9db334d84acf8d95622b4fb7e51d(static_cast<SunShadowClearConstants*>(instance), target);
+            return RTTI_TryCastImpl_28cb9db334d84acf8d95622b4fb7e51d(static_cast<SunShadowUpdateConstants*>(instance), target);
         };
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_28cb9db334d84acf8d95622b4fb7e51d(&SunShadowClearConstants::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_28cb9db334d84acf8d95622b4fb7e51d(&SunShadowUpdateConstants::Reflect);
 } // namespace FE::Graphics
 
 
@@ -4107,14 +4131,38 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageTable = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_owners = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_freePages = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_evictablePages = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dirtyPages = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counters = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageCount = {};
 
-        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+        static const festd::array<Rtti::FieldInfo, 7> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_pageTable",
                                                      &SunShadowAllocateConstants::m_pageTable,
                                                      kAttributes_m_pageTable,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_owners",
+                                                     &SunShadowAllocateConstants::m_owners,
+                                                     kAttributes_m_owners,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_freePages",
+                                                     &SunShadowAllocateConstants::m_freePages,
+                                                     kAttributes_m_freePages,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_evictablePages",
+                                                     &SunShadowAllocateConstants::m_evictablePages,
+                                                     kAttributes_m_evictablePages,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_dirtyPages",
+                                                     &SunShadowAllocateConstants::m_dirtyPages,
+                                                     kAttributes_m_dirtyPages,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_counters",
                                                      &SunShadowAllocateConstants::m_counters,
@@ -5419,6 +5467,85 @@ namespace FE::Graphics::Visibility
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID SunShadowInvalidatePassDesc::TypeID = Rtti::TypeID{
+        0x65, 0x5e, 0xbb, 0xc8, 0xea, 0x6f, 0x43, 0xa9, 0xb5, 0xe6, 0x69, 0x42, 0x97, 0xa2, 0x78, 0x95,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL
+        RTTI_TryCastImpl_655ebbc8ea6f43a9b5e6694297a27895(SunShadowInvalidatePassDesc* thisPtr, const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x65, 0x5e, 0xbb, 0xc8, 0xea, 0x6f, 0x43, 0xa9,
+                0xb5, 0xe6, 0x69, 0x42, 0x97, 0xa2, 0x78, 0x95, // FE::Graphics::SunShadowInvalidatePassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_655ebbc8ea6f43a9b5e6694297a27895()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowInvalidatePassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_655ebbc8ea6f43a9b5e6694297a27895();
+    }
+
+    void SunShadowInvalidatePassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_655ebbc8ea6f43a9b5e6694297a27895();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x65, 0x5e, 0xbb, 0xc8, 0xea, 0x6f, 0x43, 0xa9,
+            0xb5, 0xe6, 0x69, 0x42, 0x97, 0xa2, 0x78, 0x95, // FE::Graphics::SunShadowInvalidatePassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SunShadowInvalidatePassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SunShadowInvalidatePassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowInvalidatePassDesc>(typeInstance,
+                                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                          "FE::Graphics::SunShadowInvalidatePassDesc",
+                                                          kBaseClassTypeIDs,
+                                                          kAttributes,
+                                                          kFields,
+                                                          Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_655ebbc8ea6f43a9b5e6694297a27895(static_cast<SunShadowInvalidatePassDesc*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_655ebbc8ea6f43a9b5e6694297a27895(&SunShadowInvalidatePassDesc::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID SunShadowClearAtlasPassDesc::TypeID = Rtti::TypeID{
         0x6c, 0x9d, 0x39, 0x17, 0x12, 0xba, 0x43, 0xf5, 0xa3, 0x5a, 0xca, 0xf9, 0x59, 0x97, 0x7c, 0xdd,
     };
@@ -5939,18 +6066,18 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID SunShadowClearPassDesc::TypeID = Rtti::TypeID{
+    const Rtti::TypeID SunShadowUpdatePassDesc::TypeID = Rtti::TypeID{
         0x71, 0xc2, 0x3b, 0x37, 0x0a, 0xd2, 0x46, 0x48, 0xb1, 0xc0, 0x87, 0x7e, 0xef, 0xff, 0x8d, 0xac,
     };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_71c23b370ad24648b1c0877eefff8dac(SunShadowClearPassDesc* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_71c23b370ad24648b1c0877eefff8dac(SunShadowUpdatePassDesc* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
                 0x71, 0xc2, 0x3b, 0x37, 0x0a, 0xd2, 0x46, 0x48,
-                0xb1, 0xc0, 0x87, 0x7e, 0xef, 0xff, 0x8d, 0xac, // FE::Graphics::SunShadowClearPassDesc (this type)
+                0xb1, 0xc0, 0x87, 0x7e, 0xef, 0xff, 0x8d, 0xac, // FE::Graphics::SunShadowUpdatePassDesc (this type)
             };
 
             __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
@@ -5968,18 +6095,18 @@ namespace FE::Graphics
         }
     } // namespace
 
-    const Rtti::Type& SunShadowClearPassDesc::RTTI_GetType()
+    const Rtti::Type& SunShadowUpdatePassDesc::RTTI_GetType()
     {
         return RTTI_GetMutableType_71c23b370ad24648b1c0877eefff8dac();
     }
 
-    void SunShadowClearPassDesc::Reflect(Rtti::ReflectionContext& context)
+    void SunShadowUpdatePassDesc::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_71c23b370ad24648b1c0877eefff8dac();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
             0x71, 0xc2, 0x3b, 0x37, 0x0a, 0xd2, 0x46, 0x48,
-            0xb1, 0xc0, 0x87, 0x7e, 0xef, 0xff, 0x8d, 0xac, // FE::Graphics::SunShadowClearPassDesc
+            0xb1, 0xc0, 0x87, 0x7e, 0xef, 0xff, 0x8d, 0xac, // FE::Graphics::SunShadowUpdatePassDesc
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
@@ -5991,28 +6118,28 @@ namespace FE::Graphics
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_constants",
-                                                     &SunShadowClearPassDesc::m_constants,
+                                                     &SunShadowUpdatePassDesc::m_constants,
                                                      kAttributes_m_constants,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
-                                                     &SunShadowClearPassDesc::m_pipeline,
+                                                     &SunShadowUpdatePassDesc::m_pipeline,
                                                      kAttributes_m_pipeline,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
-        context.ReflectClass<SunShadowClearPassDesc>(typeInstance,
-                                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                                     "FE::Graphics::SunShadowClearPassDesc",
-                                                     kBaseClassTypeIDs,
-                                                     kAttributes,
-                                                     kFields,
-                                                     Rtti::TypeFlags::kNone);
+        context.ReflectClass<SunShadowUpdatePassDesc>(typeInstance,
+                                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                      "FE::Graphics::SunShadowUpdatePassDesc",
+                                                      kBaseClassTypeIDs,
+                                                      kAttributes,
+                                                      kFields,
+                                                      Rtti::TypeFlags::kNone);
         typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
-            return RTTI_TryCastImpl_71c23b370ad24648b1c0877eefff8dac(static_cast<SunShadowClearPassDesc*>(instance), target);
+            return RTTI_TryCastImpl_71c23b370ad24648b1c0877eefff8dac(static_cast<SunShadowUpdatePassDesc*>(instance), target);
         };
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_71c23b370ad24648b1c0877eefff8dac(&SunShadowClearPassDesc::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_71c23b370ad24648b1c0877eefff8dac(&SunShadowUpdatePassDesc::Reflect);
 } // namespace FE::Graphics
 
 
@@ -8673,6 +8800,98 @@ namespace FE::Graphics::MeshPass
 } // namespace FE::Graphics::MeshPass
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID SunShadowInvalidateConstants::TypeID = Rtti::TypeID{
+        0x98, 0x9c, 0xb8, 0x24, 0xd8, 0x85, 0x40, 0x04, 0xa2, 0x98, 0x67, 0x2c, 0x2b, 0x61, 0x0e, 0xe6,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL
+        RTTI_TryCastImpl_989cb824d8854004a298672c2b610ee6(SunShadowInvalidateConstants* thisPtr, const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x98, 0x9c, 0xb8, 0x24, 0xd8, 0x85, 0x40, 0x04,
+                0xa2, 0x98, 0x67, 0x2c, 0x2b, 0x61, 0x0e, 0xe6, // FE::Graphics::SunShadowInvalidateConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_989cb824d8854004a298672c2b610ee6()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowInvalidateConstants::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_989cb824d8854004a298672c2b610ee6();
+    }
+
+    void SunShadowInvalidateConstants::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_989cb824d8854004a298672c2b610ee6();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x98, 0x9c, 0xb8, 0x24, 0xd8, 0x85, 0x40, 0x04,
+            0xa2, 0x98, 0x67, 0x2c, 0x2b, 0x61, 0x0e, 0xe6, // FE::Graphics::SunShadowInvalidateConstants
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_data = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_regions = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageTable = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_owners = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_data",
+                                                     &SunShadowInvalidateConstants::m_data,
+                                                     kAttributes_m_data,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_regions",
+                                                     &SunShadowInvalidateConstants::m_regions,
+                                                     kAttributes_m_regions,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pageTable",
+                                                     &SunShadowInvalidateConstants::m_pageTable,
+                                                     kAttributes_m_pageTable,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_owners",
+                                                     &SunShadowInvalidateConstants::m_owners,
+                                                     kAttributes_m_owners,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowInvalidateConstants>(typeInstance,
+                                                           Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                           "FE::Graphics::SunShadowInvalidateConstants",
+                                                           kBaseClassTypeIDs,
+                                                           kAttributes,
+                                                           kFields,
+                                                           Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_989cb824d8854004a298672c2b610ee6(static_cast<SunShadowInvalidateConstants*>(instance),
+                                                                     target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_989cb824d8854004a298672c2b610ee6(&SunShadowInvalidateConstants::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::Visibility
 {
     const Rtti::TypeID SurfaceDirectPassDesc::TypeID = Rtti::TypeID{
@@ -10061,6 +10280,103 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID SunShadowCollectConstants::TypeID = Rtti::TypeID{
+        0xb1, 0xf8, 0x07, 0x79, 0x54, 0x48, 0x49, 0x5f, 0xb8, 0x29, 0x36, 0x0d, 0x17, 0xba, 0x8d, 0xa6,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b1f807795448495fb829360d17ba8da6(SunShadowCollectConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xb1, 0xf8, 0x07, 0x79, 0x54, 0x48, 0x49, 0x5f,
+                0xb8, 0x29, 0x36, 0x0d, 0x17, 0xba, 0x8d, 0xa6, // FE::Graphics::SunShadowCollectConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_b1f807795448495fb829360d17ba8da6()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowCollectConstants::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_b1f807795448495fb829360d17ba8da6();
+    }
+
+    void SunShadowCollectConstants::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_b1f807795448495fb829360d17ba8da6();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xb1, 0xf8, 0x07, 0x79, 0x54, 0x48, 0x49, 0x5f,
+            0xb8, 0x29, 0x36, 0x0d, 0x17, 0xba, 0x8d, 0xa6, // FE::Graphics::SunShadowCollectConstants
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageTable = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_owners = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_freePages = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_evictablePages = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counters = {};
+
+        static const festd::array<Rtti::FieldInfo, 5> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_pageTable",
+                                                     &SunShadowCollectConstants::m_pageTable,
+                                                     kAttributes_m_pageTable,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_owners",
+                                                     &SunShadowCollectConstants::m_owners,
+                                                     kAttributes_m_owners,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_freePages",
+                                                     &SunShadowCollectConstants::m_freePages,
+                                                     kAttributes_m_freePages,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_evictablePages",
+                                                     &SunShadowCollectConstants::m_evictablePages,
+                                                     kAttributes_m_evictablePages,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_counters",
+                                                     &SunShadowCollectConstants::m_counters,
+                                                     kAttributes_m_counters,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowCollectConstants>(typeInstance,
+                                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                        "FE::Graphics::SunShadowCollectConstants",
+                                                        kBaseClassTypeIDs,
+                                                        kAttributes,
+                                                        kFields,
+                                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_b1f807795448495fb829360d17ba8da6(static_cast<SunShadowCollectConstants*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_b1f807795448495fb829360d17ba8da6(&SunShadowCollectConstants::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID LocalLightingBinding::TypeID = Rtti::TypeID{
         0xb2, 0x74, 0xd0, 0x17, 0x6b, 0xdb, 0x4f, 0xfd, 0xbb, 0x75, 0x09, 0xdb, 0xf5, 0xaf, 0x6a, 0x18,
     };
@@ -10684,6 +11000,85 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID SunShadowCopyPagesPassDesc::TypeID = Rtti::TypeID{
+        0xbb, 0x4b, 0x53, 0x8a, 0xa3, 0x1a, 0x42, 0xa4, 0xb8, 0x88, 0xe5, 0x8f, 0x6f, 0x80, 0xf3, 0xf7,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_bb4b538aa31a42a4b888e58f6f80f3f7(SunShadowCopyPagesPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xbb, 0x4b, 0x53, 0x8a, 0xa3, 0x1a, 0x42, 0xa4,
+                0xb8, 0x88, 0xe5, 0x8f, 0x6f, 0x80, 0xf3, 0xf7, // FE::Graphics::SunShadowCopyPagesPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_bb4b538aa31a42a4b888e58f6f80f3f7()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowCopyPagesPassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_bb4b538aa31a42a4b888e58f6f80f3f7();
+    }
+
+    void SunShadowCopyPagesPassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_bb4b538aa31a42a4b888e58f6f80f3f7();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xbb, 0x4b, 0x53, 0x8a, 0xa3, 0x1a, 0x42, 0xa4,
+            0xb8, 0x88, 0xe5, 0x8f, 0x6f, 0x80, 0xf3, 0xf7, // FE::Graphics::SunShadowCopyPagesPassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SunShadowCopyPagesPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SunShadowCopyPagesPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowCopyPagesPassDesc>(typeInstance,
+                                                         Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                         "FE::Graphics::SunShadowCopyPagesPassDesc",
+                                                         kBaseClassTypeIDs,
+                                                         kAttributes,
+                                                         kFields,
+                                                         Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_bb4b538aa31a42a4b888e58f6f80f3f7(static_cast<SunShadowCopyPagesPassDesc*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_bb4b538aa31a42a4b888e58f6f80f3f7(&SunShadowCopyPagesPassDesc::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::ShadowAtlas
 {
     const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{
@@ -11059,6 +11454,85 @@ namespace FE::Graphics::Tools::DepthPyramid
 
     static Rtti::TypeRegistrar GTypeRegistrar_c7f6fc3c9bb0413e84f37155b6ee13c8(&SpdConstants::Reflect);
 } // namespace FE::Graphics::Tools::DepthPyramid
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID SunShadowPageMaskPassDesc::TypeID = Rtti::TypeID{
+        0xc9, 0x3a, 0x08, 0x3c, 0xaa, 0x67, 0x42, 0xc2, 0x80, 0x27, 0xa6, 0xaa, 0x90, 0xa4, 0x13, 0x2e,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_c93a083caa6742c28027a6aa90a4132e(SunShadowPageMaskPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xc9, 0x3a, 0x08, 0x3c, 0xaa, 0x67, 0x42, 0xc2,
+                0x80, 0x27, 0xa6, 0xaa, 0x90, 0xa4, 0x13, 0x2e, // FE::Graphics::SunShadowPageMaskPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_c93a083caa6742c28027a6aa90a4132e()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowPageMaskPassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_c93a083caa6742c28027a6aa90a4132e();
+    }
+
+    void SunShadowPageMaskPassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_c93a083caa6742c28027a6aa90a4132e();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xc9, 0x3a, 0x08, 0x3c, 0xaa, 0x67, 0x42, 0xc2,
+            0x80, 0x27, 0xa6, 0xaa, 0x90, 0xa4, 0x13, 0x2e, // FE::Graphics::SunShadowPageMaskPassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SunShadowPageMaskPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SunShadowPageMaskPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowPageMaskPassDesc>(typeInstance,
+                                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                        "FE::Graphics::SunShadowPageMaskPassDesc",
+                                                        kBaseClassTypeIDs,
+                                                        kAttributes,
+                                                        kFields,
+                                                        Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_c93a083caa6742c28027a6aa90a4132e(static_cast<SunShadowPageMaskPassDesc*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_c93a083caa6742c28027a6aa90a4132e(&SunShadowPageMaskPassDesc::Reflect);
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Tools::Downsample
@@ -11495,6 +11969,85 @@ namespace FE::Graphics::SurfaceEvaluation
 } // namespace FE::Graphics::SurfaceEvaluation
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID SunShadowCollectPassDesc::TypeID = Rtti::TypeID{
+        0xd2, 0x2f, 0xbf, 0xff, 0x42, 0x9e, 0x42, 0x55, 0x86, 0x61, 0x7b, 0xcc, 0x62, 0x38, 0x76, 0xd0,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_d22fbfff429e425586617bcc623876d0(SunShadowCollectPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xd2, 0x2f, 0xbf, 0xff, 0x42, 0x9e, 0x42, 0x55,
+                0x86, 0x61, 0x7b, 0xcc, 0x62, 0x38, 0x76, 0xd0, // FE::Graphics::SunShadowCollectPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_d22fbfff429e425586617bcc623876d0()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowCollectPassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_d22fbfff429e425586617bcc623876d0();
+    }
+
+    void SunShadowCollectPassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_d22fbfff429e425586617bcc623876d0();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xd2, 0x2f, 0xbf, 0xff, 0x42, 0x9e, 0x42, 0x55,
+            0x86, 0x61, 0x7b, 0xcc, 0x62, 0x38, 0x76, 0xd0, // FE::Graphics::SunShadowCollectPassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &SunShadowCollectPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &SunShadowCollectPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowCollectPassDesc>(typeInstance,
+                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                       "FE::Graphics::SunShadowCollectPassDesc",
+                                                       kBaseClassTypeIDs,
+                                                       kAttributes,
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_d22fbfff429e425586617bcc623876d0(static_cast<SunShadowCollectPassDesc*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_d22fbfff429e425586617bcc623876d0(&SunShadowCollectPassDesc::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::Visibility
 {
     const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{
@@ -11585,6 +12138,103 @@ namespace FE::Graphics::Visibility
 
     static Rtti::TypeRegistrar GTypeRegistrar_d6f76e4181b54442b976e9f80b37feb7(&ViewModule::Reflect);
 } // namespace FE::Graphics::Visibility
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID SunShadowPageMaskConstants::TypeID = Rtti::TypeID{
+        0xda, 0x1d, 0x75, 0xb4, 0x3d, 0x68, 0x49, 0x1f, 0xb2, 0xf5, 0x4f, 0x3a, 0xbd, 0xd1, 0x08, 0xd3,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_da1d75b43d68491fb2f54f3abdd108d3(SunShadowPageMaskConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xda, 0x1d, 0x75, 0xb4, 0x3d, 0x68, 0x49, 0x1f,
+                0xb2, 0xf5, 0x4f, 0x3a, 0xbd, 0xd1, 0x08, 0xd3, // FE::Graphics::SunShadowPageMaskConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_da1d75b43d68491fb2f54f3abdd108d3()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowPageMaskConstants::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_da1d75b43d68491fb2f54f3abdd108d3();
+    }
+
+    void SunShadowPageMaskConstants::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_da1d75b43d68491fb2f54f3abdd108d3();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xda, 0x1d, 0x75, 0xb4, 0x3d, 0x68, 0x49, 0x1f,
+            0xb2, 0xf5, 0x4f, 0x3a, 0xbd, 0xd1, 0x08, 0xd3, // FE::Graphics::SunShadowPageMaskConstants
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageTable = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mask = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_level = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_requiredFlags = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageOrigin = {};
+
+        static const festd::array<Rtti::FieldInfo, 5> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_pageTable",
+                                                     &SunShadowPageMaskConstants::m_pageTable,
+                                                     kAttributes_m_pageTable,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mask",
+                                                     &SunShadowPageMaskConstants::m_mask,
+                                                     kAttributes_m_mask,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_level",
+                                                     &SunShadowPageMaskConstants::m_level,
+                                                     kAttributes_m_level,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_requiredFlags",
+                                                     &SunShadowPageMaskConstants::m_requiredFlags,
+                                                     kAttributes_m_requiredFlags,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pageOrigin",
+                                                     &SunShadowPageMaskConstants::m_pageOrigin,
+                                                     kAttributes_m_pageOrigin,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowPageMaskConstants>(typeInstance,
+                                                         Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                         "FE::Graphics::SunShadowPageMaskConstants",
+                                                         kBaseClassTypeIDs,
+                                                         kAttributes,
+                                                         kFields,
+                                                         Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_da1d75b43d68491fb2f54f3abdd108d3(static_cast<SunShadowPageMaskConstants*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_da1d75b43d68491fb2f54f3abdd108d3(&SunShadowPageMaskConstants::Reflect);
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics
@@ -11877,6 +12527,97 @@ namespace FE::Graphics::Tools::DepthPyramid
 
     static Rtti::TypeRegistrar GTypeRegistrar_de08d889a3094f22b99de94c8bf17eef(&TilePassDesc::Reflect);
 } // namespace FE::Graphics::Tools::DepthPyramid
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID SunShadowCopyPagesConstants::TypeID = Rtti::TypeID{
+        0xe0, 0xb9, 0xe7, 0xa5, 0xdc, 0x51, 0x4e, 0x6f, 0xa9, 0xff, 0xe4, 0xd0, 0x63, 0xd5, 0xb4, 0x36,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL
+        RTTI_TryCastImpl_e0b9e7a5dc514e6fa9ffe4d063d5b436(SunShadowCopyPagesConstants* thisPtr, const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xe0, 0xb9, 0xe7, 0xa5, 0xdc, 0x51, 0x4e, 0x6f,
+                0xa9, 0xff, 0xe4, 0xd0, 0x63, 0xd5, 0xb4, 0x36, // FE::Graphics::SunShadowCopyPagesConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_e0b9e7a5dc514e6fa9ffe4d063d5b436()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowCopyPagesConstants::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_e0b9e7a5dc514e6fa9ffe4d063d5b436();
+    }
+
+    void SunShadowCopyPagesConstants::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_e0b9e7a5dc514e6fa9ffe4d063d5b436();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xe0, 0xb9, 0xe7, 0xa5, 0xdc, 0x51, 0x4e, 0x6f,
+            0xa9, 0xff, 0xe4, 0xd0, 0x63, 0xd5, 0xb4, 0x36, // FE::Graphics::SunShadowCopyPagesConstants
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageTable = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_owners = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_source = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_target = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_pageTable",
+                                                     &SunShadowCopyPagesConstants::m_pageTable,
+                                                     kAttributes_m_pageTable,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_owners",
+                                                     &SunShadowCopyPagesConstants::m_owners,
+                                                     kAttributes_m_owners,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_source",
+                                                     &SunShadowCopyPagesConstants::m_source,
+                                                     kAttributes_m_source,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_target",
+                                                     &SunShadowCopyPagesConstants::m_target,
+                                                     kAttributes_m_target,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowCopyPagesConstants>(typeInstance,
+                                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                          "FE::Graphics::SunShadowCopyPagesConstants",
+                                                          kBaseClassTypeIDs,
+                                                          kAttributes,
+                                                          kFields,
+                                                          Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_e0b9e7a5dc514e6fa9ffe4d063d5b436(static_cast<SunShadowCopyPagesConstants*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_e0b9e7a5dc514e6fa9ffe4d063d5b436(&SunShadowCopyPagesConstants::Reflect);
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Visibility

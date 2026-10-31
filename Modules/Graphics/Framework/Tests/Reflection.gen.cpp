@@ -149,16 +149,32 @@ namespace FE::Graphics::SunShadowProbe
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_target = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_source = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_output = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_size = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depth = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_backgroundRows = {};
 
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mode = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_outputOffset = {};
+
+        static const festd::array<Rtti::FieldInfo, 8> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_target",
                                                      &Constants::m_target,
                                                      kAttributes_m_target,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_source",
+                                                     &Constants::m_source,
+                                                     kAttributes_m_source,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_output",
+                                                     &Constants::m_output,
+                                                     kAttributes_m_output,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_size",
                                                      &Constants::m_size,
@@ -171,6 +187,14 @@ namespace FE::Graphics::SunShadowProbe
             Rtti::ReflectionContext::CreateFieldInfo("m_backgroundRows",
                                                      &Constants::m_backgroundRows,
                                                      kAttributes_m_backgroundRows,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mode",
+                                                     &Constants::m_mode,
+                                                     kAttributes_m_mode,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_outputOffset",
+                                                     &Constants::m_outputOffset,
+                                                     kAttributes_m_outputOffset,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 

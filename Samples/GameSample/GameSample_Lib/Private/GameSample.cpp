@@ -6,6 +6,7 @@
 #include <GameFramework/Editor/Application.h>
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <GameSample/GameSample.h>
+#include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Scene/Culling.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
@@ -167,6 +168,43 @@ namespace
             {
                 if (stats.m_lodInstances[lodIndex] != 0)
                     Logger::LogInfo("Culling: LOD {} rendered {} instances", lodIndex, stats.m_lodInstances[lodIndex]);
+            }
+
+            LogSunShadowStats(view);
+        }
+
+
+        //! Casters tested and drawn by all clip levels; the page pyramids cull those that touch no drawn page, so static casters
+        //! are only drawn into pages that were not cached.
+        static void LogSunShadowStats(const Graphics::View& view)
+        {
+            const auto* shadows = view.GetModules().TryFind<Graphics::SunShadow::ViewModule>();
+            if (shadows == nullptr)
+                return;
+
+            using Graphics::SunShadow::Layer;
+            for (const Layer layer : { Layer::kStatic, Layer::kDynamic })
+            {
+                const char* layerName = layer == Layer::kStatic ? "static" : "dynamic";
+                const Graphics::Culling::Stats stats = shadows->GetCullingStats(layer);
+                if (!stats.m_isValid)
+                {
+                    Logger::LogWarning("No {} sun shadow culling statistics were read back", layerName);
+                    continue;
+                }
+
+                Logger::LogInfo("Sun shadow ({}): {} instances tested, {} frustum culled, {} page culled, {} rendered",
+                                layerName,
+                                stats.m_instanceCandidates,
+                                stats.m_instanceFrustumCulled,
+                                stats.m_instanceOcclusionCulled,
+                                stats.m_instancesRendered);
+                Logger::LogInfo("Sun shadow ({}): {} meshlets tested, {} page culled, {} rendered, {} triangles",
+                                layerName,
+                                stats.m_meshletCandidates,
+                                stats.m_meshletOcclusionCulled,
+                                stats.m_meshletsRendered,
+                                stats.m_trianglesRendered);
             }
         }
 

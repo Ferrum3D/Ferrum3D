@@ -2,7 +2,8 @@
 
 [[vk::push_constant]] SunShadowAllocateConstants GConstants;
 
-// Back every requested page with the next free atlas page. Requests beyond the atlas stay unbacked and sample as lit.
+// Requested entries without backing take a free atlas page, or else evict one whose entry was not requested this frame.
+// Requests beyond the atlas stay unbacked and sample as lit.
 FE_NUM_THREADS(kSunShadowThreadCount, 1, 1)
 void main(uint3 thread : SV_DispatchThreadID)
 {
@@ -11,17 +12,37 @@ void main(uint3 thread : SV_DispatchThreadID)
         return;
 
     const uint entry = GConstants.m_pageTable.Load(index);
-    if ((entry & kSunShadowPageRequested) == 0)
+    if ((entry & kSunShadowPageRequested) == 0 || (entry & kSunShadowPageAllocated) != 0)
         return;
 
     RWStructuredBuffer<uint> counters = GConstants.m_counters.Get();
+    uint freeIndex;
+    InterlockedAdd(counters[kSunShadowFreeTakenCounter], 1, freeIndex);
+
     uint physicalPage;
-    InterlockedAdd(counters[kSunShadowAllocatedCounter], 1, physicalPage);
-    if (physicalPage >= kSunShadowPhysicalPageCount)
+    if (freeIndex < counters[kSunShadowFreeCounter])
     {
-        InterlockedAdd(counters[kSunShadowOverflowCounter], 1);
-        return;
+        physicalPage = GConstants.m_freePages.Load(freeIndex);
+    }
+    else
+    {
+        uint evictableIndex;
+        InterlockedAdd(counters[kSunShadowEvictableTakenCounter], 1, evictableIndex);
+        if (evictableIndex >= counters[kSunShadowEvictableCounter])
+        {
+            InterlockedAdd(counters[kSunShadowOverflowCounter], 1);
+            return;
+        }
+
+        // The evicted entry was not requested, so no other thread of this pass touches it.
+        physicalPage = GConstants.m_evictablePages.Load(evictableIndex);
+        GConstants.m_pageTable.Store(GConstants.m_owners.Load(physicalPage), 0);
     }
 
-    GConstants.m_pageTable.Store(index, entry | kSunShadowPageAllocated | physicalPage);
+    GConstants.m_owners.Store(physicalPage, index);
+    GConstants.m_pageTable.Store(index, entry | kSunShadowPageAllocated | kSunShadowPageDirty | physicalPage);
+
+    uint dirtyIndex;
+    InterlockedAdd(counters[kSunShadowAllocatedCounter], 1, dirtyIndex);
+    GConstants.m_dirtyPages.Store(dirtyIndex, physicalPage);
 }

@@ -69,18 +69,18 @@ namespace FE::Graphics::Visibility
         // All opaque object modules contribute coverage against the same depth and visibility targets.
         const Culling::PassData& culling = Culling::GetPassData(blackboard);
         const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
-        const Tools::DepthPyramid::Output* frozenDepthPyramid = culling.GetFrozenDepthPyramid();
+        const Tools::DepthPyramid::Output* occluderPyramid = culling.GetOccluderPyramid();
         SceneRenderPass pass;
         pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
         pass.m_passDescToken = graph.AddBasePassDesc(coverage);
         pass.m_drawTag = data->m_drawTag;
         pass.m_techniqueRole = data->m_techniqueRole;
         pass.m_reportsStats = true;
-        if (frozenDepthPyramid != nullptr || !isOcclusionCulled)
+        if (occluderPyramid != nullptr || !isOcclusionCulled)
         {
-            // A frozen camera has no visibility history to render first; its captured pyramid already holds the occluders.
+            // A supplied or frozen occluder pyramid already holds the occluders, so there is no history to render first.
             pass.m_phase = SceneRenderPhase::kSingle;
-            pass.m_depthPyramid = isOcclusionCulled ? frozenDepthPyramid : nullptr;
+            pass.m_depthPyramid = isOcclusionCulled ? occluderPyramid : nullptr;
             AddScenePasses(graph, blackboard, view, pass);
         }
         else
@@ -98,7 +98,7 @@ namespace FE::Graphics::Visibility
         }
 
         // The first frozen frame captures the complete depth of the frozen camera.
-        if (culling.m_frozenDepthPyramid != nullptr && frozenDepthPyramid == nullptr)
+        if (culling.m_frozenDepthPyramid != nullptr && occluderPyramid == nullptr)
         {
             Tools::DepthPyramid::Settings settings;
             settings.m_buildsClosest = false;

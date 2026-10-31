@@ -64,10 +64,15 @@ namespace FE::Graphics::Culling
         Stats* m_stats = nullptr;
         //! Set while culling is frozen. The renderer captures the pyramid into it in the first frozen frame.
         Tools::DepthPyramid::Output* m_frozenDepthPyramid = nullptr;
+        //! Occluders the view supplies itself, e.g. the clean pages of a shadow clip level.
+        const Tools::DepthPyramid::Output* m_occluderPyramid = nullptr;
 
-        //! The captured frozen pyramid; while it exists, views render once and test occlusion against it.
-        [[nodiscard]] const Tools::DepthPyramid::Output* GetFrozenDepthPyramid() const
+        //! The supplied or captured frozen pyramid; while it exists, views render once and test occlusion against it.
+        [[nodiscard]] const Tools::DepthPyramid::Output* GetOccluderPyramid() const
         {
+            if (m_occluderPyramid != nullptr)
+                return m_occluderPyramid;
+
             const bool isCaptured = m_frozenDepthPyramid != nullptr && m_frozenDepthPyramid->m_texture != nullptr;
             return isCaptured ? m_frozenDepthPyramid : nullptr;
         }

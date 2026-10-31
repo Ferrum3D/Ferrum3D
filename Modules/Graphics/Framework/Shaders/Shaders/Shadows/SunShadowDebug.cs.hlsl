@@ -44,12 +44,19 @@ void main(uint3 thread : SV_DispatchThreadID)
         }
         else
         {
-            // Pages show as their own color with dark borders; unbacked pages are red.
+            // Cached pages show as their own color with dark borders, pages drawn this frame as yellow and unbacked pages as red.
             const uint2 texel = uint2(projection.m_texel);
-            const uint entry = GConstants.m_shadow.m_pageTable.Load(SunShadow::GetPageIndex(projection.m_level, texel));
+            const int2 pageOrigin = data.m_levels[projection.m_level].m_pageOrigin;
+            const uint entry = GConstants.m_shadow.m_pageTable.Load(SunShadow::GetPageIndex(projection.m_level, pageOrigin, texel));
             const uint2 inPage = texel % kSunShadowPageSize;
             const bool isBorder = any(inPage < 2) || any(inPage >= kSunShadowPageSize - 2);
-            color = (entry & kSunShadowPageAllocated) != 0 ? DebugIDColor(entry & kSunShadowPhysicalPageMask) : float3(1, 0, 0);
+            if ((entry & kSunShadowPageAllocated) == 0)
+                color = float3(1, 0, 0);
+            else if ((entry & kSunShadowPageDirty) != 0)
+                color = float3(1, 0.9f, 0.1f);
+            else
+                color = DebugIDColor(entry & kSunShadowPhysicalPageMask);
+
             color *= isBorder ? 0.25f : 1.0f;
         }
     }

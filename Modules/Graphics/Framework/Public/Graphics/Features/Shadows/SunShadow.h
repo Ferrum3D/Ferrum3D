@@ -1,6 +1,10 @@
 #pragma once
 #include <Core/Math/Transform.h>
+#include <Core/Memory/Memory.h>
+#include <Graphics/Base/DrawTag.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
+#include <Graphics/Passes/Tools/DepthPyramid.h>
+#include <Graphics/Scene/Culling.h>
 #include <Graphics/Scene/View.h>
 #include <Shaders/Shadows/SunShadow.h>
 #include <festd/vector.h>
@@ -20,13 +24,17 @@ namespace FE::Graphics::SunShadow
     };
 
 
-    //! Camera and projection of one clip level, snapped to whole pages in light space.
+    //! Camera and projection of one clip level, snapped to whole pages in light space so that cached pages stay valid.
     struct LevelSetup final
     {
         Transform m_camera{ kForceInit };
         Matrix4x4 m_viewProjection = Matrix4x4::kIdentity;
         float m_size = 0.0f;
         float m_texelSize = 0.0f;
+        //! Light-space page of the level centre; the level covers 16 pages on each side of it.
+        Vector2Int m_pageOrigin = Vector2Int::kZero;
+        //! Light-space depth of the near plane, shared by all levels and snapped to a quarter of the depth range.
+        float m_depthOrigin = 0.0f;
     };
 
 
@@ -46,6 +54,19 @@ namespace FE::Graphics::SunShadow
 
     [[nodiscard]] SunShadowData BuildShadowData(const Settings& settings, festd::span<const LevelSetup> levels,
                                                 const CameraDesc& camera);
+
+
+    struct PageCache;
+
+
+    //! Static casters are drawn into cached pages when the pages are backed; dynamic casters are drawn every frame.
+    enum class Layer : uint32_t
+    {
+        kStatic,
+        kDynamic,
+    };
+
+    constexpr uint32_t kLayerCount = 2;
 
 
     //! Publishes the sun shadows of a camera view and owns the child views that render its clip levels.
@@ -68,15 +89,24 @@ namespace FE::Graphics::SunShadow
             return m_debugMode;
         }
 
-        [[nodiscard]] View* GetLevelView(const uint32_t levelIndex) const
+        [[nodiscard]] View* GetLevelView(const uint32_t levelIndex, const Layer layer) const
         {
-            return m_levelViews[levelIndex].Get();
+            return m_levelViews[festd::to_underlying(layer)][levelIndex].Get();
+        }
+
+        //! Culling counters of a layer summed over the clip levels; invalid until every level has read back its counters.
+        [[nodiscard]] Culling::Stats GetCullingStats(Layer layer) const;
+
+        [[nodiscard]] PageCache& GetPageCache() const
+        {
+            return *m_pageCache;
         }
 
     private:
         void DoRelease() override;
 
-        festd::fixed_vector<Rc<View>, kSunShadowMaxLevelCount> m_levelViews;
+        festd::fixed_vector<Rc<View>, kSunShadowMaxLevelCount> m_levelViews[kLayerCount];
+        festd::unique_ptr<PageCache> m_pageCache;
         uint32_t m_debugMode = kInvalidIndex;
     };
 
@@ -96,6 +126,12 @@ namespace FE::Graphics::ShadowAtlas
     {
         Core::Buffer* m_pageTable = nullptr;
         Core::Texture* m_atlas = nullptr;
+        //! Culls casters that touch no page drawn this frame; null disables occlusion culling.
+        const Tools::DepthPyramid::Output* m_pagePyramid = nullptr;
+        //! Casters drawn by the level, and the page table flags of the pages they are drawn into.
+        DrawTag m_drawTag;
+        uint32_t m_requiredPageFlags = 0;
+        Vector2Int m_pageOrigin = Vector2Int::kZero;
         uint32_t m_level = 0;
     };
 
@@ -112,8 +148,16 @@ namespace FE::Graphics::ShadowAtlas
 
         void Update(Core::FrameGraphBlackboard& blackboard) override;
 
+        //! Culling counters of the clip level, read back a few frames later.
+        [[nodiscard]] const Culling::Stats& GetStats() const
+        {
+            return m_stats;
+        }
+
     private:
         void DoRelease() override;
+
+        Culling::Stats m_stats;
     };
 
 

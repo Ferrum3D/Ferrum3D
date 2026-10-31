@@ -48,7 +48,7 @@ namespace FE::Graphics
         uint32_t m_meshletVisibilityCapacity = 0;
         //! MeshPass::CullStat counters of this frame.
         Core::Buffer* m_stats = nullptr;
-        //! A frozen depth pyramid tested in the single phase; null otherwise.
+        //! An occluder pyramid tested in the single phase; null otherwise.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
     };
 
@@ -85,7 +85,7 @@ namespace FE::Graphics
     struct MeshPassPhase final
     {
         uint32_t m_phase = MeshPass::CullPhase::kSingle;
-        //! Built from the early depth in the late phase, or frozen in the single phase; occlusion is tested when set.
+        //! Built from the early depth in the late phase, or the occluders of the single phase; occlusion is tested when set.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Receives meshlet and rendered instance counters when not null.
         Core::Buffer* m_stats = nullptr;

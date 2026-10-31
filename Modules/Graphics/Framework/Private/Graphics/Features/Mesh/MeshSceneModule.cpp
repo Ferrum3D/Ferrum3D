@@ -270,6 +270,7 @@ namespace FE::Graphics
         m_memberTable->Free(batch->m_members);
         m_batchTable->Free(batch->m_tableRef);
 
+        AddStaticChange(batch, batch->m_octreeEntry.GetBounds());
         m_octree.Remove(batch->m_octreeEntry);
         m_batches[batchIndex] = nullptr;
         m_boundsDirty.reset(batchIndex);
@@ -387,7 +388,16 @@ namespace FE::Graphics
             m_dirtyBatchBounds[index] = CalculateBatchBounds(m_batches[m_dirtyBatches[index]]);
         });
         for (uint32_t i = 0; i < m_dirtyBatches.size(); ++i)
-            m_octree.InsertOrUpdate(m_batches[m_dirtyBatches[i]]->m_octreeEntry, m_dirtyBatchBounds[i]);
+        {
+            MeshBatch* batch = m_batches[m_dirtyBatches[i]];
+            AddStaticChange(batch, batch->m_octreeEntry.GetBounds());
+            AddStaticChange(batch, m_dirtyBatchBounds[i]);
+            m_octree.InsertOrUpdate(batch->m_octreeEntry, m_dirtyBatchBounds[i]);
+        }
+
+        // Changes recorded between updates and by this one are published together.
+        m_staticChanges.swap(m_pendingStaticChanges);
+        m_pendingStaticChanges.clear();
 
         m_boundsDirty.reset();
 
@@ -433,8 +443,7 @@ namespace FE::Graphics
         }
 
         DrawTagMask drawTagMask = batch->m_drawTagMask;
-        if (batch->m_mobility == MeshMobility::kDynamic)
-            drawTagMask |= DrawTagMask(DrawTags::Dynamic);
+        drawTagMask |= DrawTagMask(batch->m_mobility == MeshMobility::kDynamic ? DrawTags::Dynamic : DrawTags::Static);
 
         const auto row = m_batchTable->WriteRow(batch->m_tableRef);
         row.m_members.Get() = batch->m_members;
@@ -449,7 +458,11 @@ namespace FE::Graphics
     {
         const auto reference = TranslateHandle(instance);
         FE_Assert(reference.m_rowIndex != kInvalidIndex);
+        // Republishing an unchanged transform must not invalidate data derived from it, such as cached static shadows.
         InstanceRecord& record = m_instances[instance.m_value];
+        if (*record.m_transform == transform)
+            return;
+
         *record.m_transform = transform;
         record.m_transformDirty = true;
     }
@@ -539,8 +552,20 @@ namespace FE::Graphics
         if (batch->m_mobility == mobility)
             return;
 
+        // Static caches either contain the batch and must drop it, or lack it and must add it.
+        AddStaticChange(batch, batch->m_octreeEntry.GetBounds());
         batch->m_mobility = mobility;
+        AddStaticChange(batch, batch->m_octreeEntry.GetBounds());
         m_membershipDirty.set(batch->m_tableRef.m_rowIndex);
+    }
+
+
+    void MeshSceneModule::AddStaticChange(const MeshBatch* batch, const Aabb& bounds)
+    {
+        // Empty batches have zero bounds and cast nothing.
+        const bool isEmpty = bounds.min == bounds.max;
+        if (batch->m_mobility == MeshMobility::kStatic && bounds.IsValid() && !isEmpty)
+            m_pendingStaticChanges.push_back(bounds);
     }
 
 
@@ -779,10 +804,10 @@ namespace FE::Graphics
         data.m_cull = CreateCullData(culling, view.m_viewportRect.Height());
         data.m_scene = graph.GetSRV(m_sceneData.Get());
 
-        // A frozen pyramid replaces the two phases with a single one, matching Visibility::AddPasses.
+        // An occluder pyramid replaces the two phases with a single one, matching Visibility::AddPasses.
         const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
-        const Tools::DepthPyramid::Output* frozenDepthPyramid = culling.GetFrozenDepthPyramid();
-        const bool isTwoPhase = isOcclusionCulled && frozenDepthPyramid == nullptr;
+        const Tools::DepthPyramid::Output* occluderPyramid = culling.GetOccluderPyramid();
+        const bool isTwoPhase = isOcclusionCulled && occluderPyramid == nullptr;
         const uint32_t phase = isTwoPhase ? MeshPass::CullPhase::kEarly : MeshPass::CullPhase::kSingle;
 
         MeshCullViewResources resources;
@@ -791,7 +816,7 @@ namespace FE::Graphics
         resources.m_meshletVisibility = state.m_meshletVisibility.Get();
         resources.m_meshletVisibilityCapacity = state.m_meshletVisibilityCapacity;
         resources.m_stats = state.m_stats.Get();
-        resources.m_depthPyramid = isOcclusionCulled ? frozenDepthPyramid : nullptr;
+        resources.m_depthPyramid = isOcclusionCulled ? occluderPyramid : nullptr;
         GpuMeshWorkBuilder::CullView(
             graph,
             uploader,

@@ -2,14 +2,16 @@
 
 [[vk::push_constant]] SunShadowMarkConstants GConstants;
 
-void RequestPage(const uint level, const int2 texel)
+void RequestPage(const SunShadowData data, const uint level, const int2 texel)
 {
     const uint2 clamped = uint2(clamp(texel, 0, (int)kSunShadowVirtualSize - 1));
-    GConstants.m_pageTable.Store(SunShadow::GetPageIndex(level, clamped), kSunShadowPageRequested);
+    const uint index = SunShadow::GetPageIndex(level, data.m_levels[level].m_pageOrigin, clamped);
+    RWStructuredBuffer<uint> pageTable = GConstants.m_pageTable.Get();
+    InterlockedOr(pageTable[index], kSunShadowPageRequested);
 }
 
 
-// Every visible pixel requests the pages its filter footprint reads. All writers store the same value, so plain stores suffice.
+// Every visible pixel requests the pages its filter footprint reads. Entries keep their backing, so requests set a bit.
 FE_NUM_THREADS(kSunShadowTileSize, kSunShadowTileSize, 1)
 void main(uint3 thread : SV_DispatchThreadID)
 {
@@ -34,8 +36,8 @@ void main(uint3 thread : SV_DispatchThreadID)
 
     // Sampling offsets the receiver by a few texels and filters a 3x3 footprint, so request the pages around it.
     const int2 texel = int2(floor(projection.m_texel));
-    RequestPage(projection.m_level, texel + int2(-3, -3));
-    RequestPage(projection.m_level, texel + int2(3, -3));
-    RequestPage(projection.m_level, texel + int2(-3, 3));
-    RequestPage(projection.m_level, texel + int2(3, 3));
+    RequestPage(data, projection.m_level, texel + int2(-3, -3));
+    RequestPage(data, projection.m_level, texel + int2(3, -3));
+    RequestPage(data, projection.m_level, texel + int2(-3, 3));
+    RequestPage(data, projection.m_level, texel + int2(3, 3));
 }

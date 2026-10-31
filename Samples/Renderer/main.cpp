@@ -266,6 +266,8 @@ namespace
                 MeshBatchDesc batchDesc;
                 batchDesc.m_bounds = Aabb{ Vector3(batchX - 5.0f, -5.0f, -5.0f), Vector3(batchX + 5.0f, 5.0f, 5.0f) };
                 batchDesc.m_drawTagMask = DrawTagMask(DrawTags::Visibility) | DrawTagMask(DrawTags::Visibility);
+                // Every instance rotates, so cached shadow pages would be invalidated each frame.
+                batchDesc.m_mobility = MeshMobility::kDynamic;
                 instanceDesc.m_batch = meshSceneModule.CreateBatch(batchDesc);
 
                 for (int32_t instanceIndex = -1; instanceIndex <= 1; ++instanceIndex)
