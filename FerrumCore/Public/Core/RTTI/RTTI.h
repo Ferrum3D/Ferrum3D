@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/Base/Hash.h>
 #include <Core/Math/UUID.h>
 #include <concepts>
@@ -12,10 +12,10 @@
 #    define FE_CODEGEN_ATTRIBUTE(value)
 #endif
 
-#if FE_CODEGEN
-#    define FE_META(...) FE_CODEGEN_ATTRIBUTE(#__VA_ARGS__)
-#elif __INTELLISENSE__ || __JETBRAINS_IDE__
+#if __INTELLISENSE__ || __JETBRAINS_IDE__ || _CLANGD
 #    define FE_META(...) __declspec(align(__VA_ARGS__))
+#elif FE_CODEGEN
+#    define FE_META(...) FE_CODEGEN_ATTRIBUTE(#__VA_ARGS__)
 #else
 #    define FE_META(...)
 #endif
@@ -31,10 +31,10 @@ namespace FE::Rtti
 
     struct MetaAttributeBase
     {
-#if __INTELLISENSE__ || __JETBRAINS_IDE__
+#if __INTELLISENSE__ || __JETBRAINS_IDE__ || _CLANGD
         constexpr operator int32_t() const
         {
-            return 0;
+            return 1;
         }
 #endif
     };
