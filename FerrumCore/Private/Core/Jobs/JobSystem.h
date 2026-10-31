@@ -61,7 +61,9 @@ namespace FE::Jobs
         void AddReadyFiber(FiberWaitEntry* entry);
         void AddReadyJob(JobNode* job);
         void CleanUpAfterSwitch(Context::TransferParams transferParams);
-        bool TakeWork(uint32_t workerIndex, JobNode*& job, FiberWaitEntry*& entry, bool checkEmptyQueues = false);
+        //! Take a ready fiber or, unless takesJobs is false, a job.
+        bool TakeWork(uint32_t workerIndex, JobNode*& job, FiberWaitEntry*& entry, bool checkEmptyQueues = false,
+                      bool takesJobs = true);
 
         // All queues at a priority share its lock, including producer access.
         template<class T>

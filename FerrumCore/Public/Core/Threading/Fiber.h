@@ -42,6 +42,8 @@ namespace FE::Threading
         FiberPool& operator=(FiberPool&&) = delete;
 
         FiberHandle Rent(bool extended);
+        //! Rent a fiber without waiting; returns false while every fiber is in use.
+        bool TryRent(bool extended, FiberHandle& fiberHandle);
         void Return(FiberHandle fiberHandle);
 
         void Update(FiberHandle fiberHandle, Context::Handle context);

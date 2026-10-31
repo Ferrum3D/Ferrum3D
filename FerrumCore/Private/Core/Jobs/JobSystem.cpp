@@ -135,9 +135,21 @@ namespace FE::Jobs
         FiberWaitEntry* readyEntry = nullptr;
         TakeWork(workerIndex, worker.m_nextJob, readyEntry);
 
+        // When every fiber is suspended in a wait, only resuming one of them can make progress, so keep looking for ready
+        // fibers instead of waiting for a free one. A job taken meanwhile stays in m_nextJob until a fiber of this worker
+        // returns to its loop.
+        Threading::FiberHandle freeFiber;
+        while (readyEntry == nullptr && !m_fiberPool.TryRent(false, freeFiber))
+        {
+            JobNode* unusedJob = nullptr;
+            const bool takesJobs = worker.m_nextJob == nullptr;
+            TakeWork(workerIndex, takesJobs ? worker.m_nextJob : unusedJob, readyEntry, false, takesJobs);
+            _mm_pause();
+        }
+
         worker.m_lastWaitEntry = &entry;
         worker.m_prevFiber = worker.m_currentFiber;
-        worker.m_currentFiber = readyEntry ? readyEntry->m_fiber : m_fiberPool.Rent(false);
+        worker.m_currentFiber = readyEntry ? readyEntry->m_fiber : freeFiber;
 
         const Context::TransferParams transferParams =
             m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this));
@@ -168,7 +180,8 @@ namespace FE::Jobs
     }
 
 
-    bool JobSystem::TakeWork(const uint32_t workerIndex, JobNode*& job, FiberWaitEntry*& entry, const bool checkEmptyQueues)
+    bool JobSystem::TakeWork(const uint32_t workerIndex, JobNode*& job, FiberWaitEntry*& entry, const bool checkEmptyQueues,
+                             const bool takesJobs)
     {
         Worker& worker = m_workers[workerIndex];
         const uint32_t poolIndex = festd::to_underlying(worker.m_threadPoolType);
@@ -192,6 +205,9 @@ namespace FE::Jobs
                 worker.m_affinityMask = entry->m_affinityMask;
                 return true;
             }
+
+            if (!takesJobs)
+                continue;
 
             job = TakeOldest(worker.m_jobQueues[queueIndex],
                              queues.m_jobQueues[0],

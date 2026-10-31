@@ -117,27 +117,38 @@ namespace FE::Threading
 
     FiberHandle FiberPool::Rent(const bool extended)
     {
-        const uint32_t fiberCount = extended ? kExtendedFiberCount : kNormalFiberCount;
-        const uint32_t baseFiberIndex = extended ? kNormalFiberCount : 0;
-        const uint32_t indexSeed = m_indexSeed.fetch_add(1, std::memory_order_relaxed);
-
-        while (true)
+        FiberHandle fiberHandle;
+        while (!TryRent(extended, fiberHandle))
         {
-            for (uint32_t fiberIndex = 0; fiberIndex < fiberCount; ++fiberIndex)
-            {
-                const uint32_t realIndex = (fiberIndex + indexSeed) & (fiberCount - 1);
-                FiberInfo& info = m_fibers[realIndex + baseFiberIndex];
-                if (!info.m_isFree.load(std::memory_order_relaxed))
-                    continue;
-
-                bool expected = true;
-                if (info.m_isFree.compare_exchange_weak(expected, false, std::memory_order_acquire, std::memory_order_relaxed))
-                    return FiberHandle{ realIndex + baseFiberIndex };
-            }
-
             for (uint32_t spin = 0; spin < 32; ++spin)
                 _mm_pause();
         }
+
+        return fiberHandle;
+    }
+
+
+    bool FiberPool::TryRent(const bool extended, FiberHandle& fiberHandle)
+    {
+        const uint32_t fiberCount = extended ? kExtendedFiberCount : kNormalFiberCount;
+        const uint32_t baseFiberIndex = extended ? kNormalFiberCount : 0;
+        const uint32_t indexSeed = m_indexSeed.fetch_add(1, std::memory_order_relaxed);
+        for (uint32_t fiberIndex = 0; fiberIndex < fiberCount; ++fiberIndex)
+        {
+            const uint32_t realIndex = (fiberIndex + indexSeed) & (fiberCount - 1);
+            FiberInfo& info = m_fibers[realIndex + baseFiberIndex];
+            if (!info.m_isFree.load(std::memory_order_relaxed))
+                continue;
+
+            bool expected = true;
+            if (info.m_isFree.compare_exchange_weak(expected, false, std::memory_order_acquire, std::memory_order_relaxed))
+            {
+                fiberHandle = FiberHandle{ realIndex + baseFiberIndex };
+                return true;
+            }
+        }
+
+        return false;
     }
 
 
