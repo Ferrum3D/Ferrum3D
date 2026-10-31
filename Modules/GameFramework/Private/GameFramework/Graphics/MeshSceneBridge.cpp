@@ -56,6 +56,7 @@ namespace FE::GameFramework
         Graphics::MeshBatchDesc batch;
         batch.m_bounds = bounds;
         batch.m_drawTagMask = Graphics::DrawTagMask(Graphics::DrawTags::Visibility);
+        batch.m_mobility = component.m_mobility;
         component.m_batch = m_module->CreateBatch(batch);
         for (const auto& link : model->m_meshes)
         {
@@ -68,7 +69,6 @@ namespace FE::GameFramework
             desc.m_material =
                 IO::AssetLease<Graphics::MaterialInstanceAsset>(component.m_material.GetAssetHandle().GetAssetSlot());
             desc.m_batch = component.m_batch;
-            desc.m_transform = Matrix4x4::kIdentity;
             component.m_handles.push_back(m_module->CreateInstance(desc));
         }
 
@@ -100,6 +100,7 @@ namespace FE::GameFramework
         {
             // Build replacement membership first; an invalid model leaves the previous scene state intact.
             MeshComponent replacement(component);
+            replacement.m_mobility = component.m_mobility;
             if (Create(replacement) != Framework::LifecycleResult::kSucceeded)
                 return;
 
@@ -126,7 +127,15 @@ namespace FE::GameFramework
     }
 
 
-    void MeshSceneBridge::UpdateTransform(const MeshComponent& component, const Matrix4x4& world)
+    void MeshSceneBridge::UpdateMobility(MeshComponent& component, const Graphics::MeshMobility mobility)
+    {
+        component.m_mobility = mobility;
+        if (component.m_batch)
+            m_module->SetBatchMobility(component.m_batch, mobility);
+    }
+
+
+    void MeshSceneBridge::UpdateTransform(const MeshComponent& component, const Matrix3x4& world)
     {
         for (const auto instance : component.m_handles)
             m_module->UpdateTransform(instance, world);

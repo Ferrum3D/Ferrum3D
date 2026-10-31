@@ -121,7 +121,7 @@ TEST_F(PhysicsFixture, DynamicSphereFallsAndRestsOnStaticBox)
     ASSERT_TRUE(m_world.SchedulePhase(FE::GameFramework::Phases::Transformation));
     ASSERT_TRUE(m_world.ExecuteSchedule());
     ASSERT_TRUE(m_world.EndUpdate());
-    EXPECT_NEAR(m_world.Find(id)->FindComponent<const WorldTransformComponent>()->m_world.m_31, 0.5f, 0.03f);
+    EXPECT_NEAR(m_world.Find(id)->FindComponent<const WorldTransformComponent>()->m_world.GetTranslation().y, 0.5f, 0.03f);
 }
 
 

@@ -20,6 +20,12 @@ namespace FE::Graphics
     }
 
 
+    Rc<View> SceneImpl::CreateChildView()
+    {
+        return Rc<View>(Memory::DefaultNew<ViewImpl>(this));
+    }
+
+
     void SceneImpl::DestroyView(View* view)
     {
         const auto found = festd::find_if(m_views.begin(), m_views.end(), [view](const Rc<View>& candidate) {

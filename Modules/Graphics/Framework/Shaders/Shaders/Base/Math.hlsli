@@ -47,4 +47,11 @@ namespace Math
     {
         return pow(max(color, 0.0f), 2.2f);
     }
+
+
+    // Expand an affine Matrix3x4 (rows are output coordinates) into the equivalent row-vector float4x4.
+    float4x4 AffineToMatrix(const float3x4 affine)
+    {
+        return transpose(float4x4(affine[0], affine[1], affine[2], float4(0, 0, 0, 1)));
+    }
 } // namespace Math

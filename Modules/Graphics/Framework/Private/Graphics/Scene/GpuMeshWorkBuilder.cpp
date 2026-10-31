@@ -575,6 +575,12 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         graph.AddBufferDependency(result.m_view.Get(), viewData.m_scene);
         graph.AddBufferDependency(result.m_view.Get(), result.m_meshlets.Get());
         graph.AddBufferDependency(result.m_view.Get(), result.m_commands.Get());
+        if (phase.m_passData != nullptr)
+        {
+            viewData.m_passData = graph.GetSRV(phase.m_passData);
+            graph.AddBufferDependency(result.m_view.Get(), phase.m_passData);
+        }
+
         FE_Verify(uploader.Upload(graph, result.m_view.Get(), viewData));
     }
 } // namespace FE::Graphics::GpuMeshWorkBuilder

@@ -24,6 +24,7 @@ namespace FE::Graphics
         void RenderAsync(RenderRequest request) override;
         void WaitForScene() override;
         void WaitForRender() override;
+        Core::FrameGraphBlackboard& AddViewPasses(Core::FrameGraph& graph, const ChildViewDesc& desc) override;
 
         Core::GraphicsQueue* GetGraphicsQueue() const override;
         Core::AsyncCopyQueue* GetAsyncCopyQueue() const override;
@@ -58,7 +59,7 @@ namespace FE::Graphics
 
         void RenderFrame(WaitGroup& sceneReady);
         void PrepareFrameGraph(FrameViewList& views);
-        void SetupView(const FrameView& view);
+        void SetupView(View& view, Core::FrameGraphBlackboard& blackboard, Vector2UInt resolution, Core::Texture* outputTexture);
         void AcquireViewports(FrameViewportList& viewports);
         void AddOutputPasses(const FrameViewList& views, FrameViewportList& viewports);
 
@@ -79,5 +80,7 @@ namespace FE::Graphics
         //! Retained by the queued frame and released by the caller joining it.
         RenderRequest m_request;
         Core::RingUploader m_renderQueueUploader;
+        //! Views whose passes are being added; child views nest inside the setup of their parent.
+        festd::inline_vector<View*, 4> m_viewSetupStack;
     };
 } // namespace FE::Graphics

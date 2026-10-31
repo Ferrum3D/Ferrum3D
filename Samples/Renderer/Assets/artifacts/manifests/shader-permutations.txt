@@ -1,0 +1,54 @@
+cs Shaders/Passes/MeshPass/ScatterMeshWork.cs.hlsl
+cs Shaders/Passes/MeshPass/ScanMeshBuckets.cs.hlsl
+cs Shaders/Passes/MeshPass/OcclusionCullMeshlets.cs.hlsl
+cs Shaders/Passes/MeshPass/PropagateMeshBucketOffsets.cs.hlsl
+cs Shaders/Passes/MeshPass/OcclusionCullMeshInstances.cs.hlsl
+cs Shaders/Passes/MeshPass/FinalizeMeshletCommands.cs.hlsl
+cs Shaders/Passes/MeshPass/FinalizeMeshBuckets.cs.hlsl
+cs Shaders/Passes/MeshPass/CullMeshlets.cs.hlsl
+cs Shaders/Passes/MeshPass/CullMeshInstances.cs.hlsl
+cs Shaders/Passes/MeshPass/CountMeshInstances.cs.hlsl
+cs Shaders/Passes/MeshPass/ClearMeshWork.cs.hlsl
+cs Shaders/Passes/Visibility/InitializeDebug.cs.hlsl
+vs Shaders/Passes/Tools/Blit/Blit.vs.hlsl
+ps Shaders/Passes/Tools/Tonemap/Tonemap.ps.hlsl
+cs Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl FFX_HALF=0 FFX_SPD_OPTION_DOWNSAMPLE_FILTER=0
+cs Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl FFX_HALF=0 FFX_SPD_OPTION_DOWNSAMPLE_FILTER=1
+cs Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl FFX_HALF=1 FFX_SPD_OPTION_DOWNSAMPLE_FILTER=0
+cs Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl FFX_HALF=1 FFX_SPD_OPTION_DOWNSAMPLE_FILTER=1
+cs Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl FFX_HALF=0 FFX_SPD_OPTION_DOWNSAMPLE_FILTER=2
+cs Shaders/Passes/Tools/DepthPyramid/DepthPyramidSpd.cs.hlsl
+cs Shaders/Passes/Tools/DepthPyramid/DepthPyramid.cs.hlsl
+cs Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl FFX_HALF=1 FFX_SPD_OPTION_DOWNSAMPLE_FILTER=2
+ps Shaders/Passes/Tools/Blit/Blit.ps.hlsl
+cs Shaders/Deferred/EmitSurfaceCommands.cs.hlsl
+cs Shaders/Deferred/ScatterSurfacePixels.cs.hlsl
+cs Shaders/Deferred/PropagateSurfaceOffsets.cs.hlsl
+cs Shaders/Deferred/ScanSurfaceBuckets.cs.hlsl
+cs Shaders/Deferred/CountSurfacePixels.cs.hlsl
+cs Shaders/Deferred/ClearSurfaceWork.cs.hlsl
+cs Shaders/Deferred/ClearSurface.cs.hlsl
+vs Shaders/Passes/ImGui/ImGui.vs.hlsl
+ps Shaders/Passes/ImGui/ImGui.ps.hlsl
+cs Shaders/Deferred/SurfaceDebug.cs.hlsl
+cs Shaders/Deferred/InitializeDeferred.cs.hlsl
+cs Shaders/Passes/MeshPass/MeshSurfaceDebug.cs.hlsl
+cs Shaders/Passes/MeshPass/VisibilityDebug.cs.hlsl
+cs Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl
+cs Shaders/Passes/MeshPass/CountMeshSurfacePixels.cs.hlsl
+cs Shaders/Passes/ImGui/UploadTexture.cs.hlsl
+cs Shaders/Materials/EvaluateBunnyVariants.cs.hlsl BUNNY_PALETTE=0
+cs Shaders/Materials/ShadeSimpleLit.cs.hlsl
+ms Shaders/Passes/Visibility/DepthVisibility.ms.hlsl
+ps Shaders/Passes/Visibility/DepthVisibility.ps.hlsl
+cs Shaders/Materials/EvaluateBunnyVariants.cs.hlsl BUNNY_PALETTE=1
+cs Shaders/Materials/EvaluateTextured.cs.hlsl
+cs Shaders/Materials/EvaluateStandardPBR.cs.hlsl
+cs Shaders/Materials/ShadeStandardPBR.cs.hlsl
+ms Shaders/Shadows/ShadowDepth.ms.hlsl
+cs Shaders/Shadows/SunShadowDebug.cs.hlsl
+ps Shaders/Shadows/ShadowDepth.ps.hlsl
+cs Shaders/Shadows/ClearAtlasPages.cs.hlsl
+cs Shaders/Shadows/MarkPages.cs.hlsl
+cs Shaders/Shadows/AllocatePages.cs.hlsl
+cs Shaders/Shadows/ClearPageTable.cs.hlsl

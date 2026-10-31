@@ -19,7 +19,23 @@ namespace FE::Graphics
         m_nearPlane = near;
         m_farPlane = far;
 
+        m_isOrthographic = false;
+
         m_projectionMatrix = Matrix4x4::Projection(fovY, aspectRatio, near, far);
+        m_viewProjectionMatrix = m_viewMatrix * m_projectionMatrix;
+        m_inverseViewProjectionMatrix = Math::Invert(m_viewProjectionMatrix);
+    }
+
+
+    void View::SetOrthographicProjection(const float width, const float height, const float near, const float far)
+    {
+        m_fovY = 0.0f;
+        m_aspectRatio = width / height;
+        m_nearPlane = near;
+        m_farPlane = far;
+        m_isOrthographic = true;
+
+        m_projectionMatrix = Matrix4x4::Orthographic(width, height, near, far);
         m_viewProjectionMatrix = m_viewMatrix * m_projectionMatrix;
         m_inverseViewProjectionMatrix = Math::Invert(m_viewProjectionMatrix);
     }

@@ -2,6 +2,7 @@
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/Jobs/Jobs.h>
+#include <Core/Math/Matrix3x4.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Threading/Thread.h>
 #include <Core/Time/BaseTime.h>
@@ -16,6 +17,7 @@
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
+#include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
@@ -44,7 +46,7 @@ namespace
     struct RotatingInstance final
     {
         MeshHandle m_handle;
-        Matrix4x4 m_baseTransform;
+        Matrix3x4 m_baseTransform;
     };
 
 
@@ -156,6 +158,7 @@ namespace
             m_view->GetModules().Add<Visibility::ViewModule>();
             m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();
             m_view->GetModules().Add<DeferredShading::ViewModule>();
+            m_view->GetModules().Add<SunShadow::ViewModule>();
             m_view->GetModules().Add<Visibility::DebugViewModule>();
             m_view->GetModules().Add<GBufferDebug::ViewModule>();
             m_view->GetModules().Add<Tonemap::ViewModule>();
@@ -271,8 +274,9 @@ namespace
                     instanceDesc.m_asset = isHelmet ? helmetMeshLease : meshLease;
                     instanceDesc.m_material = isHelmet ? helmetMaterial : batchMaterial;
                     const float height = isHelmet ? 1.25f : 0.0f;
-                    instanceDesc.m_transform = Matrix4x4::RotationY(Constants::kPI)
-                        * Matrix4x4::Translation(Vector3(batchX, height, static_cast<float>(instanceIndex) * 1.5f));
+                    instanceDesc.m_transform = Matrix3x4::FromMatrix4x4(
+                        Matrix4x4::RotationY(Constants::kPI)
+                        * Matrix4x4::Translation(Vector3(batchX, height, static_cast<float>(instanceIndex) * 1.5f)));
                     const MeshHandle handle = meshSceneModule.CreateInstance(instanceDesc);
                     m_rotatingInstances.push_back({ handle, instanceDesc.m_transform });
                 }
@@ -290,7 +294,7 @@ namespace
 
             constexpr float angularSpeed = Constants::kPI / 6.0f;
             m_rotationAngle = Math::Fmod(m_rotationAngle + angularSpeed * deltaSeconds, 2.0f * Constants::kPI);
-            const Matrix4x4 rotation = Matrix4x4::RotationY(m_rotationAngle);
+            const Matrix3x4 rotation = Matrix3x4::FromMatrix4x4(Matrix4x4::RotationY(m_rotationAngle));
 
             IO::AssetManager::Tick();
             auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();

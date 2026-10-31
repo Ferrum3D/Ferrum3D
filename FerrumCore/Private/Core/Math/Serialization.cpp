@@ -1,5 +1,6 @@
 #include <Core/Math/Aabb.h>
 #include <Core/Math/Color.h>
+#include <Core/Math/Matrix3x4.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Math/Quaternion.h>
 #include <Core/Math/Rect.h>
@@ -234,6 +235,24 @@ namespace FE
     FE_DEFINE_VECTOR4_SERIALIZATION(Color4F, r, g, b, a)
 
 #undef FE_DEFINE_VECTOR4_SERIALIZATION
+
+
+    Serialization::ResultCode Matrix3x4::Serialize(Serialization::SerializationContext& context, const Matrix3x4& value)
+    {
+        if (auto object = context.BeginObject())
+            object.Field("m_rows", value.m_rows);
+
+        return context.GetResultCode();
+    }
+
+
+    Serialization::ResultCode Matrix3x4::Deserialize(Serialization::DeserializationContext& context, Matrix3x4& value)
+    {
+        if (auto object = context.BeginObject())
+            object.Field("m_rows", value.m_rows);
+
+        return context.GetResultCode();
+    }
 
 
     Serialization::ResultCode Matrix4x4::Serialize(Serialization::SerializationContext& context, const Matrix4x4& value)

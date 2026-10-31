@@ -1,5 +1,6 @@
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <Graphics/Assets/Streamers.h>
+#include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
@@ -92,6 +93,7 @@ namespace FE::GameFramework
         view->GetModules().Add<Graphics::DepthPyramidPass::ViewModule>();
         view->GetModules().Add<Graphics::SurfaceEvaluation::ViewModule>();
         view->GetModules().Add<Graphics::DeferredShading::ViewModule>();
+        view->GetModules().Add<Graphics::SunShadow::ViewModule>();
         view->GetModules().Add<Graphics::Visibility::DebugViewModule>();
         view->GetModules().Add<Graphics::GBufferDebug::ViewModule>();
         view->GetModules().Add<Graphics::Tonemap::ViewModule>();

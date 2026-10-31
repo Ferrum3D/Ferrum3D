@@ -22,8 +22,10 @@ namespace FE::GameFramework
         virtual void Destroy(MeshComponent& component);
         //! @brief Update model/material membership on the main thread before transform extraction.
         virtual void UpdateModel(MeshComponent& component);
+        //! @brief Change the batch mobility on the main thread before transform extraction.
+        virtual void UpdateMobility(MeshComponent& component, Graphics::MeshMobility mobility);
         //! @brief Submit transforms concurrently for distinct components, with stable scene membership.
-        virtual void UpdateTransform(const MeshComponent& component, const Matrix4x4& world);
+        virtual void UpdateTransform(const MeshComponent& component, const Matrix3x4& world);
 
     private:
         Graphics::MeshSceneModule* m_module;

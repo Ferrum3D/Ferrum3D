@@ -10,17 +10,17 @@
 struct MeshInstanceTable
 {
     FE_CONSTEXPR uint32_t kRowsPerPage =
-        DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float4x4) + sizeof(BufferPointer) + sizeof(uint32_t));
+        DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float3x4) + sizeof(BufferPointer) + sizeof(uint32_t));
 
     FE_CONSTEXPR uint32_t kOffset_m_meshGroup = 0;
     FE_CONSTEXPR uint32_t kOffset_m_transform = kOffset_m_meshGroup + sizeof(DB::Ref<MeshGroupTable>) * kRowsPerPage;
-    FE_CONSTEXPR uint32_t kOffset_m_instanceData = kOffset_m_transform + sizeof(float4x4) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_instanceData = kOffset_m_transform + sizeof(float3x4) * kRowsPerPage;
     FE_CONSTEXPR uint32_t kOffset_m_meshletVisibilityOffset = kOffset_m_instanceData + sizeof(BufferPointer) * kRowsPerPage;
 
     struct Row
     {
         DB::ElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
-        DB::ElementHandle<float4x4, kOffset_m_transform> m_transform;
+        DB::ElementHandle<float3x4, kOffset_m_transform> m_transform;
         DB::ElementHandle<BufferPointer, kOffset_m_instanceData> m_instanceData;
         DB::ElementHandle<uint32_t, kOffset_m_meshletVisibilityOffset> m_meshletVisibilityOffset;
     };

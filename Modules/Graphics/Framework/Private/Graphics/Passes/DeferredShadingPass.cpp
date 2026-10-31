@@ -80,6 +80,10 @@ namespace FE::Graphics::DeferredShading
             scene.m_shadingRoutingRevision = scene.m_shadingPipelines.GetRevision();
         }
 
+        SunShadowBinding sunShadow;
+        if (const auto* binding = blackboard.TryGet<SunShadowBinding>())
+            sunShadow = *binding;
+
         auto work = CreateSurfaceWork(graph.GetDevice(), resolution, scene.m_shadingRouting, 32);
         {
             FE_FG_SCOPE(graph, "ShadingClassification");
@@ -97,6 +101,7 @@ namespace FE::Graphics::DeferredShading
                 Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
             shading->m_constants.m_view = graph.GetSRV(viewBuffer);
             shading->m_constants.m_lighting = initialize->m_constants.m_lighting;
+            shading->m_constants.m_sunShadow = sunShadow;
             shading->m_constants.m_g0 = graph.GetSRV(gBufferTargets[0].Get());
             shading->m_constants.m_g1 = graph.GetSRV(gBufferTargets[1].Get());
             shading->m_constants.m_g2 = graph.GetSRV(gBufferTargets[2].Get());

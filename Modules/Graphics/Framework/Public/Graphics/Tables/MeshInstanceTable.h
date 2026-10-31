@@ -14,11 +14,11 @@ namespace FE::Graphics
         FE_RTTI("8A836070-A798-50FB-A93B-6FE5848B70B9");
 
         static constexpr uint32_t kRowsPerPage =
-            DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float4x4) + sizeof(BufferPointer) + sizeof(uint32_t));
+            DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float3x4) + sizeof(BufferPointer) + sizeof(uint32_t));
 
         static constexpr uint32_t kOffset_m_meshGroup = 0;
         static constexpr uint32_t kOffset_m_transform = kOffset_m_meshGroup + sizeof(DB::Ref<MeshGroupTable>) * kRowsPerPage;
-        static constexpr uint32_t kOffset_m_instanceData = kOffset_m_transform + sizeof(float4x4) * kRowsPerPage;
+        static constexpr uint32_t kOffset_m_instanceData = kOffset_m_transform + sizeof(float3x4) * kRowsPerPage;
         static constexpr uint32_t kOffset_m_meshletVisibilityOffset =
             kOffset_m_instanceData + sizeof(BufferPointer) * kRowsPerPage;
 
@@ -27,7 +27,7 @@ namespace FE::Graphics
         struct Row final
         {
             DB::ElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
-            DB::ElementHandle<float4x4, kOffset_m_transform> m_transform;
+            DB::ElementHandle<float3x4, kOffset_m_transform> m_transform;
             DB::ElementHandle<BufferPointer, kOffset_m_instanceData> m_instanceData;
             DB::ElementHandle<uint32_t, kOffset_m_meshletVisibilityOffset> m_meshletVisibilityOffset;
         };
@@ -35,7 +35,7 @@ namespace FE::Graphics
         struct RWRow final
         {
             DB::RWElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
-            DB::RWElementHandle<float4x4, kOffset_m_transform> m_transform;
+            DB::RWElementHandle<float3x4, kOffset_m_transform> m_transform;
             DB::RWElementHandle<BufferPointer, kOffset_m_instanceData> m_instanceData;
             DB::RWElementHandle<uint32_t, kOffset_m_meshletVisibilityOffset> m_meshletVisibilityOffset;
         };
@@ -169,7 +169,7 @@ namespace FE::Graphics
             festd::copy(source, destinationData);
         }
 
-        void CopyColumn(const DB::Slice<MeshInstanceTable> destination, const festd::span<const float4x4> source)
+        void CopyColumn(const DB::Slice<MeshInstanceTable> destination, const festd::span<const float3x4> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -183,7 +183,7 @@ namespace FE::Graphics
             DB::StoragePage* page = m_pages[pageIndex];
             m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
-            auto* destinationData = reinterpret_cast<float4x4*>(storage + kOffset_m_transform) + localRowIndex;
+            auto* destinationData = reinterpret_cast<float3x4*>(storage + kOffset_m_transform) + localRowIndex;
             festd::copy(source, destinationData);
         }
 

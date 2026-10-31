@@ -1,5 +1,6 @@
 #include <Shaders/Deferred/DeferredCommon.hlsli>
 #include <Shaders/Shading/PBR.hlsli>
+#include <Shaders/Shadows/SunShadow.hlsli>
 
 FE_NUM_THREADS(EVALUATION_LANES* kSurfaceWavesPerGroup, 1, 1)
 void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
@@ -27,6 +28,7 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
     const float4 homogeneousWorld = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
     const float3 worldPosition = homogeneousWorld.xyz / homogeneousWorld.w;
     const GlobalLightingData lighting = LoadGlobalLighting(GConstants.m_lighting);
-    const float3 color = Shading::ComputeShading(material, worldPosition, view.m_cameraPosition.xyz, lighting).rgb;
+    const float sunVisibility = SunShadow::SampleVisibility(GConstants.m_sunShadow, worldPosition, surface.m_normal);
+    const float3 color = Shading::ComputeShading(material, worldPosition, view.m_cameraPosition.xyz, lighting, sunVisibility).rgb;
     GConstants.m_output.Store(pixel, color);
 }

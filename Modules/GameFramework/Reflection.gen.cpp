@@ -1054,7 +1054,9 @@ namespace FE::GameFramework
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_loadedMaterial = {};
 
-        static const festd::array<Rtti::FieldInfo, 6> kFields = {
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mobility = {};
+
+        static const festd::array<Rtti::FieldInfo, 7> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_model",
                                                      &MeshComponent::m_model,
                                                      kAttributes_m_model,
@@ -1081,6 +1083,11 @@ namespace FE::GameFramework
             Rtti::ReflectionContext::CreateFieldInfo("m_loadedMaterial",
                                                      &MeshComponent::m_loadedMaterial,
                                                      kAttributes_m_loadedMaterial,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mobility",
+                                                     &MeshComponent::m_mobility,
+                                                     kAttributes_m_mobility,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
                                                          | Rtti::FieldFlags::kTransient),
         };
@@ -1141,6 +1148,111 @@ namespace FE::GameFramework
     }
 
     uint32_t MeshComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID DynamicTagComponent::TypeID = Rtti::TypeID{
+        0x79, 0xd2, 0x93, 0x84, 0x73, 0x47, 0x4f, 0xb1, 0x82, 0x0c, 0x73, 0x18, 0x50, 0x77, 0x83, 0xe4,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_79d2938473474fb1820c7318507783e4(DynamicTagComponent* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x79, 0xd2, 0x93, 0x84, 0x73, 0x47, 0x4f, 0xb1,
+                0x82, 0x0c, 0x73, 0x18, 0x50, 0x77, 0x83, 0xe4, // FE::GameFramework::DynamicTagComponent (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_79d2938473474fb1820c7318507783e4()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& DynamicTagComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_79d2938473474fb1820c7318507783e4();
+    }
+
+    void DynamicTagComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_79d2938473474fb1820c7318507783e4();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x79, 0xd2, 0x93, 0x84, 0x73, 0x47, 0x4f, 0xb1,
+            0x82, 0x0c, 0x73, 0x18, 0x50, 0x77, 0x83, 0xe4, // FE::GameFramework::DynamicTagComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<DynamicTagComponent>(typeInstance,
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                  "FE::GameFramework::DynamicTagComponent",
+                                                  kBaseClassTypeIDs,
+                                                  kAttributes,
+                                                  kFields,
+                                                  Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_79d2938473474fb1820c7318507783e4(static_cast<DynamicTagComponent*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_79d2938473474fb1820c7318507783e4(&DynamicTagComponent::Reflect);
+
+    FE::Serialization::ResultCode DynamicTagComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode DynamicTagComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t DynamicTagComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x79, 0xd2, 0x93, 0x84, 0x73, 0x47, 0x4f, 0xb1, 0x82, 0x0c, 0x73, 0x18, 0x50, 0x77, 0x83, 0xe4,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t DynamicTagComponent::RTTI_GetSerializationVersion()
     {
         return 0;
     }

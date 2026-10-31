@@ -42,6 +42,15 @@ namespace FE::Graphics
     };
 
 
+    //! @brief A view rendered from the pass setup of another view, e.g. a shadow view of a camera.
+    struct ChildViewDesc final
+    {
+        View* m_view = nullptr;
+        //! Size of the view's main targets; child views have no output to derive it from.
+        Vector2UInt m_resolution = Vector2UInt::kZero;
+    };
+
+
     struct RendererModuleBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("273B0F50-B991-4323-A516-6C87BBCD83A1");
@@ -92,6 +101,13 @@ namespace FE::Graphics
 
         //! @brief Join all CPU render work before viewport changes, shutdown, or external queue use.
         virtual void WaitForRender() = 0;
+
+        //! @brief Add every pass of a child view at the current position of the graph and return the child's blackboard.
+        //!
+        //! Call only from the pass setup of another view. The child's modules are updated and its passes added in the fixed
+        //! order, so its results precede the passes its parent adds afterwards. Its blackboard is separate from the
+        //! parent's; read its outputs through the returned blackboard or through state shared by the modules.
+        virtual Core::FrameGraphBlackboard& AddViewPasses(Core::FrameGraph& graph, const ChildViewDesc& desc) = 0;
 
         virtual Core::GraphicsQueue* GetGraphicsQueue() const = 0;
         virtual Core::AsyncCopyQueue* GetAsyncCopyQueue() const = 0;

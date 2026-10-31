@@ -51,7 +51,7 @@ Debug callbacks, readbacks, culling overrides, forced dispatch/page limits, shuf
 
 ## Assets
 
-This application owns its asset depot, including material variants, triangle geometry, and the palette shader under `Assets/source/Shaders`. CMake stages that shader into the build directory for the shader source cache. Assets are rebuilt with FerrumCli. Mesh payloads now append one local-space float4 sphere per meshlet after packed triangles. Submesh bounds cover all LODs, and LOD error metadata includes the original highest-detail LOD. `Triangle` supplies a single-meshlet mesh; `BunnyOpaqueOnly` and `BunnyDepthOnly` exercise missing techniques.
+This application owns its asset depot, including material variants, triangle geometry, and the palette shader under `Assets/source/Shaders`. CMake stages that shader into the build directory for the shader source cache. Assets are rebuilt with FerrumCli. Mesh payloads now append one local-space float4 sphere per meshlet after packed triangles. Submesh bounds cover all LODs, and LOD error metadata includes the original highest-detail LOD. `Triangle` supplies a single-meshlet mesh; `BunnyNoVisibility` (no visibility or shadow technique) and `BunnyUnsupported` (no surface evaluation) exercise missing techniques.
 
 Rebuild modified assets through `ferrum build`, supplying `Samples/GpuDrivenTestApp/Assets/source` as the source root and `Samples/GpuDrivenTestApp/Assets` as the output root. FerrumCli appends the `artifacts` directory itself.
 

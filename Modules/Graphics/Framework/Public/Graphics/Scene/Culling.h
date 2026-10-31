@@ -55,8 +55,11 @@ namespace FE::Graphics::Culling
         //! The camera of the depth pyramid that occlusion culling tests against.
         Matrix4x4 m_occlusionViewProjection = Matrix4x4::kIdentity;
         Vector3 m_cameraPosition = Vector3::kZero;
-        //! The vertical projection scale (cotangent of half the vertical field of view) of the culling camera.
+        //! The vertical projection scale of the culling camera: the cotangent of half the vertical field of view, or two
+        //! divided by the height of an orthographic projection.
         float m_projectionScaleY = 1.0f;
+        //! Orthographic LOD selection ignores the distance to the camera.
+        bool m_isOrthographic = false;
         //! Receives read back statistics when not null.
         Stats* m_stats = nullptr;
         //! Set while culling is frozen. The renderer captures the pyramid into it in the first frozen frame.
@@ -107,6 +110,7 @@ namespace FE::Graphics::Culling
         Matrix4x4 m_frozenViewProjection = Matrix4x4::kIdentity;
         Vector3 m_frozenCameraPosition = Vector3::kZero;
         float m_frozenProjectionScaleY = 1.0f;
+        bool m_isFrozenOrthographic = false;
         bool m_isFrozen = false;
     };
 

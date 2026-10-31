@@ -46,3 +46,10 @@ cs Shaders/Materials/EvaluateTextured.cs.hlsl
 cs Shaders/Materials/EvaluateStandardPBR.cs.hlsl
 cs Shaders/Materials/ShadeStandardPBR.cs.hlsl
 cs Shaders/Editor/Selection.cs.hlsl
+cs Shaders/Shadows/SunShadowDebug.cs.hlsl
+ms Shaders/Shadows/ShadowDepth.ms.hlsl
+ps Shaders/Shadows/ShadowDepth.ps.hlsl
+cs Shaders/Shadows/ClearAtlasPages.cs.hlsl
+cs Shaders/Shadows/AllocatePages.cs.hlsl
+cs Shaders/Shadows/MarkPages.cs.hlsl
+cs Shaders/Shadows/ClearPageTable.cs.hlsl

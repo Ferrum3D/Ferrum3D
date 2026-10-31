@@ -1,4 +1,5 @@
 #pragma once
+#include <Shaders/Base/Math.hlsli>
 #include <Shaders/Base/Packing.hlsli>
 #include <Shaders/Core/Meshlet.hlsli>
 #include <Shaders/Tables/MaterialInstanceTable.hlsli>
@@ -78,7 +79,7 @@ MeshDrawData CreateMeshDrawData(const MeshInstanceTable::Row instance, const Mes
 {
     MeshDrawData result;
     result.m_geometry.SetDeviceAddress(group.m_geometry.Get().GetDeviceAddress() + lod.m_geometryOffset.Get());
-    result.m_worldTransform = instance.m_transform.Get();
+    result.m_worldTransform = Math::AffineToMatrix(instance.m_transform.Get());
     result.m_lodInfo = lod.m_info.Get();
     result.m_instance = instance;
     result.m_group = group;

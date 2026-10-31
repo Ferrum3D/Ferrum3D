@@ -22,7 +22,8 @@ uint SelectLod(const MeshCullData cull, MeshLodInfoTable lods, const MeshGroupTa
         return finestLod;
 
     const float4 sphere = TransformSphere(float4(bounds.m_center, length(bounds.m_extent)), localToWorld);
-    const float distance = length(sphere.xyz - cull.m_cameraPosition.xyz) - sphere.w;
+    const bool isOrthographic = HasCullFlag(cull, CullFlags::kOrthographic);
+    const float distance = isOrthographic ? 1.0f : length(sphere.xyz - cull.m_cameraPosition.xyz) - sphere.w;
     if (distance <= 0.0f)
         return finestLod;
 
@@ -78,7 +79,7 @@ InstanceCullResult CullMember(const MeshViewData view, const MeshSceneData scene
 
     result.m_isCandidate = true;
 
-    const float4x4 localToWorld = instance.m_transform.Get();
+    const float4x4 localToWorld = Math::AffineToMatrix(instance.m_transform.Get());
     const InstanceBounds bounds = LoadInstanceBounds(group);
     const MeshCullData cull = view.m_cull;
     if (HasCullFlag(cull, CullFlags::kInstanceFrustum))

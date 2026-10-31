@@ -4,7 +4,13 @@
 
 namespace FE::GameFramework
 {
+    struct DynamicTagComponent;
+    struct PhysicsBodyComponent;
     struct WorldGraphicsSceneService;
+
+
+    //! @brief Meshes are dynamic when their entity is tagged dynamic or carries a non-static physics body.
+    [[nodiscard]] Graphics::MeshMobility GetMeshMobility(const DynamicTagComponent* tag, const PhysicsBodyComponent* body);
 
 
     //! @brief Authored mesh assets; copying and serialization exclude scene membership.
@@ -23,6 +29,8 @@ namespace FE::GameFramework
         FE_SKIP_SERIALIZING IO::AssetID m_loadedModel = IO::AssetID::kNull;
         //! @brief Last submitted material identity.
         FE_SKIP_SERIALIZING IO::AssetID m_loadedMaterial = IO::AssetID::kNull;
+        //! @brief Mobility of the scene batch, derived from the components of the same entity.
+        FE_SKIP_SERIALIZING Graphics::MeshMobility m_mobility = Graphics::MeshMobility::kStatic;
 
         MeshComponent() = default;
         MeshComponent(IO::Link<Graphics::ModelAsset> model, IO::Link<Graphics::MaterialInstanceAsset> material);

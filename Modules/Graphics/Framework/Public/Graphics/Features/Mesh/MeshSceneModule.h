@@ -39,6 +39,16 @@ namespace FE::Graphics
         }
     };
 
+    //! How the instance transforms of a batch change after creation.
+    enum class MeshMobility : uint32_t
+    {
+        //! Moved rarely, e.g. by editing; data derived from the transforms may be cached across frames.
+        kStatic,
+        //! Moved at runtime. Dynamic batches also carry DrawTags::Dynamic, so passes can select only them.
+        kDynamic,
+    };
+
+
     struct MeshBatch final
     {
         static constexpr uint32_t kMaxInstanceCount = MeshMemberTable::kRowsPerPage;
@@ -46,6 +56,7 @@ namespace FE::Graphics
         OctreeEntry m_octreeEntry;
         MeshSceneModule* m_parent = nullptr;
         DrawTagMask m_drawTagMask;
+        MeshMobility m_mobility = MeshMobility::kStatic;
         festd::vector<DB::Ref<MeshInstanceTable>> m_meshInstances;
         festd::vector<MeshHandle> m_handles;
         DB::Ref<MeshBatchTable> m_tableRef;
@@ -80,7 +91,7 @@ namespace FE::Graphics
         IO::AssetLease<MeshAsset> m_asset;
         MeshBatch* m_batch = nullptr;
         IO::AssetLease<MaterialInstanceAsset> m_material;
-        Matrix4x4 m_transform;
+        Matrix3x4 m_transform = Matrix3x4::kIdentity;
     };
 
 
@@ -88,6 +99,7 @@ namespace FE::Graphics
     {
         Aabb m_bounds = Aabb::kInvalid;
         DrawTagMask m_drawTagMask;
+        MeshMobility m_mobility = MeshMobility::kStatic;
     };
 
 
@@ -101,6 +113,7 @@ namespace FE::Graphics
         [[nodiscard]] MeshBatch* CreateBatch(const MeshBatchDesc& desc);
         void DestroyBatch(MeshBatch* batch);
         void SetBatchDrawTags(MeshBatch* batch, DrawTagMask tags);
+        void SetBatchMobility(MeshBatch* batch, MeshMobility mobility);
 
         [[nodiscard]] MeshHandle CreateInstance(const MeshInstanceDesc& desc);
         void DestroyInstance(MeshHandle instance);
@@ -108,7 +121,7 @@ namespace FE::Graphics
         void Update() override;
 
         //! Concurrent calls require distinct instances. Join callers before structural changes or Update().
-        void UpdateTransform(MeshHandle instance, const Matrix4x4& transform);
+        void UpdateTransform(MeshHandle instance, const Matrix3x4& transform);
         void MoveInstance(MeshHandle instance, MeshBatch* batch);
         void UpdateMaterial(MeshHandle handle, const IO::AssetLease<MaterialInstanceAsset>& materialLease);
 
@@ -188,7 +201,7 @@ namespace FE::Graphics
 
         struct InstanceRecord final
         {
-            Matrix4x4* m_transform = nullptr;
+            Matrix3x4* m_transform = nullptr;
             bool m_transformDirty = false;
             DB::Ref<MeshInstanceTable> m_tableRef = DB::Ref<MeshInstanceTable>::CreateInvalid();
             MeshBatch* m_batch = nullptr;

@@ -41,7 +41,7 @@ namespace FE::Editor
             return false;
         }
 
-        const Vector3 position(world->m_world.m_rows[3].m_simdVector);
+        const Vector3 position = world->m_world.GetTranslation();
         const float distance = Math::Length(position - view.GetCameraTransform().Translation());
         const float length = Math::Max(0.25f, distance * 0.12f);
         const Vector3 axes[] = { Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1) };
@@ -99,7 +99,7 @@ namespace FE::Editor
         if (const auto* parent = entity.GetParent())
         {
             if (const auto* parentWorld = parent->FindComponent<const GameFramework::WorldTransformComponent>())
-                motion = motion * Math::Invert(parentWorld->m_world);
+                motion = motion * Math::Invert(Matrix3x4::ToMatrix4x4(parentWorld->m_world));
         }
 
         m_axis = axis;

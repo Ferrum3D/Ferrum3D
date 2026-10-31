@@ -2,6 +2,7 @@
 #include "DepthPyramidProbe.h"
 #include "GpuProbe.h"
 #include "RasterProbe.h"
+#include "SunShadowProbe.h"
 #include "SurfaceProbe.h"
 #include <Core/Base/PlatformInclude.h>
 #include <Core/Jobs/Jobs.h>
@@ -583,6 +584,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), true);
             DeferredProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             DepthPyramidProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+            SunShadowProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
 #if FE_PLATFORM_WINDOWS
             CheckWorkerSurfaceExtent(device.Get());
             CheckViewportSuspension(device.Get(), pool.Get(), queue.Get(), descriptors.Get());

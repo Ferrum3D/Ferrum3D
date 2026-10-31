@@ -95,7 +95,7 @@ namespace FE::Graphics::RasterProbe
         lods.WriteRow(lod).m_info.Get() = { 3, 3, 2, 2 };
         const auto instanceRow = instances.WriteRow(instance);
         instanceRow.m_meshGroup.Get() = group;
-        instanceRow.m_transform.Get() = Matrix4x4::Scale(Vector3(-1, 0.5f, 1));
+        instanceRow.m_transform.Get() = Matrix3x4::FromMatrix4x4(Matrix4x4::Scale(Vector3(-1, 0.5f, 1)));
 
         Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
         Core::RingUploader uploader;

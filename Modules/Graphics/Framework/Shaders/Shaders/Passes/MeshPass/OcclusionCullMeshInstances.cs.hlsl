@@ -12,7 +12,7 @@ bool IsInstanceOccluded(const MeshViewData view, const InstanceClassification it
     const InstanceBounds bounds = LoadInstanceBounds(group);
 
     ScreenBounds screenBounds;
-    const float4x4 localToClip = mul(instance.m_transform.Get(), view.m_cull.m_occlusionViewProjection);
+    const float4x4 localToClip = mul(Math::AffineToMatrix(instance.m_transform.Get()), view.m_cull.m_occlusionViewProjection);
     if (!ProjectBox(bounds.m_center, bounds.m_extent, localToClip, screenBounds))
         return false;
 

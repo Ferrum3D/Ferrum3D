@@ -132,6 +132,7 @@ namespace FE::GameFramework
     {
         world.Components().Register<TransformComponent>();
         world.Components().Register<NonUniformScaleComponent>();
+        world.Components().Register<DynamicTagComponent>();
         world.Components().Register<WorldTransformComponent>({ true });
         world.Components().AddRuntimeCompanion<TransformComponent, WorldTransformComponent>();
         world.SetReparentHandler(PrepareReparent);
@@ -157,7 +158,7 @@ namespace FE::GameFramework
                                  const WorldTransformComponent* parent,
                                  WorldTransformComponent& output) {
             // Row-vector convention: apply the scale modifier, then local transform, then parent world.
-            const Matrix4x4 effectiveLocal = ComposeLocal(local, scale);
+            const Matrix3x4 effectiveLocal = Matrix3x4::FromMatrix4x4(ComposeLocal(local, scale));
             output.m_world = parent ? effectiveLocal * parent->m_world : effectiveLocal;
         };
 

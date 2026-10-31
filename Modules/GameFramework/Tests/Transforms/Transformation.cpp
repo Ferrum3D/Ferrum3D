@@ -63,7 +63,7 @@ TEST_F(TransformationFixture, RowVectorTransformScaleAndParentComposition)
     const Matrix4x4 expected =
         Matrix4x4::Scale(Vector3(2, 3, 4)) * Transform::ToMatrix(childLocal) * Transform::ToMatrix(parentLocal);
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+        EXPECT_NEAR(Matrix3x4::ToMatrix4x4(output->m_world).m_values[i], expected.m_values[i], 0.0001f);
     Tick();
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
 }
@@ -82,12 +82,12 @@ TEST_F(TransformationFixture, ParentChangesPropagateAndMissingTransformNodesCont
     change.ReplaceComponent(m_world.Find(kParent)->GetID(), TransformComponent{ Transform::Translation(Vector3(20, 0, 0)) });
     m_world.Submit(std::move(change));
     Tick();
-    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.m_30, 21.0f);
+    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.GetTranslation().x, 21.0f);
     EntityCommandList remove(m_world);
     remove.RemoveComponent<WorldTransformComponent>(m_world.Find(kParent)->GetID());
     m_world.Submit(std::move(remove));
     Tick();
-    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.m_30, 1.0f);
+    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.GetTranslation().x, 1.0f);
 }
 
 
@@ -105,14 +105,15 @@ TEST_F(TransformationFixture, DeepChainAndLateChildrenPropagateOptionalScaleChan
     m_world.Submit(std::move(commands));
     ASSERT_TRUE(m_world.CommitBootstrap());
     Tick();
-    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.m_30, float(kDepth));
+    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.GetTranslation().x, float(kDepth));
     EntityCommandList add(m_world);
     auto child = Add(add, Uuid::kNull, Transform::Translation(Vector3(1, 0, 0)));
     add.SetParent(child, m_world.Find(kChild)->GetID(), ReparentMode::kPreserveLocal);
     add.AddComponent(m_world.Find(kParent)->GetID(), NonUniformScaleComponent{ Vector3(2, 2, 2) });
     m_world.Submit(std::move(add));
     Tick();
-    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.m_30, 1 + float(kDepth - 1) * 2);
+    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<WorldTransformComponent>()->m_world.GetTranslation().x,
+                    1 + float(kDepth - 1) * 2);
     EXPECT_EQ(m_world.GetEntityCount(), kDepth + 1);
     Tick();
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
@@ -159,7 +160,7 @@ TEST_F(TransformationFixture, MixedScaleHierarchiesUpdateWithOptionalScale)
                 const Matrix4x4 expected = local * parent;
                 const auto* output = m_world.Find(ids[tree][depth])->FindComponent<const WorldTransformComponent>();
                 for (uint32_t i = 0; i < 16; ++i)
-                    EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+                    EXPECT_NEAR(Matrix3x4::ToMatrix4x4(output->m_world).m_values[i], expected.m_values[i], 0.0001f);
 
                 parent = expected;
             }
@@ -224,14 +225,14 @@ TEST_F(TransformationFixture, PreserveWorldUsesAuthoredTransformsBeforeFirstTick
     const Matrix4x4 expected = Matrix4x4::Scale(Vector3(2, 3, 4)) * Transform::ToMatrix(local);
     const auto* output = m_world.Find(kChild)->FindComponent<WorldTransformComponent>();
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+        EXPECT_NEAR(Matrix3x4::ToMatrix4x4(output->m_world).m_values[i], expected.m_values[i], 0.0001f);
     EntityCommandList detach(m_world);
     detach.SetParent(m_world.Find(kChild)->GetID());
     m_world.Submit(std::move(detach));
     Tick();
     output = m_world.Find(kChild)->FindComponent<WorldTransformComponent>();
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+        EXPECT_NEAR(Matrix3x4::ToMatrix4x4(output->m_world).m_values[i], expected.m_values[i], 0.0001f);
 }
 
 
@@ -279,7 +280,7 @@ TEST_F(TransformationFixture, PlacementRootAndCookedChildrenReceiveRuntimeOutput
     ASSERT_NE(output, nullptr);
     const Matrix4x4 expected = Transform::ToMatrix(childLocal) * Transform::ToMatrix(rootLocal);
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+        EXPECT_NEAR(Matrix3x4::ToMatrix4x4(output->m_world).m_values[i], expected.m_values[i], 0.0001f);
     EXPECT_EQ(entity->GetParent()->GetUuid(), placement.m_rootUuid);
 }
 
@@ -297,12 +298,12 @@ TEST_F(TransformationFixture, PreserveWorldHonorsPrecedingLocalEditsAndExplicitL
     reparent.SetParent(m_world.Find(kChild)->GetID(), m_world.Find(kParent)->GetID());
     m_world.Submit(std::move(reparent));
     Tick();
-    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<const WorldTransformComponent>()->m_world.m_30, 7);
+    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<const WorldTransformComponent>()->m_world.GetTranslation().x, 7);
     EntityCommandList detach(m_world);
     detach.SetParent(m_world.Find(kChild)->GetID(), {}, ReparentMode::kPreserveLocal);
     m_world.Submit(std::move(detach));
     Tick();
-    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<const WorldTransformComponent>()->m_world.m_30, -3);
+    EXPECT_FLOAT_EQ(m_world.Find(kChild)->FindComponent<const WorldTransformComponent>()->m_world.GetTranslation().x, -3);
 }
 
 
@@ -323,7 +324,7 @@ TEST_F(TransformationFixture, ManyShallowTreesPublishEveryDerivedTransform)
     Tick();
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_treeBatches, 8);
     for (uint32_t tree = 0; tree < children.size(); ++tree)
-        EXPECT_FLOAT_EQ(m_world.Find(children[tree])->FindComponent<const WorldTransformComponent>()->m_world.m_30,
+        EXPECT_FLOAT_EQ(m_world.Find(children[tree])->FindComponent<const WorldTransformComponent>()->m_world.GetTranslation().x,
                         float(tree + 1));
     Tick();
     EXPECT_EQ(m_world.GetScheduleDiagnostics().m_callbacks, 0);
@@ -358,7 +359,7 @@ TEST_F(TransformationFixture, PreserveWorldRetainsAdjustedLocalUnderInactivePare
     m_world.Submit(std::move(reactivate));
     Tick();
     EXPECT_TRUE(child->IsActive());
-    EXPECT_FLOAT_EQ(child->FindComponent<WorldTransformComponent>()->m_world.m_30, 7);
+    EXPECT_FLOAT_EQ(child->FindComponent<WorldTransformComponent>()->m_world.GetTranslation().x, 7);
 }
 
 
@@ -378,7 +379,7 @@ TEST_F(TransformationFixture, PreserveWorldKeepsUniformScaleInLocalTransform)
     const Matrix4x4 expected = Transform::ToMatrix(original);
     const auto* output = entity->FindComponent<WorldTransformComponent>();
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+        EXPECT_NEAR(Matrix3x4::ToMatrix4x4(output->m_world).m_values[i], expected.m_values[i], 0.0001f);
 }
 
 
@@ -403,5 +404,5 @@ TEST_F(TransformationFixture, PreserveWorldDecomposesNonUniformScaleIntoModifier
     const Matrix4x4 expected = Matrix4x4::Translation(Vector3(4, 5, 6));
     const auto* output = entity->FindComponent<WorldTransformComponent>();
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_NEAR(output->m_world.m_values[i], expected.m_values[i], 0.0001f);
+        EXPECT_NEAR(Matrix3x4::ToMatrix4x4(output->m_world).m_values[i], expected.m_values[i], 0.0001f);
 }

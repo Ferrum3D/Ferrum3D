@@ -1,3 +1,4 @@
+#include <Core/Math/Matrix3x4.h>
 #include <Core/Math/Matrix4x4.h>
 
 namespace FE
@@ -10,6 +11,7 @@ namespace FE
     };
 
     const Matrix4x4 Matrix4x4::kIdentity = LoadAligned(&Internal::kIdentity4Values[0]);
+    const Matrix3x4 Matrix3x4::kIdentity = FromMatrix4x4(Matrix4x4::kIdentity);
 
 
     Matrix4x4 FE_VECTORCALL Math::InvertTransform(const Matrix4x4& matrix)

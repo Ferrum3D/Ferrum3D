@@ -19,7 +19,7 @@ namespace FE::GameFramework
         const auto traverse = [](const CameraComponent& camera, const WorldTransformComponent& transform) {
             Vector3 position, scale, shear;
             Quaternion rotation;
-            if (!Math::DecomposeTransform(transform.m_world, position, rotation, scale, shear))
+            if (!Math::DecomposeTransform(Matrix3x4::ToMatrix4x4(transform.m_world), position, rotation, scale, shear))
                 return;
 
             camera.m_view->SetCameraTransform(Transform::Create(position, rotation, 1.0f));

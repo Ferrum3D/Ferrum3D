@@ -10,6 +10,7 @@
 #include <GameFramework/Components/CameraComponent.h>
 #include <GameFramework/Components/CameraMovementComponent.h>
 #include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Components/TransformComponents.h>
 #include <GameFramework/Editor/CameraMovementSystem.h>
 #include <GameFramework/Editor/Controls.h>
 #include <GameFramework/Editor/Gizmos.h>
@@ -90,8 +91,9 @@ namespace
     {
         uint32_t m_created = 0, m_destroyed = 0;
         std::atomic<uint32_t> m_updates = 0;
-        Matrix4x4 m_matrices[1024];
-        Matrix4x4 m_matrix = Matrix4x4::kIdentity;
+        Matrix3x4 m_matrices[1024];
+        Matrix3x4 m_matrix = Matrix3x4::kIdentity;
+        uint32_t m_mobilityUpdates = 0;
         LifecycleResult Create(MeshComponent& component) override
         {
             component.m_handles.push_back({ ++m_created, 1 });
@@ -112,7 +114,15 @@ namespace
         }
 
 
-        void UpdateTransform(const MeshComponent& component, const Matrix4x4& matrix) override
+        void UpdateMobility(MeshComponent& component, const Graphics::MeshMobility mobility) override
+        {
+            EXPECT_TRUE(Threading::IsMainThread());
+            ++m_mobilityUpdates;
+            component.m_mobility = mobility;
+        }
+
+
+        void UpdateTransform(const MeshComponent& component, const Matrix3x4& matrix) override
         {
             ++m_updates;
             const uint32_t handle = component.m_handles.front().m_value;
@@ -135,6 +145,12 @@ namespace
         {
             m_views.push_back(Memory::DefaultNew<TestView>());
             return m_views.back().Get();
+        }
+
+
+        Rc<Graphics::View> CreateChildView() override
+        {
+            return Rc<Graphics::View>(Memory::DefaultNew<TestView>());
         }
 
 
@@ -247,11 +263,37 @@ namespace
 } // namespace
 
 
+TEST_F(GraphicsFixture, DerivesMeshMobilityFromDynamicTags)
+{
+    const auto mobility = [this] {
+        return m_world.Find(m_meshUuid)->FindComponent<const MeshComponent>()->m_mobility;
+    };
+
+    Tick();
+    EXPECT_EQ(mobility(), Graphics::MeshMobility::kStatic);
+    EXPECT_EQ(Meshes().m_mobilityUpdates, 0);
+
+    EntityCommandList tag(m_world);
+    tag.AddComponent<DynamicTagComponent>(m_world.Find(m_meshUuid)->GetID());
+    m_world.Submit(std::move(tag));
+    Tick();
+    EXPECT_EQ(mobility(), Graphics::MeshMobility::kDynamic);
+    EXPECT_EQ(Meshes().m_mobilityUpdates, 1);
+
+    EntityCommandList untag(m_world);
+    untag.RemoveComponent<DynamicTagComponent>(m_world.Find(m_meshUuid)->GetID());
+    m_world.Submit(std::move(untag));
+    Tick();
+    EXPECT_EQ(mobility(), Graphics::MeshMobility::kStatic);
+    EXPECT_EQ(Meshes().m_mobilityUpdates, 2);
+}
+
+
 TEST_F(GraphicsFixture, ExtractsChangedMatricesAndSkipsUnchangedChunks)
 {
     Tick();
     EXPECT_EQ(Meshes().m_created, 1);
-    EXPECT_FLOAT_EQ(Meshes().m_matrix.m_30, 1);
+    EXPECT_FLOAT_EQ(Meshes().m_matrix.GetTranslation().x, 1);
     EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_32, 8);
     const auto updates = Meshes().m_updates.load();
     Tick();
@@ -266,7 +308,7 @@ TEST_F(GraphicsFixture, ExtractsChangedMatricesAndSkipsUnchangedChunks)
                               TransformComponent{ Transform::Translation(Vector3(0, 4, -12)) });
     m_world.Submit(std::move(commands));
     Tick();
-    EXPECT_FLOAT_EQ(Meshes().m_matrix.m_30, 9);
+    EXPECT_FLOAT_EQ(Meshes().m_matrix.GetTranslation().x, 9);
     EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_31, -4);
     EXPECT_FLOAT_EQ(CameraView().GetViewMatrix().m_32, 12);
     const auto projection = Matrix4x4::Projection(0.5f, 16.0f / 9.0f, 0.01f, 1000);
@@ -850,9 +892,9 @@ TEST_F(GraphicsFixture, ExtractsHundredsOfTransformsAfterMainThreadMembership)
     EXPECT_GT(m_world.GetScheduleDiagnostics().m_jobs, 4);
     for (uint32_t i = 0; i < 500; ++i)
     {
-        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].m_30, float(i));
-        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].m_31, 7.0f);
-        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].m_32, 13.0f);
+        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].GetTranslation().x, float(i));
+        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].GetTranslation().y, 7.0f);
+        EXPECT_FLOAT_EQ(Meshes().m_matrices[i + 2].GetTranslation().z, 13.0f);
     }
 
     const uint32_t updates = Meshes().m_updates.load();

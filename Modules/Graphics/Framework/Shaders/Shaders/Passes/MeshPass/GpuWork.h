@@ -37,6 +37,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
         FE_CONSTEXPR uint32_t kMeshletFrustum = 1u << 2;
         FE_CONSTEXPR uint32_t kMeshletOcclusion = 1u << 3;
         FE_CONSTEXPR uint32_t kLodSelection = 1u << 4;
+        //! The projected LOD error does not depend on the distance to the camera.
+        FE_CONSTEXPR uint32_t kOrthographic = 1u << 5;
     } // namespace CullFlags
 
 
@@ -198,7 +200,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     {
         float4x4 m_viewProjection;
         float4x4 m_occlusionViewProjection;
-        //! xyz: LOD reference position; w: pixels per unit of error at unit distance divided by the error threshold.
+        //! xyz: LOD reference position; w: pixels per unit of error at unit distance divided by the error threshold, or
+        //! pixels per unit of error divided by the threshold with CullFlags::kOrthographic.
         float4 m_cameraPosition;
         uint32_t m_flags;
         uint32_t m_padding0;
@@ -226,7 +229,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
         StructuredBufferDescriptor<MeshSceneData> m_scene;
         StructuredBufferDescriptor<VisibleMeshlet> m_visibleMeshlets;
         StructuredBufferDescriptor<MeshCommandRange> m_commands;
-        uint32_t m_padding;
+        //! Constants of the technique role rendering this pass, e.g. the shadow atlas of a clip level.
+        ByteAddressBufferDescriptor m_passData;
     };
 
 

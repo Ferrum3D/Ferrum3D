@@ -1,11 +1,11 @@
-import Meshlets
+﻿import Meshlets
 {
-	cpp <Graphics/Core/Meshlet.h>
-	hlsl <Shaders/Core/Meshlet.hlsli>
+    cpp <Graphics/Core/Meshlet.h>
+    hlsl <Shaders/Core/Meshlet.hlsli>
 }
 
 table MeshLodInfoTable
-	: Meshlets
+    : Meshlets
 {
     Core::MeshLodInfo m_info;
     uint32_t m_geometryOffset;
@@ -14,7 +14,7 @@ table MeshLodInfoTable
 
 table MaterialInstanceTable
 {
-	BufferPointer m_materialParameters;
+    BufferPointer m_materialParameters;
     uint32_t m_evaluationSlot;
     uint32_t m_shadingSlot;
 }
@@ -23,8 +23,8 @@ table MeshGroupTable
     : Meshlets
 {
     BufferPointer m_geometry;
-	DB::Slice<MeshLodInfoTable> m_lods;
-	DB::Ref<MaterialInstanceTable> m_materialInstance;
+    DB::Slice<MeshLodInfoTable> m_lods;
+    DB::Ref<MaterialInstanceTable> m_materialInstance;
     Core::MeshBoundsInfo m_bounds;
     uint32_t m_renderable;
     uint32_t m_finestResidentLod;
@@ -43,8 +43,8 @@ table MeshBatchTable
 
 table MeshInstanceTable
 {
-	DB::Ref<MeshGroupTable> m_meshGroup;
-	float4x4 m_transform;
-	BufferPointer m_instanceData;
+    DB::Ref<MeshGroupTable> m_meshGroup;
+    float3x4 m_transform;
+    BufferPointer m_instanceData;
     uint32_t m_meshletVisibilityOffset;
 }

@@ -21,6 +21,7 @@
 #include <Core/IO/StreamBase.h>
 #include <Core/Math/Aabb.h>
 #include <Core/Math/Color.h>
+#include <Core/Math/Matrix3x4.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Math/Obb.h>
 #include <Core/Math/Quaternion.h>
@@ -2972,6 +2973,71 @@ namespace FE::Rtti
 
     static TypeRegistrar GTypeRegistrar_80e074d8c4c04190b716701dba47f9f7(&Internal::ExternalTypeReflector<uint8_t>::Reflect);
 } // namespace FE::Rtti
+
+
+namespace FE
+{
+    const Rtti::TypeID Matrix3x4::TypeID = Rtti::TypeID{
+        0x81, 0x82, 0x05, 0xf6, 0xec, 0xfe, 0x42, 0x4a, 0xb4, 0x55, 0xdd, 0x46, 0x48, 0xf8, 0xac, 0xd6,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_818205f6ecfe424ab455dd4648f8acd6(Matrix3x4* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x81, 0x82, 0x05, 0xf6, 0xec, 0xfe, 0x42, 0x4a,
+                0xb4, 0x55, 0xdd, 0x46, 0x48, 0xf8, 0xac, 0xd6, // FE::Matrix3x4 (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_818205f6ecfe424ab455dd4648f8acd6()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Matrix3x4::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_818205f6ecfe424ab455dd4648f8acd6();
+    }
+
+    void Matrix3x4::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_818205f6ecfe424ab455dd4648f8acd6();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x81, 0x82, 0x05, 0xf6, 0xec, 0xfe, 0x42, 0x4a, 0xb4, 0x55, 0xdd, 0x46, 0x48, 0xf8, 0xac, 0xd6, // FE::Matrix3x4
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<Matrix3x4>(typeInstance,
+                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                        "FE::Matrix3x4",
+                                        kBaseClassTypeIDs,
+                                        kAttributes,
+                                        kFields,
+                                        Rtti::TypeFlags::kHasUnreflectedFields);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_818205f6ecfe424ab455dd4648f8acd6(static_cast<Matrix3x4*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_818205f6ecfe424ab455dd4648f8acd6(&Matrix3x4::Reflect);
+} // namespace FE
 
 
 namespace FE::Rtti

@@ -218,6 +218,8 @@ namespace FE::Graphics::Vulkan
         deviceFeatures.sampleRateShading = true;
         deviceFeatures.shaderImageGatherExtended = true;
         deviceFeatures.shaderInt64 = true;
+        // Sun shadow rasterization writes depth into the shadow atlas with atomics from pixel shaders.
+        deviceFeatures.fragmentStoresAndAtomics = true;
         deviceFeatures.shaderStorageImageExtendedFormats = supportedFeatures.features.shaderStorageImageExtendedFormats;
         deviceFeatures.shaderStorageImageReadWithoutFormat = supportedFeatures.features.shaderStorageImageReadWithoutFormat;
         deviceFeatures.shaderStorageImageWriteWithoutFormat = supportedFeatures.features.shaderStorageImageWriteWithoutFormat;

@@ -1,5 +1,6 @@
 #include <Shaders/Deferred/DeferredCommon.hlsli>
 #include <Shaders/Lighting/Atmosphere.hlsli>
+#include <Shaders/Shadows/SunShadow.hlsli>
 
 FE_NUM_THREADS(EVALUATION_LANES* kSurfaceWavesPerGroup, 1, 1)
 void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
@@ -22,7 +23,9 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
     const float2 ndc = ((float2(pixel) + 0.5f - view.m_viewport.xy) / view.m_viewport.zw) * float2(2, -2) + float2(-1, 1);
     const float depth = GConstants.m_depth.Load(location);
     const float4 world = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
+    const float3 worldPosition = world.xyz / world.w;
     const float nDotL = saturate(dot(surface.m_normal, lighting.m_directionIlluminance.xyz));
-    const float3 illuminance = Atmosphere::DirectionalIlluminance(lighting, world.xyz / world.w);
+    const float sunVisibility = SunShadow::SampleVisibility(GConstants.m_sunShadow, worldPosition, surface.m_normal);
+    const float3 illuminance = Atmosphere::DirectionalIlluminance(lighting, worldPosition) * sunVisibility;
     GConstants.m_output.Store(pixel, surface.m_color * illuminance * (nDotL * Shading::kPreExposure / Atmosphere::kPi));
 }

@@ -263,6 +263,20 @@ namespace FE
             return result;
         }
 
+        //! @brief Reverse-Z orthographic projection of a width x height box from near (depth 1) to far (depth 0).
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4 FE_VECTORCALL Orthographic(const float width, const float height,
+                                                                                          const float near, const float far)
+        {
+            const float range = 1.0f / (far - near);
+
+            Matrix4x4 result;
+            result.m_simdVectors[0] = _mm_setr_ps(2.0f / width, 0.0f, 0.0f, 0.0f);
+            result.m_simdVectors[1] = _mm_setr_ps(0.0f, 2.0f / height, 0.0f, 0.0f);
+            result.m_simdVectors[2] = _mm_setr_ps(0.0f, 0.0f, -range, 0.0f);
+            result.m_simdVectors[3] = _mm_setr_ps(0.0f, 0.0f, far * range, 1.0f);
+            return result;
+        }
+
         static const Matrix4x4 kZero;
         static const Matrix4x4 kIdentity;
     };

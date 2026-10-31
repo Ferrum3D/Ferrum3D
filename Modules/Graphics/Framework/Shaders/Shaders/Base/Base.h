@@ -8,6 +8,7 @@
 
 #if FE_HOST
 #    include <Core/Base/Base.h>
+#    include <Core/Math/Matrix3x4.h>
 #    include <Core/Math/Matrix4x4.h>
 #    include <Graphics/Core/FrameGraph/FrameGraph.h>
 #    include <Graphics/Core/FrameGraph/FrameGraphPass.h>
@@ -40,6 +41,7 @@ namespace FE
     using uint2 = Vector2UInt;
     using uint3 = PackedVector3UInt;
 
+    using float3x4 = Matrix3x4;
     using float4x4 = Matrix4x4;
 
 

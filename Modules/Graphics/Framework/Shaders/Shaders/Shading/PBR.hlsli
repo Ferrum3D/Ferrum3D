@@ -31,8 +31,9 @@ namespace Shading
     }
 
 
+    //! sunVisibility scales the directional light, e.g. by its shadow.
     float4 ComputeShading(const MaterialEvaluation material, const float3 worldPosition, const float3 cameraPosition,
-                          const GlobalLightingData lighting)
+                          const GlobalLightingData lighting, const float sunVisibility = 1.0f)
     {
         const Surface surface = material.m_surface;
         const float3 viewDirection = normalize(cameraPosition - worldPosition);
@@ -40,7 +41,8 @@ namespace Shading
             return float4(material.m_emissive, 1);
 
         const float3 lightDirection = lighting.m_directionIlluminance.xyz;
-        const float3 preExposedIlluminance = Atmosphere::DirectionalIlluminance(lighting, worldPosition) * kPreExposure;
+        const float3 preExposedIlluminance =
+            Atmosphere::DirectionalIlluminance(lighting, worldPosition) * (kPreExposure * sunVisibility);
         const float3 brdf = EvaluateBRDF(surface.m_diffuseAlbedo,
                                          surface.m_f0,
                                          surface.m_perceptualRoughness,

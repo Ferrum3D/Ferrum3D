@@ -6,6 +6,7 @@
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
+#include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
@@ -137,7 +138,8 @@ namespace FE::Graphics
 
         MeshPass::MeshCullData CreateCullData(const Culling::PassData& culling, const float viewportHeight)
         {
-            // An LOD is acceptable when error * scale / distance * projection * height / 2 <= threshold.
+            // An LOD is acceptable when error * scale / distance * projection * height / 2 <= threshold. Orthographic views
+            // compare against a unit distance.
             const float threshold = Math::Max(culling.m_settings.m_lodErrorThreshold, 1e-3f);
             const float lodScale = culling.m_projectionScaleY * viewportHeight * 0.5f / threshold;
 
@@ -146,6 +148,9 @@ namespace FE::Graphics
             cull.m_occlusionViewProjection = culling.m_occlusionViewProjection;
             cull.m_cameraPosition = PackedVector4F(Vector4(culling.m_cameraPosition, lodScale));
             cull.m_flags = CalculateCullFlags(culling.m_settings);
+            if (culling.m_isOrthographic)
+                cull.m_flags |= MeshPass::CullFlags::kOrthographic;
+
             return cull;
         }
 
@@ -232,6 +237,7 @@ namespace FE::Graphics
         batch->m_parent = this;
         batch->m_tableRef = m_batchTable->AllocateRow();
         batch->m_drawTagMask = desc.m_drawTagMask;
+        batch->m_mobility = desc.m_mobility;
         const uint32_t batchIndex = batch->m_tableRef.m_rowIndex;
         if (batchIndex >= m_batches.size())
         {
@@ -405,8 +411,7 @@ namespace FE::Graphics
             for (uint32_t corner = 0; corner < 8; ++corner)
             {
                 const Vector3 localPosition = Math::Blend(localBounds.min, localBounds.max, corner);
-                const Vector4 worldPosition = Vector4(localPosition, 1.0f) * *instance.m_transform;
-                bounds = Math::Union(bounds, Vector3(worldPosition.x, worldPosition.y, worldPosition.z));
+                bounds = Math::Union(bounds, Math::TransformPoint(*instance.m_transform, localPosition));
             }
         }
 
@@ -427,16 +432,20 @@ namespace FE::Graphics
             batch->m_members = m_memberTable->AllocateRows(count);
         }
 
+        DrawTagMask drawTagMask = batch->m_drawTagMask;
+        if (batch->m_mobility == MeshMobility::kDynamic)
+            drawTagMask |= DrawTagMask(DrawTags::Dynamic);
+
         const auto row = m_batchTable->WriteRow(batch->m_tableRef);
         row.m_members.Get() = batch->m_members;
-        row.m_drawTagMask.Get() = Vector2UInt(static_cast<uint32_t>(batch->m_drawTagMask.m_value),
-                                              static_cast<uint32_t>(batch->m_drawTagMask.m_value >> 32));
+        row.m_drawTagMask.Get() =
+            Vector2UInt(static_cast<uint32_t>(drawTagMask.m_value), static_cast<uint32_t>(drawTagMask.m_value >> 32));
 
         m_memberTable->CopyColumn(batch->m_members, festd::span(batch->m_meshInstances));
     }
 
 
-    void MeshSceneModule::UpdateTransform(const MeshHandle instance, const Matrix4x4& transform)
+    void MeshSceneModule::UpdateTransform(const MeshHandle instance, const Matrix3x4& transform)
     {
         const auto reference = TranslateHandle(instance);
         FE_Assert(reference.m_rowIndex != kInvalidIndex);
@@ -520,6 +529,17 @@ namespace FE::Graphics
     {
         FE_Assert(batch != nullptr && batch->m_parent == this);
         batch->m_drawTagMask = tags;
+        m_membershipDirty.set(batch->m_tableRef.m_rowIndex);
+    }
+
+
+    void MeshSceneModule::SetBatchMobility(MeshBatch* batch, const MeshMobility mobility)
+    {
+        FE_Assert(batch != nullptr && batch->m_parent == this);
+        if (batch->m_mobility == mobility)
+            return;
+
+        batch->m_mobility = mobility;
         m_membershipDirty.set(batch->m_tableRef.m_rowIndex);
     }
 
@@ -842,6 +862,7 @@ namespace FE::Graphics
         phase.m_phase = festd::to_underlying(pass.m_phase);
         phase.m_depthPyramid = pass.m_depthPyramid;
         phase.m_stats = pass.m_reportsStats ? state.m_stats.Get() : nullptr;
+        phase.m_passData = pass.m_passData;
 
         MeshPipelineRegistry& registry = UpdatePipelineRegistry(graph, uploader, pass.m_techniqueRole);
         PreparedMeshPass prepared;

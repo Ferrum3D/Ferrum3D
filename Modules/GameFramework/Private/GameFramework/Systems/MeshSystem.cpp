@@ -1,5 +1,6 @@
 #include <Framework/Entities/Query.h>
 #include <GameFramework/Components/MeshComponent.h>
+#include <GameFramework/Components/PhysicsBodyComponent.h>
 #include <GameFramework/Components/TransformComponents.h>
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <GameFramework/Systems/MeshSystem.h>
@@ -20,12 +21,20 @@ namespace FE::GameFramework
 
         auto* sceneService = context.m_world.FindService<WorldGraphicsSceneService>();
 
-        const auto updateModel = [sceneService](MeshComponent& mesh) {
-            sceneService->GetMeshes().UpdateModel(mesh);
-            return Framework::QueryWriteResult::kUnchanged;
-        };
+        const auto updateModel =
+            [sceneService](MeshComponent& mesh, const DynamicTagComponent* tag, const PhysicsBodyComponent* body) {
+                MeshSceneBridge& meshes = sceneService->GetMeshes();
+                meshes.UpdateModel(mesh);
 
-        const auto models = Framework::Query<MeshComponent>::Create()
+                const Graphics::MeshMobility mobility = GetMeshMobility(tag, body);
+                if (mobility != mesh.m_mobility)
+                    meshes.UpdateMobility(mesh, mobility);
+
+                return Framework::QueryWriteResult::kUnchanged;
+            };
+
+        using ModelQuery = Framework::Query<MeshComponent, const DynamicTagComponent*, const PhysicsBodyComponent*>;
+        const auto models = ModelQuery::Create()
                                 .SetChangeCursor(m_modelChanges)
                                 .SetExecutionPolicy(Framework::ExecutionPolicy::kMainThread)
                                 .Traverse(context, Phases::GraphicsExtraction, updateModel);

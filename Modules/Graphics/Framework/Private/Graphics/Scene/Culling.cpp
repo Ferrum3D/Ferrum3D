@@ -36,6 +36,7 @@ namespace FE::Graphics::Culling
             m_frozenViewProjection = m_view->GetViewProjectionMatrix();
             m_frozenCameraPosition = m_view->GetCameraTransform().Translation();
             m_frozenProjectionScaleY = GetProjectionScaleY(*m_view);
+            m_isFrozenOrthographic = m_view->IsOrthographic();
         }
 
         m_isFrozen = m_settings.m_freezeCulling;
@@ -49,6 +50,7 @@ namespace FE::Graphics::Culling
             data.m_occlusionViewProjection = m_frozenViewProjection;
             data.m_cameraPosition = m_frozenCameraPosition;
             data.m_projectionScaleY = m_frozenProjectionScaleY;
+            data.m_isOrthographic = m_isFrozenOrthographic;
             data.m_frozenDepthPyramid = &m_frozenDepthPyramid;
         }
         else
@@ -57,6 +59,7 @@ namespace FE::Graphics::Culling
             data.m_occlusionViewProjection = data.m_viewProjection;
             data.m_cameraPosition = m_view->GetCameraTransform().Translation();
             data.m_projectionScaleY = GetProjectionScaleY(*m_view);
+            data.m_isOrthographic = m_view->IsOrthographic();
         }
     }
 
@@ -72,6 +75,7 @@ namespace FE::Graphics::Culling
         data.m_occlusionViewProjection = data.m_viewProjection;
         data.m_cameraPosition = view.GetCameraTransform().Translation();
         data.m_projectionScaleY = GetProjectionScaleY(view);
+        data.m_isOrthographic = view.IsOrthographic();
         return data;
     }
 } // namespace FE::Graphics::Culling

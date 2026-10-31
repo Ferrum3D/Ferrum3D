@@ -129,8 +129,16 @@ namespace FE::Graphics
             return m_enabled;
         }
 
+        //! @brief Whether the projection was set by SetOrthographicProjection().
+        [[nodiscard]] bool IsOrthographic() const
+        {
+            return m_isOrthographic;
+        }
+
         void SetCameraTransform(const Transform& transform);
         void SetProjection(float fovY, float aspectRatio, float near, float far);
+        //! @brief Project a width x height box along the camera's +Z axis, e.g. for a directional light.
+        void SetOrthographicProjection(float width, float height, float near, float far);
 
         //! @brief Enable a diagnostic mode of one of the view's modules and disable all others.
         //!
@@ -159,6 +167,7 @@ namespace FE::Graphics
         float m_aspectRatio = 1.0f;
         float m_nearPlane = 1.0f;
         float m_farPlane = 100.0f;
+        bool m_isOrthographic = false;
         bool m_enabled = true;
 
         Matrix4x4 m_viewMatrix = Matrix4x4::kIdentity;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/Env/Environment.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Graphics/Base/Base.h>
@@ -70,7 +70,10 @@ namespace FE::Graphics
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Whether the pass reports its culling statistics to the view.
         bool m_reportsStats = false;
+        //! Read by the role's shaders through MeshViewData::m_passData.
+        Core::Buffer* m_passData = nullptr;
     };
+
 
     //! Render callbacks run on a job fiber. Recorded passes must retain their inputs and must not access mutable scene state.
     struct SceneModuleBase : public Memory::RefCountedObjectBase
@@ -127,6 +130,8 @@ namespace FE::Graphics
         }
 
         [[nodiscard]] virtual View* CreateView() = 0;
+        //! @brief Create a view the scene does not list; it renders only through Renderer::AddViewPasses.
+        [[nodiscard]] virtual Rc<View> CreateChildView() = 0;
         //! @brief Remove scene ownership of a camera View; callers release their retained reference separately.
         virtual void DestroyView(View* view) = 0;
         [[nodiscard]] virtual uint32_t GetViewCount() const = 0;

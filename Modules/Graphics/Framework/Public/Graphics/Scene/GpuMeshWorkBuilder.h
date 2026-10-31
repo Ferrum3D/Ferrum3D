@@ -89,6 +89,8 @@ namespace FE::Graphics
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Receives meshlet and rendered instance counters when not null.
         Core::Buffer* m_stats = nullptr;
+        //! Published to the pass shaders as MeshViewData::m_passData when not null.
+        Core::Buffer* m_passData = nullptr;
     };
 
 

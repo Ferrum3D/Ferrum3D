@@ -2,6 +2,7 @@
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/Jobs/Jobs.h>
+#include <Core/Math/Matrix3x4.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Threading/Thread.h>
 #include <Core/Time/BaseTime.h>
@@ -17,6 +18,7 @@
 #include <Graphics/Database/Database.h>
 #include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
+#include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
@@ -194,6 +196,7 @@ namespace
             m_view->GetModules().Add<Visibility::ViewModule>();
             m_view->GetModules().Add<SurfaceEvaluation::ViewModule>();
             m_view->GetModules().Add<DeferredShading::ViewModule>();
+            m_view->GetModules().Add<SunShadow::ViewModule>();
             m_view->GetModules().Add<Tonemap::ViewModule>();
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
@@ -303,8 +306,9 @@ namespace
 
                 for (int32_t instanceIndex = -1; instanceIndex <= 1; ++instanceIndex)
                 {
-                    instanceDesc.m_transform = Matrix4x4::RotationY(Constants::kPI)
-                        * Matrix4x4::Translation(Vector3(batchX, 0.0f, static_cast<float>(instanceIndex) * 1.5f));
+                    instanceDesc.m_transform = Matrix3x4::FromMatrix4x4(
+                        Matrix4x4::RotationY(Constants::kPI)
+                        * Matrix4x4::Translation(Vector3(batchX, 0.0f, static_cast<float>(instanceIndex) * 1.5f)));
                     m_meshInstances.push_back(meshSceneModule.CreateInstance(instanceDesc));
                 }
             }
@@ -329,7 +333,7 @@ namespace
                     instanceDesc.m_material = index % 3 == 0 ? originalMaterial : index % 3 == 1 ? warmMaterial : coolMaterial;
                     const float x = float(index % 27) * 2.0f - 26.0f;
                     const float z = float(index / 27) * 2.0f;
-                    instanceDesc.m_transform = Matrix4x4::Translation(Vector3(x, 0.0f, z));
+                    instanceDesc.m_transform = Matrix3x4::FromMatrix4x4(Matrix4x4::Translation(Vector3(x, 0.0f, z)));
                     m_stressInstances.push_back(meshSceneModule.CreateInstance(instanceDesc));
                 }
                 instanceDesc.m_material = originalMaterial;
@@ -341,6 +345,7 @@ namespace
                 m_secondView->GetModules().Add<Visibility::ViewModule>();
                 m_secondView->GetModules().Add<SurfaceEvaluation::ViewModule>();
                 m_secondView->GetModules().Add<DeferredShading::ViewModule>();
+                m_secondView->GetModules().Add<SunShadow::ViewModule>();
                 m_secondView->GetModules().Add<Tonemap::ViewModule>();
                 auto& probePass = m_secondView->GetModules().Find<Visibility::ViewModule>();
                 probePass.m_drawTag = GMaskProbeTag;
@@ -354,11 +359,11 @@ namespace
             culledBatchDesc.m_bounds = Aabb{ Vector3(95.0f, -5.0f, -5.0f), Vector3(105.0f, 5.0f, 5.0f) };
             culledBatchDesc.m_drawTagMask = DrawTagMask(DrawTags::Visibility);
             instanceDesc.m_batch = meshSceneModule.CreateBatch(culledBatchDesc);
-            instanceDesc.m_transform = Matrix4x4::Translation(Vector3(100.0f, 0.0f, 0.0f));
+            instanceDesc.m_transform = Matrix3x4::FromMatrix4x4(Matrix4x4::Translation(Vector3(100.0f, 0.0f, 0.0f)));
             m_meshInstances.push_back(meshSceneModule.CreateInstance(instanceDesc));
             if (GAllCulled)
             {
-                const Matrix4x4 outside = Matrix4x4::Translation(Vector3(100.0f, 100.0f, -100.0f));
+                const Matrix3x4 outside = Matrix3x4::FromMatrix4x4(Matrix4x4::Translation(Vector3(100.0f, 100.0f, -100.0f)));
                 for (MeshHandle handle : m_meshInstances)
                     meshSceneModule.UpdateTransform(handle, outside);
                 for (MeshHandle handle : m_stressInstances)
@@ -400,8 +405,8 @@ namespace
 
                     for (uint32_t index = 0; index < 257; ++index)
                     {
-                        m_stressDesc.m_transform =
-                            Matrix4x4::Translation(Vector3(float(index % 19) - 9.0f, 0.0f, float(index / 19)));
+                        m_stressDesc.m_transform = Matrix3x4::FromMatrix4x4(
+                            Matrix4x4::Translation(Vector3(float(index % 19) - 9.0f, 0.0f, float(index / 19))));
                         m_stressInstances[index] = scene.CreateInstance(m_stressDesc);
                     }
                 }
@@ -418,12 +423,13 @@ namespace
                     shear.m_11 = 0.25f;
                     shear.m_22 = 2.0f;
                     shear.m_10 = 0.5f;
-                    scene.UpdateTransform(m_stressInstances[0], shear);
+                    scene.UpdateTransform(m_stressInstances[0], Matrix3x4::FromMatrix4x4(shear));
                     shear.m_22 = 0.0f;
-                    scene.UpdateTransform(m_stressInstances[1], shear);
+                    scene.UpdateTransform(m_stressInstances[1], Matrix3x4::FromMatrix4x4(shear));
                     scene.UpdateMaterial(m_stressInstances[2],
                                          IO::AssetLease<MaterialInstanceAsset>(m_warmMaterialRequest.GetAssetSlot()));
-                    scene.UpdateTransform(m_stressInstances.back(), Matrix4x4::Translation(Vector3(100.0f, 0.0f, 0.0f)));
+                    scene.UpdateTransform(m_stressInstances.back(),
+                                          Matrix3x4::FromMatrix4x4(Matrix4x4::Translation(Vector3(100.0f, 0.0f, 0.0f))));
                 }
                 if (m_frameIndex == 5)
                 {
@@ -477,7 +483,7 @@ namespace
                 }
                 if (m_frameIndex == 12)
                 {
-                    const Matrix4x4 outside = Matrix4x4::Translation(Vector3(100.0f, 100.0f, -100.0f));
+                    const Matrix3x4 outside = Matrix3x4::FromMatrix4x4(Matrix4x4::Translation(Vector3(100.0f, 100.0f, -100.0f)));
                     for (MeshHandle handle : m_meshInstances)
                         scene.UpdateTransform(handle, outside);
                     for (MeshHandle handle : m_stressInstances)

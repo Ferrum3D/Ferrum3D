@@ -9,6 +9,7 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/ShaderSourceDirectory.h>
 #include <Graphics/Database/Database.h>
+#include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
@@ -309,9 +310,35 @@ namespace FE::Graphics
         for (uint32_t viewIndex = 0; viewIndex < views.size(); ++viewIndex)
         {
             FE_FG_SCOPE(*m_frameGraph, Fmt::FixedFormat("View{}", viewIndex));
-            views[viewIndex].m_blackboard = &m_frameGraph->CreateBlackboard();
-            SetupView(views[viewIndex]);
+            FrameView& view = views[viewIndex];
+            view.m_blackboard = &m_frameGraph->CreateBlackboard();
+
+            // Acquisition may resize the image later; output passes sample the main targets with normalized coordinates.
+            const Vector2UInt resolution = view.m_texture
+                ? view.m_texture->GetDesc().GetSize2D()
+                : Vector2UInt(view.m_viewport->GetDesc().m_width, view.m_viewport->GetDesc().m_height);
+            SetupView(*view.m_view, *view.m_blackboard, resolution, view.m_texture);
         }
+    }
+
+
+    Core::FrameGraphBlackboard& RendererImpl::AddViewPasses(Core::FrameGraph& graph, const ChildViewDesc& desc)
+    {
+        FE_PROFILER_ZONE();
+
+        constexpr uint32_t kMaxViewNesting = 4;
+        FE_Assert(&graph == m_frameGraph.Get());
+        FE_Assert(!m_viewSetupStack.empty(), "Child views are added from the pass setup of another view");
+        FE_Assert(m_viewSetupStack.size() < kMaxViewNesting, "Child views are nested too deeply");
+        FE_Assert(desc.m_view && desc.m_resolution.x > 0 && desc.m_resolution.y > 0);
+
+        // Only the scenes of top-level views were updated for this frame.
+        FE_Assert(desc.m_view->GetScene() == m_viewSetupStack.back()->GetScene());
+
+        FE_FG_SCOPE(graph, "ChildView");
+        Core::FrameGraphBlackboard& blackboard = graph.CreateBlackboard();
+        SetupView(*desc.m_view, blackboard, desc.m_resolution, nullptr);
+        return blackboard;
     }
 
 
@@ -345,17 +372,16 @@ namespace FE::Graphics
     }
 
 
-    void RendererImpl::SetupView(const FrameView& frameView)
+    void RendererImpl::SetupView(View& view, Core::FrameGraphBlackboard& blackboard, const Vector2UInt resolution,
+                                 Core::Texture* outputTexture)
     {
         Core::FrameGraph& graph = *m_frameGraph;
-        Core::FrameGraphBlackboard& blackboard = *frameView.m_blackboard;
-        View& view = *frameView.m_view;
         Scene& scene = *view.GetScene();
 
-        // Acquisition may resize the image later; output passes sample the main targets with normalized coordinates.
-        const Vector2UInt resolution = frameView.m_texture
-            ? frameView.m_texture->GetDesc().GetSize2D()
-            : Vector2UInt(frameView.m_viewport->GetDesc().m_width, frameView.m_viewport->GetDesc().m_height);
+        m_viewSetupStack.push_back(&view);
+        const auto popView = festd::defer([this] {
+            m_viewSetupStack.pop_back();
+        });
 
         RendererViewTargets& targets = blackboard.Add<RendererViewTargets>();
         targets.m_color = Core::Texture::Create(m_device.Get(), "RendererMainColor", Core::Format::kB10G11R11_UFLOAT, resolution);
@@ -390,10 +416,13 @@ namespace FE::Graphics
         });
 
         Visibility::AddPasses(graph, blackboard);
+        ShadowAtlas::AddPasses(graph, blackboard);
         DepthPyramidPass::AddPasses(graph, blackboard);
+        SunShadow::AddPasses(graph, blackboard);
         Visibility::AddDebugPasses(graph, blackboard);
         SurfaceEvaluation::AddPasses(graph, blackboard);
         GBufferDebug::AddPasses(graph, blackboard);
+        SunShadow::AddDebugPasses(graph, blackboard);
         DeferredShading::AddPasses(graph, blackboard);
         Tonemap::AddPasses(graph, blackboard);
         view.GetModules().ForEachActive([&](ViewModuleBase& module) {
@@ -402,10 +431,10 @@ namespace FE::Graphics
         ImGuiPass::AddPasses(graph, blackboard);
 
         // Offscreen output must precede UI passes that sample it in this same graph.
-        if (frameView.m_texture)
+        if (outputTexture)
         {
             ViewOutput& output = blackboard.Add<ViewOutput>();
-            output.m_target = Core::TextureView::Create(frameView.m_texture);
+            output.m_target = Core::TextureView::Create(outputTexture);
             Tonemap::AddOutputPasses(graph, blackboard);
             ImGuiPass::AddOutputPasses(graph, blackboard);
         }

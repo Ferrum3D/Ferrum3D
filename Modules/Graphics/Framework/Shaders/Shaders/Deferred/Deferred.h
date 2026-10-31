@@ -2,12 +2,14 @@
 #include <Shaders/Deferred/Tiling.h>
 #include <Shaders/Lighting/GlobalLighting.h>
 #include <Shaders/Scene/ViewData.h>
+#include <Shaders/Shadows/SunShadow.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     struct DeferredConstants final
     {
         StructuredBufferDescriptor<ViewData> m_view;
         GlobalLightingBinding m_lighting;
+        SunShadowBinding m_sunShadow;
         Texture2DDescriptor<uint32_t> m_g0;
         Texture2DDescriptor<uint32_t> m_g1;
         Texture2DDescriptor<uint32_t> m_g2;

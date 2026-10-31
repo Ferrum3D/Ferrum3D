@@ -12,6 +12,7 @@ namespace FE::Graphics
         ~SceneImpl() override;
 
         View* CreateView() override;
+        Rc<View> CreateChildView() override;
         void DestroyView(View* view) override;
         uint32_t GetViewCount() const override;
         View* GetView(uint32_t index) const override;
