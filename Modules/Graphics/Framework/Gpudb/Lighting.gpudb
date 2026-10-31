@@ -9,3 +9,15 @@ table GlobalLightingTable
 {
     GlobalLightingData m_lighting;
 }
+
+import LocalLighting
+{
+    cpp <Shaders/Lighting/LocalLighting.h>
+    hlsl <Shaders/Lighting/LocalLighting.h>
+}
+
+table LocalLightTable
+    : LocalLighting
+{
+    LocalLightData m_light;
+}

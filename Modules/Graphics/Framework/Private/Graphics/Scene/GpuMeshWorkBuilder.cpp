@@ -169,7 +169,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_dispatch = graph.GetSRV(candidates.m_dispatch.Get());
             constants.m_classification = graph.GetUAV(classification);
             constants.m_visibility = graph.GetUAV(culled.m_visibility.Get());
-            constants.m_stats = graph.GetUAV(culled.m_stats.Get());
+            constants.m_stats = GetOptionalUAV(graph, culled.m_stats.Get());
             constants.m_visibilityCapacity = culled.m_visibilityCapacity;
             constants.m_phase = phase;
             SetDepthPyramid(graph, &depthPyramid, constants);
@@ -207,7 +207,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_visibility = graph.GetUAV(culled.m_visibility.Get());
             constants.m_occlusionCandidates = GetOptionalUAV(graph, candidates.m_candidates.Get());
             constants.m_occlusionDispatch = GetOptionalUAV(graph, candidates.m_dispatch.Get());
-            constants.m_stats = graph.GetUAV(culled.m_stats.Get());
+            constants.m_stats = GetOptionalUAV(graph, culled.m_stats.Get());
             constants.m_visibilityCapacity = culled.m_visibilityCapacity;
             constants.m_isOcclusionTested = depthPyramid != nullptr ? 1 : 0;
             constants.m_phase = phase;
@@ -491,6 +491,21 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         FE_Assert(resources.m_depthPyramid == nullptr || phase == MeshPass::CullPhase::kSingle);
         result.m_classification = CullInstances(graph, uploader, result, phase, resources.m_depthPyramid);
+    }
+
+
+    CulledMeshView CullIndependent(Core::FrameGraph& graph, Core::RingUploader& uploader, const CulledMeshView& source)
+    {
+        CulledMeshView result = source;
+        result.m_phase = MeshPass::CullPhase::kSingle;
+        result.m_visibilityCapacity = 0;
+        result.m_meshletVisibilityCapacity = 0;
+        result.m_stats = nullptr;
+        result.m_lateClassification.Reset();
+        if (result.m_dispatchCount != 0)
+            result.m_classification = CullInstances(graph, uploader, result, result.m_phase, nullptr);
+
+        return result;
     }
 
 

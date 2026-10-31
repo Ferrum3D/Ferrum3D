@@ -135,6 +135,16 @@ namespace FE::Graphics
             return m_isOrthographic;
         }
 
+        [[nodiscard]] float GetNearPlane() const
+        {
+            return m_nearPlane;
+        }
+        [[nodiscard]] float GetFarPlane() const
+        {
+            return m_farPlane;
+        }
+
+
         void SetCameraTransform(const Transform& transform);
         void SetProjection(float fovY, float aspectRatio, float near, float far);
         //! @brief Project a width x height box along the camera's +Z axis, e.g. for a directional light.

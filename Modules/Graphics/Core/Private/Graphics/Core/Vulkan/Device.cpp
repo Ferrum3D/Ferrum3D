@@ -216,6 +216,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures.tessellationShader = true;
         deviceFeatures.samplerAnisotropy = true;
         deviceFeatures.sampleRateShading = true;
+        deviceFeatures.independentBlend = true;
         deviceFeatures.shaderImageGatherExtended = true;
         deviceFeatures.shaderInt64 = true;
         // Sun shadow rasterization writes depth into the shadow atlas with atomics from pixel shaders.

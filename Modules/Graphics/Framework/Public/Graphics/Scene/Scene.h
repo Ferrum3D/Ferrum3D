@@ -70,6 +70,8 @@ namespace FE::Graphics
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Whether the pass reports its culling statistics to the view.
         bool m_reportsStats = false;
+        //! Classify independently of opaque visibility history, without writing it.
+        bool m_independentCulling = false;
         //! Read by the role's shaders through MeshViewData::m_passData.
         Core::Buffer* m_passData = nullptr;
     };

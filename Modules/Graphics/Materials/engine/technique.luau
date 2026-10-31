@@ -23,7 +23,8 @@ export type TechniqueDesc = {
 
     rasterization: Pipeline.RasterizationState?,
     depthStencil: Pipeline.DepthStencilState?,
-    blend: Pipeline.BlendState?
+    blend: Pipeline.BlendState?,
+    targetBlends: { Pipeline.BlendState }?
 }
 
 export type TechniqueContext = typeof(setmetatable(

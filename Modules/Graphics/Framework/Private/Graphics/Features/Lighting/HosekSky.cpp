@@ -117,6 +117,22 @@ namespace FE::Graphics
     } // namespace
 
 
+    PackedVector3F BlackbodyLinearColor(const float temperature)
+    {
+        Vector3 xyz = Vector3::kZero;
+        for (uint32_t wavelength = 360; wavelength <= 830; wavelength += 5)
+        {
+            const double meters = wavelength * 1e-9;
+            const double spectrum = 1e-30 / (std::pow(meters, 5) * std::expm1(0.01438776877 / (meters * temperature)));
+            xyz = xyz + CieMatchingFunctions(wavelength) * static_cast<float>(spectrum);
+        }
+
+        const Vector3 rgb = XyzToLinearRgb(xyz);
+        const float luminance = 0.2126f * rgb.x + 0.7152f * rgb.y + 0.0722f * rgb.z;
+        return PackedVector3F(rgb / luminance);
+    }
+
+
     void PrecomputeHosekSky(const SkyAtmosphereParameters& parameters, const Vector3 sunDirection, GlobalLightingData& data)
     {
         if (sunDirection.y < 0)

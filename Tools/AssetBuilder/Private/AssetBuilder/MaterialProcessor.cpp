@@ -552,6 +552,35 @@ namespace FE::AssetBuilder
                         memset(&technique.m_blend, 0, sizeof(technique.m_blend));
                         technique.m_blend.m_targetBlendStates[0] = blend;
                         lua_pop(state, 1);
+
+                        lua_getfield(state, -1, "targetBlends");
+                        if (!lua_isnil(state, -1))
+                        {
+                            if (!lua_istable(state, -1))
+                                return false;
+
+                            const uint32_t count = static_cast<uint32_t>(lua_objlen(state, -1));
+                            if (count != technique.m_renderTargetFormats.size()
+                                || count > Graphics::Core::Limits::Pipeline::kMaxColorAttachments)
+                            {
+                                return false;
+                            }
+
+                            technique.m_blend.m_enableIndependentBlend = true;
+                            for (uint32_t index = 0; index < count; ++index)
+                            {
+                                lua_rawgeti(state, -1, index + 1);
+                                if (!lua_istable(state, -1)
+                                    || !ReadBlend(state, -1, technique.m_blend.m_targetBlendStates[index]))
+                                {
+                                    return false;
+                                }
+
+                                lua_pop(state, 1);
+                            }
+                        }
+
+                        lua_pop(state, 1);
                     }
 
                     lua_getfield(state, -1, "shaderDefines");

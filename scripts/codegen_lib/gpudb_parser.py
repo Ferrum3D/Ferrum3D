@@ -140,7 +140,7 @@ def _parse_table(f: TextIOBase, line: str, imports: dict[str, ImportDecl]) -> Ta
 
 
 def _parse_file(filename: Path, tables: list[Table], imports: dict[str, ImportDecl]):
-    with open(filename) as f:
+    with open(filename, encoding="utf-8-sig") as f:
         while True:
             line = f.readline() # do not strip because we need to keep newline characters
             if line == '':

@@ -12,6 +12,7 @@
 #include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
+#include <Graphics/Passes/ForwardTransparencyPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/ImGuiPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
@@ -424,6 +425,7 @@ namespace FE::Graphics
         GBufferDebug::AddPasses(graph, blackboard);
         SunShadow::AddDebugPasses(graph, blackboard);
         DeferredShading::AddPasses(graph, blackboard);
+        ForwardTransparency::AddPasses(graph, blackboard);
         Tonemap::AddPasses(graph, blackboard);
         view.GetModules().ForEachActive([&](ViewModuleBase& module) {
             module.AddRenderPasses(graph, blackboard);

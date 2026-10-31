@@ -15,7 +15,7 @@ and the authored world remains paused without physics simulation.
 `GameSample_Editor.exe --smoke` renders eight ready frames and exercises selection
 outline and pixel picking. The regular `GameSample.exe --smoke` remains available.
 
-Visibility rasterization, GBuffer evaluation and deferred compute shading are the default pipeline. Each stage has its own view module and exchanges targets through the FrameGraph blackboard. The forward path has been removed. See [Stage 5 notes](../../VISIBILITY_BUFFER_STAGE5.md).
+Visibility rasterization, GBuffer evaluation and deferred compute shading are the default pipeline. Each stage has its own view module and exchanges targets through the FrameGraph blackboard. Transparent materials use a clustered forward pass after deferred lighting and before tonemapping. See [Stage 5 notes](../../VISIBILITY_BUFFER_STAGE5.md).
 
 Validation is disabled by default. Add `--ecs-validation` to check ECS schedules. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Leave validation disabled for performance measurements and Nsight captures. The former `--no-api-validation` flag only hid validation messages and did not disable validation.
 
@@ -98,3 +98,37 @@ above, so the game and the editor use the same catalog. Gameplay input assets re
 
 Shader sources come from the module directories during development. `--shader-packages` makes the sample read them only
 from the shader packages in its catalog, as a build without the source tree does.
+
+
+## Local lights and transparency
+
+`LocalLightingSceneModule` builds a view-local 32x32 pixel, 24 logarithmic depth-slice grid on the GPU. Conservative sphere/AABB
+and cone/sphere tests produce dynamically sized light bitmasks, shared by deferred and forward PBR shading through `ComputeShading`. SimpleLit uses directional lighting only.
+The shader scalarizes bitmask iteration across each wave. The grid covers the entire view frustum, including empty opaque
+pixels, so transparent surfaces can look up lights at their own depth. It follows the cluster and flat-bitmask approaches in
+Drobot's 2017 Improved Culling presentation and the Doom Eternal 2020 rendering presentation. Hybrid depth-refined tile
+lists and hash scalarization from Doom Eternal are future optimizations.
+
+`PointLightComponent` and `SpotLightComponent` own generation-checked scene slots allocated on activation and released on
+deactivation. `LocalLightingSceneModule` stores their data in persistent `LocalLightTable` GPU database rows. `LightSystem`
+extracts changed component parameters or world transforms after transform propagation; unchanged values never dirty a row.
+Each light occupies 32 bytes: full-precision position/range, R11G11B10 color with a float intensity multiplier,
+octahedral SNORM16x2 direction, and two UNORM16 half-angles (with a separate point-light sentinel). Packing angles avoids
+loss of narrow spot cones near cosine 1. The database uploads only dirty pages through the same path as meshes. Freed rows are disabled before slot reuse, and
+cluster masks index stable row slots. Only view-dependent cluster constants and masks are rebuilt each frame.
+Both expose `LightUnit` (candela or lumen), `LightColorMode` (linear RGB or temperature), intensity, range in meters and
+color temperature in kelvin (1000–40000 K). Temperature integrates a blackbody spectrum against the same CIE matching
+functions as the sky and normalizes luminance. Point lumen values divide by 4 pi; spot lumen values integrate the smooth
+inner/outer cone profile. Spot angles are half-angles in radians and local +Z is the emission axis. Transform scale does
+not change light range. Illumination uses inverse-square falloff with a smooth finite-range window and the existing
+pre-exposure. Local light contributions use no shadow maps; sun shadows still apply to opaque directional lighting.
+
+Materials with a `ForwardTransparency` technique select `DrawTags::Transparent`; opaque meshes select `DrawTags::Visibility`.
+Transparent objects use independent frustum/LOD classification and do not write opaque occlusion history or depth.
+`TransparentPBR.mat.luau` demonstrates independent target blends, a constant base color/opacity and roughness/metallic PBR.
+Six bunnies use this material. The world also contains two colored point lights and one spotlight.
+
+The forward pass accumulates weighted premultiplied lighting and multiplicative revealage in separate targets, then
+composites onto HDR color. This weighted blended order-independent transparency avoids object sorting and handles
+intersecting meshes, but approximates layered alpha compositing; refraction, transmission and transparent shadows are
+not implemented. Transparent objects are excluded from the opaque visibility/GBuffer debug views.

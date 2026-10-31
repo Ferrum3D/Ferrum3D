@@ -95,7 +95,13 @@ void main(uint3 dispatch : SV_DispatchThreadID)
             const float4 world = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
             const float3 worldPosition = world.xyz / world.w;
 #endif
-            expected = Shading::ComputeShading(material, worldPosition, view.m_cameraPosition.xyz, lighting).rgb;
+            expected = Shading::ComputeShading(material,
+                                               worldPosition,
+                                               view.m_cameraPosition.xyz,
+                                               lighting,
+                                               (LocalLightingBinding)0,
+                                               float2(pixel) + 0.5f)
+                           .rgb;
         }
     }
 

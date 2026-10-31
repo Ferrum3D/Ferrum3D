@@ -1,8 +1,10 @@
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <Graphics/Assets/Streamers.h>
+#include <Graphics/Features/Lighting/LocalLightingSceneModule.h>
 #include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
+#include <Graphics/Passes/ForwardTransparencyPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/TonemapPass.h>
@@ -62,6 +64,8 @@ namespace FE::GameFramework
 
         if (m_scene->GetModules().Contains<Graphics::MeshSceneModule>())
             m_scene->GetModules().Remove<Graphics::MeshSceneModule>();
+        if (m_scene->GetModules().Contains<Graphics::LocalLightingSceneModule>())
+            m_scene->GetModules().Remove<Graphics::LocalLightingSceneModule>();
         if (m_scene->GetModules().Contains<Graphics::GlobalLightingSceneModule>())
             m_scene->GetModules().Remove<Graphics::GlobalLightingSceneModule>();
         if (Graphics::Renderer* renderer = m_scene->GetRenderer())
@@ -93,6 +97,7 @@ namespace FE::GameFramework
         view->GetModules().Add<Graphics::DepthPyramidPass::ViewModule>();
         view->GetModules().Add<Graphics::SurfaceEvaluation::ViewModule>();
         view->GetModules().Add<Graphics::DeferredShading::ViewModule>();
+        view->GetModules().Add<Graphics::ForwardTransparency::ViewModule>();
         view->GetModules().Add<Graphics::SunShadow::ViewModule>();
         view->GetModules().Add<Graphics::Visibility::DebugViewModule>();
         view->GetModules().Add<Graphics::GBufferDebug::ViewModule>();
@@ -109,6 +114,7 @@ namespace FE::GameFramework
         Graphics::Scene* scene = Graphics::Renderer::Get().CreateScene();
         scene->GetModules().Add<Graphics::MeshSceneModule>();
         scene->GetModules().Add<Graphics::GlobalLightingSceneModule>();
+        scene->GetModules().Add<Graphics::LocalLightingSceneModule>();
         return scene;
     }
 

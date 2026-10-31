@@ -20,7 +20,8 @@
                             "9A548BD5-6768-49BC-9FE6-77F418F8C9C5",
                             "49C7EDBB-D164-4C26-BA2A-AB53F1397406",
                             "E2E58CE8-7202-4B65-91C7-B13145B938A2",
-                            "AA875EA6-B101-432B-9D55-BC6A84CDEFE8"
+                            "AA875EA6-B101-432B-9D55-BC6A84CDEFE8",
+                            "52A039AE-EE95-411F-AD79-D779B4AB2CDF"
                         ],
                         "m_services": [
                             {
@@ -100,7 +101,7 @@
                                                     "m_typeId": "73077BD1-7103-43F9-B94A-FFCC1DCE71F5",
                                                     "m_value": {
                                                         "m_model": "4B01B878-5EEF-4D6A-AD04-FC9AF1F78416",
-                                                        "m_material": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC"
+                                                        "m_material": "2ED2F61B-71F6-479D-92DC-768039B05CE3"
                                                     }
                                                 },
                                                 {
@@ -340,7 +341,7 @@
                                                     "m_typeId": "73077BD1-7103-43F9-B94A-FFCC1DCE71F5",
                                                     "m_value": {
                                                         "m_model": "4B01B878-5EEF-4D6A-AD04-FC9AF1F78416",
-                                                        "m_material": "D5BA9140-9F93-4407-B5CE-E9FB01C2DDEC"
+                                                        "m_material": "2ED2F61B-71F6-479D-92DC-768039B05CE3"
                                                     }
                                                 },
                                                 {
@@ -580,7 +581,7 @@
                                                     "m_typeId": "73077BD1-7103-43F9-B94A-FFCC1DCE71F5",
                                                     "m_value": {
                                                         "m_model": "4B01B878-5EEF-4D6A-AD04-FC9AF1F78416",
-                                                        "m_material": "FBD2877D-D6CB-4A11-A8A6-569E066A68EF"
+                                                        "m_material": "2ED2F61B-71F6-479D-92DC-768039B05CE3"
                                                     }
                                                 },
                                                 {
@@ -820,7 +821,7 @@
                                                     "m_typeId": "73077BD1-7103-43F9-B94A-FFCC1DCE71F5",
                                                     "m_value": {
                                                         "m_model": "4B01B878-5EEF-4D6A-AD04-FC9AF1F78416",
-                                                        "m_material": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC"
+                                                        "m_material": "2ED2F61B-71F6-479D-92DC-768039B05CE3"
                                                     }
                                                 },
                                                 {
@@ -900,7 +901,7 @@
                                                     "m_typeId": "73077BD1-7103-43F9-B94A-FFCC1DCE71F5",
                                                     "m_value": {
                                                         "m_model": "4B01B878-5EEF-4D6A-AD04-FC9AF1F78416",
-                                                        "m_material": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC"
+                                                        "m_material": "2ED2F61B-71F6-479D-92DC-768039B05CE3"
                                                     }
                                                 },
                                                 {
@@ -1140,7 +1141,7 @@
                                                     "m_typeId": "73077BD1-7103-43F9-B94A-FFCC1DCE71F5",
                                                     "m_value": {
                                                         "m_model": "4B01B878-5EEF-4D6A-AD04-FC9AF1F78416",
-                                                        "m_material": "D5BA9140-9F93-4407-B5CE-E9FB01C2DDEC"
+                                                        "m_material": "2ED2F61B-71F6-479D-92DC-768039B05CE3"
                                                     }
                                                 },
                                                 {
@@ -4226,6 +4227,137 @@
                                             ],
                                             "m_active": true,
                                             "m_residency": 0
+                                        },
+                                        {
+                                            "m_uuid": "E870C759-69CB-4777-BCA9-D68B145A6389",
+                                            "m_parentUuid": "00000000-0000-0000-0000-000000000000",
+                                            "m_name": "Point light 1",
+                                            "m_components": [
+                                                {
+                                                    "m_typeId": "BA1B0286-D3BC-4AB2-8005-97F124771735",
+                                                    "m_value": {
+                                                        "m_local": {
+                                                            "m_translationScale": {
+                                                                "x": "0000a0c0",
+                                                                "y": "0000a040",
+                                                                "z": "000080bf",
+                                                                "w": "0000803f"
+                                                            },
+                                                            "m_rotation": {
+                                                                "x": "00000000",
+                                                                "y": "00000000",
+                                                                "z": "00000000",
+                                                                "w": "0000803f"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "m_typeId": "01983C05-87C8-410F-9ED1-822A133691B9",
+                                                    "m_value": {
+                                                        "$base:FE::Graphics::LocalLightParameters": {
+                                                            "m_unit": 0,
+                                                            "m_colorMode": 0,
+                                                            "m_intensity": "0080bb45",
+                                                            "m_range": "00009041",
+                                                            "m_color": {
+                                                                "x": "0000803f",
+                                                                "y": "9a99193e",
+                                                                "z": "cdcc4c3d"
+                                                            },
+                                                            "m_temperature": "00007a45"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "m_uuid": "B054EC43-63D6-4FB9-86B3-2ABC7031AD36",
+                                            "m_parentUuid": "00000000-0000-0000-0000-000000000000",
+                                            "m_name": "Point light 2",
+                                            "m_components": [
+                                                {
+                                                    "m_typeId": "BA1B0286-D3BC-4AB2-8005-97F124771735",
+                                                    "m_value": {
+                                                        "m_local": {
+                                                            "m_translationScale": {
+                                                                "x": "00008040",
+                                                                "y": "0000c040",
+                                                                "z": "00000040",
+                                                                "w": "0000803f"
+                                                            },
+                                                            "m_rotation": {
+                                                                "x": "00000000",
+                                                                "y": "00000000",
+                                                                "z": "00000000",
+                                                                "w": "0000803f"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "m_typeId": "01983C05-87C8-410F-9ED1-822A133691B9",
+                                                    "m_value": {
+                                                        "$base:FE::Graphics::LocalLightParameters": {
+                                                            "m_unit": 0,
+                                                            "m_colorMode": 0,
+                                                            "m_intensity": "0080bb45",
+                                                            "m_range": "00009041",
+                                                            "m_color": {
+                                                                "x": "cdcccc3d",
+                                                                "y": "3333b33e",
+                                                                "z": "0000803f"
+                                                            },
+                                                            "m_temperature": "00007a45"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "m_uuid": "D690B9ED-5B3A-4101-89F2-D5DD81F3FEFA",
+                                            "m_parentUuid": "00000000-0000-0000-0000-000000000000",
+                                            "m_name": "Spot light 3",
+                                            "m_components": [
+                                                {
+                                                    "m_typeId": "BA1B0286-D3BC-4AB2-8005-97F124771735",
+                                                    "m_value": {
+                                                        "m_local": {
+                                                            "m_translationScale": {
+                                                                "x": "00000000",
+                                                                "y": "00002041",
+                                                                "z": "00000000",
+                                                                "w": "0000803f"
+                                                            },
+                                                            "m_rotation": {
+                                                                "x": "f304353f",
+                                                                "y": "00000000",
+                                                                "z": "00000000",
+                                                                "w": "f304353f"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "m_typeId": "8FE31BCE-BAAD-4AE8-8437-BA465D5B1773",
+                                                    "m_value": {
+                                                        "m_innerAngle": "3333b33e",
+                                                        "m_outerAngle": "6666263f",
+                                                        "$base:FE::Graphics::LocalLightParameters": {
+                                                            "m_unit": 1,
+                                                            "m_colorMode": 1,
+                                                            "m_intensity": "00606a46",
+                                                            "m_range": "00009041",
+                                                            "m_color": {
+                                                                "x": "0000803f",
+                                                                "y": "cdcc4c3f",
+                                                                "z": "cdcccc3e"
+                                                            },
+                                                            "m_temperature": "00007a45"
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     ]
                                 },
@@ -4293,6 +4425,11 @@
                     {
                         "m_assetId": "40C30B4A-A66C-4658-8A6D-5A326AFA4293",
                         "m_expectedTypeId": "E6382DFF-E9F2-42F7-8FF7-C044F968AAA7",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "2ED2F61B-71F6-479D-92DC-768039B05CE3",
+                        "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
                         "m_kind": 0
                     }
                 ],

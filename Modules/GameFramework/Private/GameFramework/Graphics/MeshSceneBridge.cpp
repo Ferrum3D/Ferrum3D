@@ -1,5 +1,6 @@
 #include <GameFramework/Graphics/MeshSceneBridge.h>
 #include <Graphics/Assets/Streamers.h>
+#include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DrawTags.h>
 
 namespace FE::GameFramework
@@ -55,7 +56,9 @@ namespace FE::GameFramework
 
         Graphics::MeshBatchDesc batch;
         batch.m_bounds = bounds;
-        batch.m_drawTagMask = Graphics::DrawTagMask(Graphics::DrawTags::Visibility);
+        batch.m_drawTagMask =
+            Graphics::DrawTagMask(material->m_runtime->HasTechnique("ForwardTransparency") ? Graphics::DrawTags::Transparent
+                                                                                           : Graphics::DrawTags::Visibility);
         batch.m_mobility = component.m_mobility;
         component.m_batch = m_module->CreateBatch(batch);
         for (const auto& link : model->m_meshes)
@@ -95,6 +98,14 @@ namespace FE::GameFramework
     void MeshSceneBridge::UpdateModel(MeshComponent& component)
     {
         FE_PROFILER_ZONE();
+
+        const auto currentMaterial = component.m_material.GetAssetHandle().Read();
+        if (component.m_batch && currentMaterial && currentMaterial->m_runtime)
+        {
+            const auto tag = currentMaterial->m_runtime->HasTechnique("ForwardTransparency") ? Graphics::DrawTags::Transparent
+                                                                                             : Graphics::DrawTags::Visibility;
+            m_module->SetBatchDrawTags(component.m_batch, Graphics::DrawTagMask(tag));
+        }
 
         if (component.m_loadedModel != component.m_model.GetAssetID())
         {

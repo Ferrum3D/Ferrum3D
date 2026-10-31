@@ -1,19 +1,10 @@
 #pragma once
 #include <Shaders/Lighting/Atmosphere.hlsli>
-#include <Shaders/Shading/BRDF.hlsli>
+#include <Shaders/Lighting/LocalLighting.hlsli>
 #include <Shaders/Shading/Exposure.hlsli>
 
 namespace Shading
 {
-    struct Surface
-    {
-        float3 m_diffuseAlbedo;
-        float3 m_f0;
-        float m_perceptualRoughness;
-        float3 m_worldSpaceNormal;
-    };
-
-
     struct MaterialEvaluation
     {
         Surface m_surface;
@@ -33,12 +24,14 @@ namespace Shading
 
     //! sunVisibility scales the directional light, e.g. by its shadow.
     float4 ComputeShading(const MaterialEvaluation material, const float3 worldPosition, const float3 cameraPosition,
-                          const GlobalLightingData lighting, const float sunVisibility = 1.0f)
+                          const GlobalLightingData lighting, const LocalLightingBinding localLighting, const float2 pixel,
+                          const float sunVisibility = 1.0f)
     {
         const Surface surface = material.m_surface;
         const float3 viewDirection = normalize(cameraPosition - worldPosition);
+        const float3 localLuminance = ComputeLocalLighting(localLighting, surface, worldPosition, cameraPosition, pixel);
         if (lighting.m_directionIlluminance.w <= 0)
-            return float4(material.m_emissive, 1);
+            return float4(localLuminance + material.m_emissive, 1);
 
         const float3 lightDirection = lighting.m_directionIlluminance.xyz;
         const float3 preExposedIlluminance =
@@ -51,6 +44,6 @@ namespace Shading
                                          lightDirection);
         const float3 reflectedLuminance = brdf * preExposedIlluminance;
         // AO belongs to indirect illumination, which is currently absent.
-        return float4(reflectedLuminance + material.m_emissive, 1.0f);
+        return float4(reflectedLuminance + localLuminance + material.m_emissive, 1.0f);
     }
 } // namespace Shading

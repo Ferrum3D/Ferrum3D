@@ -153,6 +153,9 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
             GConstants.m_occlusionCandidates.Store(candidateIndex, slot);
     }
 
+    if (!GConstants.m_stats.IsValid())
+        return;
+
     // Both phases see the same candidates and frustum results; count them once.
     const bool isFirstPhase = GConstants.m_phase != CullPhase::kLate;
     AddCullStat(GConstants.m_stats, CullStat::kInstanceCandidates, isFirstPhase && result.m_isCandidate);

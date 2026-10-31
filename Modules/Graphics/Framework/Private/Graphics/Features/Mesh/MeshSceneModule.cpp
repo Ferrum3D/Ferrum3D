@@ -837,7 +837,12 @@ namespace FE::Graphics
     {
         FE_PROFILER_ZONE();
 
-        auto& culled = blackboard.Get<CulledMeshView>();
+        auto& primary = blackboard.Get<CulledMeshView>();
+        CulledMeshView independent;
+        if (pass.m_independentCulling)
+            independent = GpuMeshWorkBuilder::CullIndependent(graph, uploader, primary);
+
+        auto& culled = pass.m_independentCulling ? independent : primary;
         ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
         const bool isLate = pass.m_phase == SceneRenderPhase::kLate;
         FE_FG_SCOPE(graph, isLate ? "LateMeshes" : "Meshes");
@@ -1288,7 +1293,8 @@ namespace FE::Graphics
                 material->m_runtime->GetComputePipeline(Env::Name("SurfaceEvaluate"), m_evaluationWaveLaneCount));
             materialRow.m_shadingSlot.Get() = m_scene->GetRenderData().m_shadingPipelines.Register(
                 material->m_runtime->GetComputePipeline(Env::Name("DeferredShade")));
-            if (materialRow.m_evaluationSlot.Get() == kInvalidIndex || materialRow.m_shadingSlot.Get() >= 254)
+            const bool isDeferred = material->m_runtime->HasTechnique("DepthVisibility");
+            if (isDeferred && (materialRow.m_evaluationSlot.Get() == kInvalidIndex || materialRow.m_shadingSlot.Get() >= 254))
             {
                 Logger::LogWarning("Material permutation '{}' has no supported deferred evaluation/shading combination",
                                    material->m_permutationKey);

@@ -4,7 +4,7 @@
     "$version": 0,
     "$schema": "0x4d3ae890a4a739c5",
     "$value": {
-        "m_artifactId": "32A51D2A-1AA0-4304-A174-0F768A753EBE",
+        "m_artifactId": "668B8EF2-B81D-4324-B541-F3DF3938DC28",
         "m_assetId": "AAA69126-4427-4055-B1C4-04013AAE10A0",
         "m_assetTypeId": "AB1B29E1-D167-43AA-8718-B3F8693FE184",
         "m_payloads": [
@@ -12,16 +12,16 @@
                 "m_resolvedDataSource": {
                     "m_filePath": "",
                     "m_byteOffset": 0,
-                    "m_byteSize": 3345
+                    "m_byteSize": 3738
                 },
                 "m_chunks": [
                     {
                         "m_offsetInPayload": 0,
-                        "m_compressedSize": 3345,
-                        "m_uncompressedSize": 63907,
+                        "m_compressedSize": 3738,
+                        "m_uncompressedSize": 65983,
                         "m_compressionMethod": 2,
                         "m_checksum": {
-                            "m_current": 1322922076
+                            "m_current": 1252142476
                         }
                     }
                 ]
@@ -39,7 +39,7 @@
                 "m_kind": 0
             },
             {
-                "m_assetId": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC",
+                "m_assetId": "2ED2F61B-71F6-479D-92DC-768039B05CE3",
                 "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
                 "m_kind": 0
             },
@@ -59,12 +59,17 @@
                 "m_kind": 0
             },
             {
-                "m_assetId": "D5BA9140-9F93-4407-B5CE-E9FB01C2DDEC",
+                "m_assetId": "FBD2877D-D6CB-4A11-A8A6-569E066A68EF",
                 "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
                 "m_kind": 0
             },
             {
-                "m_assetId": "FBD2877D-D6CB-4A11-A8A6-569E066A68EF",
+                "m_assetId": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC",
+                "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                "m_kind": 0
+            },
+            {
+                "m_assetId": "D5BA9140-9F93-4407-B5CE-E9FB01C2DDEC",
                 "m_expectedTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
                 "m_kind": 0
             },

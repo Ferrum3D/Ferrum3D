@@ -9,6 +9,7 @@
 #include <Framework/Entities/WorldTimeService.h>
 #include <GameFramework/Components/CameraComponent.h>
 #include <GameFramework/Components/CameraMovementComponent.h>
+#include <GameFramework/Components/LightComponents.h>
 #include <GameFramework/Components/MeshComponent.h>
 #include <GameFramework/Components/TransformComponents.h>
 #include <GameFramework/Editor/CameraMovementSystem.h>
@@ -900,4 +901,26 @@ TEST_F(GraphicsFixture, ExtractsHundredsOfTransformsAfterMainThreadMembership)
     const uint32_t updates = Meshes().m_updates.load();
     Tick();
     EXPECT_EQ(Meshes().m_updates.load(), updates);
+}
+
+
+TEST(LocalLights, ComponentCopiesDoNotShareSceneSlots)
+{
+    PointLightComponent point;
+    point.m_intensity = 1234;
+    point.m_light = { 7, 9 };
+    const PointLightComponent pointCopy(point);
+    EXPECT_EQ(pointCopy.m_intensity, 1234);
+    EXPECT_FALSE(pointCopy.m_light.IsValid());
+
+    SpotLightComponent spot;
+    spot.m_intensity = 4321;
+    spot.m_innerAngle = 0.2f;
+    spot.m_outerAngle = 0.4f;
+    spot.m_light = { 8, 10 };
+    const SpotLightComponent spotCopy(spot);
+    EXPECT_EQ(spotCopy.m_intensity, 4321);
+    EXPECT_EQ(spotCopy.m_innerAngle, 0.2f);
+    EXPECT_EQ(spotCopy.m_outerAngle, 0.4f);
+    EXPECT_FALSE(spotCopy.m_light.IsValid());
 }

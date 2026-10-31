@@ -11,10 +11,12 @@
 #include <Graphics/Database/Database.h>
 #include <Graphics/Features/ImGui/ImGuiSceneModule.h>
 #include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
+#include <Graphics/Features/Lighting/LocalLightingSceneModule.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
+#include <Graphics/Passes/ForwardTransparencyPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/ImGuiPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
@@ -30,6 +32,7 @@
 #include <Graphics/Scene/View.h>
 #include <Graphics/Scene/ViewImpl.h>
 #include <Graphics/Tables/GlobalLightingTable.h>
+#include <Graphics/Tables/LocalLightTable.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshBatchTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
@@ -39,6 +42,8 @@
 #include <Shaders/Deferred/Deferred.h>
 #include <Shaders/Deferred/Surface.h>
 #include <Shaders/Deferred/Tiling.h>
+#include <Shaders/Lighting/ForwardTransparency.h>
+#include <Shaders/Lighting/LocalLighting.h>
 #include <Shaders/Passes/ImGui/ImGui.h>
 #include <Shaders/Passes/MeshPass/ClearMeshWork.h>
 #include <Shaders/Passes/MeshPass/CountMeshInstances.h>
@@ -319,6 +324,169 @@ namespace FE::Graphics::Visibility
 
     static Rtti::TypeRegistrar GTypeRegistrar_08dbd2a2814b447391679269ffa9d67a(&ClearSurfacePassDesc::Reflect);
 } // namespace FE::Graphics::Visibility
+
+
+namespace FE::Graphics::ForwardTransparency
+{
+    const Rtti::TypeID Targets::TypeID = Rtti::TypeID{
+        0x0d, 0xa3, 0x91, 0x10, 0x5a, 0x90, 0x46, 0x64, 0xa2, 0xc1, 0xe8, 0xd7, 0x14, 0x88, 0xc8, 0x2c,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_0da391105a904664a2c1e8d71488c82c(Targets* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x0d, 0xa3, 0x91, 0x10, 0x5a, 0x90, 0x46, 0x64,
+                0xa2, 0xc1, 0xe8, 0xd7, 0x14, 0x88, 0xc8, 0x2c, // FE::Graphics::ForwardTransparency::Targets (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_0da391105a904664a2c1e8d71488c82c()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Targets::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_0da391105a904664a2c1e8d71488c82c();
+    }
+
+    void Targets::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_0da391105a904664a2c1e8d71488c82c();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x0d, 0xa3, 0x91, 0x10, 0x5a, 0x90, 0x46, 0x64,
+            0xa2, 0xc1, 0xe8, 0xd7, 0x14, 0x88, 0xc8, 0x2c, // FE::Graphics::ForwardTransparency::Targets
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_accumulation = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_revealage = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depth = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_accumulation",
+                                                     &Targets::m_accumulation,
+                                                     kAttributes_m_accumulation,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_revealage",
+                                                     &Targets::m_revealage,
+                                                     kAttributes_m_revealage,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_depth",
+                                                     &Targets::m_depth,
+                                                     kAttributes_m_depth,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_viewport",
+                                                     &Targets::m_viewport,
+                                                     kAttributes_m_viewport,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<Targets>(typeInstance,
+                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                      "FE::Graphics::ForwardTransparency::Targets",
+                                      kBaseClassTypeIDs,
+                                      kAttributes,
+                                      kFields,
+                                      Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_0da391105a904664a2c1e8d71488c82c(static_cast<Targets*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_0da391105a904664a2c1e8d71488c82c(&Targets::Reflect);
+} // namespace FE::Graphics::ForwardTransparency
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_0e16b434faff45dd9c4e297083475f73()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Graphics::LightColorMode>()
+    {
+        return GetMutableType_0e16b434faff45dd9c4e297083475f73();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Graphics::LightColorMode>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x0e, 0x16, 0xb4, 0x34, 0xfa, 0xff, 0x45, 0xdd,
+            0x9c, 0x4e, 0x29, 0x70, 0x83, 0x47, 0x5f, 0x73, // FE::Graphics::LightColorMode
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Graphics::LightColorMode>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_0e16b434faff45dd9c4e297083475f73();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x0e, 0x16, 0xb4, 0x34, 0xfa, 0xff, 0x45, 0xdd,
+            0x9c, 0x4e, 0x29, 0x70, 0x83, 0x47, 0x5f, 0x73, // FE::Graphics::LightColorMode
+        };
+
+        static constexpr alignas(16) uint8_t kUnderlyingTypeIDBytes[sizeof(TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<festd::ascii_view, 2> kEnumNames = {
+            "kRGB",
+            "kTemperature",
+        };
+
+        static constexpr festd::array<festd::ascii_view, 2> kEnumDisplayNames = {
+            "kRGB",
+            "kTemperature",
+        };
+
+        static constexpr festd::array<int64_t, 2> kEnumValues = {
+            static_cast<uint32_t>(0),
+            static_cast<uint32_t>(1),
+        };
+
+        context.ReflectEnum<FE::Graphics::LightColorMode>(typeInstance,
+                                                          TypeID::LoadAligned(kTypeIDBytes),
+                                                          kUnderlyingTypeIDBytes,
+                                                          "FE::Graphics::LightColorMode",
+                                                          kAttributes,
+                                                          kEnumNames,
+                                                          kEnumDisplayNames,
+                                                          kEnumValues);
+    }
+
+    static TypeRegistrar GTypeRegistrar_0e16b434faff45dd9c4e297083475f73(
+        &Internal::ExternalTypeReflector<FE::Graphics::LightColorMode>::Reflect);
+} // namespace FE::Rtti
 
 
 namespace FE::Graphics::MeshPass::CountMeshInstances
@@ -1999,6 +2167,85 @@ namespace FE::Graphics
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_20121f058d10442799252dba388379c9(&Scene::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID CullLocalLightsConstants::TypeID = Rtti::TypeID{
+        0x24, 0xb8, 0x91, 0xdf, 0x17, 0xd1, 0x48, 0x79, 0xb3, 0x0d, 0xfe, 0x44, 0x15, 0xfa, 0x84, 0x58,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_24b891df17d14879b30dfe4415fa8458(CullLocalLightsConstants* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x24, 0xb8, 0x91, 0xdf, 0x17, 0xd1, 0x48, 0x79,
+                0xb3, 0x0d, 0xfe, 0x44, 0x15, 0xfa, 0x84, 0x58, // FE::Graphics::CullLocalLightsConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_24b891df17d14879b30dfe4415fa8458()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& CullLocalLightsConstants::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_24b891df17d14879b30dfe4415fa8458();
+    }
+
+    void CullLocalLightsConstants::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_24b891df17d14879b30dfe4415fa8458();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x24, 0xb8, 0x91, 0xdf, 0x17, 0xd1, 0x48, 0x79,
+            0xb3, 0x0d, 0xfe, 0x44, 0x15, 0xfa, 0x84, 0x58, // FE::Graphics::CullLocalLightsConstants
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lighting = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_masks = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_lighting",
+                                                     &CullLocalLightsConstants::m_lighting,
+                                                     kAttributes_m_lighting,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_masks",
+                                                     &CullLocalLightsConstants::m_masks,
+                                                     kAttributes_m_masks,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<CullLocalLightsConstants>(typeInstance,
+                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                       "FE::Graphics::CullLocalLightsConstants",
+                                                       kBaseClassTypeIDs,
+                                                       kAttributes,
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_24b891df17d14879b30dfe4415fa8458(static_cast<CullLocalLightsConstants*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_24b891df17d14879b30dfe4415fa8458(&CullLocalLightsConstants::Reflect);
 } // namespace FE::Graphics
 
 
@@ -3897,6 +4144,85 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID TransparencyResolvePassDesc::TypeID = Rtti::TypeID{
+        0x48, 0x29, 0x23, 0x33, 0xcb, 0x86, 0x41, 0xb8, 0x92, 0x6e, 0x23, 0x86, 0x03, 0xdd, 0xd8, 0xa8,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL
+        RTTI_TryCastImpl_48292333cb8641b8926e238603ddd8a8(TransparencyResolvePassDesc* thisPtr, const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x48, 0x29, 0x23, 0x33, 0xcb, 0x86, 0x41, 0xb8,
+                0x92, 0x6e, 0x23, 0x86, 0x03, 0xdd, 0xd8, 0xa8, // FE::Graphics::TransparencyResolvePassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_48292333cb8641b8926e238603ddd8a8()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TransparencyResolvePassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_48292333cb8641b8926e238603ddd8a8();
+    }
+
+    void TransparencyResolvePassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_48292333cb8641b8926e238603ddd8a8();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x48, 0x29, 0x23, 0x33, 0xcb, 0x86, 0x41, 0xb8,
+            0x92, 0x6e, 0x23, 0x86, 0x03, 0xdd, 0xd8, 0xa8, // FE::Graphics::TransparencyResolvePassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &TransparencyResolvePassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &TransparencyResolvePassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TransparencyResolvePassDesc>(typeInstance,
+                                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                          "FE::Graphics::TransparencyResolvePassDesc",
+                                                          kBaseClassTypeIDs,
+                                                          kAttributes,
+                                                          kFields,
+                                                          Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_48292333cb8641b8926e238603ddd8a8(static_cast<TransparencyResolvePassDesc*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_48292333cb8641b8926e238603ddd8a8(&TransparencyResolvePassDesc::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID GlobalLightingParameters::TypeID = Rtti::TypeID{
         0x49, 0x16, 0xec, 0x59, 0x74, 0x2a, 0x49, 0x8c, 0x99, 0xdd, 0xdc, 0x07, 0x64, 0x00, 0x17, 0x91,
     };
@@ -4938,6 +5264,78 @@ namespace FE::Graphics
 
     static Rtti::TypeRegistrar GTypeRegistrar_636c5c42d04648e5991e90ab330ad0d0(&GlobalLightingSceneModule::Reflect);
 } // namespace FE::Graphics
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_63722280197b465c8a61d666cca9fb0b()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Graphics::LightUnit>()
+    {
+        return GetMutableType_63722280197b465c8a61d666cca9fb0b();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Graphics::LightUnit>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x63, 0x72, 0x22, 0x80, 0x19, 0x7b, 0x46, 0x5c,
+            0x8a, 0x61, 0xd6, 0x66, 0xcc, 0xa9, 0xfb, 0x0b, // FE::Graphics::LightUnit
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Graphics::LightUnit>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_63722280197b465c8a61d666cca9fb0b();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x63, 0x72, 0x22, 0x80, 0x19, 0x7b, 0x46, 0x5c,
+            0x8a, 0x61, 0xd6, 0x66, 0xcc, 0xa9, 0xfb, 0x0b, // FE::Graphics::LightUnit
+        };
+
+        static constexpr alignas(16) uint8_t kUnderlyingTypeIDBytes[sizeof(TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<festd::ascii_view, 2> kEnumNames = {
+            "kCandela",
+            "kLumen",
+        };
+
+        static constexpr festd::array<festd::ascii_view, 2> kEnumDisplayNames = {
+            "kCandela",
+            "kLumen",
+        };
+
+        static constexpr festd::array<int64_t, 2> kEnumValues = {
+            static_cast<uint32_t>(0),
+            static_cast<uint32_t>(1),
+        };
+
+        context.ReflectEnum<FE::Graphics::LightUnit>(typeInstance,
+                                                     TypeID::LoadAligned(kTypeIDBytes),
+                                                     kUnderlyingTypeIDBytes,
+                                                     "FE::Graphics::LightUnit",
+                                                     kAttributes,
+                                                     kEnumNames,
+                                                     kEnumDisplayNames,
+                                                     kEnumValues);
+    }
+
+    static TypeRegistrar GTypeRegistrar_63722280197b465c8a61d666cca9fb0b(
+        &Internal::ExternalTypeReflector<FE::Graphics::LightUnit>::Reflect);
+} // namespace FE::Rtti
 
 
 namespace FE::Graphics::Visibility
@@ -7232,6 +7630,98 @@ namespace FE::Graphics::Visibility
 } // namespace FE::Graphics::Visibility
 
 
+namespace FE::Graphics::ForwardTransparency
+{
+    const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{
+        0x89, 0x2a, 0xe3, 0xb6, 0xbb, 0xe9, 0x4b, 0xd6, 0x82, 0xdc, 0x53, 0x46, 0xac, 0x88, 0x9a, 0xc3,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_892ae3b6bbe94bd682dc5346ac889ac3(ViewModule* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0x89, 0x2a, 0xe3, 0xb6, 0xbb, 0xe9, 0x4b, 0xd6,
+                0x82, 0xdc, 0x53, 0x46, 0xac, 0x88, 0x9a, 0xc3, // FE::Graphics::ForwardTransparency::ViewModule (this type)
+                0x77, 0xbc, 0x4d, 0xe9, 0xa7, 0x92, 0x4a, 0x65,
+                0xbc, 0xb8, 0xf2, 0x35, 0x56, 0x55, 0x17, 0x74, // FE::Graphics::ViewModuleBase
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::ViewModuleBase*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_892ae3b6bbe94bd682dc5346ac889ac3()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ViewModule::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_892ae3b6bbe94bd682dc5346ac889ac3();
+    }
+
+    void* FE_VECTORCALL ViewModule::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_892ae3b6bbe94bd682dc5346ac889ac3(this, typeID);
+    }
+
+    const void* FE_VECTORCALL ViewModule::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_892ae3b6bbe94bd682dc5346ac889ac3(const_cast<ViewModule*>(this), typeID);
+    }
+    void ViewModule::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_892ae3b6bbe94bd682dc5346ac889ac3();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x89, 0x2a, 0xe3, 0xb6, 0xbb, 0xe9, 0x4b, 0xd6,
+            0x82, 0xdc, 0x53, 0x46, 0xac, 0x88, 0x9a, 0xc3, // FE::Graphics::ForwardTransparency::ViewModule
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x77, 0xbc, 0x4d, 0xe9, 0xa7, 0x92, 0x4a, 0x65,
+            0xbc, 0xb8, 0xf2, 0x35, 0x56, 0x55, 0x17, 0x74, // FE::Graphics::ViewModuleBase
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<ViewModule>(typeInstance,
+                                         Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                         "FE::Graphics::ForwardTransparency::ViewModule",
+                                         kBaseClassTypeIDs,
+                                         kAttributes,
+                                         kFields,
+                                         Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<ViewModule*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_892ae3b6bbe94bd682dc5346ac889ac3(&ViewModule::Reflect);
+} // namespace FE::Graphics::ForwardTransparency
+
+
 namespace FE::Graphics
 {
     const Rtti::TypeID MaterialAsset::TypeID = Rtti::TypeID{
@@ -7756,6 +8246,172 @@ namespace FE::Graphics::Visibility
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID LocalLightParameters::TypeID = Rtti::TypeID{
+        0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3, 0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_908bff07cd194ec38bf0ac05b59c43ae(LocalLightParameters* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3,
+                0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae, // FE::Graphics::LocalLightParameters (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_908bff07cd194ec38bf0ac05b59c43ae()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& LocalLightParameters::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_908bff07cd194ec38bf0ac05b59c43ae();
+    }
+
+    void LocalLightParameters::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_908bff07cd194ec38bf0ac05b59c43ae();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3,
+            0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae, // FE::Graphics::LocalLightParameters
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_unit = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_colorMode = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_intensity = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_temperature = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_color = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_range = {};
+
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_unit",
+                                                     &LocalLightParameters::m_unit,
+                                                     kAttributes_m_unit,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_colorMode",
+                                                     &LocalLightParameters::m_colorMode,
+                                                     kAttributes_m_colorMode,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_intensity",
+                                                     &LocalLightParameters::m_intensity,
+                                                     kAttributes_m_intensity,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_temperature",
+                                                     &LocalLightParameters::m_temperature,
+                                                     kAttributes_m_temperature,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_color",
+                                                     &LocalLightParameters::m_color,
+                                                     kAttributes_m_color,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_range",
+                                                     &LocalLightParameters::m_range,
+                                                     kAttributes_m_range,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<LocalLightParameters>(typeInstance,
+                                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                   "FE::Graphics::LocalLightParameters",
+                                                   kBaseClassTypeIDs,
+                                                   kAttributes,
+                                                   kFields,
+                                                   Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_908bff07cd194ec38bf0ac05b59c43ae(static_cast<LocalLightParameters*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_908bff07cd194ec38bf0ac05b59c43ae(&LocalLightParameters::Reflect);
+
+    FE::Serialization::ResultCode LocalLightParameters::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_unit", m_unit);
+            object.Field("m_colorMode", m_colorMode);
+            object.Field("m_intensity", m_intensity);
+            object.Field("m_temperature", m_temperature);
+            object.Field("m_color", m_color);
+            object.Field("m_range", m_range);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode LocalLightParameters::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_unit", m_unit);
+            object.Field("m_colorMode", m_colorMode);
+            object.Field("m_intensity", m_intensity);
+            object.Field("m_temperature", m_temperature);
+            object.Field("m_color", m_color);
+            object.Field("m_range", m_range);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t LocalLightParameters::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3, 0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_unit", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_unit)>());
+            hasher.Update("m_colorMode", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_colorMode)>());
+            hasher.Update("m_intensity", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_intensity)>());
+            hasher.Update("m_temperature", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_temperature)>());
+            hasher.Update("m_color", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_color)>());
+            hasher.Update("m_range", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_range)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t LocalLightParameters::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID GlobalLightingTable::TypeID = Rtti::TypeID{
         0x92, 0x1d, 0x75, 0x4b, 0x9a, 0x7e, 0x56, 0x3c, 0x86, 0xf9, 0x37, 0x21, 0x97, 0xa3, 0x8c, 0x92,
     };
@@ -8263,6 +8919,98 @@ namespace FE::Graphics
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9986fa74475847daab813a6953060564(&SunShadowBinding::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID TransparencyResolveConstants::TypeID = Rtti::TypeID{
+        0x9b, 0x59, 0xa4, 0x1a, 0xc7, 0x5b, 0x45, 0x2a, 0xb4, 0x1f, 0x79, 0x07, 0x05, 0xe9, 0xa6, 0x53,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL
+        RTTI_TryCastImpl_9b59a41ac75b452ab41f790705e9a653(TransparencyResolveConstants* thisPtr, const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x9b, 0x59, 0xa4, 0x1a, 0xc7, 0x5b, 0x45, 0x2a,
+                0xb4, 0x1f, 0x79, 0x07, 0x05, 0xe9, 0xa6, 0x53, // FE::Graphics::TransparencyResolveConstants (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_9b59a41ac75b452ab41f790705e9a653()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TransparencyResolveConstants::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_9b59a41ac75b452ab41f790705e9a653();
+    }
+
+    void TransparencyResolveConstants::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_9b59a41ac75b452ab41f790705e9a653();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x9b, 0x59, 0xa4, 0x1a, 0xc7, 0x5b, 0x45, 0x2a,
+            0xb4, 0x1f, 0x79, 0x07, 0x05, 0xe9, 0xa6, 0x53, // FE::Graphics::TransparencyResolveConstants
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_accumulation = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_revealage = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_color = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_accumulation",
+                                                     &TransparencyResolveConstants::m_accumulation,
+                                                     kAttributes_m_accumulation,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_revealage",
+                                                     &TransparencyResolveConstants::m_revealage,
+                                                     kAttributes_m_revealage,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_color",
+                                                     &TransparencyResolveConstants::m_color,
+                                                     kAttributes_m_color,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &TransparencyResolveConstants::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TransparencyResolveConstants>(typeInstance,
+                                                           Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                           "FE::Graphics::TransparencyResolveConstants",
+                                                           kBaseClassTypeIDs,
+                                                           kAttributes,
+                                                           kFields,
+                                                           Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_9b59a41ac75b452ab41f790705e9a653(static_cast<TransparencyResolveConstants*>(instance),
+                                                                     target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_9b59a41ac75b452ab41f790705e9a653(&TransparencyResolveConstants::Reflect);
 } // namespace FE::Graphics
 
 
@@ -8888,6 +9636,98 @@ namespace FE::Graphics::ImGuiPass
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID LocalLightingSceneModule::TypeID = Rtti::TypeID{
+        0xab, 0xc6, 0xd5, 0xc6, 0x93, 0xa2, 0x42, 0x9f, 0x8f, 0xbb, 0xc9, 0x43, 0x22, 0x3d, 0x63, 0xd0,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_abc6d5c693a2429f8fbbc943223d63d0(LocalLightingSceneModule* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0xab, 0xc6, 0xd5, 0xc6, 0x93, 0xa2, 0x42, 0x9f,
+                0x8f, 0xbb, 0xc9, 0x43, 0x22, 0x3d, 0x63, 0xd0, // FE::Graphics::LocalLightingSceneModule (this type)
+                0x77, 0x29, 0xe6, 0x83, 0x86, 0x38, 0x47, 0x12,
+                0x81, 0xd3, 0xb1, 0xc7, 0x8b, 0x16, 0xbf, 0xe3, // FE::Graphics::SceneModuleBase
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::SceneModuleBase*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_abc6d5c693a2429f8fbbc943223d63d0()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& LocalLightingSceneModule::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_abc6d5c693a2429f8fbbc943223d63d0();
+    }
+
+    void* FE_VECTORCALL LocalLightingSceneModule::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_abc6d5c693a2429f8fbbc943223d63d0(this, typeID);
+    }
+
+    const void* FE_VECTORCALL LocalLightingSceneModule::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_abc6d5c693a2429f8fbbc943223d63d0(const_cast<LocalLightingSceneModule*>(this), typeID);
+    }
+    void LocalLightingSceneModule::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_abc6d5c693a2429f8fbbc943223d63d0();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xab, 0xc6, 0xd5, 0xc6, 0x93, 0xa2, 0x42, 0x9f,
+            0x8f, 0xbb, 0xc9, 0x43, 0x22, 0x3d, 0x63, 0xd0, // FE::Graphics::LocalLightingSceneModule
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x77, 0x29, 0xe6, 0x83, 0x86, 0x38, 0x47, 0x12,
+            0x81, 0xd3, 0xb1, 0xc7, 0x8b, 0x16, 0xbf, 0xe3, // FE::Graphics::SceneModuleBase
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<LocalLightingSceneModule>(typeInstance,
+                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                       "FE::Graphics::LocalLightingSceneModule",
+                                                       kBaseClassTypeIDs,
+                                                       kAttributes,
+                                                       kFields,
+                                                       Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<LocalLightingSceneModule*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_abc6d5c693a2429f8fbbc943223d63d0(&LocalLightingSceneModule::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID SunShadowAllocatePassDesc::TypeID = Rtti::TypeID{
         0xad, 0xd7, 0x3e, 0xee, 0xae, 0x3c, 0x4f, 0x58, 0xab, 0x51, 0x0d, 0x4a, 0x1e, 0x02, 0xef, 0x7b,
     };
@@ -8962,6 +9802,85 @@ namespace FE::Graphics
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_add73eeeae3c4f58ab510d4a1e02ef7b(&SunShadowAllocatePassDesc::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID CullLocalLightsPassDesc::TypeID = Rtti::TypeID{
+        0xaf, 0x25, 0xf1, 0x55, 0x62, 0x19, 0x43, 0xca, 0x98, 0xc8, 0x5d, 0xd0, 0x7b, 0xb4, 0xff, 0x6b,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_af25f155621943ca98c85dd07bb4ff6b(CullLocalLightsPassDesc* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xaf, 0x25, 0xf1, 0x55, 0x62, 0x19, 0x43, 0xca,
+                0x98, 0xc8, 0x5d, 0xd0, 0x7b, 0xb4, 0xff, 0x6b, // FE::Graphics::CullLocalLightsPassDesc (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_af25f155621943ca98c85dd07bb4ff6b()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& CullLocalLightsPassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_af25f155621943ca98c85dd07bb4ff6b();
+    }
+
+    void CullLocalLightsPassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_af25f155621943ca98c85dd07bb4ff6b();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xaf, 0x25, 0xf1, 0x55, 0x62, 0x19, 0x43, 0xca,
+            0x98, 0xc8, 0x5d, 0xd0, 0x7b, 0xb4, 0xff, 0x6b, // FE::Graphics::CullLocalLightsPassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     &CullLocalLightsPassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pipeline",
+                                                     &CullLocalLightsPassDesc::m_pipeline,
+                                                     kAttributes_m_pipeline,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<CullLocalLightsPassDesc>(typeInstance,
+                                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                      "FE::Graphics::CullLocalLightsPassDesc",
+                                                      kBaseClassTypeIDs,
+                                                      kAttributes,
+                                                      kFields,
+                                                      Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_af25f155621943ca98c85dd07bb4ff6b(static_cast<CullLocalLightsPassDesc*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_af25f155621943ca98c85dd07bb4ff6b(&CullLocalLightsPassDesc::Reflect);
 } // namespace FE::Graphics
 
 
@@ -9140,6 +10059,97 @@ namespace FE::Graphics::MeshPass::ScanMeshBuckets
 } // namespace FE::Graphics::MeshPass::ScanMeshBuckets
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID LocalLightingBinding::TypeID = Rtti::TypeID{
+        0xb2, 0x74, 0xd0, 0x17, 0x6b, 0xdb, 0x4f, 0xfd, 0xbb, 0x75, 0x09, 0xdb, 0xf5, 0xaf, 0x6a, 0x18,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b274d0176bdb4ffdbb7509dbf5af6a18(LocalLightingBinding* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xb2, 0x74, 0xd0, 0x17, 0x6b, 0xdb, 0x4f, 0xfd,
+                0xbb, 0x75, 0x09, 0xdb, 0xf5, 0xaf, 0x6a, 0x18, // FE::Graphics::LocalLightingBinding (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_b274d0176bdb4ffdbb7509dbf5af6a18()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& LocalLightingBinding::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_b274d0176bdb4ffdbb7509dbf5af6a18();
+    }
+
+    void LocalLightingBinding::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_b274d0176bdb4ffdbb7509dbf5af6a18();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xb2, 0x74, 0xd0, 0x17, 0x6b, 0xdb, 0x4f, 0xfd,
+            0xbb, 0x75, 0x09, 0xdb, 0xf5, 0xaf, 0x6a, 0x18, // FE::Graphics::LocalLightingBinding
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lights = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_clusters = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_masks = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lightCount = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_lights",
+                                                     &LocalLightingBinding::m_lights,
+                                                     kAttributes_m_lights,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_clusters",
+                                                     &LocalLightingBinding::m_clusters,
+                                                     kAttributes_m_clusters,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_masks",
+                                                     &LocalLightingBinding::m_masks,
+                                                     kAttributes_m_masks,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_lightCount",
+                                                     &LocalLightingBinding::m_lightCount,
+                                                     kAttributes_m_lightCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<LocalLightingBinding>(typeInstance,
+                                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                   "FE::Graphics::LocalLightingBinding",
+                                                   kBaseClassTypeIDs,
+                                                   kAttributes,
+                                                   kFields,
+                                                   Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_b274d0176bdb4ffdbb7509dbf5af6a18(static_cast<LocalLightingBinding*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_b274d0176bdb4ffdbb7509dbf5af6a18(&LocalLightingBinding::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::Visibility
 {
     const Rtti::TypeID DeferredConstants::TypeID = Rtti::TypeID{
@@ -9194,6 +10204,8 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_sunShadow = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_localLighting = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g0 = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g1 = {};
@@ -9220,7 +10232,7 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderCount = {};
 
-        static const festd::array<Rtti::FieldInfo, 16> kFields = {
+        static const festd::array<Rtti::FieldInfo, 17> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &DeferredConstants::m_view,
                                                      kAttributes_m_view,
@@ -9232,6 +10244,10 @@ namespace FE::Graphics::Visibility
             Rtti::ReflectionContext::CreateFieldInfo("m_sunShadow",
                                                      &DeferredConstants::m_sunShadow,
                                                      kAttributes_m_sunShadow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_localLighting",
+                                                     &DeferredConstants::m_localLighting,
+                                                     kAttributes_m_localLighting,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_g0",
                                                      &DeferredConstants::m_g0,
@@ -9574,6 +10590,98 @@ namespace FE::Graphics::Visibility
 
     static Rtti::TypeRegistrar GTypeRegistrar_b6cd22e2880f46edb2c23f2e0d9d1f79(&EvaluationCountPassDesc::Reflect);
 } // namespace FE::Graphics::Visibility
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID LocalLightTable::TypeID = Rtti::TypeID{
+        0xb7, 0x79, 0x79, 0x10, 0xa4, 0xa6, 0x5c, 0x9b, 0x96, 0xf8, 0x2f, 0x3f, 0x6e, 0x47, 0xa7, 0x58,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b7797910a4a65c9b96f82f3f6e47a758(LocalLightTable* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0xb7, 0x79, 0x79, 0x10, 0xa4, 0xa6, 0x5c, 0x9b,
+                0x96, 0xf8, 0x2f, 0x3f, 0x6e, 0x47, 0xa7, 0x58, // FE::Graphics::LocalLightTable (this type)
+                0xb0, 0xb2, 0x92, 0x17, 0x3d, 0x30, 0x4b, 0x35,
+                0x80, 0x26, 0x9d, 0x0e, 0xb9, 0x1b, 0x8f, 0xd2, // FE::Graphics::DB::TableBase
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::DB::TableBase*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_b7797910a4a65c9b96f82f3f6e47a758()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& LocalLightTable::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_b7797910a4a65c9b96f82f3f6e47a758();
+    }
+
+    void* FE_VECTORCALL LocalLightTable::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_b7797910a4a65c9b96f82f3f6e47a758(this, typeID);
+    }
+
+    const void* FE_VECTORCALL LocalLightTable::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_b7797910a4a65c9b96f82f3f6e47a758(const_cast<LocalLightTable*>(this), typeID);
+    }
+    void LocalLightTable::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_b7797910a4a65c9b96f82f3f6e47a758();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xb7, 0x79, 0x79, 0x10, 0xa4, 0xa6, 0x5c, 0x9b,
+            0x96, 0xf8, 0x2f, 0x3f, 0x6e, 0x47, 0xa7, 0x58, // FE::Graphics::LocalLightTable
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xb0, 0xb2, 0x92, 0x17, 0x3d, 0x30, 0x4b, 0x35,
+            0x80, 0x26, 0x9d, 0x0e, 0xb9, 0x1b, 0x8f, 0xd2, // FE::Graphics::DB::TableBase
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<LocalLightTable>(typeInstance,
+                                              Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                              "FE::Graphics::LocalLightTable",
+                                              kBaseClassTypeIDs,
+                                              kAttributes,
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<LocalLightTable*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_b7797910a4a65c9b96f82f3f6e47a758(&LocalLightTable::Reflect);
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::ShadowAtlas

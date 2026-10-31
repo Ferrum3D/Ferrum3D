@@ -1,6 +1,8 @@
 #pragma once
 #include <Core/Math/Vector2.h>
+#include <Core/Math/Vector3.h>
 #include <Core/Math/Vector4.h>
+#include <cmath>
 
 namespace FE::Math::Pack
 {
@@ -82,5 +84,58 @@ namespace FE::Math::Pack
         // i = x|y|z|w
         vResulti = _mm_or_si128(vResulti, vResulti2);
         return _mm_cvtsi128_si32(vResulti);
+    }
+
+
+    FE_FORCE_INLINE uint32_t NormalToOctahedral16Snorm(const Vector3 normal)
+    {
+        const Vector3 n = normal / (std::abs(normal.x) + std::abs(normal.y) + std::abs(normal.z));
+        const float x = n.z >= 0 ? n.x : (1 - std::abs(n.y)) * (n.x >= 0 ? 1.0f : -1.0f);
+        const float y = n.z >= 0 ? n.y : (1 - std::abs(n.x)) * (n.y >= 0 ? 1.0f : -1.0f);
+        const Vector3 rounded = Math::Round(Vector3(x, y, 0) * 32767.0f);
+        return (static_cast<uint32_t>(static_cast<int32_t>(rounded.x)) & 65535u)
+            | (static_cast<uint32_t>(static_cast<int32_t>(rounded.y)) << 16);
+    }
+
+
+    FE_FORCE_INLINE Vector3 Octahedral16SnormToNormal(const uint32_t word)
+    {
+        const int32_t sx = static_cast<int32_t>(word & 32767u) - static_cast<int32_t>(word & 32768u);
+        const int32_t sy = static_cast<int32_t>((word >> 16) & 32767u) - static_cast<int32_t>((word >> 16) & 32768u);
+        const float x = sx / 32767.0f;
+        const float y = sy / 32767.0f;
+        const float z = 1 - std::abs(x) - std::abs(y);
+        const Vector3 normal = z >= 0
+            ? Vector3(x, y, z)
+            : Vector3((1 - std::abs(y)) * (x >= 0 ? 1.0f : -1.0f), (1 - std::abs(x)) * (y >= 0 ? 1.0f : -1.0f), z);
+        return Math::Normalize(normal);
+    }
+
+
+    FE_FORCE_INLINE uint32_t EncodeUnsignedFloat(float value, const uint32_t mantissaBits)
+    {
+        const float maximum = mantissaBits == 6 ? 65024.0f : 64512.0f;
+        value = std::isfinite(value) ? Math::Clamp(value, 0.0f, maximum) : 0.0f;
+        const uint32_t halfBits = R32FloatToR16Float(value);
+        const uint32_t shift = 10 - mantissaBits;
+        const uint32_t rounded = halfBits + ((1u << (shift - 1)) - 1) + ((halfBits >> shift) & 1);
+        return rounded >> shift;
+    }
+
+
+    FE_FORCE_INLINE uint32_t RGB32FloatToR11G11B10Float(const Vector3 source)
+    {
+        const uint32_t red = EncodeUnsignedFloat(source.x, 6);
+        const uint32_t green = EncodeUnsignedFloat(source.y, 6);
+        const uint32_t blue = EncodeUnsignedFloat(source.z, 5);
+        return red | (green << 11) | (blue << 22);
+    }
+
+
+    FE_FORCE_INLINE Vector3 R11G11B10FloatToRGB32Float(const uint32_t word)
+    {
+        return Vector3(R16FloatToR32Float(static_cast<uint16_t>((word & 2047) << 4)),
+                       R16FloatToR32Float(static_cast<uint16_t>(((word >> 11) & 2047) << 4)),
+                       R16FloatToR32Float(static_cast<uint16_t>((word >> 22) << 5)));
     }
 } // namespace FE::Math::Pack

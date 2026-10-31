@@ -60,3 +60,28 @@ m:technique('DeferredShade', function(t, ctx)
 end)
 )"));
 }
+
+
+TEST(MaterialTechniques, IndependentTransparencyTargets)
+{
+    EXPECT_TRUE(Validate(R"(
+local Pipeline = require('@engine/pipeline')
+m:technique('ForwardTransparency', function(t, ctx)
+    t.meshShader = 'Transparent.ms'
+    t.pixelShader = 'Transparent.ps'
+    t.renderTargetFormats = { 'R16G16B16A16_SFLOAT', 'R16_SFLOAT' }
+    t.targetBlends = { Pipeline.BlendState.disabled(), Pipeline.BlendState.disabled() }
+    return true
+end)
+)"));
+    EXPECT_FALSE(Validate(R"(
+local Pipeline = require('@engine/pipeline')
+m:technique('ForwardTransparency', function(t, ctx)
+    t.meshShader = 'Transparent.ms'
+    t.pixelShader = 'Transparent.ps'
+    t.renderTargetFormats = { 'R16G16B16A16_SFLOAT', 'R16_SFLOAT' }
+    t.targetBlends = { Pipeline.BlendState.disabled() }
+    return true
+end)
+)"));
+}

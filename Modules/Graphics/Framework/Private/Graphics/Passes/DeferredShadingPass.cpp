@@ -102,6 +102,8 @@ namespace FE::Graphics::DeferredShading
             shading->m_constants.m_view = graph.GetSRV(viewBuffer);
             shading->m_constants.m_lighting = initialize->m_constants.m_lighting;
             shading->m_constants.m_sunShadow = sunShadow;
+            if (const auto* local = blackboard.TryGet<LocalLightingBinding>())
+                shading->m_constants.m_localLighting = *local;
             shading->m_constants.m_g0 = graph.GetSRV(gBufferTargets[0].Get());
             shading->m_constants.m_g1 = graph.GetSRV(gBufferTargets[1].Get());
             shading->m_constants.m_g2 = graph.GetSRV(gBufferTargets[2].Get());

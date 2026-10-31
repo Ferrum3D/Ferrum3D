@@ -1,0 +1,24 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0xe4105f5e8b39350b",
+    "$value": {
+        "m_sourcePath": "TransparentPBR.mat.luau",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Material/Primary",
+                "m_name": "Material",
+                "m_assetId": "A6B0C851-5104-4AE3-A51E-1A932494291C",
+                "m_assetTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                "m_buildSettings": {
+                    "m_typeId": "A5F968E2-282C-4364-957B-DC52CC51014D",
+                    "m_value": {}
+                },
+                "m_dependencies": [],
+                "m_isRemoved": false
+            }
+        ]
+    }
+}

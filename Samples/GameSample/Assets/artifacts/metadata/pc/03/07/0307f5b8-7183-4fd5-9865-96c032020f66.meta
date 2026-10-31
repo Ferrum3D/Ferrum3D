@@ -4,7 +4,7 @@
     "$version": 0,
     "$schema": "0x4d3ae890a4a739c5",
     "$value": {
-        "m_artifactId": "4BEBE519-A36C-4D7B-89DA-6A7E01C8B007",
+        "m_artifactId": "BEDA0D2C-2B46-46B4-96EC-9229999E274E",
         "m_assetId": "0307F5B8-7183-4FD5-9865-96C032020F66",
         "m_assetTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
         "m_payloads": [
@@ -21,7 +21,7 @@
                         "m_uncompressedSize": 4366,
                         "m_compressionMethod": 2,
                         "m_checksum": {
-                            "m_current": 2518314418
+                            "m_current": 2673082827
                         }
                     }
                 ]

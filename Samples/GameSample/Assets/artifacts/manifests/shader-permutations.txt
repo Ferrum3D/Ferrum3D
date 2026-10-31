@@ -53,3 +53,7 @@ cs Shaders/Shadows/ClearAtlasPages.cs.hlsl
 cs Shaders/Shadows/AllocatePages.cs.hlsl
 cs Shaders/Shadows/MarkPages.cs.hlsl
 cs Shaders/Shadows/ClearPageTable.cs.hlsl
+cs Shaders/Lighting/ResolveTransparency.cs.hlsl
+cs Shaders/Lighting/CullLocalLights.cs.hlsl
+ms Shaders/Materials/ForwardTransparent.ms.hlsl
+ps Shaders/Materials/ForwardTransparent.ps.hlsl

@@ -1,4 +1,5 @@
 ﻿#include <Core/RTTI/Reflection.h>
+#include <Core/RTTI/Traversal.h>
 #include <Graphics/Core/Common/Buffer.h>
 #include <Graphics/Core/Common/FrameGraph/FrameGraph.h>
 
@@ -372,12 +373,10 @@ namespace FE::Graphics::Common
             }
         };
 
-        for (const Rtti::FieldInfo& field : type.m_fields)
-        {
-            const PassFieldElements elements = GetPassFieldElements(field);
-            for (uint32_t index = 0; index < elements.m_count; ++index)
-                registerDescriptor(*elements.m_type, &elements.Get<std::byte>(field, data, index));
-        }
+        Rtti::VisitConst(type, data, Rtti::VisitFlags::kNone, [&](const Rtti::VisitNode& node) {
+            registerDescriptor(node.m_type, node.m_value);
+            return Rtti::VisitResult::kContinue;
+        });
     }
 
 

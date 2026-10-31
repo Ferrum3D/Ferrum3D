@@ -6,6 +6,7 @@
 #include "SurfaceProbe.h"
 #include <Core/Base/PlatformInclude.h>
 #include <Core/Jobs/Jobs.h>
+#include <Core/Math/Packing.h>
 #include <Core/Threading/Thread.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/DescriptorManager.h>
@@ -18,12 +19,15 @@
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
+#include <Graphics/Features/Lighting/LocalLightingSceneModule.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
 #include <Graphics/Scene/ComputePassRegistry.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
+#include <Shaders/Lighting/LocalLighting.h>
+#include <cmath>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -31,6 +35,168 @@ using namespace FE::Graphics;
 
 namespace
 {
+    void CheckLightClusterMasks(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
+                                Core::DescriptorManager* descriptors, Core::PipelineFactory* pipelines)
+    {
+        DB::Database database(device, pool);
+        LocalLightingSceneModule lightsModule(nullptr, &database);
+        LocalLightData lights[34]{};
+        LightHandle handles[34];
+        for (uint32_t index = 0; index < 34; ++index)
+        {
+            lights[index] = PackLocalLightData(Vector3::kZero, 100000, Vector3(0.2f, 0.6f, 4), 1e12f);
+        }
+
+        lights[33] = PackLocalLightData(Vector3(1000000, 0, 0),
+                                        1,
+                                        Vector3(0.2f, 0.6f, 4),
+                                        1e12f,
+                                        Math::Normalize(Vector3(1, -2, -3)),
+                                        0.005f,
+                                        0.01f);
+        for (uint32_t index = 0; index < 34; ++index)
+            handles[index] = lightsModule.CreateLight(lights[index]);
+
+        LightClusterData clusters{};
+        clusters.m_view = Matrix4x4::kIdentity;
+        clusters.m_projection = Matrix4x4::Projection(1, 1, 0.1f, 100);
+        clusters.m_inverseViewProjection = Math::Invert(clusters.m_projection);
+        clusters.m_viewport = { 0, 0, 17, 19 };
+        clusters.m_depth = { 0.1f, 100, kLightClusterSlices / std::log2(1000.0f), 0 };
+        clusters.m_tiles = Vector2UInt(1, 1);
+        clusters.m_lightCount = 34;
+        clusters.m_wordCount = 2;
+        const auto clusterBuffer = Core::Buffer::CreateStructured<LightClusterData>(device, "ProbeClusters", 1);
+        const uint32_t bytes = kLightClusterSlices * 2 * sizeof(uint32_t);
+        const auto masks = Core::Buffer::CreateByteAddress(device, "ProbeMasks", bytes);
+        const auto readback = Core::Buffer::CreateByteAddress(device, "ProbeMasksReadback", bytes);
+        Core::ResourceCommitParams commit;
+        commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
+        commit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
+        pool->CommitBufferMemory(readback.Get(), commit);
+        const uint32_t decodedBytes = 34 * 16 * sizeof(float);
+        const auto decoded = Core::Buffer::CreateByteAddress(device, "DecodedLights", decodedBytes);
+        const auto decodedReadback = Core::Buffer::CreateByteAddress(device, "DecodedLightsReadback", decodedBytes);
+        pool->CommitBufferMemory(decodedReadback.Get(), commit);
+        Core::ComputePipelineRequest decodeRequest;
+        decodeRequest.m_desc.SetComputeShader("Shaders/Tests/GpuProbe.cs.hlsl");
+        auto* decodePipeline = pipelines->CreateComputePipeline(decodeRequest);
+        decodePipeline->GetCompletionWaitGroup()->Wait();
+        ASSERT_TRUE(decodePipeline->IsReady());
+        Core::ComputePipelineRequest request;
+        request.m_desc.SetComputeShader("Shaders/Lighting/CullLocalLights.cs.hlsl");
+        auto* pipeline = pipelines->CreateComputePipeline(request);
+        pipeline->GetCompletionWaitGroup()->Wait();
+        ASSERT_TRUE(pipeline->IsReady());
+        auto graph = device->CreateFrameGraph(descriptors, pool, queue);
+        Core::RingUploader uploader;
+        uploader.Setup("LightProbeUploader", pool, 64 * 1024);
+        const LightHandle stale0 = handles[0];
+        const LightHandle stale32 = handles[32];
+        for (uint32_t frame = 0; frame < 4; ++frame)
+        {
+            SCOPED_TRACE(frame);
+            if (frame == 2)
+            {
+                lightsModule.DestroyLight(handles[0]);
+                lightsModule.DestroyLight(handles[32]);
+                EXPECT_EQ(lightsModule.FindLight(stale0), nullptr);
+                EXPECT_EQ(lightsModule.FindLight(stale32), nullptr);
+            }
+            else if (frame == 3)
+            {
+                handles[0] = lightsModule.CreateLight(lights[33]);
+                handles[32] = lightsModule.CreateLight(lights[32]);
+                EXPECT_EQ(handles[0].m_value, stale0.m_value);
+                EXPECT_NE(handles[0].m_generation, stale0.m_generation);
+                EXPECT_EQ(handles[32].m_value, stale32.m_value);
+                EXPECT_NE(handles[32].m_generation, stale32.m_generation);
+                lightsModule.UpdateLight(stale0, lights[0]);
+                lightsModule.DestroyLight(stale32);
+                lightsModule.UpdateLight(handles[1], lights[33]);
+            }
+
+            queue->BeginFrame();
+            graph->BeginFrame();
+            database.Update(*graph, queue->GetCurrentFence());
+            ASSERT_TRUE(uploader.Upload(*graph, clusterBuffer.Get(), clusters));
+            auto* pass = graph->AllocatePassData<CullLocalLightsPassDesc>();
+            pass->m_pipeline = pipeline;
+            pass->m_constants.m_lighting.m_lights = lightsModule.GetLightTable()->GetDeviceAddress();
+            pass->m_constants.m_lighting.m_clusters = graph->GetSRV(clusterBuffer.Get());
+            pass->m_constants.m_lighting.m_lightCount = 34;
+            pass->m_constants.m_masks = graph->GetUAV(masks.Get());
+            graph->AddDispatchPass("ProbeClusterMasks", pass, Vector3UInt(1, 1, kLightClusterSlices));
+            graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(masks.Get()));
+            if (frame == 0)
+            {
+                auto* decode = graph->AllocatePassData<Stage1Probe::PassDesc>();
+                decode->m_pipeline = decodePipeline;
+                decode->m_constants.m_material = lightsModule.GetLightTable()->GetDeviceAddress();
+                decode->m_constants.m_writeArguments = 3;
+                decode->m_constants.m_words = graph->GetUAV(decoded.Get());
+                graph->AddDispatchPass("DecodePackedLights", decode, 34);
+                graph->AddCopyPass(Core::BufferView(decodedReadback.Get()), Core::BufferView(decoded.Get()));
+            }
+
+            graph->CompileAndExecute();
+            const auto completion = queue->GetCurrentFence();
+            uploader.CloseFrame(completion);
+            queue->SubmitFrame();
+            completion.Wait();
+            const auto* words = static_cast<const uint32_t*>(readback->Map());
+            readback->InvalidateMappedRange(0, bytes);
+            for (uint32_t slice = 0; slice < kLightClusterSlices; ++slice)
+            {
+                const uint32_t firstWord = frame < 2 ? 0xffffffffu : frame == 2 ? 0xfffffffeu : 0xfffffffcu;
+                EXPECT_EQ(words[slice * 2], firstWord);
+                EXPECT_EQ(words[slice * 2 + 1], frame == 2 ? 0u : 1u);
+            }
+
+            readback->Unmap();
+            if (frame == 0)
+            {
+                const auto* values = static_cast<const float*>(decodedReadback->Map());
+                decodedReadback->InvalidateMappedRange(0, decodedBytes);
+                for (uint32_t index = 0; index < 34; ++index)
+                {
+                    const float* record = values + index * 16;
+                    EXPECT_EQ(record[0], lights[index].m_positionRange.x);
+                    EXPECT_EQ(record[3], lights[index].m_positionRange.w);
+                    const Vector3 color = Math::Pack::R11G11B10FloatToRGB32Float(lights[index].m_color);
+                    for (uint32_t channel = 0; channel < 3; ++channel)
+                        EXPECT_EQ(record[4 + channel], color.m_values[channel]);
+
+                    EXPECT_EQ(record[7], lights[index].m_colorMultiplier);
+                    const Vector3 direction = Math::Pack::Octahedral16SnormToNormal(lights[index].m_direction);
+                    for (uint32_t channel = 0; channel < 3; ++channel)
+                        EXPECT_NEAR(record[8 + channel], direction.m_values[channel], 0.000001f);
+
+                    if (index < 33)
+                    {
+                        EXPECT_EQ(record[11], -1);
+                    }
+                    else
+                    {
+                        EXPECT_NEAR(record[11], std::cos(0.01f), 0.000001f);
+                        EXPECT_NEAR(record[12], std::cos(0.005f), 0.000001f);
+                        EXPECT_LT(record[11], record[12]);
+                    }
+                }
+
+                decodedReadback->Unmap();
+            }
+        }
+
+        for (const LightHandle handle : handles)
+            lightsModule.DestroyLight(handle);
+
+        EXPECT_EQ(lightsModule.GetLightSlotCount(), 0u);
+        graph.Reset();
+        uploader.Shutdown();
+    }
+
+
     void CheckSplitAsyncUpload(Core::Device* device, Core::ResourcePool* pool, Core::AsyncCopyQueue* copyQueue)
     {
         constexpr uint32_t kByteSize = 16 * 1024 * 1024 + 4096;
@@ -578,6 +744,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_NEAR(std::bit_cast<float>(results[2]), 0.175f / 0.525f, 1e-6f);
             EXPECT_NEAR(std::bit_cast<float>(results[3]), 0.1f / 0.525f, 1e-6f);
             reconstructionReadback->Unmap();
+            CheckLightClusterMasks(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), 64);
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());

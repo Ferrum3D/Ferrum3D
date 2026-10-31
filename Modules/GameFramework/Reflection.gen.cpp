@@ -9,6 +9,7 @@
 #include <GameFramework/Assets/PhysicsShapeAsset.h>
 #include <GameFramework/Components/CameraComponent.h>
 #include <GameFramework/Components/CameraMovementComponent.h>
+#include <GameFramework/Components/LightComponents.h>
 #include <GameFramework/Components/MeshComponent.h>
 #include <GameFramework/Components/PhysicsBodyComponent.h>
 #include <GameFramework/Components/TransformComponents.h>
@@ -21,6 +22,7 @@
 #include <GameFramework/Services/WorldStreamingService.h>
 #include <GameFramework/Systems/CameraMovementSystem.h>
 #include <GameFramework/Systems/CameraSystem.h>
+#include <GameFramework/Systems/LightSystem.h>
 #include <GameFramework/Systems/MeshSystem.h>
 #include <GameFramework/Systems/PhysicsSystem.h>
 #include <GameFramework/Systems/TransformationSystem.h>
@@ -31,6 +33,133 @@ namespace FE
 {
     void CallLinkerAnchor_GameFramework() {}
 } // namespace FE
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID PointLightComponent::TypeID = Rtti::TypeID{
+        0x01, 0x98, 0x3c, 0x05, 0x87, 0xc8, 0x41, 0x0f, 0x9e, 0xd1, 0x82, 0x2a, 0x13, 0x36, 0x91, 0xb9,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_01983c0587c8410f9ed1822a133691b9(PointLightComponent* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0x01, 0x98, 0x3c, 0x05, 0x87, 0xc8, 0x41, 0x0f,
+                0x9e, 0xd1, 0x82, 0x2a, 0x13, 0x36, 0x91, 0xb9, // FE::GameFramework::PointLightComponent (this type)
+                0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3,
+                0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae, // FE::Graphics::LocalLightParameters
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::LocalLightParameters*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_01983c0587c8410f9ed1822a133691b9()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PointLightComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_01983c0587c8410f9ed1822a133691b9();
+    }
+
+    void PointLightComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_01983c0587c8410f9ed1822a133691b9();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x01, 0x98, 0x3c, 0x05, 0x87, 0xc8, 0x41, 0x0f,
+            0x9e, 0xd1, 0x82, 0x2a, 0x13, 0x36, 0x91, 0xb9, // FE::GameFramework::PointLightComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3,
+            0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae, // FE::Graphics::LocalLightParameters
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_light = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_light",
+                                                     &PointLightComponent::m_light,
+                                                     kAttributes_m_light,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+        };
+
+        context.ReflectClass<PointLightComponent>(typeInstance,
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                  "FE::GameFramework::PointLightComponent",
+                                                  kBaseClassTypeIDs,
+                                                  kAttributes,
+                                                  kFields,
+                                                  Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_01983c0587c8410f9ed1822a133691b9(static_cast<PointLightComponent*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_01983c0587c8410f9ed1822a133691b9(&PointLightComponent::Reflect);
+
+    FE::Serialization::ResultCode PointLightComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("$base:FE::Graphics::LocalLightParameters",
+                         static_cast<const FE::Graphics::LocalLightParameters&>(*this));
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode PointLightComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("$base:FE::Graphics::LocalLightParameters", static_cast<FE::Graphics::LocalLightParameters&>(*this));
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t PointLightComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x01, 0x98, 0x3c, 0x05, 0x87, 0xc8, 0x41, 0x0f, 0x9e, 0xd1, 0x82, 0x2a, 0x13, 0x36, 0x91, 0xb9,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("$base:FE::Graphics::LocalLightParameters", 40);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<FE::Graphics::LocalLightParameters>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t PointLightComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::GameFramework
 
 
 namespace FE::GameFramework
@@ -996,6 +1125,90 @@ namespace FE::GameFramework
 
 namespace FE::GameFramework
 {
+    const Rtti::TypeID LightSystem::TypeID = Rtti::TypeID{
+        0x52, 0xa0, 0x39, 0xae, 0xee, 0x95, 0x41, 0x1f, 0xad, 0x79, 0xd7, 0x79, 0xb4, 0xab, 0x2c, 0xdf,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_52a039aeee95411fad79d779b4ab2cdf(LightSystem* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0x52, 0xa0, 0x39, 0xae, 0xee, 0x95, 0x41, 0x1f,
+                0xad, 0x79, 0xd7, 0x79, 0xb4, 0xab, 0x2c, 0xdf, // FE::GameFramework::LightSystem (this type)
+                0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+                0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Framework::WorldSystem*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_52a039aeee95411fad79d779b4ab2cdf()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& LightSystem::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_52a039aeee95411fad79d779b4ab2cdf();
+    }
+
+    void* FE_VECTORCALL LightSystem::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_52a039aeee95411fad79d779b4ab2cdf(this, typeID);
+    }
+
+    const void* FE_VECTORCALL LightSystem::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_52a039aeee95411fad79d779b4ab2cdf(const_cast<LightSystem*>(this), typeID);
+    }
+    void LightSystem::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_52a039aeee95411fad79d779b4ab2cdf();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x52, 0xa0, 0x39, 0xae, 0xee, 0x95, 0x41, 0x1f,
+            0xad, 0x79, 0xd7, 0x79, 0xb4, 0xab, 0x2c, 0xdf, // FE::GameFramework::LightSystem
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x94, 0x36, 0xea, 0x35, 0x32, 0xdc, 0x4a, 0x82,
+            0xbe, 0xb3, 0x18, 0xc9, 0xd4, 0xec, 0xc7, 0x6f, // FE::Framework::WorldSystem
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<LightSystem>(typeInstance,
+                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                          "FE::GameFramework::LightSystem",
+                                          kBaseClassTypeIDs,
+                                          kAttributes,
+                                          kFields,
+                                          Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return static_cast<LightSystem*>(instance)->RTTI_TryCast(target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_52a039aeee95411fad79d779b4ab2cdf(&LightSystem::Reflect);
+} // namespace FE::GameFramework
+
+
+namespace FE::GameFramework
+{
     const Rtti::TypeID MeshComponent::TypeID = Rtti::TypeID{
         0x73, 0x07, 0x7b, 0xd1, 0x71, 0x03, 0x43, 0xf9, 0xb9, 0x4a, 0xff, 0xcc, 0x1d, 0xce, 0x71, 0xf5,
     };
@@ -1358,6 +1571,153 @@ namespace FE::Editor
 
     static Rtti::TypeRegistrar GTypeRegistrar_7be656b824ba48ff8f350ab778c3bcd2(&Application::Reflect);
 } // namespace FE::Editor
+
+
+namespace FE::GameFramework
+{
+    const Rtti::TypeID SpotLightComponent::TypeID = Rtti::TypeID{
+        0x8f, 0xe3, 0x1b, 0xce, 0xba, 0xad, 0x4a, 0xe8, 0x84, 0x37, 0xba, 0x46, 0x5d, 0x5b, 0x17, 0x73,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_8fe31bcebaad4ae88437ba465d5b1773(SpotLightComponent* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0x8f, 0xe3, 0x1b, 0xce, 0xba, 0xad, 0x4a, 0xe8,
+                0x84, 0x37, 0xba, 0x46, 0x5d, 0x5b, 0x17, 0x73, // FE::GameFramework::SpotLightComponent (this type)
+                0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3,
+                0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae, // FE::Graphics::LocalLightParameters
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::LocalLightParameters*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_8fe31bcebaad4ae88437ba465d5b1773()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SpotLightComponent::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_8fe31bcebaad4ae88437ba465d5b1773();
+    }
+
+    void SpotLightComponent::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_8fe31bcebaad4ae88437ba465d5b1773();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x8f, 0xe3, 0x1b, 0xce, 0xba, 0xad, 0x4a, 0xe8,
+            0x84, 0x37, 0xba, 0x46, 0x5d, 0x5b, 0x17, 0x73, // FE::GameFramework::SpotLightComponent
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x90, 0x8b, 0xff, 0x07, 0xcd, 0x19, 0x4e, 0xc3,
+            0x8b, 0xf0, 0xac, 0x05, 0xb5, 0x9c, 0x43, 0xae, // FE::Graphics::LocalLightParameters
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_light = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_innerAngle = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_outerAngle = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_light",
+                                                     &SpotLightComponent::m_light,
+                                                     kAttributes_m_light,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic
+                                                         | Rtti::FieldFlags::kTransient),
+            Rtti::ReflectionContext::CreateFieldInfo("m_innerAngle",
+                                                     &SpotLightComponent::m_innerAngle,
+                                                     kAttributes_m_innerAngle,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_outerAngle",
+                                                     &SpotLightComponent::m_outerAngle,
+                                                     kAttributes_m_outerAngle,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SpotLightComponent>(typeInstance,
+                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                 "FE::GameFramework::SpotLightComponent",
+                                                 kBaseClassTypeIDs,
+                                                 kAttributes,
+                                                 kFields,
+                                                 Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_8fe31bcebaad4ae88437ba465d5b1773(static_cast<SpotLightComponent*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_8fe31bcebaad4ae88437ba465d5b1773(&SpotLightComponent::Reflect);
+
+    FE::Serialization::ResultCode SpotLightComponent::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("$base:FE::Graphics::LocalLightParameters",
+                         static_cast<const FE::Graphics::LocalLightParameters&>(*this));
+            object.Field("m_innerAngle", m_innerAngle);
+            object.Field("m_outerAngle", m_outerAngle);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode SpotLightComponent::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("$base:FE::Graphics::LocalLightParameters", static_cast<FE::Graphics::LocalLightParameters&>(*this));
+            object.Field("m_innerAngle", m_innerAngle);
+            object.Field("m_outerAngle", m_outerAngle);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t SpotLightComponent::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x8f, 0xe3, 0x1b, 0xce, 0xba, 0xad, 0x4a, 0xe8, 0x84, 0x37, 0xba, 0x46, 0x5d, 0x5b, 0x17, 0x73,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("$base:FE::Graphics::LocalLightParameters", 40);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<FE::Graphics::LocalLightParameters>());
+            hasher.Update("m_innerAngle", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_innerAngle)>());
+            hasher.Update("m_outerAngle", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_outerAngle)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t SpotLightComponent::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::GameFramework
 
 
 namespace FE::GameFramework
