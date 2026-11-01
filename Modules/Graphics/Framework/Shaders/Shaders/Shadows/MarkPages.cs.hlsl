@@ -1,8 +1,9 @@
-#include <Shaders/Shadows/SunShadow.hlsli>
+#include <Shaders/Shadows/LocalShadow.hlsli>
 
 [[vk::push_constant]] SunShadowMarkConstants GConstants;
 
-// Every visible pixel requests the pages its filter footprint reads.
+// Every visible pixel requests the pages its filter footprint reads, in the clip levels and in the maps of the shadowed
+// local lights of its light cluster.
 FE_NUM_THREADS(kSunShadowTileSize, kSunShadowTileSize, 1)
 void main(uint3 thread : SV_DispatchThreadID)
 {
@@ -20,5 +21,14 @@ void main(uint3 thread : SV_DispatchThreadID)
     const float4 homogeneousWorld = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
     const float3 worldPosition = homogeneousWorld.xyz / homogeneousWorld.w;
 
-    SunShadow::RequestPages(GConstants.m_pageTable.Get(), GConstants.m_data.Load(0), worldPosition);
+    const SunShadowData data = GConstants.m_data.Load(0);
+    RWStructuredBuffer<uint> pageTable = GConstants.m_pageTable.Get();
+    SunShadow::RequestPages(pageTable, data, worldPosition);
+    LocalShadow::RequestPages(pageTable,
+                              data,
+                              GConstants.m_localLighting,
+                              GConstants.m_localMaps,
+                              GConstants.m_localLightMaps,
+                              worldPosition,
+                              float2(pixel) + 0.5f);
 }

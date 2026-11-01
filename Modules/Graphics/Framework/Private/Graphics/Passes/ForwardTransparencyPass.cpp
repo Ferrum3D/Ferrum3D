@@ -85,6 +85,11 @@ namespace FE::Graphics::ForwardTransparency
         {
             graph.AddBufferDependency(lighting.Get(), sunShadow->m_data.Get());
             graph.AddBufferDependency(lighting.Get(), sunShadow->m_pageTable.Get());
+            if (sunShadow->m_localMaps != nullptr)
+            {
+                graph.AddBufferDependency(lighting.Get(), sunShadow->m_localMaps.Get());
+                graph.AddBufferDependency(lighting.Get(), sunShadow->m_localLightMaps.Get());
+            }
         }
 
         FE_Verify(view.m_renderQueueUploader->Upload(graph, lighting.Get(), data));

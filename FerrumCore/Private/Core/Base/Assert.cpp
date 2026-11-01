@@ -72,4 +72,12 @@ namespace FE
 
         Platform::AssertionReport(sourceLocation, message, messageSize);
     }
+
+
+    void Internal::ReportEASTLAssertion(const char* message, const char* fileName, const int lineNumber)
+    {
+        const SourceLocation sourceLocation = SourceLocation::Current(fileName, static_cast<uint32_t>(lineNumber));
+        Trace::AssertionReport(sourceLocation, message, static_cast<uint32_t>(__builtin_strlen(message)));
+        FE_DebugBreak();
+    }
 } // namespace FE

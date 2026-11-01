@@ -1,23 +1,22 @@
 #pragma once
+#include <Shaders/Lighting/LightClusters.hlsli>
 #include <Shaders/Lighting/LocalLightTable.hlsli>
 #include <Shaders/Shading/BRDF.hlsli>
 #include <Shaders/Shading/Exposure.hlsli>
 #include <Shaders/Shading/Surface.hlsli>
+#include <Shaders/Shadows/LocalShadow.hlsli>
 
 namespace Shading
 {
-    float3 ComputeLocalLighting(LocalLightingBinding binding, Surface surface, float3 position, float3 camera, float2 pixel)
+    float3 ComputeLocalLighting(LocalLightingBinding binding, SunShadowBinding shadows, Surface surface, float3 position,
+                                float3 camera, float2 pixel)
     {
         if (!binding.m_clusters.IsValid())
             return 0;
 
         const LightClusterData data = binding.m_clusters.Load(0);
-        const float z = mul(float4(position, 1), data.m_view).z;
-        const uint slice = (uint)clamp(floor(log2(max(z, data.m_depth.x) / data.m_depth.x) * data.m_depth.z),
-                                       0.0f,
-                                       float(kLightClusterSlices - 1));
-        const uint2 tile = min(uint2(max(pixel - data.m_viewport.xy, 0)) / kLightClusterTileSize, data.m_tiles - 1);
-        const uint base = ((slice * data.m_tiles.y + tile.y) * data.m_tiles.x + tile.x) * data.m_wordCount;
+        const uint base = GetLightClusterBase(data, position, pixel);
+        const LocalShadow::Camera shadowCamera = LocalShadow::LoadCamera(shadows);
         float3 result = 0;
         const float3 viewDirection = normalize(camera - position);
         for (uint word = 0; word < data.m_wordCount; ++word)
@@ -30,6 +29,7 @@ namespace Shading
                 const uint bit = firstbitlow(merged);
                 merged &= ~(1u << bit);
                 const DecodedLocalLight light = LoadLocalLight(binding, word * 32 + bit);
+                const uint lightMaps = LocalShadow::LoadLightMaps(shadows, word * 32 + bit);
                 if ((mask & (1u << bit)) == 0)
                     continue;
 
@@ -46,6 +46,12 @@ namespace Shading
                                                 / max(light.m_cone.x - light.m_directionOuterCos.w, 0.000001f));
                     attenuation *= cone * cone * (3 - 2 * cone);
                 }
+
+                if (attenuation <= 0)
+                    continue;
+
+                attenuation *=
+                    LocalShadow::SampleVisibility(shadows, shadowCamera, lightMaps, position, surface.m_worldSpaceNormal);
 
                 result += EvaluateBRDF(surface.m_diffuseAlbedo,
                                        surface.m_f0,

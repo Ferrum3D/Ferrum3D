@@ -31,6 +31,8 @@ namespace FE::Graphics
         float m_temperature = 6500.0f;
         PackedVector3F m_color{ 1.0f, 1.0f, 1.0f };
         float m_range = 10.0f;
+        //! Opt-in, since every shadowed light takes shadow map pages and rendering time; see LocalShadows::kMaxMapCount.
+        bool m_castsShadows = false;
 
         [[nodiscard]] bool Validate() const;
         [[nodiscard]] PackedVector3F GetLinearColor() const;
@@ -67,6 +69,20 @@ namespace FE::Graphics
         void DestroyLight(LightHandle handle);
         void UpdateLight(LightHandle handle, const LocalLightData& light);
         [[nodiscard]] const LocalLightData* FindLight(LightHandle handle) const;
+        void SetLightCastsShadows(LightHandle handle, bool castsShadows);
+
+        //! Call function(LightHandle, const LocalLightData&) for every light that casts shadows.
+        template<class TFunction>
+        void ForEachShadowCaster(const TFunction& function) const
+        {
+            for (uint32_t index = 0; index < m_slotCount; ++index)
+            {
+                const Slot& slot = m_slots[index];
+                if (slot.m_active && slot.m_castsShadows)
+                    function(LightHandle{ index, slot.m_generation }, m_table->ReadRow(index).m_light.Get());
+            }
+        }
+
         [[nodiscard]] uint32_t GetLightSlotCount() const
         {
             return m_slotCount;
@@ -87,6 +103,7 @@ namespace FE::Graphics
         {
             uint32_t m_generation = 1;
             bool m_active = false;
+            bool m_castsShadows = false;
         };
 
         Rc<LocalLightTable> m_table;

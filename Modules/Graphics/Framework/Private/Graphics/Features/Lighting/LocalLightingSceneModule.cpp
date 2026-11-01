@@ -147,9 +147,17 @@ namespace FE::Graphics
         m_table->Free(DB::Ref<LocalLightTable>{ handle.m_value });
         Slot& slot = m_slots[handle.m_value];
         slot.m_active = false;
+        slot.m_castsShadows = false;
         ++slot.m_generation;
         while (m_slotCount != 0 && !m_slots[m_slotCount - 1].m_active)
             --m_slotCount;
+    }
+
+
+    void LocalLightingSceneModule::SetLightCastsShadows(const LightHandle handle, const bool castsShadows)
+    {
+        if (FindLight(handle) != nullptr)
+            m_slots[handle.m_value].m_castsShadows = castsShadows;
     }
 
 

@@ -30,6 +30,7 @@ void main(PixelAttributes input, out float4 accumulation : SV_Target0, out float
                                                  GView.m_view.m_cameraPosition.xyz,
                                                  LoadGlobalLighting(lighting.m_global),
                                                  lighting.m_local,
+                                                 lighting.m_sunShadow,
                                                  input.m_pos.xy,
                                                  sunVisibility)
                              .rgb;

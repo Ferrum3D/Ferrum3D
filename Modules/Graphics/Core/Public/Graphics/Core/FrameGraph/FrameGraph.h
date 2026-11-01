@@ -126,7 +126,9 @@ namespace FE::Graphics::Core
         };
 
         FrameGraph()
-            : m_linearAllocator(UINT64_C(64 * 1024), Env::GetStaticAllocator(Memory::StaticAllocatorType::kVirtual))
+            // The pass, resource and scope arrays of a frame grow inside single pages, so a page must hold the largest of them;
+            // views with many child views, e.g. shadow maps, record thousands of passes.
+            : m_linearAllocator(UINT64_C(1024 * 1024), Env::GetStaticAllocator(Memory::StaticAllocatorType::kVirtual))
             , m_blackboard(&m_linearAllocator)
         {
         }

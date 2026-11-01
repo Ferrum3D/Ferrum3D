@@ -53,6 +53,7 @@ namespace FE::GameFramework
             const Graphics::LocalLightData data =
                 light.Validate() ? BuildLight(light, transform.m_world) : Graphics::LocalLightData{};
             lights.UpdateLight(light.m_light, data);
+            lights.SetLightCastsShadows(light.m_light, light.m_castsShadows);
         };
         using Points = Framework::Query<const PointLightComponent, const WorldTransformComponent>;
         const auto points = Points::Create()
@@ -68,6 +69,7 @@ namespace FE::GameFramework
 
             const auto data = BuildLight(light, transform.m_world, light.m_innerAngle, light.m_outerAngle);
             lights.UpdateLight(light.m_light, data);
+            lights.SetLightCastsShadows(light.m_light, light.m_castsShadows);
         };
         using Spots = Framework::Query<const SpotLightComponent, const WorldTransformComponent>;
         Spots::Create()

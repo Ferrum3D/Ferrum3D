@@ -29,14 +29,14 @@ void main(uint3 thread : SV_DispatchThreadID)
         return;
     }
 
-    // Entries whose world page left the level when it scrolled release their atlas page.
+    // Entries whose world page left the block when it scrolled, and the entries of discarded blocks, release their atlas page.
     const uint entry = GConstants.m_pageTable.Load(index);
-    const uint level = index / kSunShadowLevelPageCount;
+    const uint block = index / kSunShadowLevelPageCount;
     const uint slotIndex = index % kSunShadowLevelPageCount;
     const uint2 slot = uint2(slotIndex % kSunShadowLevelPagesPerAxis, slotIndex / kSunShadowLevelPagesPerAxis);
-    const SunShadowScroll scroll = GConstants.m_scroll.Load(level);
+    const SunShadowScroll scroll = GConstants.m_scroll.Load(block);
     const bool isMoved = any(GetEntryWorldPage(slot, scroll.m_previousOrigin) != GetEntryWorldPage(slot, scroll.m_currentOrigin));
-    if (isMoved)
+    if (isMoved || scroll.m_isReset != 0)
     {
         if ((entry & kSunShadowPageAllocated) != 0)
             GConstants.m_owners.Store(entry & kSunShadowPhysicalPageMask, kSunShadowNoOwner);
@@ -45,5 +45,6 @@ void main(uint3 thread : SV_DispatchThreadID)
         return;
     }
 
-    GConstants.m_pageTable.Store(index, entry & ~(kSunShadowPageRequested | kSunShadowPageDirty));
+    const uint clearedFlags = kSunShadowPageRequested | (scroll.m_keepsDirty != 0 ? 0 : kSunShadowPageDirty);
+    GConstants.m_pageTable.Store(index, entry & ~clearedFlags);
 }

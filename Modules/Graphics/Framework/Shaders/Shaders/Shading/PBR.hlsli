@@ -22,14 +22,15 @@ namespace Shading
     }
 
 
-    //! sunVisibility scales the directional light, e.g. by its shadow.
+    //! sunVisibility scales the directional light, e.g. by its shadow; shadows holds the shadow maps of local lights.
     float4 ComputeShading(const MaterialEvaluation material, const float3 worldPosition, const float3 cameraPosition,
-                          const GlobalLightingData lighting, const LocalLightingBinding localLighting, const float2 pixel,
-                          const float sunVisibility = 1.0f)
+                          const GlobalLightingData lighting, const LocalLightingBinding localLighting,
+                          const SunShadowBinding shadows, const float2 pixel, const float sunVisibility = 1.0f)
     {
         const Surface surface = material.m_surface;
         const float3 viewDirection = normalize(cameraPosition - worldPosition);
-        const float3 localLuminance = ComputeLocalLighting(localLighting, surface, worldPosition, cameraPosition, pixel);
+        const float3 localLuminance =
+            ComputeLocalLighting(localLighting, shadows, surface, worldPosition, cameraPosition, pixel);
         if (lighting.m_directionIlluminance.w <= 0)
             return float4(localLuminance + material.m_emissive, 1);
 

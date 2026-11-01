@@ -34,6 +34,7 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
                                                  view.m_cameraPosition.xyz,
                                                  lighting,
                                                  GConstants.m_localLighting,
+                                                 GConstants.m_sunShadow,
                                                  float2(pixel) + 0.5f,
                                                  sunVisibility)
                              .rgb;

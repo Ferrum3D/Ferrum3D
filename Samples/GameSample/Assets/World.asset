@@ -4265,7 +4265,8 @@
                                                                 "y": "9a99193e",
                                                                 "z": "cdcc4c3d"
                                                             },
-                                                            "m_temperature": "00007a45"
+                                                            "m_temperature": "00007a45",
+                                                            "m_castsShadows": true
                                                         }
                                                     }
                                                 }
@@ -4308,7 +4309,8 @@
                                                                 "y": "3333b33e",
                                                                 "z": "0000803f"
                                                             },
-                                                            "m_temperature": "00007a45"
+                                                            "m_temperature": "00007a45",
+                                                            "m_castsShadows": true
                                                         }
                                                     }
                                                 }
@@ -4353,7 +4355,8 @@
                                                                 "y": "cdcc4c3f",
                                                                 "z": "cdcccc3e"
                                                             },
-                                                            "m_temperature": "00007a45"
+                                                            "m_temperature": "00007a45",
+                                                            "m_castsShadows": true
                                                         }
                                                     }
                                                 }

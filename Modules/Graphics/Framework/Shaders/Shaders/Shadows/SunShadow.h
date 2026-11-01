@@ -1,5 +1,6 @@
 #pragma once
 #include <Shaders/Base/Base.h>
+#include <Shaders/Lighting/LocalLighting.h>
 #include <Shaders/Scene/ViewData.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
@@ -32,7 +33,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     FE_CONSTEXPR uint32_t kSunShadowEvictableCounter = 3;
     FE_CONSTEXPR uint32_t kSunShadowFreeTakenCounter = 4;
     FE_CONSTEXPR uint32_t kSunShadowEvictableTakenCounter = 5;
-    FE_CONSTEXPR uint32_t kSunShadowCounterCount = 8;
 
     //! The page mask of a level covers each page with 2x2 texels, so the first mip of its pyramid has one texel per page.
     FE_CONSTEXPR uint32_t kSunShadowMaskTexelsPerPage = 2;
@@ -41,9 +41,28 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     FE_CONSTEXPR uint32_t kSunShadowThreadCount = 256;
     FE_CONSTEXPR uint32_t kSunShadowTileSize = 8;
 
+    //! Local light shadow maps share the page table and the atlas with the clip levels. Their blocks follow the clip levels:
+    //! each map has kLocalShadowMipCount mips of kSunShadowVirtualSize >> mip texels, and each mip takes one block of
+    //! kSunShadowLevelPageCount entries, of which it uses the first (kSunShadowLevelPagesPerAxis >> mip) pages per axis.
+    FE_CONSTEXPR uint32_t kLocalShadowMaxMapCount = 16;
+    FE_CONSTEXPR uint32_t kLocalShadowMipCount = 4;
+    FE_CONSTEXPR uint32_t kLocalShadowPointFaceCount = 6;
+    FE_CONSTEXPR uint32_t kSunShadowMaxBlockCount = kSunShadowMaxLevelCount + kLocalShadowMaxMapCount * kLocalShadowMipCount;
+    //! Per light slot: the first map of a shadowed light, with this flag for point lights, whose six faces follow it.
+    FE_CONSTEXPR uint32_t kLocalShadowPointFlag = 1u << 31;
+    FE_CONSTEXPR uint32_t kLocalShadowNoMap = 0xffffffffu;
+
+    //! Per block, the requested pages and the dirty pages after allocation. They are read back to skip the views of blocks
+    //! that have nothing to draw.
+    FE_CONSTEXPR uint32_t kSunShadowBlockRequestCounter = 8;
+    FE_CONSTEXPR uint32_t kSunShadowBlockDirtyCounter = kSunShadowBlockRequestCounter + kSunShadowMaxBlockCount;
+    FE_CONSTEXPR uint32_t kSunShadowCounterCount = kSunShadowBlockDirtyCounter + kSunShadowMaxBlockCount;
+
     FE_CONSTEXPR uint32_t kSunShadowDebugLevel = 0;
     FE_CONSTEXPR uint32_t kSunShadowDebugPage = 1;
     FE_CONSTEXPR uint32_t kSunShadowDebugFactor = 2;
+    //! The lowest visibility of the shadowed local lights that reach each pixel; blue where none does.
+    FE_CONSTEXPR uint32_t kSunShadowDebugLocalFactor = 3;
 
 
     struct SunShadowLevel final
@@ -70,11 +89,36 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
-    //! How each level moved since the previous frame, in whole pages.
+    //! How each block of the page table moved since the previous frame, in whole pages, and whether its pages are discarded.
     struct SunShadowScroll final
     {
         int2 m_previousOrigin;
         int2 m_currentOrigin;
+        uint32_t m_isReset;
+        //! The static casters of the block were not drawn in the previous frame, so its dirty pages stay dirty.
+        uint32_t m_keepsDirty;
+    };
+
+
+    //! The projection of one block of the page table, for invalidating the pages that changed casters cover.
+    struct SunShadowBlock final
+    {
+        float4x4 m_viewProjection;
+        int2 m_pageOrigin;
+        //! Zero for blocks that no level or map uses this frame.
+        uint32_t m_pagesPerAxis;
+        uint32_t m_isPerspective;
+    };
+
+
+    //! One perspective shadow map of a local light: a spot light or a cube face of a point light.
+    struct LocalShadowMapData final
+    {
+        float4x4 m_viewProjection;
+        //! xyz: light position; w: world size of a texel of mip 0 per unit of distance along m_forward.
+        float4 m_positionTexelScale;
+        float3 m_forward;
+        uint32_t m_firstBlock;
     };
 
 
@@ -84,6 +128,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         StructuredBufferDescriptor<SunShadowData> m_data;
         StructuredBufferDescriptor<uint32_t> m_pageTable;
         Texture2DDescriptor<uint32_t> m_atlas;
+        StructuredBufferDescriptor<LocalShadowMapData> m_localMaps;
+        //! Indexed by light slot, see kLocalShadowPointFlag.
+        StructuredBufferDescriptor<uint32_t> m_localLightMaps;
 
         FE_RTTI_Reflect("9986FA74-4758-47DA-AB81-3A6953060564");
     };
@@ -112,10 +159,10 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
-    //! Frees the pages of every level that overlap world bounds where static casters changed.
+    //! Frees the pages of every block that overlap world bounds where static casters changed.
     struct SunShadowInvalidateConstants final
     {
-        StructuredBufferDescriptor<SunShadowData> m_data;
+        StructuredBufferDescriptor<SunShadowBlock> m_blocks;
         //! Pairs of minimum and maximum corners.
         StructuredBufferDescriptor<float4> m_regions;
         RWStructuredBufferDescriptor<uint32_t> m_pageTable;
@@ -140,6 +187,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         StructuredBufferDescriptor<ViewData> m_view;
         Texture2DDescriptor<float> m_depth;
         RWStructuredBufferDescriptor<uint32_t> m_pageTable;
+        LocalLightingBinding m_localLighting;
+        StructuredBufferDescriptor<LocalShadowMapData> m_localMaps;
+        StructuredBufferDescriptor<uint32_t> m_localLightMaps;
         uint2 m_resolution;
 
         FE_RTTI_Reflect("E507BE80-30F5-4F93-9007-4765C56FEFEC");
@@ -250,6 +300,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_level;
         uint32_t m_requiredFlags;
         int2 m_pageOrigin;
+        uint32_t m_pagesPerAxis;
 
         FE_RTTI_Reflect("DA1D75B4-3D68-491F-B2F5-4F3ABDD108D3");
     };
@@ -292,6 +343,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     {
         StructuredBufferDescriptor<SunShadowData> m_data;
         RWStructuredBufferDescriptor<uint32_t> m_pageTable;
+        LocalLightingBinding m_localLighting;
+        StructuredBufferDescriptor<LocalShadowMapData> m_localMaps;
+        StructuredBufferDescriptor<uint32_t> m_localLightMaps;
     };
 
 
@@ -310,6 +364,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     struct SunShadowDebugConstants final
     {
         SunShadowBinding m_shadow;
+        LocalLightingBinding m_localLighting;
         StructuredBufferDescriptor<ViewData> m_view;
         Texture2DDescriptor<float> m_depth;
         Texture2DDescriptor<uint32_t> m_g1;

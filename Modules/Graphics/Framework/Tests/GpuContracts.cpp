@@ -20,6 +20,7 @@
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
 #include <Graphics/Features/Lighting/LocalLightingSceneModule.h>
+#include <Graphics/Features/Shadows/LocalShadows.h>
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/VisibilityPass.h>
 #include <Graphics/Renderer.h>
@@ -193,6 +194,81 @@ namespace
         EXPECT_EQ(lightsModule.GetLightSlotCount(), 0u);
         graph.Reset();
         uploader.Shutdown();
+    }
+
+
+    uint32_t CountMapsOf(const LocalShadows::MapAllocation& allocation, const LightHandle light)
+    {
+        uint32_t count = 0;
+        for (const LocalShadows::MapSetup& map : allocation.m_maps)
+            count += map.m_isUsed && map.m_light == light ? 1 : 0;
+
+        return count;
+    }
+
+
+    void CheckLocalShadowSelection(Core::Device* device, Core::ResourcePool* pool)
+    {
+        DB::Database database(device, pool);
+        LocalLightingSceneModule lights(nullptr, &database);
+
+        // The camera looks along +Z from the origin.
+        LocalShadows::CameraDesc camera;
+        camera.m_frustum = Frustum(Matrix4x4::Projection(1.5f, 1.0f, 0.1f, 100.0f));
+        camera.m_position = Vector3::kZero;
+
+        const Vector3 down(0, -1, 0);
+        const LightHandle nearPoint = lights.CreateLight(PackLocalLightData(Vector3(0, 0, 5), 2, Vector3(1), 100));
+        const LightHandle farSpot =
+            lights.CreateLight(PackLocalLightData(Vector3(0, 0, 40), 4, Vector3(1), 100, down, 0.3f, 0.5f));
+        const LightHandle hiddenPoint = lights.CreateLight(PackLocalLightData(Vector3(1000, 0, 0), 2, Vector3(1), 100));
+        const LightHandle unshadowedSpot =
+            lights.CreateLight(PackLocalLightData(Vector3(0, 0, 10), 4, Vector3(1), 100, down, 0.3f, 0.5f));
+        for (const LightHandle light : { nearPoint, farSpot, hiddenPoint })
+            lights.SetLightCastsShadows(light, true);
+
+        // The point light covers more of the screen, so it takes the first six maps; lights out of view or without shadows
+        // take none, and every new map discards its pages.
+        LocalShadows::MapAllocation allocation;
+        EXPECT_EQ(LocalShadows::SelectMaps(lights, camera, allocation), 0x7Fu);
+        EXPECT_EQ(CountMapsOf(allocation, nearPoint), kLocalShadowPointFaceCount);
+        EXPECT_EQ(allocation.m_maps[6].m_light, farSpot);
+        EXPECT_EQ(CountMapsOf(allocation, hiddenPoint), 0u);
+        EXPECT_EQ(CountMapsOf(allocation, unshadowedSpot), 0u);
+        for (uint32_t face = 0; face < kLocalShadowPointFaceCount; ++face)
+            EXPECT_EQ(allocation.m_maps[face].m_face, face);
+
+        // Unchanged lights keep their maps and pages; a moved light discards only the pages of its map.
+        EXPECT_EQ(LocalShadows::SelectMaps(lights, camera, allocation), 0u);
+        lights.UpdateLight(farSpot, PackLocalLightData(Vector3(0, 1, 40), 4, Vector3(1), 100, down, 0.3f, 0.5f));
+        EXPECT_EQ(LocalShadows::SelectMaps(lights, camera, allocation), 1u << 6);
+        EXPECT_EQ(allocation.m_maps[6].m_light, farSpot);
+
+        // A light that stops casting shadows releases its maps; the others keep theirs.
+        lights.SetLightCastsShadows(nearPoint, false);
+        EXPECT_EQ(LocalShadows::SelectMaps(lights, camera, allocation), 0x3Fu);
+        EXPECT_EQ(CountMapsOf(allocation, nearPoint), 0u);
+        EXPECT_EQ(allocation.m_maps[6].m_light, farSpot);
+
+        // Three point lights exceed the budget together with the spot light; the one covering the least is left out.
+        festd::fixed_vector<LightHandle, 3> points;
+        for (uint32_t index = 0; index < 3; ++index)
+        {
+            const float distance = 6.0f + 4.0f * index;
+            points.push_back(lights.CreateLight(PackLocalLightData(Vector3(0, 0, distance), 2, Vector3(1), 100)));
+            lights.SetLightCastsShadows(points.back(), true);
+        }
+
+        LocalShadows::SelectMaps(lights, camera, allocation);
+        EXPECT_EQ(CountMapsOf(allocation, points[0]), kLocalShadowPointFaceCount);
+        EXPECT_EQ(CountMapsOf(allocation, points[1]), kLocalShadowPointFaceCount);
+        EXPECT_EQ(CountMapsOf(allocation, points[2]), 0u);
+        EXPECT_EQ(CountMapsOf(allocation, farSpot), 1u);
+
+        for (const LightHandle light : { nearPoint, farSpot, hiddenPoint, unshadowedSpot })
+            lights.DestroyLight(light);
+        for (const LightHandle light : points)
+            lights.DestroyLight(light);
     }
 
 
@@ -744,6 +820,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_NEAR(std::bit_cast<float>(results[3]), 0.1f / 0.525f, 1e-6f);
             reconstructionReadback->Unmap();
             CheckLightClusterMasks(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+            CheckLocalShadowSelection(device.Get(), pool.Get());
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get(), 64);
             SurfaceProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());

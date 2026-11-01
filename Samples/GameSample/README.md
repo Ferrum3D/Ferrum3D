@@ -121,14 +121,17 @@ color temperature in kelvin (1000–40000 K). Temperature integrates a blackbody s
 functions as the sky and normalizes luminance. Point lumen values divide by 4 pi; spot lumen values integrate the smooth
 inner/outer cone profile. Spot angles are half-angles in radians and local +Z is the emission axis. Transform scale does
 not change light range. Illumination uses inverse-square falloff with a smooth finite-range window and the existing
-pre-exposure. Local light contributions use no shadow maps; sun shadows still apply to opaque directional lighting.
+pre-exposure. All three lights set `m_castsShadows`, which opts a light into virtual shadow maps: a spot light takes one
+perspective map and a point light six cube faces, each with four mips, in the page table and atlas of the sun shadows.
+A camera view shadows at most 16 maps, chosen by screen coverage. The `local-shadow` debug mode shows their visibility.
 
 Materials with a `ForwardTransparency` technique select `DrawTags::Transparent`; opaque meshes select `DrawTags::Visibility`.
-Transparent objects use independent frustum/LOD classification and do not write opaque occlusion history or depth.
+Transparent objects are culled separately against the opaque depth pyramid and do not write opaque occlusion history or
+depth. Their `ShadowPageMark` technique requests the shadow pages they sample, so they receive sun and local shadows.
 `TransparentPBR.mat.luau` demonstrates independent target blends, a constant base color/opacity and roughness/metallic PBR.
 Six bunnies use this material. The world also contains two colored point lights and one spotlight.
 
 The forward pass accumulates weighted premultiplied lighting and multiplicative revealage in separate targets, then
 composites onto HDR color. This weighted blended order-independent transparency avoids object sorting and handles
-intersecting meshes, but approximates layered alpha compositing; refraction, transmission and transparent shadows are
-not implemented. Transparent objects are excluded from the opaque visibility/GBuffer debug views.
+intersecting meshes, but approximates layered alpha compositing; refraction, transmission and shadows cast by
+transparent objects are not implemented. Transparent objects are excluded from the opaque visibility/GBuffer debug views.

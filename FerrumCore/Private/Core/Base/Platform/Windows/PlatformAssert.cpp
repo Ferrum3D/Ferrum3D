@@ -2,6 +2,8 @@
 #include <Core/Base/PlatformInclude.h>
 #include <Core/Strings/Encoding.h>
 #include <Core/Strings/Format.h>
+#include <crtdbg.h>
+#include <stdlib.h>
 
 namespace FE
 {
@@ -64,6 +66,27 @@ namespace FE
             char16_t m_buffer[1024];
             uint32_t m_writePos = 0;
         };
+
+
+        //! Failed assertions break into an attached debugger. Without one, they and other crashes terminate the process
+        //! instead of opening a dialog that waits for the user, and CRT reports go to stderr and the debugger output.
+        struct ErrorDialogSuppressor final
+        {
+            ErrorDialogSuppressor()
+            {
+                SetErrorMode(GetErrorMode() | SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+                _set_error_mode(_OUT_TO_STDERR);
+                _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+                for ([[maybe_unused]] const int reportType : { _CRT_WARN, _CRT_ERROR, _CRT_ASSERT })
+                {
+                    _CrtSetReportMode(reportType, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+                    _CrtSetReportFile(reportType, _CRTDBG_FILE_STDERR);
+                }
+            }
+        };
+
+        // Constructed before main, so that assertions during static initialization do not open dialogs either.
+        const ErrorDialogSuppressor GErrorDialogSuppressor;
     } // namespace
 
 
@@ -78,5 +101,23 @@ namespace FE
         writer.WriteLn();
 
         OutputDebugStringW(reinterpret_cast<LPWSTR>(writer.m_buffer));
+
+        // Without dialogs, stderr keeps the report visible in console runs and their logs.
+        const HANDLE errorOutput = GetStdHandle(STD_ERROR_HANDLE);
+        if (errorOutput == nullptr || errorOutput == INVALID_HANDLE_VALUE)
+            return;
+
+        const auto writeError = [errorOutput](const char* text, const uint32_t length) {
+            DWORD written;
+            WriteFile(errorOutput, text, length, &written, nullptr);
+        };
+
+        const Fmt::IntFormatter<uint32_t> line{ sourceLocation.m_lineNumber };
+        writeError(sourceLocation.m_fileName, static_cast<uint32_t>(__builtin_strlen(sourceLocation.m_fileName)));
+        writeError("(", 1);
+        writeError(line.m_buffer, line.m_size);
+        writeError("): ", 3);
+        writeError(message, messageSize);
+        writeError("\n", 1);
     }
 } // namespace FE

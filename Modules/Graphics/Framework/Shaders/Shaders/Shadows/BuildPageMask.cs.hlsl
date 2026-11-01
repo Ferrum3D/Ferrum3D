@@ -6,7 +6,7 @@ FE_NUM_THREADS(kSunShadowTileSize, kSunShadowTileSize, 1)
 void main(uint3 thread : SV_DispatchThreadID)
 {
     const uint2 texel = thread.xy;
-    if (any(texel >= kSunShadowMaskSize))
+    if (any(texel >= GConstants.m_pagesPerAxis * kSunShadowMaskTexelsPerPage))
         return;
 
     const uint2 virtualTexel = texel / kSunShadowMaskTexelsPerPage * kSunShadowPageSize;

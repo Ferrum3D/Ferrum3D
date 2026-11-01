@@ -3,6 +3,7 @@
 #include <Core/Memory/Memory.h>
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
+#include <Graphics/Features/Shadows/LocalShadows.h>
 #include <Graphics/Passes/Tools/DepthPyramid.h>
 #include <Graphics/Scene/Culling.h>
 #include <Graphics/Scene/View.h>
@@ -69,7 +70,8 @@ namespace FE::Graphics::SunShadow
     constexpr uint32_t kLayerCount = 2;
 
 
-    //! Publishes the sun shadows of a camera view and owns the child views that render its clip levels.
+    //! Publishes the shadows of a camera view: the clip levels of the sun and the maps of shadow casting local lights, which
+    //! share one page table and atlas. Owns the child views that render the levels and the mips of the maps.
     struct ViewModule final : public ViewModuleBase
     {
         FE_RTTI("8AE8910B-A0DF-415C-A6E3-2CC1901D5A3B");
@@ -97,16 +99,26 @@ namespace FE::Graphics::SunShadow
         //! Culling counters of a layer summed over the clip levels; invalid until every level has read back its counters.
         [[nodiscard]] Culling::Stats GetCullingStats(Layer layer) const;
 
+        //! The child view of one mip of a local map, created on first use.
+        [[nodiscard]] View* GetLocalView(uint32_t mapIndex, uint32_t mip, Layer layer);
+
         [[nodiscard]] PageCache& GetPageCache() const
         {
             return *m_pageCache;
+        }
+
+        [[nodiscard]] LocalShadows::MapAllocation& GetLocalMaps()
+        {
+            return m_localMaps;
         }
 
     private:
         void DoRelease() override;
 
         festd::fixed_vector<Rc<View>, kSunShadowMaxLevelCount> m_levelViews[kLayerCount];
+        festd::array<Rc<View>, kLocalShadowMaxMapCount * kLocalShadowMipCount> m_localViews[kLayerCount];
         festd::unique_ptr<PageCache> m_pageCache;
+        LocalShadows::MapAllocation m_localMaps;
         uint32_t m_debugMode = kInvalidIndex;
     };
 
@@ -118,10 +130,14 @@ namespace FE::Graphics::SunShadow
         Rc<Core::Buffer> m_data;
         Rc<Core::Buffer> m_pageTable;
         Rc<Core::Texture> m_atlas;
+        //! Null when no local light casts shadows.
+        Rc<Core::Buffer> m_localMaps;
+        Rc<Core::Buffer> m_localLightMaps;
     };
 
 
-    //! Mark, allocate and render the shadow pages the camera view needs; requires its main depth.
+    //! Mark, allocate and render the shadow pages of the sun and of local lights that the camera view needs; requires its
+    //! main depth.
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard);
 
     //! Replace the view color with the selected sun shadow visualization.

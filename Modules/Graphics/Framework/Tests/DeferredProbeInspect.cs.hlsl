@@ -95,11 +95,17 @@ void main(uint3 dispatch : SV_DispatchThreadID)
             const float4 world = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
             const float3 worldPosition = world.xyz / world.w;
 #endif
+            LocalLightingBinding noLocalLights = (LocalLightingBinding)0;
+            noLocalLights.m_clusters.m_index = kInvalidIndex;
+            SunShadowBinding noShadows = (SunShadowBinding)0;
+            noShadows.m_data.m_index = kInvalidIndex;
+            noShadows.m_localLightMaps.m_index = kInvalidIndex;
             expected = Shading::ComputeShading(material,
                                                worldPosition,
                                                view.m_cameraPosition.xyz,
                                                lighting,
-                                               (LocalLightingBinding)0,
+                                               noLocalLights,
+                                               noShadows,
                                                float2(pixel) + 0.5f)
                            .rgb;
         }

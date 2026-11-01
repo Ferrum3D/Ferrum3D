@@ -164,7 +164,9 @@ namespace FE::Graphics::SunShadowProbe
                 read->m_constants.m_output = graph.GetUAV(output);
                 read->m_constants.m_size = pyramid.m_size;
                 read->m_constants.m_mode = kReadMode;
-                read->m_constants.m_outputOffset = levelIndex * kSunShadowLevelPageCount;
+                // Static pyramids fill the first page count of texels and dynamic ones the second; local map blocks stay unused.
+                const uint32_t level = isStatic ? levelIndex : levelIndex - levelCount;
+                read->m_constants.m_outputOffset = (isStatic ? 0 : frame.m_pageCount) + level * kSunShadowLevelPageCount;
                 graph.AddDispatchPass("ReadSunShadowPagePyramid", read, Math::CeilDivide(pyramid.m_size, kThreadGroupSize));
             }
         }
@@ -204,7 +206,7 @@ namespace FE::Graphics::SunShadowProbe
             inputs.m_staticChanges = staticChanges;
             SunShadow::PageFrame frame;
             SunShadow::AddRequestPasses(graph, *context.m_uploader, inputs, context.m_cache, frame);
-            SunShadow::AddAllocatePasses(graph, inputs, context.m_cache, frame);
+            SunShadow::AddAllocatePasses(graph, context.m_cache, frame);
 
             const uint32_t pageCount = frame.m_pageCount;
             Rc<Core::Buffer> pyramidTexels =

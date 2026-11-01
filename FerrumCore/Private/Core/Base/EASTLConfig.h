@@ -10,6 +10,12 @@ namespace FE::Memory
     void DefaultFree(void* ptr);
 } // namespace FE::Memory
 
+namespace FE::Internal
+{
+    //! Reports a failed EASTL assertion like FE_Assert does and breaks into the debugger.
+    void ReportEASTLAssertion(const char* message, const char* fileName, int lineNumber);
+} // namespace FE::Internal
+
 namespace FE::Memory::Internal
 {
     struct EASTLDefaultAllocator
@@ -65,6 +71,8 @@ namespace FE::Memory::Internal
 #define EASTL_SIZE_T_32BIT 1
 #define EASTLAllocatorType ::FE::Memory::Internal::EASTLDefaultAllocator
 #define EASTLAllocatorDefault ::FE::Memory::Internal::GetDefaultEASTLAllocator
-#define EASTL_ASSERT assert
-#define EASTL_ASSERT_MSG(expr, msg) assert((expr) && (msg))
-#define EASTL_FAIL_MSG(msg) assert(0 && (msg))
+// EASTL uses these in expressions as well as in statements.
+#define EASTL_ASSERT(expr)                                                                                                       \
+    ((expr) ? (void)0 : ::FE::Internal::ReportEASTLAssertion("Assertion Failed: " #expr, __FILE__, __LINE__))
+#define EASTL_ASSERT_MSG(expr, msg) ((expr) ? (void)0 : ::FE::Internal::ReportEASTLAssertion(msg, __FILE__, __LINE__))
+#define EASTL_FAIL_MSG(msg) ::FE::Internal::ReportEASTLAssertion(msg, __FILE__, __LINE__)
