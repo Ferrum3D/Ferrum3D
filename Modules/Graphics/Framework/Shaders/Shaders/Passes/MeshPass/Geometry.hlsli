@@ -38,7 +38,8 @@ struct PixelAttributes
     float3 m_normal : NORMAL;
     float4 m_tangent : TANGENT;
     float2 m_uv : TEXCOORD0;
-    nointerpolation uint m_instanceIndex : TEXCOORD1;
+    //! Material instance row of the drawn group, so pixel shaders need not resolve the instance.
+    nointerpolation uint m_materialRow : TEXCOORD1;
 };
 
 
@@ -102,8 +103,8 @@ MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanc
 }
 
 
-PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t vertexIndex, const uint32_t instanceIndex,
-                                    const float4x4 viewProjection, const bool needUV = true, const bool needTangent = true)
+PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t vertexIndex, const float4x4 viewProjection,
+                                    const bool needUV = true, const bool needTangent = true)
 {
     const uint offset = vertexIndex * sizeof(VertexInput);
     const float3 position = drawData.m_geometry.Read<float3>(offset);
@@ -125,7 +126,7 @@ PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t 
     output.m_tangent = float4(mul(tangent.xyz * 2.0f - 1.0f, normalMatrix), (tangent.w > 0.5f ? -1.0f : 1.0f) * handedness);
     const uint packedUV = needUV ? drawData.m_geometry.Read<uint>(offset + 12) : 0;
     output.m_uv = needUV ? Math::Pack::RG16FloatToRG32Float(packedUV) : 0;
-    output.m_instanceIndex = instanceIndex;
+    output.m_materialRow = drawData.m_group.m_materialInstance.Get().m_rowIndex;
     return output;
 }
 

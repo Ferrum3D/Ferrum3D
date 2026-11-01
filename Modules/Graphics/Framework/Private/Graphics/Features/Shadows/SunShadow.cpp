@@ -4,7 +4,9 @@
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Features/Shadows/SunShadowPages.h>
+#include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/DrawTags.h>
+#include <Graphics/Passes/ForwardTransparencyPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/VisibilityPass.h>
@@ -159,8 +161,8 @@ namespace FE::Graphics::SunShadow
     } // namespace
 
 
-    void AddPagePasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const PageInputs& inputs, PageCache& cache,
-                       PageFrame& frame)
+    void AddRequestPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const PageInputs& inputs, PageCache& cache,
+                          PageFrame& frame)
     {
         FE_PROFILER_ZONE();
         FE_Assert(inputs.m_levels.size() == inputs.m_settings.m_levelCount);
@@ -221,6 +223,12 @@ namespace FE::Graphics::SunShadow
         mark->m_constants.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
         mark->m_constants.m_resolution = resolution;
         graph.AddDispatchPass("MarkPages", mark, Math::CeilDivide(resolution, kSunShadowTileSize));
+    }
+
+
+    void AddAllocatePasses(Core::FrameGraph& graph, const PageInputs& inputs, const PageCache& cache, PageFrame& frame)
+    {
+        FE_PROFILER_ZONE();
 
         auto* collect = graph.AllocatePassData<SunShadowCollectPassDesc>();
         collect->m_pipeline = CollectPagesPipeline::GetPipeline();
@@ -422,6 +430,47 @@ namespace FE::Graphics::SunShadow
             Renderer::Get().AddViewPasses(graph, { levelView, Vector2UInt(kSunShadowVirtualSize, kSunShadowVirtualSize) });
             atlas.m_inputs = {};
         }
+
+
+        // Transparent surfaces are absent from the camera depth, so they rasterize their own requests in front of it.
+        void AddTransparentRequestPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Core::Buffer* data,
+                                         Core::Buffer* pageTable)
+        {
+            if (!blackboard.Contains<ForwardTransparency::ViewModule*>())
+                return;
+
+            const RendererViewData& view = blackboard.Get<RendererViewData>();
+            SunShadowMarkRasterData markData{};
+            markData.m_data = graph.GetSRV(data);
+            markData.m_pageTable = graph.GetUAV(pageTable);
+            Rc<Core::Buffer> markBuffer =
+                Core::Buffer::CreateStructured<SunShadowMarkRasterData>(graph.GetDevice(), "SunShadowMarkRaster", 1);
+            graph.AddBufferDependency(markBuffer.Get(), data);
+            FE_Verify(view.m_renderQueueUploader->Upload(graph, markBuffer.Get(), markData));
+
+            auto* base = graph.AllocatePassData<SunShadowMarkRasterPassDesc>();
+            base->m_depthTarget = Core::TextureView::Create(view.m_mainDepthTarget);
+            base->m_viewport = view.m_viewportRect;
+            base->m_pageTable =
+                Core::PassBufferAccess(Core::BufferView(pageTable),
+                                       Core::BarrierSyncFlags::kPixelShading,
+                                       Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite);
+
+            SceneRenderPass pass;
+            pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
+            pass.m_passDescToken = graph.AddBasePassDesc(base);
+            pass.m_drawTag = DrawTags::Transparent;
+            // Only materials with a ShadowPageMark technique receive sun shadows in the forward pass.
+            pass.m_techniqueRole = Env::Name("ShadowPageMark");
+            pass.m_independentCulling = true;
+            pass.m_passData = markBuffer.Get();
+            if (const auto* pyramids = blackboard.TryGet<DepthPyramidPass::Output>())
+                pass.m_depthPyramid = &pyramids->m_farthest;
+
+            view.m_scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
+                module.AddRenderPasses(graph, blackboard, *view.m_renderQueueUploader, pass);
+            });
+        }
     } // namespace
 
 
@@ -477,7 +526,9 @@ namespace FE::Graphics::SunShadow
 
         PageCache& cache = module.GetPageCache();
         PageFrame frame;
-        AddPagePasses(graph, *view.m_renderQueueUploader, inputs, cache, frame);
+        AddRequestPasses(graph, *view.m_renderQueueUploader, inputs, cache, frame);
+        AddTransparentRequestPasses(graph, blackboard, dataBuffer.Get(), cache.m_pageTable.Get());
+        AddAllocatePasses(graph, inputs, cache, frame);
 
         // Each clip level renders as child views between the page allocation and the passes that sample the atlas: static
         // casters into the dirty pages of the static atlas, then dynamic casters into this frame's copy of it.
@@ -517,6 +568,11 @@ namespace FE::Graphics::SunShadow
         binding.m_data = graph.GetSRV(dataBuffer.Get());
         binding.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
         binding.m_atlas = graph.GetSRV(frame.m_atlas.Get());
+
+        Output& output = blackboard.Add<Output>();
+        output.m_data = std::move(dataBuffer);
+        output.m_pageTable = cache.m_pageTable;
+        output.m_atlas = std::move(frame.m_atlas);
     }
 
 

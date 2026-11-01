@@ -12,11 +12,43 @@ float3 ClusterCorner(LightClusterData data, uint2 tile, float z)
 }
 
 
-FE_NUM_THREADS(32, 1, 1)
-void main(uint3 cluster : SV_GroupID, uint lane : SV_GroupIndex)
+bool IntersectsSphere(const float4 positionRange, const float3 lower, const float3 upper)
+{
+    const float3 delta = positionRange.xyz - clamp(positionRange.xyz, lower, upper);
+    return positionRange.w > 0 && dot(delta, delta) <= positionRange.w * positionRange.w;
+}
+
+
+// Conservative cone / cluster bounding sphere test, including the apex and rear plane.
+bool IntersectsCone(const DecodedLocalLight light, const float3 center, const float radius)
+{
+    if (light.m_directionOuterCos.w <= -1)
+        return true;
+
+    const float3 v = center - light.m_positionRange.xyz;
+    const float axial = dot(v, light.m_directionOuterCos.xyz);
+    const float radial = sqrt(max(0.0f, dot(v, v) - axial * axial));
+    const float cosine = light.m_directionOuterCos.w;
+    const float sine = sqrt(saturate(1 - cosine * cosine));
+    return axial >= -radius && cosine * radial - sine * axial <= radius;
+}
+
+
+// One thread per cluster. All threads walk the lights in the same order, so the light addresses are uniform across the wave.
+// Each light is read in two halves: the sphere test needs only the first, and the rest is loaded and decoded only when the
+// sphere touches a cluster of the wave. The branch is uniform, so the loads stay scalar.
+FE_NUM_THREADS(kLightClusterThreadCount, 1, 1)
+void main(uint3 thread : SV_DispatchThreadID)
 {
     const LocalLightingBinding lighting = GConstants.m_lighting;
     const LightClusterData data = lighting.m_clusters.Load(0);
+    const uint clusterIndex = thread.x;
+    if (clusterIndex >= data.m_tiles.x * data.m_tiles.y * kLightClusterSlices)
+        return;
+
+    const uint tilesPerSlice = data.m_tiles.x * data.m_tiles.y;
+    const uint3 cluster =
+        uint3(clusterIndex % data.m_tiles.x, (clusterIndex % tilesPerSlice) / data.m_tiles.x, clusterIndex / tilesPerSlice);
     const float z0 = data.m_depth.x * exp2(cluster.z / data.m_depth.z);
     const float z1 = data.m_depth.x * exp2((cluster.z + 1) / data.m_depth.z);
     float3 lower = (float3)1e30;
@@ -30,35 +62,21 @@ void main(uint3 cluster : SV_GroupID, uint lane : SV_GroupIndex)
 
     const float3 center = (lower + upper) * 0.5f;
     const float radius = length(upper - lower) * 0.5f;
-    const uint base = ((cluster.z * data.m_tiles.y + cluster.y) * data.m_tiles.x + cluster.x) * data.m_wordCount;
-    // Each lane owns a whole mask word, so there is no append limit or atomic contention.
-    for (uint word = lane; word < data.m_wordCount; word += 32)
+    const uint base = clusterIndex * data.m_wordCount;
+    for (uint word = 0; word < data.m_wordCount; ++word)
     {
         uint mask = 0;
-        for (uint bit = 0; bit < 32; ++bit)
+        const uint bitCount = min(32u, data.m_lightCount - word * 32);
+        for (uint bit = 0; bit < bitCount; ++bit)
         {
-            const uint index = word * 32 + bit;
-            if (index >= data.m_lightCount)
-                break;
-
-            const DecodedLocalLight light = LoadLocalLight(lighting, index);
-            if (light.m_positionRange.w <= 0)
+            const BufferPointer address = GetLocalLightAddress(lighting.m_lights, word * 32 + bit);
+            const float4 positionRange = LoadLocalLightPositionRange(address);
+            const bool touchesSphere = IntersectsSphere(positionRange, lower, upper);
+            if (!WaveActiveAnyTrue(touchesSphere))
                 continue;
 
-            const float3 delta = light.m_positionRange.xyz - clamp(light.m_positionRange.xyz, lower, upper);
-            bool intersects = dot(delta, delta) <= light.m_positionRange.w * light.m_positionRange.w;
-            if (intersects && light.m_directionOuterCos.w > -1)
-            {
-                // Conservative cone / cluster bounding sphere test, including the apex and rear plane.
-                const float3 v = center - light.m_positionRange.xyz;
-                const float axial = dot(v, light.m_directionOuterCos.xyz);
-                const float radial = sqrt(max(0.0f, dot(v, v) - axial * axial));
-                const float cosine = light.m_directionOuterCos.w;
-                const float sine = sqrt(saturate(1 - cosine * cosine));
-                intersects = axial >= -radius && cosine * radial - sine * axial <= radius;
-            }
-
-            if (intersects)
+            const DecodedLocalLight light = DecodeLocalLight(LoadLocalLightRemainder(address, positionRange));
+            if (touchesSphere && IntersectsCone(light, center, radius))
                 mask |= 1u << bit;
         }
 

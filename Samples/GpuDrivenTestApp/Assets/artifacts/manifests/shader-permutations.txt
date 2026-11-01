@@ -56,3 +56,5 @@ cs Shaders/Shadows/CopyPages.cs.hlsl
 cs Shaders/Shadows/CollectPages.cs.hlsl
 cs Shaders/Shadows/InvalidatePages.cs.hlsl
 cs Shaders/Shadows/UpdatePages.cs.hlsl
+cs Shaders/Lighting/ResolveTransparency.cs.hlsl
+cs Shaders/Lighting/CullLocalLights.cs.hlsl

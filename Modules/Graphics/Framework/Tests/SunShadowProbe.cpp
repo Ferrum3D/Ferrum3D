@@ -203,7 +203,8 @@ namespace FE::Graphics::SunShadowProbe
             inputs.m_levels = levels;
             inputs.m_staticChanges = staticChanges;
             SunShadow::PageFrame frame;
-            SunShadow::AddPagePasses(graph, *context.m_uploader, inputs, context.m_cache, frame);
+            SunShadow::AddRequestPasses(graph, *context.m_uploader, inputs, context.m_cache, frame);
+            SunShadow::AddAllocatePasses(graph, inputs, context.m_cache, frame);
 
             const uint32_t pageCount = frame.m_pageCount;
             Rc<Core::Buffer> pyramidTexels =

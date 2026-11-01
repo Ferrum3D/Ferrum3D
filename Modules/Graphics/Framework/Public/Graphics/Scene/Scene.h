@@ -66,11 +66,12 @@ namespace FE::Graphics
         DrawTag m_drawTag;
         Env::Name m_techniqueRole;
         SceneRenderPhase m_phase = SceneRenderPhase::kSingle;
-        //! The farthest-depth pyramid of the early phase; set for the late phase.
+        //! The farthest-depth pyramid of the early phase for the late phase, or the occluders of an independently culled pass.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Whether the pass reports its culling statistics to the view.
         bool m_reportsStats = false;
-        //! Classify independently of opaque visibility history, without writing it.
+        //! Cull only the batches with m_drawTag in a single phase, without reading or writing visibility history. Such passes of
+        //! a view share the culling result when they have the same tag and occluders.
         bool m_independentCulling = false;
         //! Read by the role's shaders through MeshViewData::m_passData.
         Core::Buffer* m_passData = nullptr;

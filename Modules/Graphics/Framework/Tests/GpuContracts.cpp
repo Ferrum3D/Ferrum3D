@@ -124,9 +124,8 @@ namespace
             pass->m_pipeline = pipeline;
             pass->m_constants.m_lighting.m_lights = lightsModule.GetLightTable()->GetDeviceAddress();
             pass->m_constants.m_lighting.m_clusters = graph->GetSRV(clusterBuffer.Get());
-            pass->m_constants.m_lighting.m_lightCount = 34;
             pass->m_constants.m_masks = graph->GetUAV(masks.Get());
-            graph->AddDispatchPass("ProbeClusterMasks", pass, Vector3UInt(1, 1, kLightClusterSlices));
+            graph->AddDispatchPass("ProbeClusterMasks", pass, 1);
             graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(masks.Get()));
             if (frame == 0)
             {

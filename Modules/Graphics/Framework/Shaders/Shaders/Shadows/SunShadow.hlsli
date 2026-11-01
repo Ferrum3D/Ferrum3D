@@ -79,6 +79,29 @@ namespace SunShadow
     }
 
 
+    void RequestPage(RWStructuredBuffer<uint> pageTable, const SunShadowData data, const uint level, const int2 texel)
+    {
+        const uint2 clamped = uint2(clamp(texel, 0, (int)kSunShadowVirtualSize - 1));
+        InterlockedOr(pageTable[GetPageIndex(level, data.m_levels[level].m_pageOrigin, clamped)], kSunShadowPageRequested);
+    }
+
+
+    //! Request the pages that sampling the position reads. Entries keep their backing, so requests only set a bit.
+    void RequestPages(RWStructuredBuffer<uint> pageTable, const SunShadowData data, const float3 worldPosition)
+    {
+        const Projection projection = Project(data, worldPosition);
+        if (!projection.m_isValid)
+            return;
+
+        // Sampling offsets the receiver by a few texels and filters a 3x3 footprint, so request the pages around it.
+        const int2 texel = int2(floor(projection.m_texel));
+        RequestPage(pageTable, data, projection.m_level, texel + int2(-3, -3));
+        RequestPage(pageTable, data, projection.m_level, texel + int2(3, -3));
+        RequestPage(pageTable, data, projection.m_level, texel + int2(-3, 3));
+        RequestPage(pageTable, data, projection.m_level, texel + int2(3, 3));
+    }
+
+
     //! Fraction of the sun visible from the position; 1 without shadow data or outside the clip levels.
     float SampleVisibility(const SunShadowBinding binding, const float3 worldPosition, const float3 normal)
     {

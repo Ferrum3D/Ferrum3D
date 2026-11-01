@@ -494,21 +494,6 @@ namespace FE::Graphics::GpuMeshWorkBuilder
     }
 
 
-    CulledMeshView CullIndependent(Core::FrameGraph& graph, Core::RingUploader& uploader, const CulledMeshView& source)
-    {
-        CulledMeshView result = source;
-        result.m_phase = MeshPass::CullPhase::kSingle;
-        result.m_visibilityCapacity = 0;
-        result.m_meshletVisibilityCapacity = 0;
-        result.m_stats = nullptr;
-        result.m_lateClassification.Reset();
-        if (result.m_dispatchCount != 0)
-            result.m_classification = CullInstances(graph, uploader, result, result.m_phase, nullptr);
-
-        return result;
-    }
-
-
     void CullLateInstances(Core::FrameGraph& graph, Core::RingUploader& uploader, const Tools::DepthPyramid::Output& depthPyramid,
                            CulledMeshView& culled)
     {

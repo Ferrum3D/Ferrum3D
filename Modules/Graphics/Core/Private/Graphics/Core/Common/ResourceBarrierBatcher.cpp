@@ -128,6 +128,27 @@ namespace FE::Graphics::Common
     }
 
 
+    bool ResourceBarrierBatcher::ExtendReadBarrier(const Core::TextureBarrierDesc& barrier)
+    {
+        for (Core::TextureBarrierDesc& existingBarrier : m_textureBarriers)
+        {
+            const bool isSameTransition =
+                existingBarrier.m_texture == barrier.m_texture && existingBarrier.m_layoutAfter == barrier.m_layoutAfter;
+            if (!isSameTransition || !Core::IsReadAccess(existingBarrier.m_accessAfter))
+                continue;
+
+            if (!existingBarrier.m_subresource.Contains(barrier.m_subresource))
+                continue;
+
+            existingBarrier.m_accessAfter |= barrier.m_accessAfter;
+            existingBarrier.m_syncAfter |= barrier.m_syncAfter;
+            return true;
+        }
+
+        return false;
+    }
+
+
     bool ResourceBarrierBatcher::AddBarrier(const Core::BufferBarrierDesc& barrier)
     {
         FE_Assert(barrier.m_queueBefore == barrier.m_queueAfter, "Ownership transfer barriers cannot be batched");

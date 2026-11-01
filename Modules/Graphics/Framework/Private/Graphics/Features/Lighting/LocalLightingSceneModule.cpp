@@ -16,6 +16,10 @@ namespace FE::Graphics
     namespace
     {
         FE_COMPUTE_PIPELINE_SET(CullLocalLightsPipeline, "Shaders/Lighting/CullLocalLights.cs.hlsl");
+
+        static_assert(sizeof(LocalLightData) == 32);
+        static_assert(offsetof(LocalLightData, m_color) == 16);
+        static_assert(offsetof(LocalLightData, m_coneAngles) == 28);
     } // namespace
 
 
@@ -185,24 +189,23 @@ namespace FE::Graphics
                              kLightClusterTileSize);
         data.m_lightCount = m_slotCount;
         data.m_wordCount = Math::CeilDivide(data.m_lightCount, 32u);
-        auto clusters = Core::Buffer::CreateStructured<LightClusterData>(graph.GetDevice(), "LightClusters", 1);
-        auto masks =
-            Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(),
-                                                     "LightClusterMasks",
-                                                     data.m_tiles.x * data.m_tiles.y * kLightClusterSlices * data.m_wordCount);
+
+        Core::Device* device = graph.GetDevice();
+        const uint32_t clusterCount = data.m_tiles.x * data.m_tiles.y * kLightClusterSlices;
+        auto clusters = Core::Buffer::CreateStructured<LightClusterData>(device, "LightClusters", 1);
+        auto masks = Core::Buffer::CreateStructured<uint32_t>(device, "LightClusterMasks", clusterCount * data.m_wordCount);
         FE_Verify(uploader.Upload(graph, clusters.Get(), data));
 
         auto& binding = blackboard.Add<LocalLightingBinding>();
         binding.m_lights = m_table->GetDeviceAddress();
         binding.m_clusters = graph.GetSRV(clusters.Get());
         binding.m_masks = graph.GetSRV(masks.Get());
-        binding.m_lightCount = data.m_lightCount;
-        auto* pass = graph.AllocatePassData<CullLocalLightsPassDesc>();
-        pass->m_pipeline = CullLocalLightsPipeline::GetPipeline();
-        pass->m_constants.m_lighting = binding;
-        pass->m_constants.m_lighting.m_masks = {};
-        pass->m_constants.m_masks = graph.GetUAV(masks.Get());
-        graph.AddDispatchPass("CullLocalLights", pass, Vector3UInt(data.m_tiles.x, data.m_tiles.y, kLightClusterSlices));
+        auto* cull = graph.AllocatePassData<CullLocalLightsPassDesc>();
+        cull->m_pipeline = CullLocalLightsPipeline::GetPipeline();
+        cull->m_constants.m_lighting = binding;
+        cull->m_constants.m_lighting.m_masks = {};
+        cull->m_constants.m_masks = graph.GetUAV(masks.Get());
+        graph.AddDispatchPass("CullLocalLights", cull, Math::CeilDivide(clusterCount, kLightClusterThreadCount));
     }
 
 

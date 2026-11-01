@@ -3,17 +3,9 @@
 #include <GameFramework/Components/TransformComponents.h>
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
 #include <GameFramework/Systems/LightSystem.h>
-#include <cmath>
 
 namespace FE::GameFramework
 {
-    bool SpotLightComponent::Validate() const
-    {
-        return LocalLightParameters::Validate() && std::isfinite(m_innerAngle) && std::isfinite(m_outerAngle) && m_innerAngle >= 0
-            && m_outerAngle > 0 && m_innerAngle <= m_outerAngle && m_outerAngle < Constants::kPI * 0.5f;
-    }
-
-
     namespace
     {
         Graphics::LocalLightData BuildLight(const Graphics::LocalLightParameters& light, const Matrix3x4& world,

@@ -5,6 +5,7 @@
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     FE_CONSTEXPR uint32_t kLightClusterTileSize = 32;
     FE_CONSTEXPR uint32_t kLightClusterSlices = 24;
+    FE_CONSTEXPR uint32_t kLightClusterThreadCount = 64;
 
     FE_CONSTEXPR float kLocalLightConeAngleScale = 65534.0f / 1.5707963267948966f;
     FE_CONSTEXPR uint32_t kLocalPointLightCone = 0xffffffffu;
@@ -20,12 +21,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_coneAngles;
     };
 
-
-#if FE_HOST
-    static_assert(sizeof(LocalLightData) == 32);
-    static_assert(offsetof(LocalLightData, m_color) == 16);
-    static_assert(offsetof(LocalLightData, m_coneAngles) == 28);
-#endif
 
     struct LightClusterData final
     {
@@ -46,7 +41,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         BufferPointer m_lights;
         StructuredBufferDescriptor<LightClusterData> m_clusters;
         StructuredBufferDescriptor<uint32_t> m_masks;
-        uint32_t m_lightCount FE_INIT(0);
         FE_RTTI_Reflect("B274D017-6BDB-4FFD-BB75-09DBF5AF6A18");
     };
 

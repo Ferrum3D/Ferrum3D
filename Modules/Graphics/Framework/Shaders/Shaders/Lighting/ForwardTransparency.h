@@ -1,11 +1,13 @@
 #pragma once
 #include <Shaders/Lighting/LocalLighting.h>
+#include <Shaders/Shadows/SunShadow.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     struct ForwardLightingData final
     {
         GlobalLightingBinding m_global;
         LocalLightingBinding m_local;
+        SunShadowBinding m_sunShadow;
     };
 
 

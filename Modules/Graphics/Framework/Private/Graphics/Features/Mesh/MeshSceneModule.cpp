@@ -174,6 +174,27 @@ namespace FE::Graphics
             stats.m_isValid = true;
             return stats;
         }
+
+
+        DrawTagMask GetBatchDrawTags(const MeshBatch& batch)
+        {
+            const DrawTag mobilityTag = batch.m_mobility == MeshMobility::kDynamic ? DrawTags::Dynamic : DrawTags::Static;
+            return batch.m_drawTagMask | DrawTagMask(mobilityTag);
+        }
+
+
+        //! Culling results of the independently culled passes of a view, shared by passes with the same tag and occluders.
+        struct IndependentCulledViews final
+        {
+            struct Entry final
+            {
+                DrawTag m_drawTag;
+                const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
+                CulledMeshView m_culled;
+            };
+
+            festd::inline_vector<Entry, 2> m_entries;
+        };
     } // namespace
 
 
@@ -442,9 +463,7 @@ namespace FE::Graphics
             batch->m_members = m_memberTable->AllocateRows(count);
         }
 
-        DrawTagMask drawTagMask = batch->m_drawTagMask;
-        drawTagMask |= DrawTagMask(batch->m_mobility == MeshMobility::kDynamic ? DrawTags::Dynamic : DrawTags::Static);
-
+        const DrawTagMask drawTagMask = GetBatchDrawTags(*batch);
         const auto row = m_batchTable->WriteRow(batch->m_tableRef);
         row.m_members.Get() = batch->m_members;
         row.m_drawTagMask.Get() =
@@ -541,6 +560,11 @@ namespace FE::Graphics
     void MeshSceneModule::SetBatchDrawTags(MeshBatch* batch, const DrawTagMask tags)
     {
         FE_Assert(batch != nullptr && batch->m_parent == this);
+        if (batch->m_drawTagMask.m_value == tags.m_value)
+            return;
+
+        // The tags select the passes, including the shadow passes, that draw the batch.
+        AddStaticChange(batch, batch->m_octreeEntry.GetBounds());
         batch->m_drawTagMask = tags;
         m_membershipDirty.set(batch->m_tableRef.m_rowIndex);
     }
@@ -744,14 +768,17 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::CollectCullDispatches(const Culling::PassData& culling)
+    void MeshSceneModule::CollectCullDispatches(const Culling::PassData& culling, const DrawTagMask tagFilter)
     {
         FE_PROFILER_ZONE();
 
         for (auto& dispatches : m_cullDispatches)
             dispatches.clear();
 
-        const auto addBatch = [](festd::vector<MeshPass::CullDispatch>& dispatches, const MeshBatch& batch) {
+        const auto addBatch = [tagFilter](festd::vector<MeshPass::CullDispatch>& dispatches, const MeshBatch& batch) {
+            if (!GetBatchDrawTags(batch).Intersects(tagFilter))
+                return;
+
             for (uint32_t first = 0; first < batch.m_members.m_count; first += MeshPass::kInstancesPerCullGroup)
                 dispatches.push_back({ batch.m_tableRef.m_rowIndex, first });
         };
@@ -789,20 +816,8 @@ namespace FE::Graphics
         blackboard.Add<ViewCullingState*>(&state);
         ResolveCullingStats(state, culling.m_stats);
 
-        CollectCullDispatches(culling);
-
-        uint32_t offsets[Octree::kMaxTraversalTasks];
-        uint32_t count = 0;
-        for (uint32_t i = 0; i < Octree::kMaxTraversalTasks; ++i)
-        {
-            offsets[i] = count;
-            count += m_cullDispatches[i].size();
-        }
-
-        MeshPass::MeshViewData data{};
-        data.m_view = blackboard.Get<ViewData>();
-        data.m_cull = CreateCullData(culling, view.m_viewportRect.Height());
-        data.m_scene = graph.GetSRV(m_sceneData.Get());
+        CollectCullDispatches(culling, DrawTagMask(~UINT64_C(0)));
+        const MeshPass::MeshViewData data = CreateMeshViewData(graph, blackboard, culling);
 
         // An occluder pyramid replaces the two phases with a single one, matching Visibility::AddPasses.
         const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
@@ -817,24 +832,7 @@ namespace FE::Graphics
         resources.m_meshletVisibilityCapacity = state.m_meshletVisibilityCapacity;
         resources.m_stats = state.m_stats.Get();
         resources.m_depthPyramid = isOcclusionCulled ? occluderPyramid : nullptr;
-        GpuMeshWorkBuilder::CullView(
-            graph,
-            uploader,
-            count,
-            [&](const festd::span<MeshPass::CullDispatch> target) {
-                // Prefix offsets give workers disjoint mapped ranges; only the render fiber touches the uploader/graph.
-                RunMeshJobs(
-                    Octree::kMaxTraversalTasks,
-                    [&](const uint32_t i) {
-                        if (!m_cullDispatches[i].empty())
-                            festd::copy(m_cullDispatches[i], target.data() + offsets[i]);
-                    },
-                    count >= 1024 ? 8 : Octree::kMaxTraversalTasks);
-            },
-            data,
-            phase,
-            resources,
-            culled);
+        CullCollectedDispatches(graph, uploader, data, phase, resources, culled);
 
         // Meshlet culling reads bounding spheres from the geometry of every group.
         if (culled.m_view)
@@ -857,17 +855,103 @@ namespace FE::Graphics
     }
 
 
+    MeshPass::MeshViewData MeshSceneModule::CreateMeshViewData(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                                               const Culling::PassData& culling) const
+    {
+        MeshPass::MeshViewData data{};
+        data.m_view = blackboard.Get<ViewData>();
+        data.m_cull = CreateCullData(culling, blackboard.Get<RendererViewData>().m_viewportRect.Height());
+        data.m_scene = graph.GetSRV(m_sceneData.Get());
+        return data;
+    }
+
+
+    void MeshSceneModule::CullCollectedDispatches(Core::FrameGraph& graph, Core::RingUploader& uploader,
+                                                  const MeshPass::MeshViewData& data, const uint32_t phase,
+                                                  const MeshCullViewResources& resources, CulledMeshView& culled)
+    {
+        uint32_t offsets[Octree::kMaxTraversalTasks];
+        uint32_t count = 0;
+        for (uint32_t i = 0; i < Octree::kMaxTraversalTasks; ++i)
+        {
+            offsets[i] = count;
+            count += m_cullDispatches[i].size();
+        }
+
+        GpuMeshWorkBuilder::CullView(
+            graph,
+            uploader,
+            count,
+            [&](const festd::span<MeshPass::CullDispatch> target) {
+                // Prefix offsets give workers disjoint mapped ranges; only the render fiber touches the uploader/graph.
+                RunMeshJobs(
+                    Octree::kMaxTraversalTasks,
+                    [&](const uint32_t i) {
+                        if (!m_cullDispatches[i].empty())
+                            festd::copy(m_cullDispatches[i], target.data() + offsets[i]);
+                    },
+                    count >= 1024 ? 8 : Octree::kMaxTraversalTasks);
+            },
+            data,
+            phase,
+            resources,
+            culled);
+    }
+
+
+    CulledMeshView MeshSceneModule::CullIndependentView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                                        Core::RingUploader& uploader, const SceneRenderPass& pass)
+    {
+        FE_PROFILER_ZONE();
+
+        IndependentCulledViews* views = blackboard.TryGet<IndependentCulledViews>();
+        if (views == nullptr)
+            views = &blackboard.Add<IndependentCulledViews>();
+
+        for (const IndependentCulledViews::Entry& entry : views->m_entries)
+        {
+            if (entry.m_drawTag == pass.m_drawTag && entry.m_depthPyramid == pass.m_depthPyramid)
+                return entry.m_culled;
+        }
+
+        const Culling::PassData& culling = Culling::GetPassData(blackboard);
+        CollectCullDispatches(culling, DrawTagMask(pass.m_drawTag));
+
+        // Without capacities the culling neither reads nor writes the visibility history of the view.
+        const ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
+        MeshCullViewResources resources;
+        resources.m_visibility = state.m_visibility.Get();
+        resources.m_meshletVisibility = state.m_meshletVisibility.Get();
+        resources.m_depthPyramid = culling.m_settings.IsOcclusionCullingEnabled() ? pass.m_depthPyramid : nullptr;
+
+        IndependentCulledViews::Entry& entry = views->m_entries.emplace_back();
+        entry.m_drawTag = pass.m_drawTag;
+        entry.m_depthPyramid = pass.m_depthPyramid;
+        CullCollectedDispatches(graph,
+                                uploader,
+                                CreateMeshViewData(graph, blackboard, culling),
+                                MeshPass::CullPhase::kSingle,
+                                resources,
+                                entry.m_culled);
+
+        // Meshlet culling reads bounding spheres from the geometry of every group.
+        if (entry.m_culled.m_view)
+            AddGeometryDependencies(graph, entry.m_culled.m_view.Get());
+
+        return entry.m_culled;
+    }
+
+
     void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
                                           Core::RingUploader& uploader, const SceneRenderPass& pass)
     {
         FE_PROFILER_ZONE();
 
-        auto& primary = blackboard.Get<CulledMeshView>();
         CulledMeshView independent;
         if (pass.m_independentCulling)
-            independent = GpuMeshWorkBuilder::CullIndependent(graph, uploader, primary);
+            independent = CullIndependentView(graph, blackboard, uploader, pass);
 
-        auto& culled = pass.m_independentCulling ? independent : primary;
+        CulledMeshView& culled = pass.m_independentCulling ? independent : blackboard.Get<CulledMeshView>();
         ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
         const bool isLate = pass.m_phase == SceneRenderPhase::kLate;
         FE_FG_SCOPE(graph, isLate ? "LateMeshes" : "Meshes");

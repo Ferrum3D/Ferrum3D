@@ -102,10 +102,6 @@ namespace FE::Graphics
                       MeshPass::MeshViewData viewData, uint32_t phase, const MeshCullViewResources& resources,
                       CulledMeshView& result);
 
-        //! Single-pass classification that preserves the primary view's occlusion history.
-        CulledMeshView CullIndependent(Core::FrameGraph& graph, Core::RingUploader& uploader, const CulledMeshView& source);
-
-
         //! Classify the instances for the late phase and record their occlusion results for the next frame.
         void CullLateInstances(Core::FrameGraph& graph, Core::RingUploader& uploader,
                                const Tools::DepthPyramid::Output& depthPyramid, CulledMeshView& culled);

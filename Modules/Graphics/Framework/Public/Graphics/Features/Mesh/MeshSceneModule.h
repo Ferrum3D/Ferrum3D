@@ -231,7 +231,14 @@ namespace FE::Graphics
         [[nodiscard]] Aabb CalculateBatchBounds(const MeshBatch* batch) const;
         void UpdateBatchMembership(MeshBatch* batch);
         void AddStaticChange(const MeshBatch* batch, const Aabb& bounds);
-        void CollectCullDispatches(const Culling::PassData& culling);
+        //! Collect the cull dispatches of the batches that the culling view sees and that have any of the tags.
+        void CollectCullDispatches(const Culling::PassData& culling, DrawTagMask tagFilter);
+        [[nodiscard]] MeshPass::MeshViewData CreateMeshViewData(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                                                const Culling::PassData& culling) const;
+        void CullCollectedDispatches(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPass::MeshViewData& data,
+                                     uint32_t phase, const MeshCullViewResources& resources, CulledMeshView& culled);
+        [[nodiscard]] CulledMeshView CullIndependentView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                                         Core::RingUploader& uploader, const SceneRenderPass& pass);
         void AllocateMeshletVisibility(InstanceRecord& record);
         void FreeMeshletVisibility(InstanceRecord& record);
         ViewCullingState& AcquireViewCullingState(Core::FrameGraph& graph, Core::RingUploader& uploader, const View* view);

@@ -852,16 +852,18 @@ namespace FE::Graphics::Common
                     continue;
                 }
 
+                // An earlier reader's transition can cover this reader too; otherwise a read-to-read barrier follows below.
                 if (isSameQueue && resourceNode.m_previousBarrierPassIndex != kInvalidIndex)
                 {
-                    PassNode& previousBarrierPass = m_passes[resourceNode.m_previousBarrierPassIndex];
-                    FE_Verify(previousBarrierPass.m_barrierBatcher.AddBarrier(barrier));
-
-                    state.m_access = state.m_access | access.m_accessFlags;
-                    state.m_layout = access.m_layout;
-                    state.m_sync = state.m_sync | access.m_syncFlags;
-                    texture->SetState(access.m_subresource, state);
-                    continue;
+                    ResourceBarrierBatcher& previousBatcher = m_passes[resourceNode.m_previousBarrierPassIndex].m_barrierBatcher;
+                    if (previousBatcher.ExtendReadBarrier(barrier))
+                    {
+                        state.m_access = state.m_access | access.m_accessFlags;
+                        state.m_layout = access.m_layout;
+                        state.m_sync = state.m_sync | access.m_syncFlags;
+                        texture->SetState(access.m_subresource, state);
+                        continue;
+                    }
                 }
             }
 

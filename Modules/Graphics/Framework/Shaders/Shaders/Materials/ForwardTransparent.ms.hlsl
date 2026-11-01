@@ -18,8 +18,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID, out ms_vertice
     if (lane < header.m_vertexCount)
     {
         const uint vertexIndex = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + lane) * sizeof(uint));
-        verts[lane] =
-            TransformAttributes(draw, vertexIndex, visibleMeshlet.m_instanceId, GView.m_view.m_viewProjection, false, false);
+        verts[lane] = TransformAttributes(draw, vertexIndex, GView.m_view.m_viewProjection, false, false);
     }
 
     if (lane < header.m_primitiveCount)

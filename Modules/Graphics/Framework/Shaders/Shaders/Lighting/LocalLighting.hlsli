@@ -8,7 +8,7 @@ namespace Shading
 {
     float3 ComputeLocalLighting(LocalLightingBinding binding, Surface surface, float3 position, float3 camera, float2 pixel)
     {
-        if (binding.m_lightCount == 0)
+        if (!binding.m_clusters.IsValid())
             return 0;
 
         const LightClusterData data = binding.m_clusters.Load(0);

@@ -2,6 +2,7 @@
 #include <Shaders/Lighting/GlobalLighting.hlsli>
 #include <Shaders/Passes/MeshPass/Common.hlsli>
 #include <Shaders/Shading/PBR.hlsli>
+#include <Shaders/Shadows/SunShadow.hlsli>
 
 struct MaterialParameters
 {
@@ -12,10 +13,8 @@ struct MaterialParameters
 
 void main(PixelAttributes input, out float4 accumulation : SV_Target0, out float4 revealage : SV_Target1)
 {
-    const MeshDrawData draw = LoadMeshDrawData(input.m_instanceIndex, 0);
     const MaterialInstanceTable table = MaterialInstanceTable::Create(GView.m_scene.Load(0).m_materials);
-    const MaterialInstanceTable::Row row = table.ReadRow(draw.m_group.m_materialInstance.Get().m_rowIndex);
-    const MaterialParameters parameters = row.m_materialParameters.Get().Read<MaterialParameters>(0);
+    const MaterialParameters parameters = table.ReadRow(input.m_materialRow).m_materialParameters.Get().Read<MaterialParameters>(0);
     const ForwardLightingData lighting = GView.m_passData.Load<ForwardLightingData>(0);
     Shading::MaterialEvaluation material;
     material.m_surface.m_diffuseAlbedo = parameters.BaseColor.rgb * (1 - parameters.Properties.y);
@@ -24,12 +23,15 @@ void main(PixelAttributes input, out float4 accumulation : SV_Target0, out float
     material.m_surface.m_worldSpaceNormal = normalize(input.m_normal);
     material.m_ambientOcclusion = 1;
     material.m_emissive = 0;
+    const float sunVisibility =
+        SunShadow::SampleVisibility(lighting.m_sunShadow, input.m_worldPos, material.m_surface.m_worldSpaceNormal);
     const float3 color = Shading::ComputeShading(material,
                                                  input.m_worldPos,
                                                  GView.m_view.m_cameraPosition.xyz,
                                                  LoadGlobalLighting(lighting.m_global),
                                                  lighting.m_local,
-                                                 input.m_pos.xy)
+                                                 input.m_pos.xy,
+                                                 sunVisibility)
                              .rgb;
     const float alpha = saturate(parameters.BaseColor.a);
     // Bounded weights avoid half-float overflow while favoring closer layers in reversed Z.

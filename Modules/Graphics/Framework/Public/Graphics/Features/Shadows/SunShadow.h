@@ -111,6 +111,16 @@ namespace FE::Graphics::SunShadow
     };
 
 
+    //! Resources behind the SunShadowBinding of a camera view, for passes that read the binding through a buffer and declare
+    //! their accesses themselves.
+    struct Output final
+    {
+        Rc<Core::Buffer> m_data;
+        Rc<Core::Buffer> m_pageTable;
+        Rc<Core::Texture> m_atlas;
+    };
+
+
     //! Mark, allocate and render the shadow pages the camera view needs; requires its main depth.
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard);
 

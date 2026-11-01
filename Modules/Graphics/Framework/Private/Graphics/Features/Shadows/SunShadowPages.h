@@ -60,10 +60,13 @@ namespace FE::Graphics::SunShadow
 
 
     //! Update the cache for the camera depth: release pages that scrolled out, were invalidated or belong to a different light,
-    //! request the pages the depth needs, back new ones with free or evictable atlas pages and clear them in the static atlas,
-    //! then build the page pyramids of the levels.
-    void AddPagePasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const PageInputs& inputs, PageCache& cache,
-                       PageFrame& frame);
+    //! then request the pages the depth needs. Further requests may be added before AddAllocatePasses.
+    void AddRequestPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const PageInputs& inputs, PageCache& cache,
+                          PageFrame& frame);
+
+    //! Back the requested pages with free or evictable atlas pages, clear new ones in the static atlas, then build the page
+    //! pyramids of the levels.
+    void AddAllocatePasses(Core::FrameGraph& graph, const PageInputs& inputs, const PageCache& cache, PageFrame& frame);
 
     //! Copy the static pages of requested entries into the frame atlas, after the static casters of dirty pages are drawn.
     void AddCopyPagesPass(Core::FrameGraph& graph, const PageCache& cache, const PageFrame& frame);

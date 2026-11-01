@@ -23,4 +23,15 @@ material:technique("ForwardTransparency", function(t, ctx)
     t.targetBlends = { accumulation, revealage }
     return true
 end)
+-- Requests the sun shadow pages that the forward pass samples, since transparent surfaces are absent from the depth.
+material:technique("ShadowPageMark", function(t, ctx)
+    t.depthTargetFormat = "D32_SFLOAT"
+    t.rasterization = Pipeline.RasterizationState.fillBackCull()
+    t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
+    t.depthStencil.depthWriteEnabled = false
+    t.meshShader = "Shaders/Shadows/MarkTransparentPages.ms.hlsl"
+    t.pixelShader = "Shaders/Shadows/MarkTransparentPages.ps.hlsl"
+    return true
+end)
+
 return material

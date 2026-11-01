@@ -9,6 +9,8 @@ namespace FE::Graphics::ForwardTransparency
         Core::PassColorTarget m_revealage;
         Core::PassDepthTarget m_depth;
         Core::PassViewport m_viewport;
+        //! Read through the lighting data of the pass, which the frame graph cannot see into.
+        Core::PassTextureAccess m_sunShadowAtlas;
         FE_RTTI_Reflect("0DA39110-5A90-4664-A2C1-E8D71488C82C");
     };
 

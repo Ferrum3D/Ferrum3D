@@ -287,6 +287,26 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
+    //! Read by the page marking pixel shader of transparent surfaces through MeshViewData::m_passData.
+    struct SunShadowMarkRasterData final
+    {
+        StructuredBufferDescriptor<SunShadowData> m_data;
+        RWStructuredBufferDescriptor<uint32_t> m_pageTable;
+    };
+
+
+    //! Base pass of the mesh passes that request pages for transparent surfaces in front of the camera depth.
+    struct SunShadowMarkRasterPassDesc final
+    {
+        //! Tested but not written, so only surfaces in front of opaque geometry request pages.
+        Core::PassDepthTarget m_depthTarget;
+        Core::PassViewport m_viewport;
+        Core::PassBufferAccess m_pageTable;
+
+        FE_RTTI_Reflect("465C550C-FB30-48C4-9955-941047DDFB20");
+    };
+
+
     struct SunShadowDebugConstants final
     {
         SunShadowBinding m_shadow;

@@ -1,6 +1,7 @@
 #include <Framework/Entities/EntityWorld.h>
 #include <GameFramework/Components/LightComponents.h>
 #include <GameFramework/Services/WorldGraphicsSceneService.h>
+#include <cmath>
 
 namespace FE::GameFramework
 {
@@ -62,5 +63,12 @@ namespace FE::GameFramework
     void SpotLightComponent::Deactivate(Framework::ComponentContext& context)
     {
         DeactivateLight(m_light, context);
+    }
+
+
+    bool SpotLightComponent::Validate() const
+    {
+        return LocalLightParameters::Validate() && std::isfinite(m_innerAngle) && std::isfinite(m_outerAngle) && m_innerAngle >= 0
+            && m_outerAngle > 0 && m_innerAngle <= m_outerAngle && m_outerAngle < Constants::kPI * 0.5f;
     }
 } // namespace FE::GameFramework

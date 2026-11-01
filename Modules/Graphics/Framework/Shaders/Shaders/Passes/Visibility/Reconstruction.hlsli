@@ -78,9 +78,9 @@ bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, cons
     const uint i0 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.x) * sizeof(uint));
     const uint i1 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.y) * sizeof(uint));
     const uint i2 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.z) * sizeof(uint));
-    const PixelAttributes v0 = TransformAttributes(draw, i0, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
-    const PixelAttributes v1 = TransformAttributes(draw, i1, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
-    const PixelAttributes v2 = TransformAttributes(draw, i2, instanceIndex, view.m_view.m_viewProjection, needUV, needTangent);
+    const PixelAttributes v0 = TransformAttributes(draw, i0, view.m_view.m_viewProjection, needUV, needTangent);
+    const PixelAttributes v1 = TransformAttributes(draw, i1, view.m_view.m_viewProjection, needUV, needTangent);
+    const PixelAttributes v2 = TransformAttributes(draw, i2, view.m_view.m_viewProjection, needUV, needTangent);
     const float2 ndcPerPixel = float2(2.0f, -2.0f) / resolution;
     const float2 ndc = pixelCenter * ndcPerPixel + float2(-1.0f, 1.0f);
 
