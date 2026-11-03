@@ -66,6 +66,7 @@ namespace FE::Memory
         if (currentPage->m_next == nullptr)
         {
             auto* newPage = static_cast<Page*>(m_pageAllocator->allocate(m_pageByteSize));
+            newPage->m_next = nullptr;
             currentPage->m_next = newPage;
         }
 

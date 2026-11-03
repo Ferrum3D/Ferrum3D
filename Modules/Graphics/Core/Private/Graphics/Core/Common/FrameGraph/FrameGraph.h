@@ -55,6 +55,7 @@ namespace FE::Graphics::Common
         void AddBufferDependency(Core::Buffer* buffer, BufferSRVDescriptor dependency) override;
 
         void AddCopyPass(const Core::BufferView& destination, const Core::BufferView& source) override;
+        void AddUploadCopy(const Core::BufferView& destination, const Core::BufferView& source) override;
 
     protected:
         struct TextureAccess final
@@ -161,6 +162,23 @@ namespace FE::Graphics::Common
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access);
 
         void RegisterBufferDependencies(Core::Resource* resource, PassNode& pass, Core::BarrierSyncFlags syncFlags);
+
+        //! The first two passes of every graph: batched upload copies and the barriers to their first readers.
+        static constexpr uint32_t kUploadPassIndex = 0;
+        static constexpr uint32_t kUploadReadPassIndex = 1;
+
+        struct UploadCopy final
+        {
+            Core::BufferView m_destination;
+            Core::BufferView m_source;
+        };
+
+        void EnsureUploadPasses();
+        [[nodiscard]] bool CanBatchUploadCopy(const Core::BufferView& destination) const;
+        void AddUploadReadAccesses();
+        static void ExecuteUploadCopies(void* functor, Core::FrameGraphContext& context);
+
+        festd::vector<UploadCopy> m_uploadCopies;
 
         struct BufferDependencies final
         {

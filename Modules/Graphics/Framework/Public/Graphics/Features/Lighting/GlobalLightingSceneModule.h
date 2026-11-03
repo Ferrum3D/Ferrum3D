@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/Math/Quaternion.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Tables/GlobalLightingTable.h>
@@ -42,7 +42,7 @@ namespace FE::Graphics
     };
 
 
-    struct GlobalLightingSceneModule final : SceneModuleBase
+    struct GlobalLightingSceneModule final : public SceneModuleBase
     {
         FE_RTTI("636C5C42-D046-48E5-991E-90AB330AD0D0");
 

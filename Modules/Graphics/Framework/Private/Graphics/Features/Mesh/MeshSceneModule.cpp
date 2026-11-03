@@ -757,17 +757,6 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::AddGeometryDependencies(Core::FrameGraph& graph, Core::Buffer* buffer) const
-    {
-        // Geometry is read by rasterization and reconstruction, independently of view culling.
-        Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
-            const MeshGroup* group = m_meshGroups[groupIndex];
-            if (group->m_buffer != nullptr)
-                graph.AddBufferDependency(buffer, group->m_buffer.Get());
-        });
-    }
-
-
     void MeshSceneModule::CollectCullDispatches(const Culling::PassData& culling, const DrawTagMask tagFilter)
     {
         FE_PROFILER_ZONE();
@@ -834,14 +823,9 @@ namespace FE::Graphics
         resources.m_depthPyramid = isOcclusionCulled ? occluderPyramid : nullptr;
         CullCollectedDispatches(graph, uploader, data, phase, resources, culled);
 
-        // Meshlet culling reads bounding spheres from the geometry of every group.
-        if (culled.m_view)
-            AddGeometryDependencies(graph, culled.m_view.Get());
-
         SurfaceEvaluationBatch batch;
         batch.m_objectData = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(graph.GetDevice(), "MeshSurfaceView", 1);
         graph.AddBufferDependency(batch.m_objectData.Get(), m_sceneData.Get());
-        AddGeometryDependencies(graph, batch.m_objectData.Get());
         FE_Verify(uploader.Upload(graph, batch.m_objectData.Get(), data));
 
         batch.m_countPipeline = CountMeshSurfacePipeline::GetPipeline();
@@ -934,10 +918,6 @@ namespace FE::Graphics
                                 resources,
                                 entry.m_culled);
 
-        // Meshlet culling reads bounding spheres from the geometry of every group.
-        if (entry.m_culled.m_view)
-            AddGeometryDependencies(graph, entry.m_culled.m_view.Get());
-
         return entry.m_culled;
     }
 
@@ -986,7 +966,6 @@ namespace FE::Graphics
         if (!prepared.m_view)
             return;
 
-        AddGeometryDependencies(graph, prepared.m_view.Get());
         auto* desc = graph.AllocatePassData<MeshPass::PassDesc>();
         const BufferSRVDescriptor viewAddress = graph.GetSRV(prepared.m_view.Get());
         desc->m_pipeline = prepared.m_submissions.front().m_pipeline.Get();
@@ -1061,11 +1040,20 @@ namespace FE::Graphics
                 CreateZeroedViewBuffer(graph, uploader, "MeshletVisibility", state->m_meshletVisibilityCapacity);
         }
 
+        // Without a stats buffer the culling passes skip their counters, the clearing upload and the readback copy.
+        state->m_stats.Reset();
+        const CullingStatsReadback* freeReadback = festd::find_if(state->m_readbacks, [](const CullingStatsReadback& readback) {
+            return !readback.m_isPending;
+        });
+        if (freeReadback == state->m_readbacks.end() || m_frameIndex < state->m_nextStatsFrameIndex)
+            return *state;
+
         constexpr uint32_t kStatsByteSize = MeshPass::CullStat::kCount * sizeof(uint32_t);
         state->m_stats = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), "MeshCullStats", MeshPass::CullStat::kCount);
         FE_Verify(uploader.UploadGenerated(graph, state->m_stats.Get(), kStatsByteSize, [](void* target) {
             memset(target, 0, kStatsByteSize);
         }));
+        state->m_nextStatsFrameIndex = m_frameIndex + kCullingStatsInterval;
 
         return *state;
     }
@@ -1149,6 +1137,9 @@ namespace FE::Graphics
 
     void MeshSceneModule::ScheduleCullingStatsReadback(Core::FrameGraph& graph, ViewCullingState& state) const
     {
+        if (state.m_stats == nullptr)
+            return;
+
         // Skip this frame when every readback is still in flight.
         CullingStatsReadback* readback = festd::find_if(state.m_readbacks, [](const CullingStatsReadback& candidate) {
             return !candidate.m_isPending;

@@ -12,7 +12,7 @@
 #endif
 
 // TODO: fix this when we have shipping builds
-#define FE_SHIPPING 0
+// #define FE_SHIPPING 1
 
 #if !FE_SHIPPING
 #    define FE_DEVELOPMENT 1
@@ -118,12 +118,20 @@ namespace FE::Build
 
     FE_FORCE_INLINE bool IsDevelopment()
     {
-        return FE_DEVELOPMENT;
+#if FE_DEVELOPMENT
+        return true;
+#else
+        return false;
+#endif
     }
 
 
     FE_FORCE_INLINE bool IsShipping()
     {
-        return FE_SHIPPING;
+#if FE_SHIPPING
+        return true;
+#else
+        return false;
+#endif
     }
 } // namespace FE::Build

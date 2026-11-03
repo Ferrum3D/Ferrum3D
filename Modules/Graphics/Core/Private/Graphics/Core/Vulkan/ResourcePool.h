@@ -6,6 +6,7 @@
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <festd/bit_vector.h>
+#include <festd/unordered_map.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -29,10 +30,14 @@ namespace FE::Graphics::Vulkan
         {
             Core::DeviceQueueType m_ownerQueue = Core::DeviceQueueType::kCount;
             uint64_t m_expirationFrame = 0;
+            uint64_t m_freeBucketKey = 0;
+            uint32_t m_freeBucketPosition = kInvalidIndex;
             bool m_isReusable = false;
         };
 
         uint32_t AllocateResourceSlot();
+        void AddFreeResource(uint32_t resourceIndex);
+        void RemoveFreeResource(uint32_t resourceIndex);
 
         template<class TDesc, class TParams>
         uint32_t FindFreeResource(const TDesc& desc, const TParams& params);
@@ -57,6 +62,9 @@ namespace FE::Graphics::Vulkan
         festd::bit_vector m_freedResources;
         festd::bit_vector m_pendingResources;
         festd::bit_vector m_emptyResources;
+
+        //! Reusable freed resources grouped by type, desc, memory and owner queue, i.e. the slots that can match a commit.
+        festd::unordered_dense_map<uint64_t, festd::vector<uint32_t>> m_freeBuckets;
         uint64_t m_frameIndex = 0;
     };
 

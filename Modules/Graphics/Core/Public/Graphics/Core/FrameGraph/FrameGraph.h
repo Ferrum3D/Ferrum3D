@@ -80,6 +80,10 @@ namespace FE::Graphics::Core
 
         virtual void AddCopyPass(const BufferView& destination, const BufferView& source) = 0;
 
+        //! Copy host-written data before the first pass, batched with the other uploads of the frame. One barrier then
+        //! covers the reads that consume the uploads. Falls back to a copy pass once the destination is accessed this frame.
+        virtual void AddUploadCopy(const BufferView& destination, const BufferView& source) = 0;
+
         template<class TPassDesc>
         BasePassDescToken AddBasePassDesc(const TPassDesc* passDesc);
 

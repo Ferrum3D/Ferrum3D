@@ -128,7 +128,7 @@ namespace FE
         auto* entry = reinterpret_cast<WaitGroupWaitEntry*>(lockAndQueue & ~UINT64_C(1));
         m_lockAndQueue.store(0, std::memory_order_release);
 
-        Rc keepAlive(this);
+        // Waiters may release the group once it is unlocked, so the entries are signaled without touching it.
         while (entry)
         {
             WaitGroupWaitEntry* next = entry->m_next;

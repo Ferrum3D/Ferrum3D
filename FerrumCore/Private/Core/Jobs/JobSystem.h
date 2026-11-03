@@ -64,6 +64,8 @@ namespace FE::Jobs
         //! Take a ready fiber or, unless takesJobs is false, a job.
         bool TakeWork(uint32_t workerIndex, JobNode*& job, FiberWaitEntry*& entry, bool checkEmptyQueues = false,
                       bool takesJobs = true);
+        //! Take a ready fiber or, unless a job is already parked in m_nextJob, a job for a fiber that is about to wait.
+        void TakeWorkWhileWaiting(uint32_t workerIndex, FiberWaitEntry*& entry);
 
         // All queues at a priority share its lock, including producer access.
         template<class T>

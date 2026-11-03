@@ -133,17 +133,14 @@ namespace FE::Jobs
     {
         Worker& worker = m_workers[workerIndex];
         FiberWaitEntry* readyEntry = nullptr;
-        TakeWork(workerIndex, worker.m_nextJob, readyEntry);
+        TakeWorkWhileWaiting(workerIndex, readyEntry);
 
         // When every fiber is suspended in a wait, only resuming one of them can make progress, so keep looking for ready
-        // fibers instead of waiting for a free one. A job taken meanwhile stays in m_nextJob until a fiber of this worker
-        // returns to its loop.
+        // fibers instead of waiting for a free one.
         Threading::FiberHandle freeFiber;
         while (readyEntry == nullptr && !m_fiberPool.TryRent(false, freeFiber))
         {
-            JobNode* unusedJob = nullptr;
-            const bool takesJobs = worker.m_nextJob == nullptr;
-            TakeWork(workerIndex, takesJobs ? worker.m_nextJob : unusedJob, readyEntry, false, takesJobs);
+            TakeWorkWhileWaiting(workerIndex, readyEntry);
             _mm_pause();
         }
 
@@ -154,6 +151,17 @@ namespace FE::Jobs
         const Context::TransferParams transferParams =
             m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this));
         CleanUpAfterSwitch(transferParams);
+    }
+
+
+    void JobSystem::TakeWorkWhileWaiting(const uint32_t workerIndex, FiberWaitEntry*& entry)
+    {
+        // A job taken by a waiting fiber stays in m_nextJob until a fiber of this worker returns to its loop. A fiber resumed
+        // in the meantime can wait again before that, so only ready fibers are taken while a job is parked.
+        Worker& worker = m_workers[workerIndex];
+        JobNode* unusedJob = nullptr;
+        const bool takesJobs = worker.m_nextJob == nullptr;
+        TakeWork(workerIndex, takesJobs ? worker.m_nextJob : unusedJob, entry, false, takesJobs);
     }
 
 

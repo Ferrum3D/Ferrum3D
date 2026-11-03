@@ -61,8 +61,6 @@ namespace FE::Graphics::Core
     {
         if (const auto allocation = m_ringBuffer.Allocate(byteSize, kAlignment))
         {
-            FE_FG_SCOPE(graph, "Upload");
-
             // TODO: We don't necessarily want a contiguous block of memory here. It is possible to save some memory by splitting
             //       copy operations in two when the ring buffer has to wrap around.
 
@@ -81,7 +79,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                graph.AddCopyPass(deviceDestination, deviceSource);
+                graph.AddUploadCopy(deviceDestination, deviceSource);
             }
 
             m_currentFrameBytes += allocation.m_size;

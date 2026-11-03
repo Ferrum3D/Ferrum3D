@@ -1,4 +1,4 @@
-#include <Graphics/Core/Common/Buffer.h>
+﻿#include <Graphics/Core/Common/Buffer.h>
 #include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
@@ -7,6 +7,43 @@
 
 namespace FE::Graphics::Vulkan
 {
+    namespace
+    {
+        //! The score of an instance whose bind flags match the requested ones exactly.
+        constexpr uint32_t kMaxCompatibilityScore = 8 * sizeof(Core::BarrierAccessFlags);
+
+
+        uint64_t MakeFreeBucketKey(const uint64_t descHash, const Core::ResourceType type, const Core::ResourceMemory memory,
+                                   const Core::DeviceQueueType queue)
+        {
+            const uint64_t typeBits = static_cast<uint64_t>(festd::to_underlying(type));
+            const uint64_t memoryBits = static_cast<uint64_t>(festd::to_underlying(memory)) << 8;
+            const uint64_t queueBits = static_cast<uint64_t>(festd::to_underlying(queue)) << 16;
+            return HashCombine(descHash, typeBits | memoryBits | queueBits);
+        }
+
+
+        uint64_t MakeFreeBucketKey(const Core::BufferDesc& desc, const Core::ResourceCommitParams& params)
+        {
+            return MakeFreeBucketKey(desc.GetHash(), Core::ResourceType::kBuffer, params.m_memory, params.m_queue);
+        }
+
+
+        uint64_t MakeFreeBucketKey(const Core::TextureDesc& desc, const Core::ResourceCommitParams& params)
+        {
+            return MakeFreeBucketKey(desc.GetHash(), Core::ResourceType::kTexture, params.m_memory, params.m_queue);
+        }
+
+
+        uint64_t MakeFreeBucketKey(const Common::ResourceInstance* instance, const Core::DeviceQueueType ownerQueue)
+        {
+            const bool isBuffer = instance->m_type == Core::ResourceType::kBuffer;
+            const uint64_t descHash = isBuffer ? instance->m_bufferDesc.GetHash() : instance->m_textureDesc.GetHash();
+            return MakeFreeBucketKey(descHash, instance->m_type, instance->m_memoryStatus, ownerQueue);
+        }
+    } // namespace
+
+
     ResourcePool::ResourcePool(Core::Device* device, Core::GraphicsQueue* graphicsQueue, Core::AsyncCopyQueue* asyncCopyQueue)
     {
         m_device = device;
@@ -44,25 +81,31 @@ namespace FE::Graphics::Vulkan
     template<class TDesc, class TParams>
     uint32_t ResourcePool::FindFreeResource(const TDesc& desc, const TParams& params)
     {
+        const auto bucket = m_freeBuckets.find(MakeFreeBucketKey(desc, params));
+        if (bucket == m_freeBuckets.end() || bucket->second.empty())
+            return kInvalidIndex;
+
         const uint64_t completedGraphicsFence = m_graphicsQueue->GetCompletedFenceValue();
         const uint64_t completedTransferFence = m_asyncCopyQueue->GetCompletedFenceValue();
         uint32_t bestCompatibilityScore = 0;
         uint32_t bestResourceIndex = kInvalidIndex;
-        Bit::Traverse(m_freedResources.view(), [&](const uint32_t resourceIndex) {
+        for (const uint32_t resourceIndex : bucket->second)
+        {
             const Common::ResourceInstance* resource = m_resources[resourceIndex];
             const ResourceSlot& slot = m_resourceSlots[resourceIndex];
-            if (!slot.m_isReusable || slot.m_ownerQueue != params.m_queue)
-                return;
             if (!IsRetirementComplete(resource, slot, completedGraphicsFence, completedTransferFence))
-                return;
+                continue;
 
+            // Bucket keys can collide, so the full compatibility check still decides.
             const uint32_t compatibilityScore = resource->ScoreCompatibility(desc, params);
-            if (compatibilityScore > bestCompatibilityScore)
-            {
-                bestCompatibilityScore = compatibilityScore;
-                bestResourceIndex = resourceIndex;
-            }
-        });
+            if (compatibilityScore <= bestCompatibilityScore)
+                continue;
+
+            bestCompatibilityScore = compatibilityScore;
+            bestResourceIndex = resourceIndex;
+            if (compatibilityScore == kMaxCompatibilityScore)
+                break;
+        }
 
         return bestResourceIndex;
     }
@@ -81,9 +124,9 @@ namespace FE::Graphics::Vulkan
             instance = m_resources[bestResourceIndex];
             FE_Assert(instance);
 
+            RemoveFreeResource(bestResourceIndex);
             m_resources[bestResourceIndex] = nullptr;
             m_emptyResources.set(bestResourceIndex);
-            m_freedResources.reset(bestResourceIndex);
         }
         else
         {
@@ -113,9 +156,9 @@ namespace FE::Graphics::Vulkan
             instance = m_resources[bestResourceIndex];
             FE_Assert(instance);
 
+            RemoveFreeResource(bestResourceIndex);
             m_resources[bestResourceIndex] = nullptr;
             m_emptyResources.set(bestResourceIndex);
-            m_freedResources.reset(bestResourceIndex);
         }
         else
         {
@@ -177,7 +220,7 @@ namespace FE::Graphics::Vulkan
             if (IsRetirementComplete(resource, slot, completedGraphicsFence, completedTransferFence))
                 resourcesToDestroy.push_back(resourceIndex);
             else
-                m_freedResources.set(resourceIndex);
+                AddFreeResource(resourceIndex);
         });
 
         for (const uint32_t resourceIndex : resourcesToDestroy)
@@ -276,10 +319,46 @@ namespace FE::Graphics::Vulkan
             break;
         }
 
+        if (m_freedResources.test(resourceIndex))
+            RemoveFreeResource(resourceIndex);
+
         m_resources[resourceIndex] = nullptr;
         m_resourceSlots[resourceIndex] = {};
-        m_freedResources.reset(resourceIndex);
         m_pendingResources.reset(resourceIndex);
         m_emptyResources.set(resourceIndex);
+    }
+
+
+    void ResourcePool::AddFreeResource(const uint32_t resourceIndex)
+    {
+        FE_AssertDebug(!m_freedResources.test(resourceIndex));
+        m_freedResources.set(resourceIndex);
+
+        ResourceSlot& slot = m_resourceSlots[resourceIndex];
+        if (!slot.m_isReusable)
+            return;
+
+        slot.m_freeBucketKey = MakeFreeBucketKey(m_resources[resourceIndex], slot.m_ownerQueue);
+        festd::vector<uint32_t>& bucket = m_freeBuckets[slot.m_freeBucketKey];
+        slot.m_freeBucketPosition = bucket.size();
+        bucket.push_back(resourceIndex);
+    }
+
+
+    void ResourcePool::RemoveFreeResource(const uint32_t resourceIndex)
+    {
+        FE_AssertDebug(m_freedResources.test(resourceIndex));
+        m_freedResources.reset(resourceIndex);
+
+        ResourceSlot& slot = m_resourceSlots[resourceIndex];
+        if (slot.m_freeBucketPosition == kInvalidIndex)
+            return;
+
+        festd::vector<uint32_t>& bucket = m_freeBuckets[slot.m_freeBucketKey];
+        const uint32_t lastResourceIndex = bucket.back();
+        bucket[slot.m_freeBucketPosition] = lastResourceIndex;
+        m_resourceSlots[lastResourceIndex].m_freeBucketPosition = slot.m_freeBucketPosition;
+        bucket.pop_back();
+        slot.m_freeBucketPosition = kInvalidIndex;
     }
 } // namespace FE::Graphics::Vulkan

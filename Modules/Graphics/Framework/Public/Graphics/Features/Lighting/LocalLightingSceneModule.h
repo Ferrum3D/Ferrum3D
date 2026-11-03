@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Tables/LocalLightTable.h>
 #include <Shaders/Lighting/LocalLighting.h>
@@ -59,7 +59,7 @@ namespace FE::Graphics
     };
 
 
-    struct LocalLightingSceneModule final : SceneModuleBase
+    struct LocalLightingSceneModule final : public SceneModuleBase
     {
         FE_RTTI("ABC6D5C6-93A2-429F-8FBB-C943223D63D0");
 

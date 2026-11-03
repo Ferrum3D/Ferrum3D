@@ -1,4 +1,4 @@
-﻿#include <Core/RTTI/Reflection.h>
+#include <Core/RTTI/Reflection.h>
 #include <Core/RTTI/Traversal.h>
 #include <Graphics/Core/Common/Buffer.h>
 #include <Graphics/Core/Common/FrameGraph/FrameGraph.h>
@@ -41,6 +41,12 @@ namespace FE::Graphics::Common
 
             return { field.m_type, 1, field.m_size };
         }
+
+
+        bool AreOverlapping(const Core::BufferSlice lhs, const Core::BufferSlice rhs)
+        {
+            return lhs.m_offset < rhs.m_offset + rhs.m_size && rhs.m_offset < lhs.m_offset + lhs.m_size;
+        }
     } // namespace
 
 
@@ -82,6 +88,7 @@ namespace FE::Graphics::Common
         m_textureViews.clear();
         m_bufferViews.clear();
         m_bufferDependencies.clear();
+        m_uploadCopies.clear();
     }
 
 
@@ -123,6 +130,8 @@ namespace FE::Graphics::Common
 
     void FrameGraph::BeginScope(const festd::string_view name)
     {
+        EnsureUploadPasses();
+
         if (Build::IsDebug())
         {
             for (const int32_t codepoint : name)
@@ -247,6 +256,124 @@ namespace FE::Graphics::Common
     }
 
 
+    void FrameGraph::AddUploadCopy(const Core::BufferView& destination, const Core::BufferView& source)
+    {
+        EnsureUploadPasses();
+        if (!CanBatchUploadCopy(destination))
+        {
+            AddCopyPass(destination, source);
+            return;
+        }
+
+        m_uploadCopies.push_back({ destination, source });
+
+        PassNode& uploadPass = m_passes[kUploadPassIndex];
+        BufferAccess write;
+        write.m_syncFlags = Core::BarrierSyncFlags::kCopy;
+        write.m_accessFlags = Core::BarrierAccessFlags::kCopyDest;
+        RegisterResource(destination.m_resource, uploadPass, write);
+
+        BufferAccess read;
+        read.m_syncFlags = Core::BarrierSyncFlags::kCopy;
+        read.m_accessFlags = Core::BarrierAccessFlags::kCopySource;
+        RegisterResource(source.m_resource, uploadPass, read);
+    }
+
+
+    void FrameGraph::EnsureUploadPasses()
+    {
+        if (!m_passes.empty())
+            return;
+
+        static const Env::Name kUploadPassName{ "Uploads" };
+        static const Env::Name kUploadReadPassName{ "UploadReads" };
+
+        PassNode& uploadPass = m_passes.emplace_back(&m_linearAllocator);
+        uploadPass.m_passIndex = kUploadPassIndex;
+        uploadPass.m_name = kUploadPassName;
+        uploadPass.m_functor = this;
+        uploadPass.m_execute = &ExecuteUploadCopies;
+        uploadPass.m_destroy = [](void*, void*) {};
+
+        PassNode& readPass = m_passes.emplace_back(&m_linearAllocator);
+        readPass.m_passIndex = kUploadReadPassIndex;
+        readPass.m_name = kUploadReadPassName;
+    }
+
+
+    bool FrameGraph::CanBatchUploadCopy(const Core::BufferView& destination) const
+    {
+        // A batched copy runs before every pass, which keeps the order of accesses only if the earlier ones are uploads.
+        const auto resource = m_resourceIndexMap.find(destination.m_resource->GetResourceID());
+        if (resource == m_resourceIndexMap.end())
+            return true;
+
+        for (const PassResourceAccess& access : m_resources[resource->second].m_accesses)
+        {
+            if (access.m_passIndex != kUploadPassIndex)
+                return false;
+        }
+
+        // The copies of a batch are not ordered against each other.
+        for (const UploadCopy& upload : m_uploadCopies)
+        {
+            if (upload.m_destination.m_resource != destination.m_resource)
+                continue;
+
+            if (AreOverlapping(upload.m_destination.m_slice, destination.m_slice))
+                return false;
+        }
+
+        return true;
+    }
+
+
+    void FrameGraph::AddUploadReadAccesses()
+    {
+        if (m_uploadCopies.empty())
+            return;
+
+        PassNode& uploadPass = m_passes[kUploadPassIndex];
+        PassNode& readPass = m_passes[kUploadReadPassIndex];
+        for (const BufferAccess& upload : uploadPass.m_accessedBuffers)
+        {
+            if (!Bit::AllSet(upload.m_accessFlags, Core::BarrierAccessFlags::kCopyDest))
+                continue;
+
+            // The reads up to the first write share one transition, after which their passes need no barriers.
+            ResourceNode& resourceNode = m_resources[upload.m_localResourceIndex];
+            BufferAccess reads;
+            reads.m_localResourceIndex = upload.m_localResourceIndex;
+            for (const PassResourceAccess& access : resourceNode.m_accesses)
+            {
+                if (access.m_passIndex == kUploadPassIndex)
+                    continue;
+
+                const BufferAccess& later = m_passes[access.m_passIndex].m_accessedBuffers[access.m_accessIndex];
+                if (!Core::IsReadAccess(later.m_accessFlags))
+                    break;
+
+                reads.m_syncFlags |= later.m_syncFlags;
+                reads.m_accessFlags |= later.m_accessFlags;
+            }
+
+            if (reads.m_accessFlags == Core::BarrierAccessFlags::kNone)
+                continue;
+
+            resourceNode.m_accesses.push_back({ kUploadReadPassIndex, readPass.m_accessedBuffers.size() });
+            readPass.m_accessedBuffers.push_back(reads);
+        }
+    }
+
+
+    void FrameGraph::ExecuteUploadCopies(void* functor, Core::FrameGraphContext& context)
+    {
+        const auto* graph = static_cast<const FrameGraph*>(functor);
+        for (const UploadCopy& upload : graph->m_uploadCopies)
+            context.Copy(upload.m_destination, upload.m_source);
+    }
+
+
     void FrameGraph::AddPassInternal(const PassNodeDesc& desc)
     {
         FE_PROFILER_ZONE();
@@ -255,6 +382,7 @@ namespace FE::Graphics::Common
                   || (desc.m_functor != nullptr && desc.m_execute != nullptr && desc.m_destroy != nullptr));
         FE_Assert(desc.m_userPassDescTypeID != Rtti::TypeID::kNull, "PassDesc must be registered with RTTI");
 
+        EnsureUploadPasses();
         PassNode& passNode = m_passes.emplace_back(&m_linearAllocator);
         passNode.m_passIndex = m_passes.size() - 1;
         passNode.m_name = desc.m_name;
@@ -678,8 +806,7 @@ namespace FE::Graphics::Common
                 m_resourcePool->CommitBufferMemory(buffer, commitParams);
             }
 
-            const ResourceInstance* bufferInstance = buffer->GetInstance();
-            FE_Assert(Bit::AllSet(bufferInstance->m_bindFlags, resourceNode.m_bindFlags));
+            FE_AssertDebug(Bit::AllSet(buffer->GetInstance()->m_bindFlags, resourceNode.m_bindFlags));
 
             SubresourceState state = buffer->GetState();
             const bool isReadToReadTransition = Core::IsReadAccess(state.m_access) && Core::IsReadAccess(access.m_accessFlags);
@@ -690,10 +817,10 @@ namespace FE::Graphics::Common
             {
                 // For now, we assume that FrameGraph can only submit commands to the graphics queue.
                 // So, the only possible transition is from AsyncCopyQueue (transfer queue).
-                FE_Assert(state.m_queueType == Core::DeviceQueueType::kTransfer);
+                FE_AssertDebug(state.m_queueType == Core::DeviceQueueType::kTransfer);
 
                 const auto transferBarrier = buffer->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics);
-                FE_Assert(transferBarrier.has_value(), "Cannot transfer buffer ownership without matching release barrier");
+                FE_AssertDebug(transferBarrier.has_value(), "Cannot transfer buffer ownership without matching release barrier");
 
                 Core::BufferBarrierDesc acquireBarrier = transferBarrier->m_barrier;
                 acquireBarrier.m_syncBefore = Core::BarrierSyncFlags::kNone;
@@ -728,6 +855,7 @@ namespace FE::Graphics::Common
             // | ComputeShading | PixelShading |
             // ^
             // | We need only one barrier here with sync = ComputeShading | PixelShading, so that both passes' work can overlap.
+            //
             if (isReadToReadTransition)
             {
                 // Nothing to do here: the resource is already in the correct state.
@@ -739,7 +867,7 @@ namespace FE::Graphics::Common
                     // Append flags to the previous barrier if there is one.
                     // Otherwise, we will have to create a new barrier.
                     PassNode& previousBarrierPass = m_passes[resourceNode.m_previousBarrierPassIndex];
-                    FE_Verify(previousBarrierPass.m_barrierBatcher.AddBarrier(barrier));
+                    FE_VerifyDebug(previousBarrierPass.m_barrierBatcher.AddBarrier(barrier));
 
                     state.m_access = state.m_access | access.m_accessFlags;
                     state.m_sync = state.m_sync | access.m_syncFlags;
@@ -777,21 +905,20 @@ namespace FE::Graphics::Common
                 m_resourcePool->CommitTextureMemory(texture, commitParams);
             }
 
-            const ResourceInstance* textureInstance = texture->GetInstance();
-            FE_Assert(Bit::AllSet(textureInstance->m_bindFlags, resourceNode.m_bindFlags));
+            FE_AssertDebug(Bit::AllSet(texture->GetInstance()->m_bindFlags, resourceNode.m_bindFlags));
 
             SubresourceState state = texture->GetState(access.m_subresource);
 
             const bool isSameQueue = state.m_queueType == Core::DeviceQueueType::kGraphics;
             if (!isSameQueue)
             {
-                FE_Assert(state.m_queueType == Core::DeviceQueueType::kTransfer);
+                FE_AssertDebug(state.m_queueType == Core::DeviceQueueType::kTransfer);
 
                 // As per Vulkan spec, both acquire and release queue ownership transfer barriers must have
                 // exactly the same subresource ranges.
                 const auto transferBarrier =
                     texture->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics, access.m_subresource);
-                FE_Assert(transferBarrier.has_value(), "Cannot transfer texture ownership without matching release barrier");
+                FE_AssertDebug(transferBarrier.has_value(), "Cannot transfer texture ownership without matching release barrier");
 
                 Core::TextureBarrierDesc acquireBarrier = transferBarrier->m_barrier;
                 acquireBarrier.m_syncBefore = Core::BarrierSyncFlags::kNone;
@@ -882,6 +1009,8 @@ namespace FE::Graphics::Common
     void FrameGraph::Compile()
     {
         FE_PROFILER_ZONE();
+
+        AddUploadReadAccesses();
 
         for (ResourceNode& resource : m_resources)
             AccumulateBindFlags(resource);

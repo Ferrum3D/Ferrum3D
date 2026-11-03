@@ -50,14 +50,14 @@ namespace FE::Memory
                 result = AllocateFromPage(page);
             }
 
-            TracySecureAllocNS(result, m_elementByteSize, 32, m_name);
+            TracySecureAllocN(result, m_elementByteSize, m_name);
             FE_AssertDebug(IsAlignedPtr(result, m_elementAlignment));
             return result;
         }
 
         result = m_freeList;
         m_freeList = *static_cast<void**>(result);
-        TracySecureAllocNS(result, m_elementByteSize, 32, m_name);
+        TracySecureAllocN(result, m_elementByteSize, m_name);
         FE_AssertDebug(IsAlignedPtr(result, m_elementAlignment));
         return result;
     }
@@ -74,6 +74,6 @@ namespace FE::Memory
         *static_cast<void**>(ptr) = m_freeList;
         m_freeList = ptr;
 
-        TracySecureFreeNS(ptr, 32, m_name);
+        TracySecureFreeN(ptr, m_name);
     }
 } // namespace FE::Memory

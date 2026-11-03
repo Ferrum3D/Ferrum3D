@@ -35,21 +35,38 @@ namespace FE::Graphics::Common
             const uint32_t bMipStart = b.m_mostDetailedMipSlice;
             const uint32_t bMipEnd = b.m_mostDetailedMipSlice + b.m_mipSliceCount;
 
-            const bool mipCompatible = (aMipStart <= bMipEnd && bMipStart <= aMipEnd) || //
-                aMipEnd == bMipStart || bMipEnd == aMipStart;
-
-            if (!mipCompatible)
-                return false;
-
             const uint32_t aArrayStart = a.m_firstArraySlice;
             const uint32_t aArrayEnd = a.m_firstArraySlice + a.m_arraySize;
             const uint32_t bArrayStart = b.m_firstArraySlice;
             const uint32_t bArrayEnd = b.m_firstArraySlice + b.m_arraySize;
 
-            const bool arrayCompatible = (aArrayStart <= bArrayEnd && bArrayStart <= aArrayEnd) || //
-                aArrayEnd == bArrayStart || bArrayEnd == aArrayStart;
+            // The coalesced range is the bounding box, so it only covers no extra subresources when one dimension matches.
+            const bool isSameMipRange = aMipStart == bMipStart && aMipEnd == bMipEnd;
+            const bool isSameArrayRange = aArrayStart == bArrayStart && aArrayEnd == bArrayEnd;
+            if (isSameArrayRange)
+                return aMipStart <= bMipEnd && bMipStart <= aMipEnd;
 
-            return arrayCompatible;
+            if (isSameMipRange)
+                return aArrayStart <= bArrayEnd && bArrayStart <= aArrayEnd;
+
+            return false;
+        }
+
+
+        bool TryCoalesce(Core::TextureBarrierDesc& existing, const Core::TextureBarrierDesc& added)
+        {
+            if (!AreBarriersCompatible(existing, added) || !SafeToCoalesce(existing.m_subresource, added.m_subresource))
+                return false;
+
+            // Reads are always mergeable as long as the layouts are the same; writes must match exactly.
+            const bool areReads = Core::IsReadAccess(existing.m_accessAfter) && Core::IsReadAccess(added.m_accessAfter);
+            if (!areReads && (existing.m_accessAfter != added.m_accessAfter || existing.m_syncAfter != added.m_syncAfter))
+                return false;
+
+            existing.m_subresource = existing.m_subresource.Coalesce(added.m_subresource);
+            existing.m_accessAfter |= added.m_accessAfter;
+            existing.m_syncAfter |= added.m_syncAfter;
+            return true;
         }
     } // namespace
 
@@ -63,7 +80,7 @@ namespace FE::Graphics::Common
 
     bool ResourceBarrierBatcher::AddBarrier(const Core::TextureBarrierDesc& barrier)
     {
-        FE_Assert(barrier.m_queueBefore == barrier.m_queueAfter, "Ownership transfer barriers cannot be batched");
+        FE_AssertDebug(barrier.m_queueBefore == barrier.m_queueAfter, "Ownership transfer barriers cannot be batched");
 
         // Firstly, group mergeable barriers together.
         const auto compareBarriers = [](const Core::TextureBarrierDesc& existing, const Core::TextureBarrierDesc& added) {
@@ -102,24 +119,20 @@ namespace FE::Graphics::Common
         };
 
         const auto it = festd::lower_bound(m_textureBarriers, barrier, compareBarriers);
-        if (it != m_textureBarriers.end() && it->m_texture == barrier.m_texture && AreBarriersCompatible(*it, barrier))
-        {
-            Core::TextureBarrierDesc& existingBarrier = *it;
-            if (SafeToCoalesce(existingBarrier.m_subresource, barrier.m_subresource))
-            {
-                if (Core::IsReadAccess(existingBarrier.m_accessAfter) && Core::IsReadAccess(barrier.m_accessAfter))
-                {
-                    existingBarrier.m_subresource = existingBarrier.m_subresource.Coalesce(barrier.m_subresource);
-                    existingBarrier.m_accessAfter |= barrier.m_accessAfter;
-                    existingBarrier.m_syncAfter |= barrier.m_syncAfter;
-                    return true;
-                }
+        if (it != m_textureBarriers.end() && TryCoalesce(*it, barrier))
+            return true;
 
-                if (existingBarrier.m_accessAfter == barrier.m_accessAfter && existingBarrier.m_syncAfter == barrier.m_syncAfter)
-                {
-                    existingBarrier.m_subresource = existingBarrier.m_subresource.Coalesce(barrier.m_subresource);
-                    return true;
-                }
+        // Subresources added in ascending order, e.g. the mips of a pyramid, extend the range sorted before them.
+        if (it != m_textureBarriers.begin())
+        {
+            const auto previous = it - 1;
+            if (TryCoalesce(*previous, barrier))
+            {
+                // The grown range can now reach the barrier that follows it.
+                if (it != m_textureBarriers.end() && TryCoalesce(*previous, *it))
+                    m_textureBarriers.erase(it);
+
+                return true;
             }
         }
 
@@ -151,7 +164,7 @@ namespace FE::Graphics::Common
 
     bool ResourceBarrierBatcher::AddBarrier(const Core::BufferBarrierDesc& barrier)
     {
-        FE_Assert(barrier.m_queueBefore == barrier.m_queueAfter, "Ownership transfer barriers cannot be batched");
+        FE_AssertDebug(barrier.m_queueBefore == barrier.m_queueAfter, "Ownership transfer barriers cannot be batched");
 
         for (Core::BufferBarrierDesc& existingBarrier : m_bufferBarriers)
         {

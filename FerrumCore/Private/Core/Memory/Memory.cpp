@@ -22,7 +22,7 @@ namespace FE::Memory
             MemoryState()
             {
                 constexpr size_t kGigabyte = 0x40000000;
-                if (Build::IsDevelopment())
+                if (Build::IsDebug())
                     m_debugHeap = DebugHeapInit(8 * kGigabyte);
             }
 

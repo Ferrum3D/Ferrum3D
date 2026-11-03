@@ -186,6 +186,9 @@ namespace FE::Graphics
 
         static constexpr uint32_t kCullingStatsReadbackCount = 4;
 
+        //! Statistics only feed diagnostics, so each view samples them once per this many frames.
+        static constexpr uint32_t kCullingStatsInterval = 8;
+
         struct CullingStatsReadback final
         {
             Rc<Core::Buffer> m_buffer;
@@ -203,6 +206,7 @@ namespace FE::Graphics
             Rc<Core::Buffer> m_meshletVisibility;
             uint32_t m_meshletVisibilityCapacity = 0;
             Rc<Core::Buffer> m_stats;
+            uint64_t m_nextStatsFrameIndex = 0;
             festd::array<CullingStatsReadback, kCullingStatsReadbackCount> m_readbacks;
         };
 
@@ -226,7 +230,6 @@ namespace FE::Graphics
         void DestroyGroup(MeshGroup* group);
         void UpdateGroup(MeshGroup* group);
         void ReleaseGroupPipelines(MeshGroup* group);
-        void AddGeometryDependencies(Core::FrameGraph& graph, Core::Buffer* buffer) const;
         MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
         [[nodiscard]] Aabb CalculateBatchBounds(const MeshBatch* batch) const;
         void UpdateBatchMembership(MeshBatch* batch);
@@ -266,6 +269,7 @@ namespace FE::Graphics
         festd::vector<MeshPass::CullDispatch> m_cullDispatches[Octree::kMaxTraversalTasks];
         festd::vector<festd::unique_ptr<ViewCullingState>> m_viewCullingStates;
         Memory::BuddyAllocator m_meshletVisibilityAllocator;
+
         //! The end of the highest meshlet visibility range allocated so far, in words.
         uint32_t m_meshletVisibilityWordCount = 0;
         uint64_t m_frameIndex = 0;
@@ -282,10 +286,12 @@ namespace FE::Graphics
         festd::array<uint64_t, 6> m_sceneTableAddresses{};
         uint32_t m_visibilityType = 0;
         uint32_t m_revision = 1;
+
         Visibility::SurfaceRouting m_evaluationRouting;
         uint32_t m_evaluationRoutingRevision = 0;
         uint32_t m_evaluationPipelineRevision = 0;
         uint32_t m_evaluationGroupRowCount = 0;
+
         Octree m_octree;
     };
 } // namespace FE::Graphics
