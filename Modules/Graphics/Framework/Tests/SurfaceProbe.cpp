@@ -56,20 +56,20 @@ namespace FE::Graphics::SurfaceProbe
                     {
                         if (indirect)
                         {
-                            auto* pass = graph.AllocatePassData<Visibility::SurfaceCommandsPassDesc>();
-                            pass->m_constants = constants;
-                            pass->m_pipeline = pipeline;
-                            pass->m_arguments = Core::BufferView(work.m_emissionArguments.Get());
-                            graph.AddDispatchIndirectPass("BenchmarkIndirectEmission", pass);
+                            Visibility::SurfaceCommandsConstants pass{};
+                            pass = constants;
+                            graph.AddDispatchIndirect("BenchmarkIndirectEmission",
+                                                      pipeline,
+                                                      pass,
+                                                      Core::BufferView(work.m_emissionArguments.Get()));
                         }
                         else
                         {
-                            auto* pass = graph.AllocatePassData<EmissionDirectPassDesc>();
-                            pass->m_constants = constants;
-                            pass->m_pipeline = pipeline;
+                            SurfaceCommandsConstants pass{};
+                            pass = constants;
                             const uint32_t threads = Math::Max(work.m_waveCapacity, work.m_shaderCount);
                             const uint32_t groups = Math::Max(Math::CeilDivide(threads, Visibility::kSurfaceBlockSize), 1u);
-                            graph.AddDispatchPass("BenchmarkDirectEmission", pass, groups);
+                            graph.AddDispatch("BenchmarkDirectEmission", pipeline, pass, groups);
                         }
                     }
 
@@ -160,8 +160,6 @@ namespace FE::Graphics::SurfaceProbe
         };
         Core::ComputePipeline* countPipeline = classifier("Shaders/Passes/MeshPass/CountMeshSurfacePixels.cs.hlsl");
         Core::ComputePipeline* scatterPipeline = classifier("Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
-        Rc<Core::Buffer> sceneBuffer = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(device, "ProbeScene", 1);
-        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "SurfaceProbeView", 1);
         Rc<Core::Texture> visibility =
             Core::Texture::Create(device, "SurfaceProbeVisibility", Core::Format::kR32G32_UINT, kResolution);
         Rc<Core::Texture> g0 = Core::Texture::Create(device, "SurfaceProbeG0", Core::Format::kR32_UINT, kResolution);
@@ -266,26 +264,23 @@ namespace FE::Graphics::SurfaceProbe
             scene.m_instances = instances.GetDeviceAddress();
             scene.m_groups = groups.GetDeviceAddress();
             scene.m_materials = materials.GetDeviceAddress();
-            view.m_scene = graph->GetSRV(sceneBuffer.Get());
-            FE_Verify(uploader.Upload(*graph, sceneBuffer.Get(), scene));
-            graph->AddBufferDependency(viewBuffer.Get(), sceneBuffer.Get());
-            FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
-            auto* seed = graph->AllocatePassData<ProbePassDesc>();
-            seed->m_pipeline = generate;
-            seed->m_constants.m_resolution = kResolution;
-            seed->m_constants.m_visibility = graph->GetUAV(Core::TextureView::Create(visibility.Get()));
-            seed->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(g0.Get()));
-            seed->m_constants.m_marks = graph->GetUAV(marks.Get());
-            seed->m_constants.m_instanceBase = instanceRows.m_rowIndex;
-            seed->m_constants.m_groupCount = testCase == 0 || testCase == 2 ? 0 : kGroupCount;
-            graph->AddDispatchPass("GenerateSurfaceProbe", seed, Math::CeilDivide(kResolution, 8u));
+            view.m_scene = graph->CreateConstants(scene);
+            const ConstantsPtr<MeshPass::MeshViewData> viewConstants = graph->CreateConstants(view);
+            ProbeConstants seed{};
+            seed.m_resolution = kResolution;
+            seed.m_visibility = graph->GetUAV(Core::TextureView::Create(visibility.Get()));
+            seed.m_g0 = graph->GetUAV(Core::TextureView::Create(g0.Get()));
+            seed.m_marks = graph->GetUAV(marks.Get());
+            seed.m_instanceBase = instanceRows.m_rowIndex;
+            seed.m_groupCount = testCase == 0 || testCase == 2 ? 0 : kGroupCount;
+            graph->AddDispatch("GenerateSurfaceProbe", generate, seed, Math::CeilDivide(kResolution, 8u));
             if (shadingTest)
             {
                 Visibility::BuildSurfaceWork(*graph, uploader, Visibility::ShadingWorkInput{ g0.Get() }, work);
             }
             else
             {
-                const Visibility::EvaluationWorkInput input{ viewBuffer.Get(), visibility.Get(), countPipeline, scatterPipeline };
+                const Visibility::EvaluationWorkInput input{ viewConstants, visibility.Get(), countPipeline, scatterPipeline };
                 Visibility::BuildSurfaceWork(*graph, uploader, input, work);
             }
 
@@ -294,20 +289,19 @@ namespace FE::Graphics::SurfaceProbe
 
             for (uint32_t slot = 0; slot < work.m_shaderCount; ++slot)
             {
-                auto* evaluation = graph->AllocatePassData<ProbeIndirectDesc>();
-                evaluation->m_pipeline = visit;
-                evaluation->m_arguments = Core::BufferView(work.m_arguments.Get()).Slice(slot * 12, 12);
-                evaluation->m_constants.m_resolution = kResolution;
-                evaluation->m_constants.m_groupBase = groupRows.m_rowIndex;
-                evaluation->m_constants.m_groupCount = kGroupCount;
-                evaluation->m_constants.m_shaderSlot = slot;
-                evaluation->m_constants.m_pixels = graph->GetSRV(work.m_pixels.Get());
-                evaluation->m_constants.m_waves = graph->GetSRV(work.m_waves.Get());
-                evaluation->m_constants.m_ranges = graph->GetSRV(work.m_ranges.Get());
-                evaluation->m_constants.m_marks = graph->GetUAV(marks.Get());
-                graph->AddPass("VisitSurfaceProbe", evaluation, [](Core::FrameGraphContext& context) {
-                    context.DispatchIndirect();
-                });
+                ProbeConstants evaluation{};
+                evaluation.m_resolution = kResolution;
+                evaluation.m_groupBase = groupRows.m_rowIndex;
+                evaluation.m_groupCount = kGroupCount;
+                evaluation.m_shaderSlot = slot;
+                evaluation.m_pixels = graph->GetSRV(work.m_pixels.Get());
+                evaluation.m_waves = graph->GetSRV(work.m_waves.Get());
+                evaluation.m_ranges = graph->GetSRV(work.m_ranges.Get());
+                evaluation.m_marks = graph->GetUAV(marks.Get());
+                graph->AddDispatchIndirect("VisitSurfaceProbe",
+                                           visit,
+                                           evaluation,
+                                           Core::BufferView(work.m_arguments.Get()).Slice(slot * 12, 12));
             }
             graph->AddCopyPass(Core::BufferView(argsReadback.Get()).Slice(0, shaderCount * 12),
                                Core::BufferView(work.m_arguments.Get()).Slice(0, shaderCount * 12));
@@ -318,10 +312,9 @@ namespace FE::Graphics::SurfaceProbe
                 Core::BufferView(argsReadback.Get()).Slice(rangesOffset, shaderCount * sizeof(Visibility::ShaderRange)),
                 Core::BufferView(work.m_ranges.Get()));
 
-            auto* pack = graph->AllocatePassData<Stage1Probe::PassDesc>();
-            pack->m_pipeline = codecPipeline;
-            pack->m_constants.m_words = graph->GetUAV(codec.Get());
-            graph->AddDispatchPass("SurfaceCodecProbe", pack, Core::ComputeWorkGroupCount(1));
+            Stage1Probe::Constants pack{};
+            pack.m_words = graph->GetUAV(codec.Get());
+            graph->AddDispatch("SurfaceCodecProbe", codecPipeline, pack, Core::ComputeWorkGroupCount(1));
             graph->AddCopyPass(Core::BufferView(codecReadback.Get()), Core::BufferView(codec.Get()));
             graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(marks.Get()));
             graph->CompileAndExecute();

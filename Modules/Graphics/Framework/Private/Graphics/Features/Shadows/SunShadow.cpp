@@ -209,15 +209,17 @@ namespace FE::Graphics::SunShadow
                 const Vector2UInt maskSize(block.m_pagesPerAxis * kSunShadowMaskTexelsPerPage);
                 Rc<Core::Texture> mask =
                     Core::Texture::Create(graph.GetDevice(), "SunShadowPageMask", Core::Format::kR32_SFLOAT, maskSize);
-                auto* buildMask = graph.AllocatePassData<SunShadowPageMaskPassDesc>();
-                buildMask->m_pipeline = BuildPageMaskPipeline::GetPipeline();
-                buildMask->m_constants.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
-                buildMask->m_constants.m_mask = graph.GetUAV(mask.Get());
-                buildMask->m_constants.m_level = blockIndex;
-                buildMask->m_constants.m_requiredFlags = requiredFlags;
-                buildMask->m_constants.m_pageOrigin = block.m_pageOrigin;
-                buildMask->m_constants.m_pagesPerAxis = block.m_pagesPerAxis;
-                graph.AddDispatchPass("BuildPageMask", buildMask, Math::CeilDivide(maskSize, kSunShadowTileSize));
+                SunShadowPageMaskConstants buildMask{};
+                buildMask.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
+                buildMask.m_mask = graph.GetUAV(mask.Get());
+                buildMask.m_level = blockIndex;
+                buildMask.m_requiredFlags = requiredFlags;
+                buildMask.m_pageOrigin = block.m_pageOrigin;
+                buildMask.m_pagesPerAxis = block.m_pagesPerAxis;
+                graph.AddDispatch("BuildPageMask",
+                                  BuildPageMaskPipeline::GetPipeline(),
+                                  buildMask,
+                                  Math::CeilDivide(maskSize, kSunShadowTileSize));
                 pyramids.push_back(Tools::DepthPyramid::AddPass(graph, mask.Get(), pyramidSettings).m_farthest);
             }
         }
@@ -244,13 +246,15 @@ namespace FE::Graphics::SunShadow
                 Core::Buffer::CreateStructured<SunShadowBlock>(graph.GetDevice(), "SunShadowBlocks", blockCount);
             FE_Verify(uploader.UploadArray(graph, blocks.Get(), festd::span<const SunShadowBlock>(frame.m_blocks)));
 
-            auto* invalidate = graph.AllocatePassData<SunShadowInvalidatePassDesc>();
-            invalidate->m_pipeline = InvalidatePagesPipeline::GetPipeline();
-            invalidate->m_constants.m_blocks = graph.GetSRV(blocks.Get());
-            invalidate->m_constants.m_regions = graph.GetSRV(regions.Get());
-            invalidate->m_constants.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
-            invalidate->m_constants.m_owners = graph.GetUAV(cache.m_owners.Get());
-            graph.AddDispatchPass("InvalidatePages", invalidate, Vector2UInt(regionCount, blockCount));
+            SunShadowInvalidateConstants invalidate{};
+            invalidate.m_blocks = graph.GetSRV(blocks.Get());
+            invalidate.m_regions = graph.GetSRV(regions.Get());
+            invalidate.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
+            invalidate.m_owners = graph.GetUAV(cache.m_owners.Get());
+            graph.AddDispatch("InvalidatePages",
+                              InvalidatePagesPipeline::GetPipeline(),
+                              invalidate,
+                              Vector2UInt(regionCount, blockCount));
         }
     } // namespace
 
@@ -318,36 +322,37 @@ namespace FE::Graphics::SunShadow
                                               Core::Format::kR32_UINT,
                                               Vector2UInt(kSunShadowAtlasSize, kSunShadowAtlasSize));
 
-        auto* update = graph.AllocatePassData<SunShadowUpdatePassDesc>();
-        update->m_pipeline = UpdatePagesPipeline::GetPipeline();
-        update->m_constants.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
-        update->m_constants.m_owners = graph.GetUAV(cache.m_owners.Get());
-        update->m_constants.m_counters = graph.GetUAV(frame.m_counters.Get());
-        update->m_constants.m_scroll = graph.GetSRV(scrollBuffer.Get());
-        update->m_constants.m_pageCount = frame.m_pageCount;
-        update->m_constants.m_isReset = changes.m_isCreated ? 1 : 0;
+        SunShadowUpdateConstants update{};
+        update.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
+        update.m_owners = graph.GetUAV(cache.m_owners.Get());
+        update.m_counters = graph.GetUAV(frame.m_counters.Get());
+        update.m_scroll = graph.GetSRV(scrollBuffer.Get());
+        update.m_pageCount = frame.m_pageCount;
+        update.m_isReset = changes.m_isCreated ? 1 : 0;
         const uint32_t updateCount = Math::Max(frame.m_pageCount, kSunShadowPhysicalPageCount);
-        graph.AddDispatchPass("UpdatePages", update, Math::CeilDivide(updateCount, kSunShadowThreadCount));
+        graph.AddDispatch("UpdatePages",
+                          UpdatePagesPipeline::GetPipeline(),
+                          update,
+                          Math::CeilDivide(updateCount, kSunShadowThreadCount));
 
         if (!changes.m_isCreated && !inputs.m_staticChanges.empty())
             AddInvalidatePass(graph, uploader, inputs, cache, frame);
 
         const Vector2UInt resolution = inputs.m_depth->GetDesc().GetSize2D();
-        auto* mark = graph.AllocatePassData<SunShadowMarkPassDesc>();
-        mark->m_pipeline = MarkPagesPipeline::GetPipeline();
-        mark->m_constants.m_data = graph.GetSRV(inputs.m_data);
-        mark->m_constants.m_view = graph.GetSRV(inputs.m_view);
-        mark->m_constants.m_depth = graph.GetSRV(inputs.m_depth);
-        mark->m_constants.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
-        mark->m_constants.m_localLighting = inputs.m_localLighting;
+        SunShadowMarkConstants mark{};
+        mark.m_data = inputs.m_data;
+        mark.m_view = inputs.m_view;
+        mark.m_depth = graph.GetSRV(inputs.m_depth);
+        mark.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
+        mark.m_localLighting = inputs.m_localLighting;
         if (inputs.m_localMaps != nullptr)
         {
-            mark->m_constants.m_localMaps = graph.GetSRV(inputs.m_localMaps);
-            mark->m_constants.m_localLightMaps = graph.GetSRV(inputs.m_localLightMaps);
+            mark.m_localMaps = graph.GetSRV(inputs.m_localMaps);
+            mark.m_localLightMaps = graph.GetSRV(inputs.m_localLightMaps);
         }
 
-        mark->m_constants.m_resolution = resolution;
-        graph.AddDispatchPass("MarkPages", mark, Math::CeilDivide(resolution, kSunShadowTileSize));
+        mark.m_resolution = resolution;
+        graph.AddDispatch("MarkPages", MarkPagesPipeline::GetPipeline(), mark, Math::CeilDivide(resolution, kSunShadowTileSize));
     }
 
 
@@ -355,32 +360,35 @@ namespace FE::Graphics::SunShadow
     {
         FE_PROFILER_ZONE();
 
-        auto* collect = graph.AllocatePassData<SunShadowCollectPassDesc>();
-        collect->m_pipeline = CollectPagesPipeline::GetPipeline();
-        collect->m_constants.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
-        collect->m_constants.m_owners = graph.GetSRV(cache.m_owners.Get());
-        collect->m_constants.m_freePages = graph.GetUAV(frame.m_freePages.Get());
-        collect->m_constants.m_evictablePages = graph.GetUAV(frame.m_evictablePages.Get());
-        collect->m_constants.m_counters = graph.GetUAV(frame.m_counters.Get());
-        graph.AddDispatchPass("CollectPages", collect, Math::CeilDivide(kSunShadowPhysicalPageCount, kSunShadowThreadCount));
+        SunShadowCollectConstants collect{};
+        collect.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
+        collect.m_owners = graph.GetSRV(cache.m_owners.Get());
+        collect.m_freePages = graph.GetUAV(frame.m_freePages.Get());
+        collect.m_evictablePages = graph.GetUAV(frame.m_evictablePages.Get());
+        collect.m_counters = graph.GetUAV(frame.m_counters.Get());
+        graph.AddDispatch("CollectPages",
+                          CollectPagesPipeline::GetPipeline(),
+                          collect,
+                          Math::CeilDivide(kSunShadowPhysicalPageCount, kSunShadowThreadCount));
 
-        auto* allocate = graph.AllocatePassData<SunShadowAllocatePassDesc>();
-        allocate->m_pipeline = AllocatePagesPipeline::GetPipeline();
-        allocate->m_constants.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
-        allocate->m_constants.m_owners = graph.GetUAV(cache.m_owners.Get());
-        allocate->m_constants.m_freePages = graph.GetSRV(frame.m_freePages.Get());
-        allocate->m_constants.m_evictablePages = graph.GetSRV(frame.m_evictablePages.Get());
-        allocate->m_constants.m_dirtyPages = graph.GetUAV(frame.m_dirtyPages.Get());
-        allocate->m_constants.m_counters = graph.GetUAV(frame.m_counters.Get());
-        allocate->m_constants.m_pageCount = frame.m_pageCount;
-        graph.AddDispatchPass("AllocatePages", allocate, Math::CeilDivide(frame.m_pageCount, kSunShadowThreadCount));
+        SunShadowAllocateConstants allocate{};
+        allocate.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
+        allocate.m_owners = graph.GetUAV(cache.m_owners.Get());
+        allocate.m_freePages = graph.GetSRV(frame.m_freePages.Get());
+        allocate.m_evictablePages = graph.GetSRV(frame.m_evictablePages.Get());
+        allocate.m_dirtyPages = graph.GetUAV(frame.m_dirtyPages.Get());
+        allocate.m_counters = graph.GetUAV(frame.m_counters.Get());
+        allocate.m_pageCount = frame.m_pageCount;
+        graph.AddDispatch("AllocatePages",
+                          AllocatePagesPipeline::GetPipeline(),
+                          allocate,
+                          Math::CeilDivide(frame.m_pageCount, kSunShadowThreadCount));
 
-        auto* clearAtlas = graph.AllocatePassData<SunShadowClearAtlasPassDesc>();
-        clearAtlas->m_pipeline = ClearAtlasPagesPipeline::GetPipeline();
-        clearAtlas->m_constants.m_counters = graph.GetSRV(frame.m_counters.Get());
-        clearAtlas->m_constants.m_dirtyPages = graph.GetSRV(frame.m_dirtyPages.Get());
-        clearAtlas->m_constants.m_atlas = graph.GetUAV(cache.m_staticAtlas.Get());
-        graph.AddDispatchPass("ClearAtlasPages", clearAtlas, kSunShadowPhysicalPageCount);
+        SunShadowClearAtlasConstants clearAtlas{};
+        clearAtlas.m_counters = graph.GetSRV(frame.m_counters.Get());
+        clearAtlas.m_dirtyPages = graph.GetSRV(frame.m_dirtyPages.Get());
+        clearAtlas.m_atlas = graph.GetUAV(cache.m_staticAtlas.Get());
+        graph.AddDispatch("ClearAtlasPages", ClearAtlasPagesPipeline::GetPipeline(), clearAtlas, kSunShadowPhysicalPageCount);
 
         AddPageMaskPasses(graph, cache, frame, kStaticPageFlags, frame.m_staticPyramids);
         AddPageMaskPasses(graph, cache, frame, kDynamicPageFlags, frame.m_dynamicPyramids);
@@ -416,13 +424,12 @@ namespace FE::Graphics::SunShadow
 
     void AddCopyPagesPass(Core::FrameGraph& graph, const PageCache& cache, const PageFrame& frame)
     {
-        auto* copy = graph.AllocatePassData<SunShadowCopyPagesPassDesc>();
-        copy->m_pipeline = CopyPagesPipeline::GetPipeline();
-        copy->m_constants.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
-        copy->m_constants.m_owners = graph.GetSRV(cache.m_owners.Get());
-        copy->m_constants.m_source = graph.GetSRV(cache.m_staticAtlas.Get());
-        copy->m_constants.m_target = graph.GetUAV(frame.m_atlas.Get());
-        graph.AddDispatchPass("CopyPages", copy, kSunShadowPhysicalPageCount);
+        SunShadowCopyPagesConstants copy{};
+        copy.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
+        copy.m_owners = graph.GetSRV(cache.m_owners.Get());
+        copy.m_source = graph.GetSRV(cache.m_staticAtlas.Get());
+        copy.m_target = graph.GetUAV(frame.m_atlas.Get());
+        graph.AddDispatch("CopyPages", CopyPagesPipeline::GetPipeline(), copy, kSunShadowPhysicalPageCount);
     }
 
 
@@ -768,31 +775,18 @@ namespace FE::Graphics::SunShadow
 
             const RendererViewData& view = blackboard.Get<RendererViewData>();
             SunShadowMarkRasterData markData{};
-            markData.m_data = graph.GetSRV(inputs.m_data);
+            markData.m_data = inputs.m_data;
             markData.m_pageTable = graph.GetUAV(pageTable);
             markData.m_localLighting = inputs.m_localLighting;
-            Rc<Core::Buffer> markBuffer =
-                Core::Buffer::CreateStructured<SunShadowMarkRasterData>(graph.GetDevice(), "SunShadowMarkRaster", 1);
-            graph.AddBufferDependency(markBuffer.Get(), inputs.m_data);
             if (inputs.m_localMaps != nullptr && inputs.m_localLighting.m_clusters.IsValid())
             {
                 markData.m_localMaps = graph.GetSRV(inputs.m_localMaps);
                 markData.m_localLightMaps = graph.GetSRV(inputs.m_localLightMaps);
-                graph.AddBufferDependency(markBuffer.Get(), inputs.m_localMaps);
-                graph.AddBufferDependency(markBuffer.Get(), inputs.m_localLightMaps);
-                graph.AddBufferDependency(markBuffer.Get(), inputs.m_localLighting.m_clusters);
-                graph.AddBufferDependency(markBuffer.Get(), inputs.m_localLighting.m_masks);
             }
-
-            FE_Verify(view.m_renderQueueUploader->Upload(graph, markBuffer.Get(), markData));
 
             auto* base = graph.AllocatePassData<SunShadowMarkRasterPassDesc>();
             base->m_depthTarget = Core::TextureView::Create(view.m_mainDepthTarget);
             base->m_viewport = view.m_viewportRect;
-            base->m_pageTable =
-                Core::PassBufferAccess(Core::BufferView(pageTable),
-                                       Core::BarrierSyncFlags::kPixelShading,
-                                       Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite);
 
             SceneRenderPass pass;
             pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
@@ -801,7 +795,7 @@ namespace FE::Graphics::SunShadow
             // Only materials with a ShadowPageMark technique receive shadows in the forward pass.
             pass.m_techniqueRole = Env::Name("ShadowPageMark");
             pass.m_independentCulling = true;
-            pass.m_passData = markBuffer.Get();
+            pass.m_passData = graph.CreateConstants(markData);
             if (const auto* pyramids = blackboard.TryGet<DepthPyramidPass::Output>())
                 pass.m_depthPyramid = &pyramids->m_farthest;
 
@@ -863,12 +857,11 @@ namespace FE::Graphics::SunShadow
         if (!hasSun)
             data.m_levelCount = 0;
 
-        Rc<Core::Buffer> dataBuffer = Core::Buffer::CreateStructured<SunShadowData>(graph.GetDevice(), "SunShadowData", 1);
-        FE_Verify(view.m_renderQueueUploader->Upload(graph, dataBuffer.Get(), data));
+        const ConstantsPtr<SunShadowData> dataConstants = graph.CreateConstants(data);
 
         PageInputs inputs;
-        inputs.m_data = dataBuffer.Get();
-        inputs.m_view = view.m_constants.Get();
+        inputs.m_data = dataConstants;
+        inputs.m_view = view.m_constants;
         inputs.m_depth = view.m_mainDepthTarget;
         inputs.m_settings = settings;
         inputs.m_directionToLight = directionToLight;
@@ -897,7 +890,7 @@ namespace FE::Graphics::SunShadow
         ScheduleFeedbackReadback(graph, cache, frame, Renderer::Get().GetGraphicsQueue()->GetCurrentFence());
 
         SunShadowBinding& binding = blackboard.Add<SunShadowBinding>();
-        binding.m_data = graph.GetSRV(dataBuffer.Get());
+        binding.m_data = dataConstants;
         binding.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
         binding.m_atlas = graph.GetSRV(frame.m_atlas.Get());
         if (localFrame.m_hasMaps)
@@ -907,7 +900,6 @@ namespace FE::Graphics::SunShadow
         }
 
         Output& output = blackboard.Add<Output>();
-        output.m_data = std::move(dataBuffer);
         output.m_pageTable = cache.m_pageTable;
         output.m_atlas = std::move(frame.m_atlas);
         output.m_localMaps = std::move(localFrame.m_mapBuffer);
@@ -926,20 +918,22 @@ namespace FE::Graphics::SunShadow
 
         RendererViewData& view = blackboard.Get<RendererViewData>();
         const Vector2UInt resolution = view.m_mainColorTarget->GetDesc().GetSize2D();
-        auto* debug = graph.AllocatePassData<SunShadowDebugPassDesc>();
-        debug->m_pipeline = SunShadowDebugPipeline::GetPipeline();
+        SunShadowDebugConstants debug{};
         if (const SunShadowBinding* binding = blackboard.TryGet<SunShadowBinding>())
-            debug->m_constants.m_shadow = *binding;
+            debug.m_shadow = *binding;
         if (const LocalLightingBinding* localLighting = blackboard.TryGet<LocalLightingBinding>())
-            debug->m_constants.m_localLighting = *localLighting;
+            debug.m_localLighting = *localLighting;
 
-        debug->m_constants.m_view = graph.GetSRV(view.m_constants.Get());
-        debug->m_constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
-        debug->m_constants.m_g1 = graph.GetSRV(surfaces->m_gBufferTargets[1].Get());
-        debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
-        debug->m_constants.m_resolution = resolution;
-        debug->m_constants.m_mode = debugData->m_mode;
-        graph.AddDispatchPass("SunShadowDebug", debug, Math::CeilDivide(resolution, kSunShadowTileSize));
+        debug.m_view = view.m_constants;
+        debug.m_depth = graph.GetSRV(view.m_mainDepthTarget);
+        debug.m_g1 = graph.GetSRV(surfaces->m_gBufferTargets[1].Get());
+        debug.m_output = graph.GetUAV(view.m_mainColorTarget);
+        debug.m_resolution = resolution;
+        debug.m_mode = debugData->m_mode;
+        graph.AddDispatch("SunShadowDebug",
+                          SunShadowDebugPipeline::GetPipeline(),
+                          debug,
+                          Math::CeilDivide(resolution, kSunShadowTileSize));
         view.m_isMainColorWritten = true;
     }
 } // namespace FE::Graphics::SunShadow
@@ -999,17 +993,9 @@ namespace FE::Graphics::ShadowAtlas
         rasterData.m_level = inputs.m_level;
         rasterData.m_requiredFlags = inputs.m_requiredPageFlags;
         rasterData.m_pageOrigin = inputs.m_pageOrigin;
-        Rc<Core::Buffer> rasterBuffer =
-            Core::Buffer::CreateStructured<SunShadowRasterData>(graph.GetDevice(), "SunShadowRaster", 1);
-        graph.AddBufferDependency(rasterBuffer.Get(), inputs.m_pageTable);
-        FE_Verify(view.m_renderQueueUploader->Upload(graph, rasterBuffer.Get(), rasterData));
 
         auto* base = graph.AllocatePassData<SunShadowRasterPassDesc>();
         base->m_viewport = view.m_viewportRect;
-        base->m_atlas = Core::PassTextureAccess(atlas,
-                                                Core::BarrierSyncFlags::kPixelShading,
-                                                Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite,
-                                                Core::BarrierLayout::kShaderReadWrite);
 
         SceneRenderPass pass;
         pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
@@ -1020,7 +1006,7 @@ namespace FE::Graphics::ShadowAtlas
         pass.m_phase = SceneRenderPhase::kSingle;
         pass.m_depthPyramid = Culling::GetPassData(blackboard).GetOccluderPyramid();
         pass.m_reportsStats = true;
-        pass.m_passData = rasterBuffer.Get();
+        pass.m_passData = graph.CreateConstants(rasterData);
         view.m_scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
             module.AddRenderPasses(graph, blackboard, *view.m_renderQueueUploader, pass);
         });

@@ -109,8 +109,6 @@ namespace FE::Graphics::RasterProbe
         };
         Core::ComputePipeline* countPipeline = classifier("Shaders/Passes/MeshPass/CountMeshSurfacePixels.cs.hlsl");
         Core::ComputePipeline* scatterPipeline = classifier("Shaders/Passes/MeshPass/ScatterMeshSurfacePixels.cs.hlsl");
-        Rc<Core::Buffer> sceneBuffer = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(device, "ProbeScene", 1);
-        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "RasterProbeView", 1);
         Rc<Core::Buffer> meshlets = Core::Buffer::CreateStructured<MeshPass::VisibleMeshlet>(device, "RasterProbeMeshlets", 1);
         Rc<Core::Buffer> commands = Core::Buffer::CreateStructured<MeshPass::MeshCommandRange>(device, "RasterProbeCommands", 1);
         Rc<Core::Buffer> arguments =
@@ -159,15 +157,21 @@ namespace FE::Graphics::RasterProbe
         scene.m_groups = groups.GetDeviceAddress();
         scene.m_lods = lods.GetDeviceAddress();
         scene.m_materials = materials.GetDeviceAddress();
-        view.m_visibleMeshlets = graph->GetSRV(meshlets.Get());
-        view.m_commands = graph->GetSRV(commands.Get());
-        view.m_scene = graph->GetSRV(sceneBuffer.Get());
-        FE_Verify(uploader.Upload(*graph, sceneBuffer.Get(), scene));
-        graph->AddBufferDependency(sceneBuffer.Get(), geometryBuffer.Get());
-        graph->AddBufferDependency(viewBuffer.Get(), sceneBuffer.Get());
-        graph->AddBufferDependency(viewBuffer.Get(), meshlets.Get());
-        graph->AddBufferDependency(viewBuffer.Get(), commands.Get());
-        FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
+        view.m_scene = graph->CreateConstants(scene);
+        const ConstantsPtr<MeshPass::MeshViewData> viewConstants = graph->CreateConstants(view);
+
+        MeshPass::MeshPassData passData{};
+        passData.m_visibleMeshlets = graph->GetSRV(meshlets.Get());
+        passData.m_commands = graph->GetSRV(commands.Get());
+        const ConstantsPtr<MeshPass::MeshPassData> passConstants = graph->CreateConstants(passData);
+
+        // Shaders reach the geometry through a table row, like the database pages.
+        auto* geometryAccess = graph->AllocatePassData<Core::BufferAccessPassDesc>();
+        geometryAccess->m_access = { geometryBuffer.Get(),
+                                     Core::BarrierSyncFlags::kAllShading,
+                                     Core::BarrierAccessFlags::kShaderRead };
+        graph->AddPass("RasterProbeGeometryAccess", geometryAccess);
+
         auto* targets = graph->AllocatePassData<Visibility::CoveragePassDesc>();
         targets->m_visibility = Core::TextureView::Create(visibility.Get());
         targets->m_depth = Core::TextureView::Create(depth.Get());
@@ -178,9 +182,8 @@ namespace FE::Graphics::RasterProbe
             context.ClearRenderTargets();
         });
         auto* mesh = graph->AllocatePassData<MeshPass::PassDesc>();
-        const BufferSRVDescriptor viewDescriptor = graph->GetSRV(viewBuffer.Get());
         mesh->m_pipeline = coverage;
-        mesh->m_constants = { viewDescriptor, 0 };
+        mesh->m_constants = { viewConstants, passConstants, 0 };
         mesh->m_arguments = Core::BufferView(arguments.Get());
         graph->AddPass("RasterProbeCoverage", mesh, graph->AddBasePassDesc(targets), [](Core::FrameGraphContext& context) {
             context.DispatchMeshIndirect();
@@ -196,16 +199,15 @@ namespace FE::Graphics::RasterProbe
         clearRequest.m_desc.SetComputeShader("Shaders/Deferred/ClearSurface.cs.hlsl");
         Core::ComputePipeline* clearPipeline = pipelines->CreateComputePipeline(clearRequest);
         clearPipeline->GetCompletionWaitGroup()->Wait();
-        auto* clear = graph->AllocatePassData<Visibility::SurfaceDirectPassDesc>();
-        clear->m_pipeline = clearPipeline;
-        clear->m_constants.m_visibility = graph->GetSRV(visibility.Get());
-        clear->m_constants.m_resolution = Vector2UInt(64, 64);
-        clear->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
-        graph->AddDispatchPass("ClearRasterSurface", clear, Math::CeilDivide(clear->m_constants.m_resolution, 8u));
+        Visibility::SurfaceConstants clear{};
+        clear.m_visibility = graph->GetSRV(visibility.Get());
+        clear.m_resolution = Vector2UInt(64, 64);
+        clear.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
+        graph->AddDispatch("ClearRasterSurface", clearPipeline, clear, Math::CeilDivide(clear.m_resolution, 8u));
         const Visibility::SurfaceBinding binding{ group.m_rowIndex, 0 };
         auto routing = Visibility::CreateSurfaceRouting(device, festd::span(&binding, 1), groups.GetReservedRowCount(), 1);
         auto surfaceWork = Visibility::CreateSurfaceWork(device, Vector2UInt(64, 64), routing, waveLaneCount);
-        const Visibility::EvaluationWorkInput input{ viewBuffer.Get(), visibility.Get(), countPipeline, scatterPipeline };
+        const Visibility::EvaluationWorkInput input{ viewConstants, visibility.Get(), countPipeline, scatterPipeline };
         Visibility::BuildSurfaceWork(*graph, uploader, input, surfaceWork);
         Core::ComputePipelineRequest evaluateRequest;
         evaluateRequest.m_desc.SetComputeShader("Shaders/Materials/EvaluateBunnyVariants.cs.hlsl");
@@ -213,33 +215,31 @@ namespace FE::Graphics::RasterProbe
         Core::ComputePipeline* evaluate = pipelines->CreateComputePipeline(evaluateRequest);
         evaluate->GetCompletionWaitGroup()->Wait();
         ASSERT_TRUE(evaluate->IsReady());
-        auto* evaluation = graph->AllocatePassData<Visibility::SurfacePassDesc>();
-        evaluation->m_pipeline = evaluate;
-        evaluation->m_arguments = Core::BufferView(surfaceWork.m_arguments.Get()).Slice(0, 12);
-        evaluation->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
-        evaluation->m_constants.m_visibility = graph->GetSRV(Core::TextureView::Create(visibility.Get()));
-        evaluation->m_constants.m_pixels = graph->GetSRV(surfaceWork.m_pixels.Get());
-        evaluation->m_constants.m_waves = graph->GetSRV(surfaceWork.m_waves.Get());
-        evaluation->m_constants.m_ranges = graph->GetSRV(surfaceWork.m_ranges.Get());
-        evaluation->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
-        evaluation->m_constants.m_g1 = graph->GetUAV(Core::TextureView::Create(planes[1].Get()));
-        evaluation->m_constants.m_g2 = graph->GetUAV(Core::TextureView::Create(planes[2].Get()));
-        evaluation->m_constants.m_g3 = graph->GetUAV(Core::TextureView::Create(planes[3].Get()));
-        evaluation->m_constants.m_resolution = Vector2UInt(64, 64);
-        evaluation->m_constants.m_tilesPerRow = 1;
-        graph->AddPass("EvaluateRasterSurface", evaluation, [](Core::FrameGraphContext& context) {
-            context.DispatchIndirect();
-        });
-        auto* inspect = graph->AllocatePassData<PassDesc>();
-        inspect->m_pipeline = probe;
-        inspect->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
-        inspect->m_constants.m_visibility = graph->GetSRV(Core::TextureView::Create(visibility.Get()));
-        inspect->m_constants.m_depth = graph->GetSRV(Core::TextureView::Create(depth.Get()));
-        inspect->m_constants.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
-        inspect->m_constants.m_g1 = graph->GetSRV(Core::TextureView::Create(planes[1].Get()));
-        inspect->m_constants.m_g2 = graph->GetSRV(Core::TextureView::Create(planes[2].Get()));
-        inspect->m_constants.m_words = graph->GetUAV(output.Get());
-        graph->AddDispatchPass("InspectRasterProbe", inspect, Core::ComputeWorkGroupCount(2));
+        Visibility::SurfaceConstants evaluation{};
+        evaluation.m_view = viewConstants;
+        evaluation.m_visibility = graph->GetSRV(Core::TextureView::Create(visibility.Get()));
+        evaluation.m_pixels = graph->GetSRV(surfaceWork.m_pixels.Get());
+        evaluation.m_waves = graph->GetSRV(surfaceWork.m_waves.Get());
+        evaluation.m_ranges = graph->GetSRV(surfaceWork.m_ranges.Get());
+        evaluation.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
+        evaluation.m_g1 = graph->GetUAV(Core::TextureView::Create(planes[1].Get()));
+        evaluation.m_g2 = graph->GetUAV(Core::TextureView::Create(planes[2].Get()));
+        evaluation.m_g3 = graph->GetUAV(Core::TextureView::Create(planes[3].Get()));
+        evaluation.m_resolution = Vector2UInt(64, 64);
+        evaluation.m_tilesPerRow = 1;
+        graph->AddDispatchIndirect("EvaluateRasterSurface",
+                                   evaluate,
+                                   evaluation,
+                                   Core::BufferView(surfaceWork.m_arguments.Get()).Slice(0, 12));
+        Constants inspect{};
+        inspect.m_view = viewConstants;
+        inspect.m_visibility = graph->GetSRV(Core::TextureView::Create(visibility.Get()));
+        inspect.m_depth = graph->GetSRV(Core::TextureView::Create(depth.Get()));
+        inspect.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
+        inspect.m_g1 = graph->GetSRV(Core::TextureView::Create(planes[1].Get()));
+        inspect.m_g2 = graph->GetSRV(Core::TextureView::Create(planes[2].Get()));
+        inspect.m_words = graph->GetUAV(output.Get());
+        graph->AddDispatch("InspectRasterProbe", probe, inspect, Core::ComputeWorkGroupCount(2));
         graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(output.Get()));
         graph->CompileAndExecute();
         uploader.CloseFrame(queue->GetCurrentFence());

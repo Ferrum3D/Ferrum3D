@@ -41,7 +41,7 @@ FE_NUM_THREADS(kLightClusterThreadCount, 1, 1)
 void main(uint3 thread : SV_DispatchThreadID)
 {
     const LocalLightingBinding lighting = GConstants.m_lighting;
-    const LightClusterData data = lighting.m_clusters.Load(0);
+    const LightClusterData data = lighting.m_clusters.Load();
     const uint clusterIndex = thread.x;
     if (clusterIndex >= data.m_tiles.x * data.m_tiles.y * kLightClusterSlices)
         return;

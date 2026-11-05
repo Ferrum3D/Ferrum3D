@@ -3,14 +3,15 @@
 #include <Shaders/Passes/MeshPass/MeshPass.h>
 
 [[vk::push_constant]] Constants GConstants;
-static const MeshViewData GView = GConstants.m_view.Load(0);
+static const MeshViewData GView = GConstants.m_view.Load();
+static const MeshPassData GPass = GConstants.m_pass.Load();
 
 
 //! Each mesh shader group rasterizes one meshlet that survived compute culling.
 VisibleMeshlet LoadVisibleMeshlet(const uint32_t groupIndex)
 {
-    const MeshCommandRange command = GView.m_commands.Load(GConstants.m_commandIndex);
-    return GView.m_visibleMeshlets.Load(command.m_firstMeshlet + groupIndex);
+    const MeshCommandRange command = GPass.m_commands.Load(GConstants.m_commandIndex);
+    return GPass.m_visibleMeshlets.Load(command.m_firstMeshlet + groupIndex);
 }
 
 

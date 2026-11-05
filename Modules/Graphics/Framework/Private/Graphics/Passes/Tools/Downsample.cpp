@@ -90,10 +90,8 @@ namespace FE::Graphics::Tools
         specializer.Set<DownsamplePipeline::AllowFloat16>(settings.m_allowFloat16);
         specializer.Set<DownsamplePipeline::DownsampleFilter>(settings.m_filter);
 
-        PassDesc* passDesc = graph.AllocatePassData<PassDesc>();
-        passDesc->m_pipeline = DownsamplePipeline::GetPipeline(specializer);
+        Constants constants{};
 
-        Constants& constants = passDesc->m_constants;
         constants.m_mips = numMips;
         constants.m_numWorkGroups = numWorkGroups;
         constants.m_workGroupOffset = workGroupOffset;
@@ -107,7 +105,7 @@ namespace FE::Graphics::Tools
         constants.m_inputSrcMidMip = constants.m_inputSrcMips[5];
         constants.m_linearClamp = graph.GetSampler(Core::SamplerState::kLinearClamp);
 
-        graph.AddDispatchPass("Downsample", passDesc, dispatchThreadGroupCount);
+        graph.AddDispatch("Downsample", DownsamplePipeline::GetPipeline(specializer), constants, dispatchThreadGroupCount);
         return dst;
     }
 } // namespace FE::Graphics::Tools

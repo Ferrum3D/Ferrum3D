@@ -1,6 +1,6 @@
+#include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Features/Lighting/GlobalLightingSceneModule.h>
 #include <Graphics/Features/Lighting/HosekSky.h>
-#include <Graphics/RendererImpl.h>
 #include <cmath>
 
 namespace FE::Graphics
@@ -68,15 +68,6 @@ namespace FE::Graphics
     GlobalLightingSceneModule::GlobalLightingSceneModule(Scene* scene)
         : SceneModuleBase(scene)
     {
-        auto* renderer = Rtti::AssertCast<RendererImpl*>(scene->GetRenderer());
-        m_table = Memory::DefaultNew<GlobalLightingTable>(renderer->GetDatabase());
-        m_row = m_table->AllocateRow();
-    }
-
-
-    GlobalLightingSceneModule::~GlobalLightingSceneModule()
-    {
-        m_table->Free(m_row);
     }
 
 
@@ -102,17 +93,21 @@ namespace FE::Graphics
         if (!m_dirty)
             return;
 
-        m_table->WriteRow(m_row).m_lighting.Get() = m_parameters.BuildRenderData();
+        m_renderData = m_parameters.BuildRenderData();
         m_dirty = false;
+    }
+
+
+    void GlobalLightingSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader&)
+    {
+        m_constants = graph.CreateConstants(m_renderData);
     }
 
 
     void GlobalLightingSceneModule::PrepareRenderView(Core::FrameGraph&, Core::FrameGraphBlackboard& blackboard,
                                                       Core::RingUploader&)
     {
-        auto& binding = blackboard.Add<GlobalLightingBinding>();
-        binding.m_table = m_table->GetDeviceAddress();
-        binding.m_row = m_row.m_rowIndex;
+        blackboard.Add<ConstantsPtr<GlobalLightingData>>(m_constants);
     }
 
 

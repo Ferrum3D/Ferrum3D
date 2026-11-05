@@ -111,6 +111,7 @@ namespace FE::Graphics::Vulkan
                 range.size = rootConstants.m_byteSize;
                 range.offset = rootConstants.m_offset;
                 range.stageFlags = VK_SHADER_STAGE_ALL;
+                m_rootConstantsByteSize = Math::Max(m_rootConstantsByteSize, rootConstants.m_byteSize);
             }
         }
 

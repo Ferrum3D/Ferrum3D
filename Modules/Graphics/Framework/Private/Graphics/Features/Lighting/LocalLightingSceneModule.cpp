@@ -172,7 +172,7 @@ namespace FE::Graphics
 
 
     void LocalLightingSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
-                                                     Core::RingUploader& uploader)
+                                                     Core::RingUploader&)
     {
         const bool isLit =
             blackboard.Contains<DeferredShading::ViewModule*>() || blackboard.Contains<ForwardTransparency::ViewModule*>();
@@ -200,20 +200,20 @@ namespace FE::Graphics
 
         Core::Device* device = graph.GetDevice();
         const uint32_t clusterCount = data.m_tiles.x * data.m_tiles.y * kLightClusterSlices;
-        auto clusters = Core::Buffer::CreateStructured<LightClusterData>(device, "LightClusters", 1);
         auto masks = Core::Buffer::CreateStructured<uint32_t>(device, "LightClusterMasks", clusterCount * data.m_wordCount);
-        FE_Verify(uploader.Upload(graph, clusters.Get(), data));
 
         auto& binding = blackboard.Add<LocalLightingBinding>();
         binding.m_lights = m_table->GetDeviceAddress();
-        binding.m_clusters = graph.GetSRV(clusters.Get());
+        binding.m_clusters = graph.CreateConstants(data);
         binding.m_masks = graph.GetSRV(masks.Get());
-        auto* cull = graph.AllocatePassData<CullLocalLightsPassDesc>();
-        cull->m_pipeline = CullLocalLightsPipeline::GetPipeline();
-        cull->m_constants.m_lighting = binding;
-        cull->m_constants.m_lighting.m_masks = {};
-        cull->m_constants.m_masks = graph.GetUAV(masks.Get());
-        graph.AddDispatchPass("CullLocalLights", cull, Math::CeilDivide(clusterCount, kLightClusterThreadCount));
+        CullLocalLightsConstants cull{};
+        cull.m_lighting = binding;
+        cull.m_lighting.m_masks = {};
+        cull.m_masks = graph.GetUAV(masks.Get());
+        graph.AddDispatch("CullLocalLights",
+                          CullLocalLightsPipeline::GetPipeline(),
+                          cull,
+                          Math::CeilDivide(clusterCount, kLightClusterThreadCount));
     }
 
 

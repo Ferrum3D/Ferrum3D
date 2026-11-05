@@ -11,7 +11,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::CullMeshlets)
     //! invalid for passes that do not report statistics.
     struct Constants final
     {
-        StructuredBufferDescriptor<MeshViewData> m_view;
+        ConstantsPtr<MeshViewData> m_view;
         StructuredBufferDescriptor<VisibleInstance> m_instances;
         StructuredBufferDescriptor<MeshletWorkChunk> m_work;
         StructuredBufferDescriptor<PipelineBucket> m_buckets;
@@ -27,15 +27,5 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::CullMeshlets)
         uint32_t m_phase;
 
         FE_RTTI_Reflect("2C78344A-4394-46E5-BDFE-69A32663EF5C");
-    };
-
-
-    struct PassDesc final
-    {
-        Constants m_constants;
-        Core::PassComputePipeline m_pipeline;
-        Core::PassIndirectArgs m_arguments;
-
-        FE_RTTI_Reflect("302094E9-72EC-40E4-8382-EF16D3E5BAB9");
     };
 FE_HOST_END_NAMESPACE

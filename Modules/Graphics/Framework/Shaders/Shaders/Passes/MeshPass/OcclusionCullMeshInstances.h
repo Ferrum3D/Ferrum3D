@@ -6,7 +6,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::OcclusionCullMeshInstances)
     //! their classification slot cleared and, in the late phase, their visibility word reset.
     struct Constants final
     {
-        StructuredBufferDescriptor<MeshViewData> m_view;
+        ConstantsPtr<MeshViewData> m_view;
         StructuredBufferDescriptor<uint32_t> m_candidates;
         StructuredBufferDescriptor<OcclusionCullDispatch> m_dispatch;
         RWStructuredBufferDescriptor<InstanceClassification> m_classification;
@@ -20,15 +20,5 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::OcclusionCullMeshInstances)
         uint32_t m_phase;
 
         FE_RTTI_Reflect("F176BF50-D62D-46ED-9211-8EE6B1C45959");
-    };
-
-
-    struct PassDesc final
-    {
-        Constants m_constants;
-        Core::PassComputePipeline m_pipeline;
-        Core::PassIndirectArgs m_arguments;
-
-        FE_RTTI_Reflect("74F4A270-390F-4A91-B5FE-AEAEEEE4090C");
     };
 FE_HOST_END_NAMESPACE

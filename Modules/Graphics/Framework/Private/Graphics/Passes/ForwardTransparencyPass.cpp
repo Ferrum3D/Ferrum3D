@@ -1,5 +1,4 @@
 #include <Graphics/Core/PipelineVariantSet.h>
-#include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/ForwardTransparencyPass.h>
@@ -51,54 +50,18 @@ namespace FE::Graphics::ForwardTransparency
         targets->m_revealage = Core::TextureView::Create(revealage.Get());
         targets->m_depth = Core::TextureView::Create(view.m_mainDepthTarget);
         targets->m_viewport = view.m_viewportRect;
-        const SunShadow::Output* sunShadow = blackboard.TryGet<SunShadow::Output>();
-        if (sunShadow != nullptr)
-        {
-            targets->m_sunShadowAtlas = Core::PassTextureAccess(Core::TextureView::Create(sunShadow->m_atlas.Get()),
-                                                                Core::BarrierSyncFlags::kPixelShading,
-                                                                Core::BarrierAccessFlags::kShaderRead,
-                                                                Core::BarrierLayout::kShaderRead);
-        }
-
         graph.AddPass("ClearTransparency", targets, [](Core::FrameGraphContext& context) {
             context.ClearColorTarget(0, Core::ColorClearValue::Float(Color4F(0, 0, 0, 0)));
             context.ClearColorTarget(1, Core::ColorClearValue::Float(Color4F(1, 1, 1, 1)));
             context.ClearRenderTargets();
         });
 
-        ForwardLightingData data{};
-        if (const auto* global = blackboard.TryGet<GlobalLightingBinding>())
-            data.m_global = *global;
-        if (const auto* local = blackboard.TryGet<LocalLightingBinding>())
-            data.m_local = *local;
-        if (const auto* binding = blackboard.TryGet<SunShadowBinding>())
-            data.m_sunShadow = *binding;
-
-        auto lighting = Core::Buffer::CreateStructured<ForwardLightingData>(graph.GetDevice(), "ForwardLighting", 1);
-        if (data.m_local.m_clusters.IsValid())
-        {
-            graph.AddBufferDependency(lighting.Get(), data.m_local.m_clusters);
-            graph.AddBufferDependency(lighting.Get(), data.m_local.m_masks);
-        }
-
-        if (sunShadow != nullptr)
-        {
-            graph.AddBufferDependency(lighting.Get(), sunShadow->m_data.Get());
-            graph.AddBufferDependency(lighting.Get(), sunShadow->m_pageTable.Get());
-            if (sunShadow->m_localMaps != nullptr)
-            {
-                graph.AddBufferDependency(lighting.Get(), sunShadow->m_localMaps.Get());
-                graph.AddBufferDependency(lighting.Get(), sunShadow->m_localLightMaps.Get());
-            }
-        }
-
-        FE_Verify(view.m_renderQueueUploader->Upload(graph, lighting.Get(), data));
         SceneRenderPass pass;
         pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
         pass.m_passDescToken = graph.AddBasePassDesc(targets);
         pass.m_drawTag = DrawTags::Transparent;
         pass.m_techniqueRole = "ForwardTransparency";
-        pass.m_passData = lighting.Get();
+        pass.m_passData = view.m_lighting;
         pass.m_independentCulling = true;
         if (const auto* pyramids = blackboard.TryGet<DepthPyramidPass::Output>())
             pass.m_depthPyramid = &pyramids->m_farthest;
@@ -107,12 +70,14 @@ namespace FE::Graphics::ForwardTransparency
             module.AddRenderPasses(graph, blackboard, *view.m_renderQueueUploader, pass);
         });
 
-        auto* resolve = graph.AllocatePassData<TransparencyResolvePassDesc>();
-        resolve->m_pipeline = ResolveTransparencyPipeline::GetPipeline();
-        resolve->m_constants.m_accumulation = graph.GetSRV(accumulation.Get());
-        resolve->m_constants.m_revealage = graph.GetSRV(revealage.Get());
-        resolve->m_constants.m_color = graph.GetUAV(view.m_mainColorTarget);
-        resolve->m_constants.m_resolution = resolution;
-        graph.AddDispatchPass("ResolveTransparency", resolve, Math::CeilDivide(resolution, 8u));
+        TransparencyResolveConstants resolve{};
+        resolve.m_accumulation = graph.GetSRV(accumulation.Get());
+        resolve.m_revealage = graph.GetSRV(revealage.Get());
+        resolve.m_color = graph.GetUAV(view.m_mainColorTarget);
+        resolve.m_resolution = resolution;
+        graph.AddDispatch("ResolveTransparency",
+                          ResolveTransparencyPipeline::GetPipeline(),
+                          resolve,
+                          Math::CeilDivide(resolution, 8u));
     }
 } // namespace FE::Graphics::ForwardTransparency

@@ -4260,6 +4260,79 @@ namespace FE::Graphics::Common::InternalPassDesc
 } // namespace FE::Graphics::Common::InternalPassDesc
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID AnyConstantsPtr::TypeID = Rtti::TypeID{
+        0xbd, 0x8f, 0x90, 0x53, 0x88, 0xc1, 0x48, 0x46, 0xac, 0x05, 0xa0, 0xfa, 0x86, 0x02, 0x66, 0x44,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_bd8f905388c14846ac05a0fa86026644(AnyConstantsPtr* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xbd, 0x8f, 0x90, 0x53, 0x88, 0xc1, 0x48, 0x46,
+                0xac, 0x05, 0xa0, 0xfa, 0x86, 0x02, 0x66, 0x44, // FE::Graphics::AnyConstantsPtr (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_bd8f905388c14846ac05a0fa86026644()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& AnyConstantsPtr::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_bd8f905388c14846ac05a0fa86026644();
+    }
+
+    void AnyConstantsPtr::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_bd8f905388c14846ac05a0fa86026644();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xbd, 0x8f, 0x90, 0x53, 0x88, 0xc1, 0x48, 0x46,
+            0xac, 0x05, 0xa0, 0xfa, 0x86, 0x02, 0x66, 0x44, // FE::Graphics::AnyConstantsPtr
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_ptr = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_ptr",
+                                                     &AnyConstantsPtr::m_ptr,
+                                                     kAttributes_m_ptr,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<AnyConstantsPtr>(typeInstance,
+                                              Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                              "FE::Graphics::AnyConstantsPtr",
+                                              kBaseClassTypeIDs,
+                                              kAttributes,
+                                              kFields,
+                                              Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_bd8f905388c14846ac05a0fa86026644(static_cast<AnyConstantsPtr*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_bd8f905388c14846ac05a0fa86026644(&AnyConstantsPtr::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID PassComputePipeline::TypeID = Rtti::TypeID{

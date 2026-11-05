@@ -99,17 +99,16 @@ namespace FE::Editor
         }
 
         auto result = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), "EditorPick", 1);
-        auto* pass = graph.AllocatePassData<SelectionPassDesc>();
-        pass->m_pipeline = pipeline;
-        pass->m_constants.m_visibility = graph.GetSRV(visibility->m_target.Get());
-        pass->m_constants.m_color = graph.GetUAV(view.m_mainColorTarget);
-        pass->m_constants.m_selected = graph.GetSRV(selected.Get());
-        pass->m_constants.m_pickResult = graph.GetUAV(result.Get());
-        pass->m_constants.m_resolution = resolution;
-        pass->m_constants.m_selectedCount = m_selected.size();
-        pass->m_constants.m_pickPosition = Math::Min(m_pickPosition, resolution - Vector2UInt(1, 1));
-        pass->m_constants.m_pick = m_pickRequested ? 1 : 0;
-        graph.AddDispatchPass("EditorSelectionOutlineAndPick", pass, Math::CeilDivide(resolution, 8u));
+        SelectionConstants pass{};
+        pass.m_visibility = graph.GetSRV(visibility->m_target.Get());
+        pass.m_color = graph.GetUAV(view.m_mainColorTarget);
+        pass.m_selected = graph.GetSRV(selected.Get());
+        pass.m_pickResult = graph.GetUAV(result.Get());
+        pass.m_resolution = resolution;
+        pass.m_selectedCount = m_selected.size();
+        pass.m_pickPosition = Math::Min(m_pickPosition, resolution - Vector2UInt(1, 1));
+        pass.m_pick = m_pickRequested ? 1 : 0;
+        graph.AddDispatch("EditorSelectionOutlineAndPick", pipeline, pass, Math::CeilDivide(resolution, 8u));
 
         if (!m_pickRequested)
             return;

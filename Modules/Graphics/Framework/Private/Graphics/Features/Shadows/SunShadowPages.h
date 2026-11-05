@@ -83,10 +83,10 @@ namespace FE::Graphics::SunShadow
 
     struct PageInputs final
     {
-        //! A structured buffer with one SunShadowData built from m_levels.
-        Core::Buffer* m_data = nullptr;
-        //! A structured buffer with the ViewData of the camera whose depth requests pages.
-        Core::Buffer* m_view = nullptr;
+        //! Built from m_levels.
+        ConstantsPtr<SunShadowData> m_data;
+        //! The camera whose depth requests pages.
+        ConstantsPtr<ViewData> m_view;
         Core::Texture* m_depth = nullptr;
         Settings m_settings;
         Vector3 m_directionToLight = Vector3::kZero;

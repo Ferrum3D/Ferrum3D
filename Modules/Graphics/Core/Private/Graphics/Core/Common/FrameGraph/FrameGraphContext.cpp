@@ -13,6 +13,7 @@ namespace FE::Graphics::Common
     void FrameGraphContext::PushConstants(const void* data, const uint32_t size)
     {
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kPushConstants), "Push constants already set");
+        FE_Assert(size <= sizeof(m_pushConstants));
         m_setStateMask |= PipelineStateFlags::kPushConstants;
 
         memcpy(m_pushConstants, data, size);

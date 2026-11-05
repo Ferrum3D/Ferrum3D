@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <Core/Math/Quaternion.h>
 #include <Graphics/Scene/Scene.h>
-#include <Graphics/Tables/GlobalLightingTable.h>
+#include <Shaders/Lighting/GlobalLighting.h>
 
 namespace FE::Graphics
 {
@@ -47,12 +47,12 @@ namespace FE::Graphics
         FE_RTTI("636C5C42-D046-48E5-991E-90AB330AD0D0");
 
         explicit GlobalLightingSceneModule(Scene* scene);
-        ~GlobalLightingSceneModule() override;
 
         bool SetParameters(const GlobalLightingParameters& parameters);
         [[nodiscard]] const GlobalLightingParameters& GetParameters() const;
 
         void Update() override;
+        void UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader) override;
         void PrepareRenderView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
                                Core::RingUploader& uploader) override;
 
@@ -60,8 +60,8 @@ namespace FE::Graphics
         void DoRelease() override;
 
         GlobalLightingParameters m_parameters;
-        Rc<GlobalLightingTable> m_table;
-        DB::Ref<GlobalLightingTable> m_row;
+        GlobalLightingData m_renderData{};
+        ConstantsPtr<GlobalLightingData> m_constants;
         bool m_dirty = true;
     };
 } // namespace FE::Graphics

@@ -21,13 +21,4 @@ FE_HOST_BEGIN_NAMESPACE(FE::Editor)
         FE_RTTI_Reflect("B48FC0E3-7C7C-467C-AC57-5493B02B094F");
     };
 
-
-    struct SelectionPassDesc final
-    {
-        SelectionConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("F53F9A17-5534-4C7B-9460-EBEC36D7C7BD");
-    };
-
 FE_HOST_END_NAMESPACE

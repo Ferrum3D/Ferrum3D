@@ -66,12 +66,11 @@ namespace FE::Graphics::SurfaceEvaluation
 
         auto& targets = output.m_gBufferTargets;
         // Clear coverage once, then let each object producer classify only its own visibility IDs.
-        auto* clear = graph.AllocatePassData<SurfaceDirectPassDesc>();
-        clear->m_pipeline = ClearSurfacePipeline::GetPipeline();
-        clear->m_constants.m_g0 = graph.GetUAV(targets[0].Get());
-        clear->m_constants.m_resolution = resolution;
-        clear->m_constants.m_visibility = graph.GetSRV(visibility);
-        graph.AddDispatchPass("ClearSurfaceG0", clear, Math::CeilDivide(resolution, 8u));
+        SurfaceConstants clear{};
+        clear.m_g0 = graph.GetUAV(targets[0].Get());
+        clear.m_resolution = resolution;
+        clear.m_visibility = graph.GetSRV(visibility);
+        graph.AddDispatch("ClearSurfaceG0", ClearSurfacePipeline::GetPipeline(), clear, Math::CeilDivide(resolution, 8u));
 
         const auto pipelines = blackboard.Get<SceneData*>()->m_evaluationPipelines.GetSlots();
         for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
@@ -82,37 +81,32 @@ namespace FE::Graphics::SurfaceEvaluation
             auto work = CreateSurfaceWork(graph.GetDevice(), resolution, *batch.m_routing, batch.m_waveLaneCount);
             {
                 FE_FG_SCOPE(graph, "SurfaceClassification");
-                const EvaluationWorkInput input{ batch.m_objectData.Get(),
-                                                 visibility,
-                                                 batch.m_countPipeline,
-                                                 batch.m_scatterPipeline };
+                const EvaluationWorkInput input{ batch.m_objectData, visibility, batch.m_countPipeline, batch.m_scatterPipeline };
                 BuildSurfaceWork(graph, *view.m_renderQueueUploader, input, work);
             }
 
             // Dispatch only shaders used by this producer, with its opaque reconstruction data.
-            const uint32_t tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
+            SurfaceConstants constants{};
+            constants.m_view = batch.m_objectData;
+            constants.m_visibility = graph.GetSRV(visibility);
+            constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
+            constants.m_waves = graph.GetSRV(work.m_waves.Get());
+            constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
+            constants.m_g0 = graph.GetUAV(targets[0].Get());
+            constants.m_g1 = graph.GetUAV(targets[1].Get());
+            constants.m_g2 = graph.GetUAV(targets[2].Get());
+            constants.m_g3 = graph.GetUAV(targets[3].Get());
+            constants.m_resolution = resolution;
+            constants.m_tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
             for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
             {
                 if (batch.m_routing->m_shaderBindingData[slot].y == 0)
                     continue;
 
-                auto* passDesc = graph.AllocatePassData<SurfacePassDesc>();
-                passDesc->m_pipeline = pipelines[slot].m_pipeline.Get();
-                passDesc->m_arguments =
+                constants.m_shaderSlot = slot;
+                const Core::BufferView arguments =
                     Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
-                passDesc->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
-                passDesc->m_constants.m_visibility = graph.GetSRV(visibility);
-                passDesc->m_constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
-                passDesc->m_constants.m_waves = graph.GetSRV(work.m_waves.Get());
-                passDesc->m_constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
-                passDesc->m_constants.m_g0 = graph.GetUAV(targets[0].Get());
-                passDesc->m_constants.m_g1 = graph.GetUAV(targets[1].Get());
-                passDesc->m_constants.m_g2 = graph.GetUAV(targets[2].Get());
-                passDesc->m_constants.m_g3 = graph.GetUAV(targets[3].Get());
-                passDesc->m_constants.m_resolution = resolution;
-                passDesc->m_constants.m_tilesPerRow = tilesPerRow;
-                passDesc->m_constants.m_shaderSlot = slot;
-                graph.AddDispatchIndirectPass("EvaluateSurface", passDesc);
+                graph.AddDispatchIndirect("EvaluateSurface", pipelines[slot].m_pipeline.Get(), constants, arguments);
             }
         }
     }

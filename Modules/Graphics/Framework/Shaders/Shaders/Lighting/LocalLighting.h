@@ -33,13 +33,14 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint2 m_tiles;
         uint32_t m_wordCount;
         uint32_t m_lightCount;
+        FE_RTTI_Reflect("150CC6E4-302D-4C8D-9498-7A1133066AE0");
     };
 
 
     struct LocalLightingBinding final
     {
         BufferPointer m_lights;
-        StructuredBufferDescriptor<LightClusterData> m_clusters;
+        ConstantsPtr<LightClusterData> m_clusters;
         StructuredBufferDescriptor<uint32_t> m_masks;
         FE_RTTI_Reflect("B274D017-6BDB-4FFD-BB75-09DBF5AF6A18");
     };
@@ -50,13 +51,5 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         LocalLightingBinding m_lighting;
         RWStructuredBufferDescriptor<uint32_t> m_masks;
         FE_RTTI_Reflect("24B891DF-17D1-4879-B30D-FE4415FA8458");
-    };
-
-
-    struct CullLocalLightsPassDesc final
-    {
-        CullLocalLightsConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-        FE_RTTI_Reflect("AF25F155-6219-43CA-98C8-5DD07BB4FF6B");
     };
 FE_HOST_END_NAMESPACE

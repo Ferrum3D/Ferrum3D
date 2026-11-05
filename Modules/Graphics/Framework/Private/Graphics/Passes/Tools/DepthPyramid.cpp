@@ -92,10 +92,8 @@ namespace FE::Graphics::Tools::DepthPyramid
             DepthPyramidTilePipeline::Specializer specializer;
             specializer.Set<DepthPyramidTilePipeline::WritesClosest>(buildsClosest);
 
-            auto* desc = graph.AllocatePassData<TilePassDesc>();
-            desc->m_pipeline = DepthPyramidTilePipeline::GetPipeline(specializer);
+            TileConstants constants{};
 
-            TileConstants& constants = desc->m_constants;
             constants.m_depth = graph.GetSRV(depth);
             constants.m_sampler = graph.GetSampler(Core::SamplerState::kPointClamp);
             constants.m_invDepthSize = Math::Reciprocal(Vector2(depth->GetDesc().GetSize2D()));
@@ -107,7 +105,10 @@ namespace FE::Graphics::Tools::DepthPyramid
                     constants.m_closest[mipIndex] = graph.GetUAV(GetMipView(pyramids.m_closest, mipIndex));
             }
 
-            graph.AddDispatchPass("BuildDepthPyramidTiles", desc, Math::CeilDivide(farthest.m_size, kTileGroupSize));
+            graph.AddDispatch("BuildDepthPyramidTiles",
+                              DepthPyramidTilePipeline::GetPipeline(specializer),
+                              constants,
+                              Math::CeilDivide(farthest.m_size, kTileGroupSize));
         }
 
 
@@ -125,10 +126,8 @@ namespace FE::Graphics::Tools::DepthPyramid
             specializer.Set<DepthPyramidSpdPipeline::MipCount>(mipCount);
             specializer.Set<DepthPyramidSpdPipeline::Farthest>(isFarthest);
 
-            auto* desc = graph.AllocatePassData<SpdPassDesc>();
-            desc->m_pipeline = DepthPyramidSpdPipeline::GetPipeline(specializer);
+            SpdConstants constants{};
 
-            SpdConstants& constants = desc->m_constants;
             constants.m_source = graph.GetSRV(GetMipView(pyramid, kSourceMip));
             constants.m_sampler = graph.GetSampler(Core::SamplerState::kPointClamp);
             constants.m_invSourceSize = Math::Reciprocal(Vector2(sourceSize));
@@ -143,7 +142,10 @@ namespace FE::Graphics::Tools::DepthPyramid
             if (mipCount > kSpdMidMip)
                 constants.m_midMip = constants.m_mips[kSpdMidMip];
 
-            graph.AddDispatchPass(isFarthest ? "ReduceFarthestDepthPyramid" : "ReduceClosestDepthPyramid", desc, workGroupCount);
+            graph.AddDispatch(isFarthest ? "ReduceFarthestDepthPyramid" : "ReduceClosestDepthPyramid",
+                              DepthPyramidSpdPipeline::GetPipeline(specializer),
+                              constants,
+                              workGroupCount);
         }
     } // namespace
 

@@ -29,11 +29,13 @@ namespace FE::Graphics::Visibility
 
     void InitializeDebugColor(Core::FrameGraph& graph, Core::Texture* target)
     {
-        auto* pass = graph.AllocatePassData<DebugPassDesc>();
-        pass->m_pipeline = InitializeDebugPipeline::GetPipeline();
-        pass->m_constants.m_output = graph.GetUAV(target);
-        pass->m_constants.m_resolution = target->GetDesc().GetSize2D();
-        graph.AddDispatchPass("InitializeDebugColor", pass, Math::CeilDivide(pass->m_constants.m_resolution, 8u));
+        DebugConstants pass{};
+        pass.m_output = graph.GetUAV(target);
+        pass.m_resolution = target->GetDesc().GetSize2D();
+        graph.AddDispatch("InitializeDebugColor",
+                          InitializeDebugPipeline::GetPipeline(),
+                          pass,
+                          Math::CeilDivide(pass.m_resolution, 8u));
     }
 
 
@@ -92,15 +94,17 @@ namespace FE::Graphics::Visibility
         // Reconstruction belongs to the object producer, which supplies its debug shader and data.
         for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
         {
-            auto* debug = graph.AllocatePassData<DebugPassDesc>();
-            debug->m_pipeline = batch.m_visibilityDebugPipeline;
-            debug->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
-            debug->m_constants.m_visibility = graph.GetSRV(visibility->m_target.Get());
-            debug->m_constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
-            debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
-            debug->m_constants.m_resolution = resolution;
-            debug->m_constants.m_mode = festd::to_underlying(data->m_mode);
-            graph.AddDispatchPass("VisibilityReconstruction", debug, Math::CeilDivide(resolution, 8u));
+            DebugConstants debug{};
+            debug.m_view = batch.m_objectData;
+            debug.m_visibility = graph.GetSRV(visibility->m_target.Get());
+            debug.m_depth = graph.GetSRV(view.m_mainDepthTarget);
+            debug.m_output = graph.GetUAV(view.m_mainColorTarget);
+            debug.m_resolution = resolution;
+            debug.m_mode = festd::to_underlying(data->m_mode);
+            graph.AddDispatch("VisibilityReconstruction",
+                              batch.m_visibilityDebugPipeline,
+                              debug,
+                              Math::CeilDivide(resolution, 8u));
         }
     }
 } // namespace FE::Graphics::Visibility

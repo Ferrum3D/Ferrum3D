@@ -14,15 +14,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Stage1Probe)
     };
 
 
-    struct PassDesc final
-    {
-        Constants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("1B049A95-2315-48E4-9039-87D85925DD26");
-    };
-
-
+    //! Dispatches from a byte offset into its arguments, which AddDispatchIndirect does not.
     struct IndirectPassDesc final
     {
         Constants m_constants;
@@ -31,5 +23,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Stage1Probe)
 
         FE_RTTI_Reflect("F41CD80E-21DB-4956-AB77-024A73D425D3");
     };
+
 
 FE_HOST_END_NAMESPACE

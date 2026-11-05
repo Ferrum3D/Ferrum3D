@@ -80,7 +80,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         struct MeshletCullInput final
         {
-            Core::Buffer* m_view;
+            ConstantsPtr<MeshPass::MeshViewData> m_view;
             Core::Buffer* m_instances;
             Core::Buffer* m_work;
             Core::Buffer* m_buckets;
@@ -162,9 +162,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                                     const Tools::DepthPyramid::Output& depthPyramid, Core::Buffer* classification,
                                     const OcclusionCandidates& candidates)
         {
-            auto* desc = graph.AllocatePassData<MeshPass::OcclusionCullMeshInstances::PassDesc>();
-            auto& constants = desc->m_constants;
-            constants.m_view = graph.GetSRV(culled.m_view.Get());
+            MeshPass::OcclusionCullMeshInstances::Constants constants{};
+            constants.m_view = culled.m_view;
             constants.m_candidates = graph.GetSRV(candidates.m_candidates.Get());
             constants.m_dispatch = graph.GetSRV(candidates.m_dispatch.Get());
             constants.m_classification = graph.GetUAV(classification);
@@ -173,9 +172,10 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_visibilityCapacity = culled.m_visibilityCapacity;
             constants.m_phase = phase;
             SetDepthPyramid(graph, &depthPyramid, constants);
-            desc->m_pipeline = OcclusionCullMeshInstancesPipeline::GetPipeline();
-            desc->m_arguments = GetOcclusionArguments(candidates);
-            graph.AddDispatchIndirectPass("OcclusionCullMeshInstances", desc);
+            graph.AddDispatchIndirect("OcclusionCullMeshInstances",
+                                      OcclusionCullMeshInstancesPipeline::GetPipeline(),
+                                      constants,
+                                      GetOcclusionArguments(candidates));
         }
 
 
@@ -199,9 +199,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                                                                  culled.m_dispatchCount * MeshPass::kInstancesPerCullGroup);
             }
 
-            auto* desc = graph.AllocatePassData<MeshPass::CullMeshInstances::PassDesc>();
-            auto& constants = desc->m_constants;
-            constants.m_view = graph.GetSRV(culled.m_view.Get());
+            MeshPass::CullMeshInstances::Constants constants{};
+            constants.m_view = culled.m_view;
             constants.m_dispatches = graph.GetSRV(culled.m_dispatches.Get());
             constants.m_classification = graph.GetUAV(classification.Get());
             constants.m_visibility = graph.GetUAV(culled.m_visibility.Get());
@@ -211,8 +210,10 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_visibilityCapacity = culled.m_visibilityCapacity;
             constants.m_isOcclusionTested = depthPyramid != nullptr ? 1 : 0;
             constants.m_phase = phase;
-            desc->m_pipeline = CullMeshInstancesPipeline::GetPipeline();
-            graph.AddDispatchPass(isLate ? "CullLateMeshInstances" : "CullMeshInstances", desc, culled.m_dispatchCount);
+            graph.AddDispatch(isLate ? "CullLateMeshInstances" : "CullMeshInstances",
+                              CullMeshInstancesPipeline::GetPipeline(),
+                              constants,
+                              culled.m_dispatchCount);
 
             if (depthPyramid != nullptr)
                 OcclusionCullInstances(graph, culled, phase, *depthPyramid, classification.Get(), candidates);
@@ -223,15 +224,15 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         void Clear(Core::FrameGraph& graph, const CountOutput& output, const uint32_t bucketCount)
         {
-            auto* desc = graph.AllocatePassData<MeshPass::ClearMeshWork::PassDesc>();
-            desc->m_constants.m_counts = graph.GetUAV(output.m_counts.Get());
-            desc->m_constants.m_cursors = graph.GetUAV(output.m_cursors.Get());
-            desc->m_constants.m_meshletCounts = graph.GetUAV(output.m_meshletCounts.Get());
-            desc->m_constants.m_bucketCount = bucketCount;
-            desc->m_pipeline = ClearMeshWorkPipeline::GetPipeline();
-            graph.AddDispatchPass("ClearMeshWork",
-                                  desc,
-                                  Math::CeilDivide(bucketCount * 2, MeshPass::ClearMeshWork::kThreadCount));
+            MeshPass::ClearMeshWork::Constants desc{};
+            desc.m_counts = graph.GetUAV(output.m_counts.Get());
+            desc.m_cursors = graph.GetUAV(output.m_cursors.Get());
+            desc.m_meshletCounts = graph.GetUAV(output.m_meshletCounts.Get());
+            desc.m_bucketCount = bucketCount;
+            graph.AddDispatch("ClearMeshWork",
+                              ClearMeshWorkPipeline::GetPipeline(),
+                              desc,
+                              Math::CeilDivide(bucketCount * 2, MeshPass::ClearMeshWork::kThreadCount));
         }
 
 
@@ -248,15 +249,16 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                                                          input.m_dispatchCount * MeshPass::kInstancesPerCullGroup);
             Clear(graph, output, bucketCount);
 
-            auto* desc = graph.AllocatePassData<MeshPass::CountMeshInstances::PassDesc>();
-            auto& constants = desc->m_constants;
+            MeshPass::CountMeshInstances::Constants constants{};
             constants.m_classification = graph.GetSRV(input.m_classification);
             constants.m_routing = graph.GetSRV(input.m_routing);
             constants.m_instanceBuckets = graph.GetUAV(output.m_instanceBuckets.Get());
             constants.m_counts = graph.GetUAV(output.m_counts.Get());
             constants.m_drawTagMask = input.m_drawTagMask;
-            desc->m_pipeline = CountMeshInstancesPipeline::GetPipeline();
-            graph.AddDispatchPass("CountEligibleMeshInstances", desc, input.m_dispatchCount);
+            graph.AddDispatch("CountEligibleMeshInstances",
+                              CountMeshInstancesPipeline::GetPipeline(),
+                              constants,
+                              input.m_dispatchCount);
             return output;
         }
 
@@ -279,14 +281,12 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                 const auto offsets = Core::Buffer::CreateStructured<Vector2UInt>(graph.GetDevice(), "MeshBucketOffsets", count);
                 const auto sums = Core::Buffer::CreateStructured<Vector2UInt>(graph.GetDevice(), "MeshBucketBlockSums", blocks);
 
-                auto* desc = graph.AllocatePassData<MeshPass::ScanMeshBuckets::PassDesc>();
-                auto& constants = desc->m_constants;
+                MeshPass::ScanMeshBuckets::Constants constants{};
                 constants.m_input = graph.GetSRV(input.Get());
                 constants.m_output = graph.GetUAV(offsets.Get());
                 constants.m_sums = graph.GetUAV(sums.Get());
                 constants.m_count = count;
-                desc->m_pipeline = ScanMeshBucketsPipeline::GetPipeline();
-                graph.AddDispatchPass("ScanMeshBucketBlocks", desc, blocks);
+                graph.AddDispatch("ScanMeshBucketBlocks", ScanMeshBucketsPipeline::GetPipeline(), constants, blocks);
 
                 levels.push_back({ offsets, count });
                 if (blocks == 1)
@@ -298,15 +298,14 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
             for (uint32_t level = levels.size() - 1; level > 0; --level)
             {
-                auto* desc = graph.AllocatePassData<MeshPass::PropagateMeshBucketOffsets::PassDesc>();
-                auto& constants = desc->m_constants;
+                MeshPass::PropagateMeshBucketOffsets::Constants constants{};
                 constants.m_input = graph.GetSRV(levels[level].m_offsets.Get());
                 constants.m_output = graph.GetUAV(levels[level - 1].m_offsets.Get());
                 constants.m_count = levels[level - 1].m_count;
-                desc->m_pipeline = PropagateMeshBucketOffsetsPipeline::GetPipeline();
-                graph.AddDispatchPass("PropagateMeshBucketOffsets",
-                                      desc,
-                                      Math::CeilDivide(constants.m_count, MeshPass::PropagateMeshBucketOffsets::kThreadCount));
+                graph.AddDispatch("PropagateMeshBucketOffsets",
+                                  PropagateMeshBucketOffsetsPipeline::GetPipeline(),
+                                  constants,
+                                  Math::CeilDivide(constants.m_count, MeshPass::PropagateMeshBucketOffsets::kThreadCount));
             }
 
             return levels.front().m_offsets;
@@ -322,17 +321,16 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             output.m_cullDispatch =
                 Core::Buffer::CreateStructured<MeshPass::MeshletCullDispatch>(device, "MeshletCullDispatch", 1);
 
-            auto* desc = graph.AllocatePassData<MeshPass::FinalizeMeshBuckets::PassDesc>();
-            auto& constants = desc->m_constants;
+            MeshPass::FinalizeMeshBuckets::Constants constants{};
             constants.m_offsets = graph.GetSRV(offsets);
             constants.m_counts = graph.GetSRV(counts);
             constants.m_buckets = graph.GetUAV(output.m_buckets.Get());
             constants.m_cullDispatch = graph.GetUAV(output.m_cullDispatch.Get());
             constants.m_bucketCount = bucketCount;
-            desc->m_pipeline = FinalizeMeshBucketsPipeline::GetPipeline();
-            graph.AddDispatchPass("FinalizeMeshBuckets",
-                                  desc,
-                                  Math::CeilDivide(bucketCount, MeshPass::FinalizeMeshBuckets::kThreadCount));
+            graph.AddDispatch("FinalizeMeshBuckets",
+                              FinalizeMeshBucketsPipeline::GetPipeline(),
+                              constants,
+                              Math::CeilDivide(bucketCount, MeshPass::FinalizeMeshBuckets::kThreadCount));
             return output;
         }
 
@@ -347,8 +345,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             output.m_work =
                 Core::Buffer::CreateStructured<MeshPass::MeshletWorkChunk>(device, "MeshletWorkChunks", input.m_workCapacity);
 
-            auto* desc = graph.AllocatePassData<MeshPass::ScatterMeshWork::PassDesc>();
-            auto& constants = desc->m_constants;
+            MeshPass::ScatterMeshWork::Constants constants{};
             constants.m_classification = graph.GetSRV(input.m_classification);
             constants.m_instanceBuckets = graph.GetSRV(input.m_instanceBuckets);
             constants.m_buckets = graph.GetSRV(input.m_buckets);
@@ -357,8 +354,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_work = graph.GetUAV(output.m_work.Get());
             constants.m_stats = GetOptionalUAV(graph, input.m_stats);
             constants.m_phase = input.m_phase;
-            desc->m_pipeline = ScatterMeshWorkPipeline::GetPipeline();
-            graph.AddDispatchPass("ScatterMeshletWork", desc, input.m_dispatchCount);
+            graph.AddDispatch("ScatterMeshletWork", ScatterMeshWorkPipeline::GetPipeline(), constants, input.m_dispatchCount);
             return output;
         }
 
@@ -366,9 +362,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         void OcclusionCullMeshlets(Core::FrameGraph& graph, const MeshletCullInput& input, Core::Buffer* meshlets,
                                    const OcclusionCandidates& candidates)
         {
-            auto* desc = graph.AllocatePassData<MeshPass::OcclusionCullMeshlets::PassDesc>();
-            auto& constants = desc->m_constants;
-            constants.m_view = graph.GetSRV(input.m_view);
+            MeshPass::OcclusionCullMeshlets::Constants constants{};
+            constants.m_view = input.m_view;
             constants.m_instances = graph.GetSRV(input.m_instances);
             constants.m_candidates = graph.GetSRV(candidates.m_candidates.Get());
             constants.m_dispatch = graph.GetSRV(candidates.m_dispatch.Get());
@@ -380,9 +375,10 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_meshletVisibilityCapacity = input.m_meshletVisibilityCapacity;
             constants.m_phase = input.m_phase;
             SetDepthPyramid(graph, input.m_depthPyramid, constants);
-            desc->m_pipeline = OcclusionCullMeshletsPipeline::GetPipeline();
-            desc->m_arguments = GetOcclusionArguments(candidates);
-            graph.AddDispatchIndirectPass("OcclusionCullMeshlets", desc);
+            graph.AddDispatchIndirect("OcclusionCullMeshlets",
+                                      OcclusionCullMeshletsPipeline::GetPipeline(),
+                                      constants,
+                                      GetOcclusionArguments(candidates));
         }
 
 
@@ -403,9 +399,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                                                                                             input.m_meshletCapacity);
             }
 
-            auto* desc = graph.AllocatePassData<MeshPass::CullMeshlets::PassDesc>();
-            auto& constants = desc->m_constants;
-            constants.m_view = graph.GetSRV(input.m_view);
+            MeshPass::CullMeshlets::Constants constants{};
+            constants.m_view = input.m_view;
             constants.m_instances = graph.GetSRV(input.m_instances);
             constants.m_work = graph.GetSRV(input.m_work);
             constants.m_buckets = graph.GetSRV(input.m_buckets);
@@ -419,9 +414,10 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_meshletVisibilityCapacity = input.m_meshletVisibilityCapacity;
             constants.m_isOcclusionTested = input.m_depthPyramid != nullptr ? 1 : 0;
             constants.m_phase = input.m_phase;
-            desc->m_pipeline = CullMeshletsPipeline::GetPipeline();
-            desc->m_arguments = Core::BufferView(input.m_cullDispatch).Slice(0, sizeof(MeshPass::MeshDispatchArguments));
-            graph.AddDispatchIndirectPass("CullMeshlets", desc);
+            graph.AddDispatchIndirect("CullMeshlets",
+                                      CullMeshletsPipeline::GetPipeline(),
+                                      constants,
+                                      Core::BufferView(input.m_cullDispatch).Slice(0, sizeof(MeshPass::MeshDispatchArguments)));
 
             if (input.m_depthPyramid != nullptr)
                 OcclusionCullMeshlets(graph, input, meshlets.Get(), candidates);
@@ -440,18 +436,17 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                                                                                                  "MeshIndirectArguments",
                                                                                                  input.m_commandCapacity);
 
-            auto* desc = graph.AllocatePassData<MeshPass::FinalizeMeshletCommands::PassDesc>();
-            auto& constants = desc->m_constants;
+            MeshPass::FinalizeMeshletCommands::Constants constants{};
             constants.m_buckets = graph.GetSRV(input.m_buckets);
             constants.m_meshletCounts = graph.GetSRV(input.m_meshletCounts);
             constants.m_layouts = graph.GetSRV(input.m_layouts);
             constants.m_commands = graph.GetUAV(output.m_commands.Get());
             constants.m_arguments = graph.GetUAV(output.m_arguments.Get());
             constants.m_bucketCount = input.m_bucketCount;
-            desc->m_pipeline = FinalizeMeshletCommandsPipeline::GetPipeline();
-            graph.AddDispatchPass("FinalizeMeshletCommands",
-                                  desc,
-                                  Math::CeilDivide(input.m_bucketCount, MeshPass::FinalizeMeshletCommands::kThreadCount));
+            graph.AddDispatch("FinalizeMeshletCommands",
+                              FinalizeMeshletCommandsPipeline::GetPipeline(),
+                              constants,
+                              Math::CeilDivide(input.m_bucketCount, MeshPass::FinalizeMeshletCommands::kThreadCount));
             return output;
         }
     } // namespace
@@ -459,7 +454,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
     void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, const uint32_t dispatchCount,
                   const festd::fixed_function<48, void(festd::span<MeshPass::CullDispatch>)>& writeDispatches,
-                  const MeshPass::MeshViewData viewData, const uint32_t phase, const MeshCullViewResources& resources,
+                  const ConstantsPtr<MeshPass::MeshViewData> view, const uint32_t phase, const MeshCullViewResources& resources,
                   CulledMeshView& result)
     {
         FE_PROFILER_ZONE();
@@ -469,7 +464,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             return;
 
         Core::Device* device = graph.GetDevice();
-        result.m_viewData = viewData;
+        result.m_view = view;
         result.m_dispatchCount = dispatchCount;
         result.m_phase = phase;
         result.m_visibility = resources.m_visibility;
@@ -477,11 +472,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         result.m_meshletVisibility = resources.m_meshletVisibility;
         result.m_meshletVisibilityCapacity = resources.m_meshletVisibilityCapacity;
         result.m_stats = resources.m_stats;
-        result.m_view = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(device, "MeshCullView", 1);
         result.m_dispatches = Core::Buffer::CreateStructured<MeshPass::CullDispatch>(device, "MeshCullDispatches", dispatchCount);
 
-        graph.AddBufferDependency(result.m_view.Get(), viewData.m_scene);
-        FE_Verify(uploader.Upload(graph, result.m_view.Get(), viewData));
         FE_Verify(uploader.UploadGenerated(graph,
                                            result.m_dispatches.Get(),
                                            dispatchCount * sizeof(MeshPass::CullDispatch),
@@ -543,7 +535,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         const ScatterOutput scattered = Scatter(graph, scatterInput);
 
         MeshletCullInput cullInput;
-        cullInput.m_view = culled.m_view.Get();
+        cullInput.m_view = culled.m_view;
         cullInput.m_instances = scattered.m_instances.Get();
         cullInput.m_work = scattered.m_work.Get();
         cullInput.m_buckets = buckets.m_buckets.Get();
@@ -568,19 +560,12 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         result.m_commands = commands.m_commands;
         result.m_arguments = commands.m_arguments;
         result.m_submissions = registry.m_submissions;
-        result.m_view = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(graph.GetDevice(), "MeshView", 1);
-        MeshPass::MeshViewData viewData = culled.m_viewData;
-        viewData.m_visibleMeshlets = graph.GetSRV(result.m_meshlets.Get());
-        viewData.m_commands = graph.GetSRV(result.m_commands.Get());
-        graph.AddBufferDependency(result.m_view.Get(), viewData.m_scene);
-        graph.AddBufferDependency(result.m_view.Get(), result.m_meshlets.Get());
-        graph.AddBufferDependency(result.m_view.Get(), result.m_commands.Get());
-        if (phase.m_passData != nullptr)
-        {
-            viewData.m_passData = graph.GetSRV(phase.m_passData);
-            graph.AddBufferDependency(result.m_view.Get(), phase.m_passData);
-        }
+        result.m_view = culled.m_view;
 
-        FE_Verify(uploader.Upload(graph, result.m_view.Get(), viewData));
+        MeshPass::MeshPassData passData{};
+        passData.m_visibleMeshlets = graph.GetSRV(result.m_meshlets.Get());
+        passData.m_commands = graph.GetSRV(result.m_commands.Get());
+        passData.m_passData = phase.m_passData;
+        result.m_pass = graph.CreateConstants(passData);
     }
 } // namespace FE::Graphics::GpuMeshWorkBuilder

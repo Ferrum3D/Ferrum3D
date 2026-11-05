@@ -9,6 +9,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         float4 m_cameraPosition;
         float4 m_viewport;
         float4 m_backgroundColor;
+        FE_RTTI_Reflect("D0EDE1DA-0E96-4FCB-BEC7-F0448213B493");
     };
 #if !FE_HOST
     // Camera constants are shared by the entire dispatch, including partially active waves.

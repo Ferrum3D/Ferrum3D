@@ -23,29 +23,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::SurfaceProbe)
     };
 
 
-    struct ProbePassDesc final
-    {
-        ProbeConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-        FE_RTTI_Reflect("5A08E833-8551-4C21-90D3-A000C7859D49");
-    };
-
-
-    struct ProbeIndirectDesc final
-    {
-        ProbeConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-        Core::PassIndirectArgs m_arguments;
-        FE_RTTI_Reflect("4F199EED-7ABB-441F-863A-558556D1BCE1");
-    };
-
-
-    struct EmissionDirectPassDesc final
-    {
-        SurfaceCommandsConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-        FE_RTTI_Reflect("E47A3FD5-B17C-48DB-8959-F1B4EC63939E");
-    };
 #if FE_HOST
     void Check(Core::Device * device,
                Core::ResourcePool * pool,

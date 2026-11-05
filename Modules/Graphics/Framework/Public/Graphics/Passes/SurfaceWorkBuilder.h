@@ -60,7 +60,7 @@ namespace FE::Graphics::Visibility
                                                 uint32_t waveLaneCount);
     struct EvaluationWorkInput final
     {
-        Core::Buffer* m_objectData;
+        AnyConstantsPtr m_objectData;
         Core::Texture* m_visibility;
         Core::ComputePipeline* m_countPipeline;
         Core::ComputePipeline* m_scatterPipeline;

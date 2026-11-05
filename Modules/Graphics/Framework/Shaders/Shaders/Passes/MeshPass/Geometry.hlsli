@@ -91,9 +91,9 @@ MeshDrawData CreateMeshDrawData(const MeshInstanceTable::Row instance, const Mes
 //! LOD indices are relative to the group's LOD slice, which is ordered from the most detailed LOD.
 MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanceIndex, const uint32_t lodIndex)
 {
-    MeshInstanceTable instanceTable = MeshInstanceTable::Create(view.m_scene.Load(0).m_instances);
-    MeshGroupTable groupTable = MeshGroupTable::Create(view.m_scene.Load(0).m_groups);
-    MeshLodInfoTable lodTable = MeshLodInfoTable::Create(view.m_scene.Load(0).m_lods);
+    MeshInstanceTable instanceTable = MeshInstanceTable::Create(view.m_scene.Load().m_instances);
+    MeshGroupTable groupTable = MeshGroupTable::Create(view.m_scene.Load().m_groups);
+    MeshLodInfoTable lodTable = MeshLodInfoTable::Create(view.m_scene.Load().m_lods);
 
     const MeshInstanceTable::Row instance = instanceTable.ReadRow(instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());

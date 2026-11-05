@@ -22,15 +22,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::DepthPyramidProbe)
     };
 
 
-    struct PassDesc final
-    {
-        Constants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("850F693D-EAB2-4A53-B731-962E19C45D1F");
-    };
-
-
     FE_INLINE float HashDepth(const uint32_t x, const uint32_t y)
     {
         uint32_t hash = (x * 73856093u) ^ (y * 19349663u);

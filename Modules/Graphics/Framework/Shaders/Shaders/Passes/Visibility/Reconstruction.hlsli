@@ -107,7 +107,7 @@ bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, cons
                            out ReconstructedAttributes result, const bool needUV = true, const bool needTangent = true)
 {
     result = (ReconstructedAttributes)0;
-    if (visibility.x == 0 || (visibility.x >> kObjectTypeShift) != view.m_scene.Load(0).m_visibilityType)
+    if (visibility.x == 0 || (visibility.x >> kObjectTypeShift) != view.m_scene.Load().m_visibilityType)
         return false;
 
     const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;

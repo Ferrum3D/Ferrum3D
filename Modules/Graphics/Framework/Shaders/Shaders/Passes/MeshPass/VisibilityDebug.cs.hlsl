@@ -13,7 +13,7 @@ void main(uint3 pixel : SV_DispatchThreadID)
 
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel.xy, 0));
     const MeshViewData view = LoadMeshView(GConstants.m_view);
-    if (id.x == 0 || (id.x >> kObjectTypeShift) != view.m_scene.Load(0).m_visibilityType)
+    if (id.x == 0 || (id.x >> kObjectTypeShift) != view.m_scene.Load().m_visibilityType)
         return;
 
     float3 color = kDebugBackgroundColor;

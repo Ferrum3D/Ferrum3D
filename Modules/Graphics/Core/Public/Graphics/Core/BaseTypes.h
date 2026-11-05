@@ -2,7 +2,32 @@
 #include <Core/Env/Environment.h>
 #include <Core/Math/Vector2.h>
 #include <Core/Math/Vector3UInt.h>
+#include <Core/RTTI/ContainerShapes.h>
 #include <Core/Strings/Format.h>
+
+namespace FE
+{
+    struct BufferPointer final
+    {
+        Vector2UInt m_deviceAddress;
+
+        BufferPointer() = default;
+
+        explicit BufferPointer(const uint64_t deviceAddress)
+            : m_deviceAddress(static_cast<uint32_t>(deviceAddress), static_cast<uint32_t>(deviceAddress >> 32))
+        {
+        }
+
+        [[nodiscard]] uint64_t GetDeviceAddress() const
+        {
+            return static_cast<uint64_t>(m_deviceAddress.x) | (static_cast<uint64_t>(m_deviceAddress.y) << 32);
+        }
+    };
+
+    static_assert(sizeof(BufferPointer) == sizeof(uint64_t));
+    static_assert(alignof(BufferPointer) == alignof(uint32_t));
+} // namespace FE
+
 
 namespace FE::Graphics
 {
@@ -67,7 +92,57 @@ namespace FE::Graphics
     using GloballyCoherentRWByteAddressBufferDescriptor = BufferUAVDescriptor;
 
 #undef FE_FRAME_GRAPH_ALIAS_DESCRIPTOR
+
+
+    //! Constants of a type known only to the shaders that read them, e.g. the payload of a technique role.
+    struct AnyConstantsPtr final
+    {
+        BufferPointer m_ptr{ UINT64_C(0) };
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_ptr.GetDeviceAddress() != 0;
+        }
+
+        FE_RTTI_Reflect("BD8F9053-88C1-4846-AC05-A0FA86026644");
+    };
+
+
+    //! Device address of immutable constants created with FrameGraph::CreateConstants, valid for one graph execution.
+    //!
+    //! It can be stored in push constants or in other constants. Passes that reference it, directly or through nested
+    //! pointers, declare the accesses of every descriptor in the constants.
+    template<class T>
+    struct ConstantsPtr final
+    {
+        AnyConstantsPtr m_any;
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_any.IsValid();
+        }
+
+        [[nodiscard]] operator AnyConstantsPtr() const
+        {
+            return m_any;
+        }
+    };
 } // namespace FE::Graphics
+
+
+namespace FE::Rtti
+{
+    //! Traversal sees one untyped pointer, so frame graphs recognize every ConstantsPtr instance by a single type.
+    template<class T>
+    struct Shape<Graphics::ConstantsPtr<T>>
+    {
+        static void Bind(Type& type)
+        {
+            static_assert(sizeof(Graphics::ConstantsPtr<T>) == sizeof(Graphics::AnyConstantsPtr));
+            Internal::BindFixedArrayShape<Graphics::ConstantsPtr<T>, Graphics::AnyConstantsPtr, 1>(type);
+        }
+    };
+} // namespace FE::Rtti
 
 FE_RTTI_Reflect(FE::Graphics::TextureSRVDescriptor, "4B5172EF-1E7A-43E2-B589-1BAC65428E92");
 FE_RTTI_Reflect(FE::Graphics::TextureUAVDescriptor, "39287D51-E573-4428-AADF-74827CD4351E");

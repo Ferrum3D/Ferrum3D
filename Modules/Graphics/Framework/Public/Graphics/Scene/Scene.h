@@ -73,8 +73,8 @@ namespace FE::Graphics
         //! Cull only the batches with m_drawTag in a single phase, without reading or writing visibility history. Such passes of
         //! a view share the culling result when they have the same tag and occluders.
         bool m_independentCulling = false;
-        //! Read by the role's shaders through MeshViewData::m_passData.
-        Core::Buffer* m_passData = nullptr;
+        //! Read by the role's shaders through MeshPassData::m_passData.
+        AnyConstantsPtr m_passData;
     };
 
 

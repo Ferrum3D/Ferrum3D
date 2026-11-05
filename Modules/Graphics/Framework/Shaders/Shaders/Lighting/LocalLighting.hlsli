@@ -14,7 +14,7 @@ namespace Shading
         if (!binding.m_clusters.IsValid())
             return 0;
 
-        const LightClusterData data = binding.m_clusters.Load(0);
+        const LightClusterData data = binding.m_clusters.Load();
         const uint base = GetLightClusterBase(data, position, pixel);
         const LocalShadow::Camera shadowCamera = LocalShadow::LoadCamera(shadows);
         float3 result = 0;

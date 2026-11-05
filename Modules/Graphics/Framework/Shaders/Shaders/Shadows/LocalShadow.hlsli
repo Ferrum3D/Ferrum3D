@@ -42,9 +42,9 @@ namespace LocalShadow
         if (!binding.m_data.IsValid() || !binding.m_localLightMaps.IsValid())
             return camera;
 
-        StructuredBuffer<SunShadowData> data = binding.m_data.Get();
-        camera.m_positionFootprint = data[0].m_cameraPosition;
-        camera.m_isOrthographic = data[0].m_isOrthographicCamera != 0;
+        const SunShadowData data = binding.m_data.Load();
+        camera.m_positionFootprint = data.m_cameraPosition;
+        camera.m_isOrthographic = data.m_isOrthographicCamera != 0;
         camera.m_isValid = true;
         return camera;
     }
@@ -153,7 +153,7 @@ namespace LocalShadow
             return;
 
         const Camera camera = CreateCamera(data);
-        const LightClusterData clusters = lighting.m_clusters.Load(0);
+        const LightClusterData clusters = lighting.m_clusters.Load();
         const uint base = GetLightClusterBase(clusters, worldPosition, pixel);
         for (uint word = 0; word < clusters.m_wordCount; ++word)
         {

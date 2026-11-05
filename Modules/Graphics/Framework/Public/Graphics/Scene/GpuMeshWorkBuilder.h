@@ -55,8 +55,7 @@ namespace FE::Graphics
 
     struct CulledMeshView final
     {
-        MeshPass::MeshViewData m_viewData{};
-        Rc<Core::Buffer> m_view;
+        ConstantsPtr<MeshPass::MeshViewData> m_view;
         Rc<Core::Buffer> m_dispatches;
         Rc<Core::Buffer> m_visibility;
         Rc<Core::Buffer> m_meshletVisibility;
@@ -73,7 +72,8 @@ namespace FE::Graphics
 
     struct PreparedMeshPass final
     {
-        Rc<Core::Buffer> m_view;
+        ConstantsPtr<MeshPass::MeshViewData> m_view;
+        ConstantsPtr<MeshPass::MeshPassData> m_pass;
         Rc<Core::Buffer> m_meshlets;
         Rc<Core::Buffer> m_commands;
         Rc<Core::Buffer> m_arguments;
@@ -89,17 +89,17 @@ namespace FE::Graphics
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Receives meshlet and rendered instance counters when not null.
         Core::Buffer* m_stats = nullptr;
-        //! Published to the pass shaders as MeshViewData::m_passData when not null.
-        Core::Buffer* m_passData = nullptr;
+        //! Published to the pass shaders as MeshPassData::m_passData.
+        AnyConstantsPtr m_passData;
     };
 
 
     namespace GpuMeshWorkBuilder
     {
-        //! Upload the view's cull inputs and classify instances for the single or early phase.
+        //! Upload the dispatches of the view and classify its instances for the single or early phase.
         void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, uint32_t dispatchCount,
                       const festd::fixed_function<48, void(festd::span<MeshPass::CullDispatch>)>& writeDispatches,
-                      MeshPass::MeshViewData viewData, uint32_t phase, const MeshCullViewResources& resources,
+                      ConstantsPtr<MeshPass::MeshViewData> view, uint32_t phase, const MeshCullViewResources& resources,
                       CulledMeshView& result);
 
         //! Classify the instances for the late phase and record their occlusion results for the next frame.

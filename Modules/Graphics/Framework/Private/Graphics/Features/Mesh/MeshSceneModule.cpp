@@ -705,7 +705,7 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader)
+    void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader&)
     {
         FE_PROFILER_ZONE();
 
@@ -718,18 +718,7 @@ namespace FE::Graphics
         sceneData.m_members = m_memberTable->GetDeviceAddress();
         sceneData.m_visibilityType = m_visibilityType;
 
-        const festd::array<uint64_t, 6> tableAddresses{
-            sceneData.m_instances.GetDeviceAddress(), sceneData.m_groups.GetDeviceAddress(),
-            sceneData.m_lods.GetDeviceAddress(),      sceneData.m_materials.GetDeviceAddress(),
-            sceneData.m_batches.GetDeviceAddress(),   sceneData.m_members.GetDeviceAddress()
-        };
-        if (m_sceneData == nullptr || tableAddresses != m_sceneTableAddresses)
-        {
-            // Immutable versions preserve constants already referenced by submitted frames.
-            m_sceneData = Core::Buffer::CreateStructured<MeshPass::MeshSceneData>(graph.GetDevice(), "MeshScene", 1);
-            FE_Verify(uploader.Upload(graph, m_sceneData.Get(), sceneData));
-            m_sceneTableAddresses = tableAddresses;
-        }
+        m_sceneData = graph.CreateConstants(sceneData);
 
         const auto& pipelines = m_scene->GetRenderData().m_evaluationPipelines;
         const uint32_t groupRowCount = m_meshGroupTable->GetReservedRowCount();
@@ -806,7 +795,8 @@ namespace FE::Graphics
         ResolveCullingStats(state, culling.m_stats);
 
         CollectCullDispatches(culling, DrawTagMask(~UINT64_C(0)));
-        const MeshPass::MeshViewData data = CreateMeshViewData(graph, blackboard, culling);
+        const auto viewConstants = CreateMeshViewData(graph, blackboard, culling);
+        blackboard.Add<ConstantsPtr<MeshPass::MeshViewData>>(viewConstants);
 
         // An occluder pyramid replaces the two phases with a single one, matching Visibility::AddPasses.
         const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
@@ -821,13 +811,10 @@ namespace FE::Graphics
         resources.m_meshletVisibilityCapacity = state.m_meshletVisibilityCapacity;
         resources.m_stats = state.m_stats.Get();
         resources.m_depthPyramid = isOcclusionCulled ? occluderPyramid : nullptr;
-        CullCollectedDispatches(graph, uploader, data, phase, resources, culled);
+        CullCollectedDispatches(graph, uploader, viewConstants, phase, resources, culled);
 
         SurfaceEvaluationBatch batch;
-        batch.m_objectData = Core::Buffer::CreateStructured<MeshPass::MeshViewData>(graph.GetDevice(), "MeshSurfaceView", 1);
-        graph.AddBufferDependency(batch.m_objectData.Get(), m_sceneData.Get());
-        FE_Verify(uploader.Upload(graph, batch.m_objectData.Get(), data));
-
+        batch.m_objectData = viewConstants;
         batch.m_countPipeline = CountMeshSurfacePipeline::GetPipeline();
         batch.m_scatterPipeline = ScatterMeshSurfacePipeline::GetPipeline();
         batch.m_visibilityDebugPipeline = MeshVisibilityDebugPipeline::GetPipeline();
@@ -839,19 +826,20 @@ namespace FE::Graphics
     }
 
 
-    MeshPass::MeshViewData MeshSceneModule::CreateMeshViewData(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
-                                                               const Culling::PassData& culling) const
+    ConstantsPtr<MeshPass::MeshViewData> MeshSceneModule::CreateMeshViewData(Core::FrameGraph& graph,
+                                                                             Core::FrameGraphBlackboard& blackboard,
+                                                                             const Culling::PassData& culling) const
     {
         MeshPass::MeshViewData data{};
         data.m_view = blackboard.Get<ViewData>();
         data.m_cull = CreateCullData(culling, blackboard.Get<RendererViewData>().m_viewportRect.Height());
-        data.m_scene = graph.GetSRV(m_sceneData.Get());
-        return data;
+        data.m_scene = m_sceneData;
+        return graph.CreateConstants(data);
     }
 
 
     void MeshSceneModule::CullCollectedDispatches(Core::FrameGraph& graph, Core::RingUploader& uploader,
-                                                  const MeshPass::MeshViewData& data, const uint32_t phase,
+                                                  const ConstantsPtr<MeshPass::MeshViewData> view, const uint32_t phase,
                                                   const MeshCullViewResources& resources, CulledMeshView& culled)
     {
         uint32_t offsets[Octree::kMaxTraversalTasks];
@@ -876,7 +864,7 @@ namespace FE::Graphics
                     },
                     count >= 1024 ? 8 : Octree::kMaxTraversalTasks);
             },
-            data,
+            view,
             phase,
             resources,
             culled);
@@ -913,7 +901,7 @@ namespace FE::Graphics
         entry.m_depthPyramid = pass.m_depthPyramid;
         CullCollectedDispatches(graph,
                                 uploader,
-                                CreateMeshViewData(graph, blackboard, culling),
+                                blackboard.Get<ConstantsPtr<MeshPass::MeshViewData>>(),
                                 MeshPass::CullPhase::kSingle,
                                 resources,
                                 entry.m_culled);
@@ -963,26 +951,27 @@ namespace FE::Graphics
         const DrawTagMask mask(pass.m_drawTag);
         const Vector2UInt drawTagMask(static_cast<uint32_t>(mask.m_value), static_cast<uint32_t>(mask.m_value >> 32));
         GpuMeshWorkBuilder::Build(graph, uploader, registry, culled, phase, drawTagMask, prepared);
-        if (!prepared.m_view)
+        if (!prepared.m_pass.IsValid())
             return;
 
         auto* desc = graph.AllocatePassData<MeshPass::PassDesc>();
-        const BufferSRVDescriptor viewAddress = graph.GetSRV(prepared.m_view.Get());
         desc->m_pipeline = prepared.m_submissions.front().m_pipeline.Get();
-        desc->m_constants = { viewAddress, prepared.m_submissions.front().m_firstCommand };
+        desc->m_constants = { prepared.m_view, prepared.m_pass, prepared.m_submissions.front().m_firstCommand };
         desc->m_arguments = Core::BufferView(prepared.m_arguments.Get());
 
         graph.AddPass(festd::string_view(pass.m_techniqueRole),
                       desc,
                       pass.m_passDescToken,
-                      [submissions = std::move(prepared.m_submissions), viewAddress](Core::FrameGraphContext& context) {
+                      [submissions = std::move(prepared.m_submissions), view = prepared.m_view, passData = prepared.m_pass](
+                          Core::FrameGraphContext& context) {
                           context.BeginRenderPass();
                           bool firstDispatch = true;
                           for (const auto& submission : submissions)
                           {
                               for (uint32_t page = 0; page < submission.m_commandCount; ++page)
                               {
-                                  const MeshPass::Constants constants{ .m_view = viewAddress,
+                                  const MeshPass::Constants constants{ .m_view = view,
+                                                                       .m_pass = passData,
                                                                        .m_commandIndex = submission.m_firstCommand + page };
                                   if (!firstDispatch)
                                   {

@@ -5,8 +5,8 @@
 [earlydepthstencil]
 void main(float4 position : SV_Position, float3 worldPosition : POSITION)
 {
-    const SunShadowMarkRasterData data = GView.m_passData.Load<SunShadowMarkRasterData>(0);
-    const SunShadowData shadowData = data.m_data.Load(0);
+    const SunShadowMarkRasterData data = GPass.m_passData.As<SunShadowMarkRasterData>().Load();
+    const SunShadowData shadowData = data.m_data.Load();
     RWStructuredBuffer<uint> pageTable = data.m_pageTable.Get();
     SunShadow::RequestPages(pageTable, shadowData, worldPosition);
     LocalShadow::RequestPages(

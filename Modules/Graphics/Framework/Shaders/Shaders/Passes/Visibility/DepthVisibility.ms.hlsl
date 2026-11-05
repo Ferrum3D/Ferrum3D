@@ -39,7 +39,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID, out ms_vertice
     {
         tris[lane] = LoadPrimitive(draw, header.m_primitiveOffset + lane, layout.m_triangleOffset);
         prims[lane].m_visibility =
-            uint2((GView.m_scene.Load(0).m_visibilityType << kObjectTypeShift) | (visibleMeshlet.m_instanceId + 1),
+            uint2((GView.m_scene.Load().m_visibilityType << kObjectTypeShift) | (visibleMeshlet.m_instanceId + 1),
                   EncodePrimitive(lodIndex, meshletIndex, lane));
     }
 }

@@ -204,14 +204,16 @@ namespace FE::Graphics
             if (!isUploaded)
                 return false;
 
-            auto* pass = graph.AllocatePassData<ImGuiPass::TextureUploadPassDesc>();
-            pass->m_pipeline = UploadImGuiTexturePipeline::GetPipeline();
-            pass->m_constants.m_source = graph.GetSRV(staging.Get());
-            pass->m_constants.m_target = graph.GetUAV(entry.m_texture.Get());
-            pass->m_constants.m_offset = Vector2UInt(static_cast<uint32_t>(rect.left), static_cast<uint32_t>(firstRow));
-            pass->m_constants.m_size = Vector2UInt(width, rowCount);
-            pass->m_constants.m_bytesPerPixel = bytesPerPixel;
-            graph.AddDispatchPass("UploadImGuiTexture", pass, Math::CeilDivide(pass->m_constants.m_size, 8u));
+            ImGuiPass::TextureUploadConstants pass{};
+            pass.m_source = graph.GetSRV(staging.Get());
+            pass.m_target = graph.GetUAV(entry.m_texture.Get());
+            pass.m_offset = Vector2UInt(static_cast<uint32_t>(rect.left), static_cast<uint32_t>(firstRow));
+            pass.m_size = Vector2UInt(width, rowCount);
+            pass.m_bytesPerPixel = bytesPerPixel;
+            graph.AddDispatch("UploadImGuiTexture",
+                              UploadImGuiTexturePipeline::GetPipeline(),
+                              pass,
+                              Math::CeilDivide(pass.m_size, 8u));
         }
 
         return true;

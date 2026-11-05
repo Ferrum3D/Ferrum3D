@@ -44,8 +44,8 @@ void main(uint3 dispatch : SV_DispatchThreadID)
         return;
 
     const uint index = pixel.x + pixel.y * GConstants.m_resolution.x;
-    const ViewData view = GConstants.m_view.Load(0);
-    const GlobalLightingData lighting = GConstants.m_expectedLighting.Load(0);
+    const ViewData view = GConstants.m_view.Load();
+    const GlobalLightingData lighting = GConstants.m_expectedLighting.Load();
     if (index == 0 && !CheckAtmosphereLimits(lighting))
         InterlockedAdd(GConstants.m_stats.Get()[3], 1);
     const float3 sourceColor = float3(0.4f, 0.6f, 0.8f);
@@ -96,9 +96,7 @@ void main(uint3 dispatch : SV_DispatchThreadID)
             const float3 worldPosition = world.xyz / world.w;
 #endif
             LocalLightingBinding noLocalLights = (LocalLightingBinding)0;
-            noLocalLights.m_clusters.m_index = kInvalidIndex;
             SunShadowBinding noShadows = (SunShadowBinding)0;
-            noShadows.m_data.m_index = kInvalidIndex;
             noShadows.m_localLightMaps.m_index = kInvalidIndex;
             expected = Shading::ComputeShading(material,
                                                worldPosition,

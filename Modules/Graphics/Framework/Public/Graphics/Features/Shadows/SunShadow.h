@@ -127,7 +127,6 @@ namespace FE::Graphics::SunShadow
     //! their accesses themselves.
     struct Output final
     {
-        Rc<Core::Buffer> m_data;
         Rc<Core::Buffer> m_pageTable;
         Rc<Core::Texture> m_atlas;
         //! Null when no local light casts shadows.

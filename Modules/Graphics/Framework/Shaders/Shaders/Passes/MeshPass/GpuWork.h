@@ -219,28 +219,37 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
         MeshBatchTable::Instance m_batches;
         MeshMemberTable::Instance m_members;
         uint32_t m_visibilityType;
+        FE_RTTI_Reflect("58299D8D-CAA1-4532-9B1A-FDBA525D1C50");
     };
 
 
+    //! Shared by the culling, rasterization and surface evaluation passes of one view.
     struct MeshViewData final
     {
         ViewData m_view;
         MeshCullData m_cull;
-        StructuredBufferDescriptor<MeshSceneData> m_scene;
+        ConstantsPtr<MeshSceneData> m_scene;
+        FE_RTTI_Reflect("62759A6A-7766-4BD2-A99A-962141CD38E6");
+    };
+
+
+    //! Results of culling for one rasterization pass.
+    struct MeshPassData final
+    {
         StructuredBufferDescriptor<VisibleMeshlet> m_visibleMeshlets;
         StructuredBufferDescriptor<MeshCommandRange> m_commands;
         //! Constants of the technique role rendering this pass, e.g. the shadow atlas of a clip level.
-        ByteAddressBufferDescriptor m_passData;
+        AnyConstantsPtr m_passData;
+        FE_RTTI_Reflect("A78E5A5C-712C-4CA4-A09A-A356BC3DC60B");
     };
 
 
 #if FE_HOST
     static_assert(sizeof(MeshCullData) == 160);
-    static_assert(sizeof(MeshViewData) % 16 == 0);
 #else
-    MeshSceneData LoadMeshScene(StructuredBufferDescriptor<MeshSceneData> descriptor)
+    MeshSceneData LoadMeshScene(ConstantsPtr<MeshSceneData> constants)
     {
-        MeshSceneData scene = descriptor.Load(0);
+        MeshSceneData scene = constants.Load();
         scene.m_instances.m_pageTableAddress.m_deviceAddress =
             WaveReadLaneFirst(scene.m_instances.m_pageTableAddress.m_deviceAddress);
         scene.m_groups.m_pageTableAddress.m_deviceAddress = WaveReadLaneFirst(scene.m_groups.m_pageTableAddress.m_deviceAddress);
@@ -270,24 +279,19 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     }
 
 
-    MeshViewData LoadMeshView(StructuredBufferDescriptor<MeshViewData> descriptor)
+    MeshViewData LoadMeshView(ConstantsPtr<MeshViewData> constants)
     {
-        MeshViewData data = descriptor.Load(0);
+        MeshViewData data = constants.Load();
         data.m_view = WaveUniformView(data.m_view);
         data.m_cull = WaveUniformCull(data.m_cull);
-        data.m_scene.m_index = WaveReadLaneFirst(data.m_scene.m_index);
-        data.m_visibleMeshlets.m_index = WaveReadLaneFirst(data.m_visibleMeshlets.m_index);
-        data.m_commands.m_index = WaveReadLaneFirst(data.m_commands.m_index);
+        data.m_scene.m_ptr.m_deviceAddress = WaveReadLaneFirst(data.m_scene.m_ptr.m_deviceAddress);
         return data;
     }
 
 
-    // Keep matrix layout identical to the structured-buffer reads used by rasterization.
-    MeshViewData LoadMeshView(ByteAddressBufferDescriptor objectData)
+    MeshViewData LoadMeshView(AnyConstantsPtr objectData)
     {
-        StructuredBufferDescriptor<MeshViewData> view;
-        view.m_index = objectData.m_index;
-        return LoadMeshView(view);
+        return LoadMeshView(objectData.As<MeshViewData>());
     }
 #endif
 FE_HOST_END_NAMESPACE

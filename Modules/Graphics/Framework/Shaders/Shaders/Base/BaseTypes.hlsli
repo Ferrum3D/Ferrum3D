@@ -5,7 +5,6 @@
 
 #define FE_RTTI(...)
 #define FE_RTTI_Reflect(...)
-#define FE_DECLARE_PASS_DATA(...)
 
 #define final
 #define FE_INIT(...)
@@ -77,6 +76,43 @@ struct BufferPointer
 #else
 #    error Not implemented
 #endif
+};
+
+//! Device address of constants created with FrameGraph::CreateConstants.
+template<typename T>
+struct ConstantsPtr
+{
+    BufferPointer m_ptr;
+
+    T Load() FE_CONST
+    {
+        return m_ptr.Read<T>(0);
+    }
+
+    bool IsValid() FE_CONST
+    {
+        return m_ptr.GetDeviceAddress() != 0;
+    }
+};
+
+
+//! Constants of a type known only to the shaders that read them, see ConstantsPtr.
+struct AnyConstantsPtr
+{
+    BufferPointer m_ptr;
+
+    template<typename T>
+    ConstantsPtr<T> As() FE_CONST
+    {
+        ConstantsPtr<T> result;
+        result.m_ptr = m_ptr;
+        return result;
+    }
+
+    bool IsValid() FE_CONST
+    {
+        return m_ptr.GetDeviceAddress() != 0;
+    }
 };
 
 #define FE_CONSTEXPR static const

@@ -26,6 +26,12 @@ namespace FE::Graphics::Core
             return m_status.load(std::memory_order_acquire) == PipelineStatus::kReady;
         }
 
+        //! Size of the push constants the shaders declare; zero when they declare none or the pipeline is not ready.
+        [[nodiscard]] uint32_t GetRootConstantsByteSize() const
+        {
+            return m_rootConstantsByteSize;
+        }
+
         [[nodiscard]] WaitGroup* GetCompletionWaitGroup() const
         {
             return m_completionWaitGroup.Get();
@@ -41,5 +47,6 @@ namespace FE::Graphics::Core
         Device* m_device = nullptr;
         std::atomic<PipelineStatus> m_status = PipelineStatus::kNotReady;
         Rc<WaitGroup> m_completionWaitGroup;
+        uint32_t m_rootConstantsByteSize = 0;
     };
 } // namespace FE::Graphics::Core

@@ -1,3 +1,4 @@
+#include "ConstantsProbe.h"
 #include "DeferredProbe.h"
 #include "DepthPyramidProbe.h"
 #include "GpuProbe.h"
@@ -28,6 +29,7 @@
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
 #include <Shaders/Lighting/LocalLighting.h>
+#include <Shaders/Scene/ViewData.h>
 #include <cmath>
 #include <gtest/gtest.h>
 
@@ -36,6 +38,72 @@ using namespace FE::Graphics;
 
 namespace
 {
+    //! Nested and type-erased constants declare the accesses of their descriptors, across the chunks of several frames.
+    void CheckConstants(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
+                        Core::DescriptorManager* descriptors, Core::PipelineFactory* pipelines)
+    {
+        Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
+
+        Core::ComputePipelineRequest request;
+        request.m_desc.SetComputeShader(Env::Name("Shaders/Tests/ConstantsProbe.cs.hlsl"));
+        Core::ComputePipeline* pipeline = pipelines->CreateComputePipeline(request);
+        pipeline->GetCompletionWaitGroup()->Wait();
+        ASSERT_TRUE(pipeline->IsReady());
+
+        constexpr uint32_t kByteSize = 2 * sizeof(uint32_t);
+        Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "ConstantsProbeReadback", kByteSize);
+        Core::ResourceCommitParams commit;
+        commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
+        commit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
+        pool->CommitBufferMemory(readback.Get(), commit);
+
+        for (uint32_t frame = 0; frame < 4; ++frame)
+        {
+            SCOPED_TRACE(frame);
+
+            queue->BeginFrame();
+            graph->BeginFrame();
+
+            Rc<Core::Buffer> output = Core::Buffer::CreateStructured<uint32_t>(device, "ConstantsProbeOutput", 2);
+            ConstantsProbe::Inner inner{};
+            inner.m_output = graph->GetUAV(output.Get());
+            inner.m_value = frame + 2;
+
+            // Enough to fill the first chunk, so that the constants of the pass span several of them.
+            constexpr uint32_t kFillerCount = 8192;
+            const ViewData filler{};
+            for (uint32_t fillerIndex = 0; fillerIndex < kFillerCount; ++fillerIndex)
+                (void)graph->CreateConstants(filler);
+
+            ConstantsProbe::Outer outer{};
+            outer.m_inner = graph->CreateConstants(inner);
+            outer.m_multiplier = 3;
+
+            ConstantsProbe::Inner erased = inner;
+            erased.m_value = frame + 7;
+
+            ConstantsProbe::Constants constants{};
+            constants.m_outer = graph->CreateConstants(outer);
+            constants.m_erased = graph->CreateConstants(erased);
+            graph->AddDispatch("ConstantsProbe", pipeline, constants, Core::ComputeWorkGroupCount(1));
+            graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(output.Get()));
+            graph->CompileAndExecute();
+
+            const Core::FenceSyncPoint completion = queue->GetCurrentFence();
+            queue->SubmitFrame();
+            completion.Wait();
+
+            const auto* words = static_cast<const uint32_t*>(readback->Map());
+            readback->InvalidateMappedRange(0, kByteSize);
+            EXPECT_EQ(words[0], (frame + 2) * 3);
+            EXPECT_EQ(words[1], frame + 7);
+            readback->Unmap();
+        }
+
+        device->WaitIdle();
+    }
+
+
     void CheckLightClusterMasks(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
                                 Core::DescriptorManager* descriptors, Core::PipelineFactory* pipelines)
     {
@@ -67,7 +135,6 @@ namespace
         clusters.m_tiles = Vector2UInt(1, 1);
         clusters.m_lightCount = 34;
         clusters.m_wordCount = 2;
-        const auto clusterBuffer = Core::Buffer::CreateStructured<LightClusterData>(device, "ProbeClusters", 1);
         const uint32_t bytes = kLightClusterSlices * 2 * sizeof(uint32_t);
         const auto masks = Core::Buffer::CreateByteAddress(device, "ProbeMasks", bytes);
         const auto readback = Core::Buffer::CreateByteAddress(device, "ProbeMasksReadback", bytes);
@@ -120,22 +187,19 @@ namespace
             queue->BeginFrame();
             graph->BeginFrame();
             database.Update(*graph, queue->GetCurrentFence());
-            ASSERT_TRUE(uploader.Upload(*graph, clusterBuffer.Get(), clusters));
-            auto* pass = graph->AllocatePassData<CullLocalLightsPassDesc>();
-            pass->m_pipeline = pipeline;
-            pass->m_constants.m_lighting.m_lights = lightsModule.GetLightTable()->GetDeviceAddress();
-            pass->m_constants.m_lighting.m_clusters = graph->GetSRV(clusterBuffer.Get());
-            pass->m_constants.m_masks = graph->GetUAV(masks.Get());
-            graph->AddDispatchPass("ProbeClusterMasks", pass, 1);
+            CullLocalLightsConstants pass{};
+            pass.m_lighting.m_lights = lightsModule.GetLightTable()->GetDeviceAddress();
+            pass.m_lighting.m_clusters = graph->CreateConstants(clusters);
+            pass.m_masks = graph->GetUAV(masks.Get());
+            graph->AddDispatch("ProbeClusterMasks", pipeline, pass, 1);
             graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(masks.Get()));
             if (frame == 0)
             {
-                auto* decode = graph->AllocatePassData<Stage1Probe::PassDesc>();
-                decode->m_pipeline = decodePipeline;
-                decode->m_constants.m_material = lightsModule.GetLightTable()->GetDeviceAddress();
-                decode->m_constants.m_writeArguments = 3;
-                decode->m_constants.m_words = graph->GetUAV(decoded.Get());
-                graph->AddDispatchPass("DecodePackedLights", decode, 34);
+                Stage1Probe::Constants decode{};
+                decode.m_material = lightsModule.GetLightTable()->GetDeviceAddress();
+                decode.m_writeArguments = 3;
+                decode.m_words = graph->GetUAV(decoded.Get());
+                graph->AddDispatch("DecodePackedLights", decodePipeline, decode, 34);
                 graph->AddCopyPass(Core::BufferView(decodedReadback.Get()), Core::BufferView(decoded.Get()));
             }
 
@@ -322,11 +386,10 @@ namespace
 
             queue->BeginFrame();
             graph->BeginFrame();
-            auto* pass = graph->AllocatePassData<Stage1Probe::PassDesc>();
-            pass->m_pipeline = pipeline;
-            pass->m_constants.m_words = descriptor;
-            pass->m_constants.m_writeArguments = 0;
-            graph->AddDispatchPass("FrozenDescriptorProbe", pass, Core::ComputeWorkGroupCount(1));
+            Stage1Probe::Constants pass{};
+            pass.m_words = descriptor;
+            pass.m_writeArguments = 0;
+            graph->AddDispatch("FrozenDescriptorProbe", pipeline, pass, Core::ComputeWorkGroupCount(1));
             descriptors->Update(descriptor, frame % 2 == 0 ? second.Get() : first.Get());
             graph->CompileAndExecute();
             const Core::FenceSyncPoint completion = queue->GetCurrentFence();
@@ -737,11 +800,10 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             parameters.Update(*graph, completion);
             // Reserved views without shader consumers must not bind transfer-only storage to a shader descriptor.
             (void)graph->GetSRV(readback.Get());
-            auto* write = graph->AllocatePassData<Stage1Probe::PassDesc>();
-            write->m_pipeline = pipeline;
-            write->m_constants.m_words = graph->GetUAV(Core::BufferView(arguments.Get()).Slice(16, 12));
-            write->m_constants.m_writeArguments = 1;
-            graph->AddDispatchPass("WriteIndirectArguments", write, Core::ComputeWorkGroupCount(1));
+            Stage1Probe::Constants write{};
+            write.m_words = graph->GetUAV(Core::BufferView(arguments.Get()).Slice(16, 12));
+            write.m_writeArguments = 1;
+            graph->AddDispatch("WriteIndirectArguments", pipeline, write, Core::ComputeWorkGroupCount(1));
 
             auto* consume = graph->AllocatePassData<Stage1Probe::IndirectPassDesc>();
             consume->m_pipeline = pipeline;
@@ -788,10 +850,12 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             pool->CommitBufferMemory(reconstructionReadback.Get(), commit);
             queue->BeginFrame();
             graph->BeginFrame();
-            auto* reconstruction = graph->AllocatePassData<Stage1Probe::PassDesc>();
-            reconstruction->m_pipeline = reconstructionPipeline;
-            reconstruction->m_constants.m_words = graph->GetUAV(reconstructed.Get());
-            graph->AddDispatchPass("CheckPerspectiveReconstruction", reconstruction, Core::ComputeWorkGroupCount(4));
+            Stage1Probe::Constants reconstruction{};
+            reconstruction.m_words = graph->GetUAV(reconstructed.Get());
+            graph->AddDispatch("CheckPerspectiveReconstruction",
+                               reconstructionPipeline,
+                               reconstruction,
+                               Core::ComputeWorkGroupCount(4));
             graph->AddCopyPass(Core::BufferView(reconstructionReadback.Get()), Core::BufferView(reconstructed.Get()));
             graph->CompileAndExecute();
             Vulkan::CommandBuffer* reconstructionCommands = Vulkan::ImplCast(queue.Get())->GetCurrentCommandBuffer();
@@ -819,6 +883,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_NEAR(std::bit_cast<float>(results[2]), 0.175f / 0.525f, 1e-6f);
             EXPECT_NEAR(std::bit_cast<float>(results[3]), 0.1f / 0.525f, 1e-6f);
             reconstructionReadback->Unmap();
+            CheckConstants(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             CheckLightClusterMasks(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             CheckLocalShadowSelection(device.Get(), pool.Get());
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());

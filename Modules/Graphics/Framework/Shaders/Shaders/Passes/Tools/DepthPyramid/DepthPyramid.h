@@ -34,15 +34,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Tools::DepthPyramid)
     };
 
 
-    struct TilePassDesc final
-    {
-        TileConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("DE08D889-A309-4F22-B99D-E94C8BF17EEF");
-    };
-
-
     //! Reduces one pyramid from mip kTileMipCount - 1 down to 1x1. Specialization constants select the reduction and the
     //! number of mips.
     struct SpdConstants final
@@ -58,15 +49,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Tools::DepthPyramid)
         RWTexture2DDescriptor<float> m_mips[kSpdMaxMipCount];
 
         FE_RTTI_Reflect("C7F6FC3C-9BB0-413E-84F3-7155B6EE13C8");
-    };
-
-
-    struct SpdPassDesc final
-    {
-        SpdConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("EF57256D-AE4E-49B2-BA5E-3BD75C72B666");
     };
 
 FE_HOST_END_NAMESPACE

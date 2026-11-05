@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/Memory/LinearAllocator.h>
 #include <Graphics/Core/Base.h>
 #include <Graphics/Core/Buffer.h>
@@ -70,10 +70,16 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual BufferUAVDescriptor GetUAV(BufferView buffer) = 0;
         [[nodiscard]] virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
 
-        //! Declare shader reads reached through a buffer's nested descriptors or device addresses.
-        //! Register before adding consuming passes. Reads inherit the consumer's shader stages and retain resources.
-        virtual void AddBufferDependency(Buffer* buffer, Buffer* dependency) = 0;
-        virtual void AddBufferDependency(Buffer* buffer, BufferSRVDescriptor dependency) = 0;
+        //! Copy constants into memory that shaders read through the returned pointer during this graph execution.
+        //! T must be reflected, as must structs nested in it that hold descriptors: passes that reference the constants
+        //! declare the accesses of those descriptors with their own shader stages.
+        template<class T>
+        [[nodiscard]] ConstantsPtr<T> CreateConstants(const T& value)
+        {
+            static_assert(std::is_trivially_copyable_v<T>);
+            static_assert(Rtti::Internal::kIsRTTIDefined<T>, "Constants must be reflected");
+            return ConstantsPtr<T>{ CreateConstantsInternal(Rtti::GetType<T>(), &value) };
+        }
 
         virtual void BeginScope(festd::string_view name) = 0;
         virtual void EndScope() = 0;
@@ -110,23 +116,33 @@ namespace FE::Graphics::Core
         void AddDrawIndexedPass(festd::string_view name, TPassDesc* passDesc, uint32_t indexCount, uint32_t instanceCount = 1,
                                 uint32_t indexOffset = 0, uint32_t vertexOffset = 0, uint32_t instanceOffset = 0);
 
-        template<class TPassDesc>
-        void AddDispatchPass(festd::string_view name, TPassDesc* passDesc, ComputeWorkGroupCount workGroupCount);
+        //! Add a compute pass that needs nothing but its push constants, whose descriptors declare its accesses.
+        template<class TConstants>
+        void AddDispatch(festd::string_view name, const ComputePipeline* pipeline, const TConstants& constants,
+                         ComputeWorkGroupCount workGroupCount);
 
-        template<class TPassDesc>
-        void AddDispatchIndirectPass(festd::string_view name, TPassDesc* passDesc);
+        template<class TConstants>
+        void AddDispatchIndirect(festd::string_view name, const ComputePipeline* pipeline, const TConstants& constants,
+                                 BufferView arguments);
 
     protected:
         struct PassNodeDesc final
         {
             Env::Name m_name;
+            BasePassDescToken m_basePassDescToken;
+
             void* m_functor = nullptr;
             void (*m_execute)(void* functor, FrameGraphContext& context) = nullptr;
             void (*m_destroy)(void* functor, void* userPassDesc) = nullptr;
 
             Rtti::TypeID m_userPassDescTypeID = Rtti::TypeID::kNull;
             void* m_userPassDescPtr = nullptr;
-            BasePassDescToken m_basePassDescToken;
+
+            //! Set for compute passes without a pass desc.
+            const ComputePipeline* m_computePipeline = nullptr;
+            const Rtti::Type* m_constantsType = nullptr;
+            const void* m_constants = nullptr;
+            BufferView m_indirectArgs = BufferView::kInvalid;
         };
 
         FrameGraph()
@@ -138,6 +154,11 @@ namespace FE::Graphics::Core
         }
 
         virtual void AddPassInternal(const PassNodeDesc& desc) = 0;
+        [[nodiscard]] virtual AnyConstantsPtr CreateConstantsInternal(const Rtti::Type& type, const void* data) = 0;
+
+        template<class TConstants, class TFunctor>
+        void AddComputePass(festd::string_view name, const ComputePipeline* pipeline, const TConstants& constants,
+                            BufferView indirectArgs, TFunctor&& functor);
 
         struct BasePassDesc final
         {
@@ -269,20 +290,51 @@ namespace FE::Graphics::Core
     }
 
 
-    template<class TPassDesc>
-    void FrameGraph::AddDispatchPass(const festd::string_view name, TPassDesc* passDesc,
-                                     const ComputeWorkGroupCount workGroupCount)
+    template<class TConstants, class TFunctor>
+    void FrameGraph::AddComputePass(const festd::string_view name, const ComputePipeline* pipeline, const TConstants& constants,
+                                    const BufferView indirectArgs, TFunctor&& functor)
     {
-        AddPass(name, passDesc, [workGroupCount](FrameGraphContext& context) {
+        static_assert(std::is_trivially_copyable_v<TConstants> && std::is_standard_layout_v<TConstants>);
+        static_assert(Rtti::Internal::kIsRTTIDefined<TConstants>, "Push constants must be reflected");
+        FE_Assert(pipeline);
+
+        using FunctorType = std::decay_t<TFunctor>;
+
+        PassNodeDesc desc;
+        desc.m_name = Env::Name(name);
+        desc.m_functor = Memory::New<FunctorType>(&m_linearAllocator, std::forward<TFunctor>(functor));
+        desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {
+            (*static_cast<FunctorType*>(functorPtr))(context);
+        };
+        desc.m_destroy = [](void* functorPtr, [[maybe_unused]] void* descPtr) {
+            static_cast<FunctorType*>(functorPtr)->~FunctorType();
+        };
+
+        desc.m_userPassDescTypeID = Rtti::GetTypeID<EmptyStruct>();
+        desc.m_computePipeline = pipeline;
+        desc.m_constantsType = &Rtti::GetType<TConstants>();
+        desc.m_constants = Memory::New<TConstants>(&m_linearAllocator, constants);
+        desc.m_indirectArgs = indirectArgs;
+        AddPassInternal(desc);
+    }
+
+
+    template<class TConstants>
+    void FrameGraph::AddDispatch(const festd::string_view name, const ComputePipeline* pipeline, const TConstants& constants,
+                                 const ComputeWorkGroupCount workGroupCount)
+    {
+        AddComputePass(name, pipeline, constants, BufferView::kInvalid, [workGroupCount](FrameGraphContext& context) {
             context.Dispatch(workGroupCount);
         });
     }
 
 
-    template<class TPassDesc>
-    void FrameGraph::AddDispatchIndirectPass(festd::string_view name, TPassDesc* passDesc)
+    template<class TConstants>
+    void FrameGraph::AddDispatchIndirect(const festd::string_view name, const ComputePipeline* pipeline,
+                                         const TConstants& constants, const BufferView arguments)
     {
-        AddPass(name, passDesc, [](FrameGraphContext& context) {
+        FE_Assert(arguments.IsValid());
+        AddComputePass(name, pipeline, constants, arguments, [](FrameGraphContext& context) {
             context.DispatchIndirect();
         });
     }

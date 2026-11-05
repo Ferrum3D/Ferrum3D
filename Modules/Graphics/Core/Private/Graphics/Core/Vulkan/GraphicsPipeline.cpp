@@ -290,7 +290,9 @@ namespace FE::Graphics::Vulkan
                         range.offset = rootConstants.m_offset;
                         range.stageFlags = VK_SHADER_STAGE_ALL;
                     }
+
                     FE_Assert(pushConstantRanges.front().offset == rootConstants.m_offset);
+                    m_rootConstantsByteSize = Math::Max(m_rootConstantsByteSize, rootConstants.m_byteSize);
                     pushConstantRanges.front().size =
                         Math::Max(pushConstantRanges.front().size, AlignUp(rootConstants.m_byteSize, 16u));
                 }

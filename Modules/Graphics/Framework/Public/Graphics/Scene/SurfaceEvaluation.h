@@ -7,7 +7,7 @@ namespace FE::Graphics
     // Pipeline slots come from the scene registries; binding IDs are local to this batch.
     struct SurfaceEvaluationBatch final
     {
-        Rc<Core::Buffer> m_objectData;
+        AnyConstantsPtr m_objectData;
         Core::ComputePipeline* m_countPipeline = nullptr;
         Core::ComputePipeline* m_scatterPipeline = nullptr;
         Core::ComputePipeline* m_visibilityDebugPipeline = nullptr;

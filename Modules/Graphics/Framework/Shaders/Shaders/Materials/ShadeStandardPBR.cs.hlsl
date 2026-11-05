@@ -21,20 +21,21 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
     material.m_ambientOcclusion = surface.m_ambientOcclusion;
     material.m_emissive = surface.m_emissive * Shading::kPreExposure;
 
-    const ViewData view = GConstants.m_view.Load(0);
+    const ViewData view = GConstants.m_view.Load();
     const float2 viewportPosition = (float2(pixel) + 0.5f - view.m_viewport.xy) / view.m_viewport.zw;
     const float2 ndc = viewportPosition * float2(2, -2) + float2(-1, 1);
     const float depth = GConstants.m_depth.Load(uint3(pixel, 0));
     const float4 homogeneousWorld = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
     const float3 worldPosition = homogeneousWorld.xyz / homogeneousWorld.w;
-    const GlobalLightingData lighting = LoadGlobalLighting(GConstants.m_lighting);
-    const float sunVisibility = SunShadow::SampleVisibility(GConstants.m_sunShadow, worldPosition, surface.m_normal);
+    const ViewLighting viewLighting = GConstants.m_lighting.Load();
+    const GlobalLightingData lighting = LoadGlobalLighting(viewLighting.m_global);
+    const float sunVisibility = SunShadow::SampleVisibility(viewLighting.m_sunShadow, worldPosition, surface.m_normal);
     const float3 color = Shading::ComputeShading(material,
                                                  worldPosition,
                                                  view.m_cameraPosition.xyz,
                                                  lighting,
-                                                 GConstants.m_localLighting,
-                                                 GConstants.m_sunShadow,
+                                                 viewLighting.m_local,
+                                                 viewLighting.m_sunShadow,
                                                  float2(pixel) + 0.5f,
                                                  sunVisibility)
                              .rgb;

@@ -111,14 +111,13 @@ namespace FE::Graphics::DepthPyramidProbe
                                           Math::Max(pyramid.m_size.y >> mipIndex, 1u));
                 const auto subresource = Core::TextureSubresource::Create(pyramid.m_texture->GetDesc(), mipIndex, 0);
 
-                auto* read = graph.AllocatePassData<PassDesc>();
-                read->m_pipeline = pipeline;
-                read->m_constants.m_source = graph.GetSRV(Core::TextureView::Create(pyramid.m_texture.Get(), subresource));
-                read->m_constants.m_output = graph.GetUAV(output);
-                read->m_constants.m_mode = kReadMode;
-                read->m_constants.m_size = mipSize;
-                read->m_constants.m_outputOffset = offset;
-                graph.AddDispatchPass("ReadDepthPyramidMip", read, Math::CeilDivide(mipSize, kThreadGroupSize));
+                Constants read{};
+                read.m_source = graph.GetSRV(Core::TextureView::Create(pyramid.m_texture.Get(), subresource));
+                read.m_output = graph.GetUAV(output);
+                read.m_mode = kReadMode;
+                read.m_size = mipSize;
+                read.m_outputOffset = offset;
+                graph.AddDispatch("ReadDepthPyramidMip", pipeline, read, Math::CeilDivide(mipSize, kThreadGroupSize));
                 offset += mipSize.x * mipSize.y;
             }
         }
@@ -136,12 +135,11 @@ namespace FE::Graphics::DepthPyramidProbe
 
             Rc<Core::Texture> depth =
                 Core::Texture::Create(device, "DepthPyramidProbeDepth", Core::Format::kR32_SFLOAT, depthSize);
-            auto* fill = graph->AllocatePassData<PassDesc>();
-            fill->m_pipeline = pipeline;
-            fill->m_constants.m_target = graph->GetUAV(depth.Get());
-            fill->m_constants.m_mode = kFillMode;
-            fill->m_constants.m_size = depthSize;
-            graph->AddDispatchPass("FillDepthPyramidProbe", fill, Math::CeilDivide(depthSize, kThreadGroupSize));
+            Constants fill{};
+            fill.m_target = graph->GetUAV(depth.Get());
+            fill.m_mode = kFillMode;
+            fill.m_size = depthSize;
+            graph->AddDispatch("FillDepthPyramidProbe", pipeline, fill, Math::CeilDivide(depthSize, kThreadGroupSize));
 
             const auto pyramids = Tools::DepthPyramid::AddPass(*graph, depth.Get());
             const uint32_t farthestCount = CalculateTexelCount(pyramids.m_farthest);

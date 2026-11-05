@@ -4,7 +4,8 @@
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     struct Constants final
     {
-        StructuredBufferDescriptor<MeshViewData> m_view;
+        ConstantsPtr<MeshViewData> m_view;
+        ConstantsPtr<MeshPassData> m_pass;
         uint32_t m_commandIndex;
         FE_RTTI_Reflect("9565427F-FE72-49CD-A99E-2A4082D638F7");
     };

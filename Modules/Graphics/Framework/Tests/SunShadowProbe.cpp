@@ -158,16 +158,18 @@ namespace FE::Graphics::SunShadowProbe
                     isStatic ? frame.m_staticPyramids[levelIndex] : frame.m_dynamicPyramids[levelIndex - levelCount];
                 ASSERT_EQ(pyramid.m_size, Vector2UInt(kSunShadowLevelPagesPerAxis));
 
-                auto* read = graph.AllocatePassData<PassDesc>();
-                read->m_pipeline = context.m_pipeline;
-                read->m_constants.m_source = graph.GetSRV(pyramid.m_texture.Get());
-                read->m_constants.m_output = graph.GetUAV(output);
-                read->m_constants.m_size = pyramid.m_size;
-                read->m_constants.m_mode = kReadMode;
+                Constants read{};
+                read.m_source = graph.GetSRV(pyramid.m_texture.Get());
+                read.m_output = graph.GetUAV(output);
+                read.m_size = pyramid.m_size;
+                read.m_mode = kReadMode;
                 // Static pyramids fill the first page count of texels and dynamic ones the second; local map blocks stay unused.
                 const uint32_t level = isStatic ? levelIndex : levelIndex - levelCount;
-                read->m_constants.m_outputOffset = (isStatic ? 0 : frame.m_pageCount) + level * kSunShadowLevelPageCount;
-                graph.AddDispatchPass("ReadSunShadowPagePyramid", read, Math::CeilDivide(pyramid.m_size, kThreadGroupSize));
+                read.m_outputOffset = (isStatic ? 0 : frame.m_pageCount) + level * kSunShadowLevelPageCount;
+                graph.AddDispatch("ReadSunShadowPagePyramid",
+                                  context.m_pipeline,
+                                  read,
+                                  Math::CeilDivide(pyramid.m_size, kThreadGroupSize));
             }
         }
 
@@ -182,23 +184,20 @@ namespace FE::Graphics::SunShadowProbe
 
             Rc<Core::Texture> depth =
                 Core::Texture::Create(device, "SunShadowProbeDepth", Core::Format::kR32_SFLOAT, Vector2UInt(kImageSize));
-            auto* fill = graph.AllocatePassData<PassDesc>();
-            fill->m_pipeline = context.m_pipeline;
-            fill->m_constants.m_target = graph.GetUAV(depth.Get());
-            fill->m_constants.m_size = Vector2UInt(kImageSize);
-            fill->m_constants.m_depth = kPlaneDepth;
-            fill->m_constants.m_backgroundRows = kBackgroundRows;
-            fill->m_constants.m_mode = kFillMode;
-            graph.AddDispatchPass("FillSunShadowProbeDepth", fill, Math::CeilDivide(Vector2UInt(kImageSize), kThreadGroupSize));
-
-            Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<ViewData>(device, "SunShadowProbeView", 1);
-            Rc<Core::Buffer> dataBuffer = Core::Buffer::CreateStructured<SunShadowData>(device, "SunShadowProbeData", 1);
-            FE_Verify(context.m_uploader->Upload(graph, viewBuffer.Get(), camera.m_view));
-            FE_Verify(context.m_uploader->Upload(graph, dataBuffer.Get(), data));
+            Constants fill{};
+            fill.m_target = graph.GetUAV(depth.Get());
+            fill.m_size = Vector2UInt(kImageSize);
+            fill.m_depth = kPlaneDepth;
+            fill.m_backgroundRows = kBackgroundRows;
+            fill.m_mode = kFillMode;
+            graph.AddDispatch("FillSunShadowProbeDepth",
+                              context.m_pipeline,
+                              fill,
+                              Math::CeilDivide(Vector2UInt(kImageSize), kThreadGroupSize));
 
             SunShadow::PageInputs inputs;
-            inputs.m_data = dataBuffer.Get();
-            inputs.m_view = viewBuffer.Get();
+            inputs.m_data = graph.CreateConstants(data);
+            inputs.m_view = graph.CreateConstants(camera.m_view);
             inputs.m_depth = depth.Get();
             inputs.m_settings = context.m_settings;
             inputs.m_directionToLight = Vector3::AxisY();

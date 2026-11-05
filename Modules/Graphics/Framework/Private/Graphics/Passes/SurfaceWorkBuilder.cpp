@@ -134,12 +134,11 @@ namespace FE::Graphics::Visibility
 
         void Clear(Core::FrameGraph& graph, const SurfaceWork& work)
         {
-            auto* clear = graph.AllocatePassData<ClearSurfacePassDesc>();
-            clear->m_pipeline = ClearPipeline::GetPipeline();
-            clear->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
-            clear->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
-            clear->m_constants.m_bucketCount = work.m_bucketCount;
-            graph.AddDispatchPass("ClearSurfaceWork", clear, DispatchSize(work.m_bucketCount));
+            ClearSurfaceConstants clear{};
+            clear.m_counts = graph.GetUAV(work.m_counts.Get());
+            clear.m_cursors = graph.GetUAV(work.m_cursors.Get());
+            clear.m_bucketCount = work.m_bucketCount;
+            graph.AddDispatch("ClearSurfaceWork", ClearPipeline::GetPipeline(), clear, DispatchSize(work.m_bucketCount));
         }
 
 
@@ -149,36 +148,37 @@ namespace FE::Graphics::Visibility
             for (uint32_t index = 0; index < work.m_scanLevels.size(); ++index)
             {
                 const SurfaceScanLevel& level = work.m_scanLevels[index];
-                auto* scan = graph.AllocatePassData<SurfaceScanPassDesc>();
-                scan->m_pipeline = ScanPipeline::GetPipeline();
-                scan->m_constants.m_scanCount = level.m_count;
-                scan->m_constants.m_scanBuckets = index == 0;
-                scan->m_constants.m_waveLaneCount = work.m_waveLaneCount;
+                SurfaceScanConstants scan{};
+                scan.m_scanCount = level.m_count;
+                scan.m_scanBuckets = index == 0;
+                scan.m_waveLaneCount = work.m_waveLaneCount;
                 if (index + 1 == work.m_scanLevels.size())
                 {
-                    scan->m_constants.m_emissionArguments = graph.GetUAV(work.m_emissionArguments.Get());
-                    scan->m_constants.m_shaderCount = work.m_shaderCount;
+                    scan.m_emissionArguments = graph.GetUAV(work.m_emissionArguments.Get());
+                    scan.m_shaderCount = work.m_shaderCount;
                 }
 
                 if (index == 0)
-                    scan->m_constants.m_countsRead = graph.GetSRV(work.m_counts.Get());
+                    scan.m_countsRead = graph.GetSRV(work.m_counts.Get());
                 else
-                    scan->m_constants.m_scanInput = graph.GetSRV(work.m_scanLevels[index - 1].m_sums.Get());
+                    scan.m_scanInput = graph.GetSRV(work.m_scanLevels[index - 1].m_sums.Get());
 
-                scan->m_constants.m_scanOutput = graph.GetUAV(level.m_offsets.Get());
-                scan->m_constants.m_scanSums = graph.GetUAV(level.m_sums.Get());
-                graph.AddDispatchPass("ScanSurfaceBuckets", scan, DispatchSize(level.m_count));
+                scan.m_scanOutput = graph.GetUAV(level.m_offsets.Get());
+                scan.m_scanSums = graph.GetUAV(level.m_sums.Get());
+                graph.AddDispatch("ScanSurfaceBuckets", ScanPipeline::GetPipeline(), scan, DispatchSize(level.m_count));
             }
 
             for (uint32_t index = work.m_scanLevels.size() - 1; index > 0; --index)
             {
                 const SurfaceScanLevel& child = work.m_scanLevels[index - 1];
-                auto* propagate = graph.AllocatePassData<SurfacePropagatePassDesc>();
-                propagate->m_pipeline = PropagatePipeline::GetPipeline();
-                propagate->m_constants.m_scanCount = child.m_count;
-                propagate->m_constants.m_scanOutput = graph.GetUAV(child.m_offsets.Get());
-                propagate->m_constants.m_parentOffsets = graph.GetSRV(work.m_scanLevels[index].m_offsets.Get());
-                graph.AddDispatchPass("PropagateSurfaceOffsets", propagate, DispatchSize(child.m_count));
+                SurfacePropagateConstants propagate{};
+                propagate.m_scanCount = child.m_count;
+                propagate.m_scanOutput = graph.GetUAV(child.m_offsets.Get());
+                propagate.m_parentOffsets = graph.GetSRV(work.m_scanLevels[index].m_offsets.Get());
+                graph.AddDispatch("PropagateSurfaceOffsets",
+                                  PropagatePipeline::GetPipeline(),
+                                  propagate,
+                                  DispatchSize(child.m_count));
             }
         }
 
@@ -187,22 +187,23 @@ namespace FE::Graphics::Visibility
         void EmitCommands(Core::FrameGraph& graph, const SurfaceWork& work)
         {
             const SurfaceRouting& routing = *work.m_routing;
-            auto* commands = graph.AllocatePassData<SurfaceCommandsPassDesc>();
-            commands->m_pipeline = CommandsPipeline::GetPipeline();
-            commands->m_arguments = Core::BufferView(work.m_emissionArguments.Get());
-            commands->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
-            commands->m_constants.m_totals = graph.GetSRV(work.m_scanLevels.back().m_sums.Get());
-            commands->m_constants.m_countsRead = graph.GetSRV(work.m_counts.Get());
-            commands->m_constants.m_bindings = graph.GetSRV(routing.m_bindings.Get());
-            commands->m_constants.m_shaderBindings = graph.GetSRV(routing.m_shaderBindings.Get());
-            commands->m_constants.m_waves = graph.GetUAV(work.m_waves.Get());
-            commands->m_constants.m_ranges = graph.GetUAV(work.m_ranges.Get());
-            commands->m_constants.m_arguments = graph.GetUAV(work.m_arguments.Get());
-            commands->m_constants.m_tileCount = work.m_tileCount;
-            commands->m_constants.m_bucketCount = work.m_bucketCount;
-            commands->m_constants.m_shaderCount = work.m_shaderCount;
-            commands->m_constants.m_waveLaneCount = work.m_waveLaneCount;
-            graph.AddDispatchIndirectPass("EmitSurfaceCommands", commands);
+            SurfaceCommandsConstants commands{};
+            commands.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
+            commands.m_totals = graph.GetSRV(work.m_scanLevels.back().m_sums.Get());
+            commands.m_countsRead = graph.GetSRV(work.m_counts.Get());
+            commands.m_bindings = graph.GetSRV(routing.m_bindings.Get());
+            commands.m_shaderBindings = graph.GetSRV(routing.m_shaderBindings.Get());
+            commands.m_waves = graph.GetUAV(work.m_waves.Get());
+            commands.m_ranges = graph.GetUAV(work.m_ranges.Get());
+            commands.m_arguments = graph.GetUAV(work.m_arguments.Get());
+            commands.m_tileCount = work.m_tileCount;
+            commands.m_bucketCount = work.m_bucketCount;
+            commands.m_shaderCount = work.m_shaderCount;
+            commands.m_waveLaneCount = work.m_waveLaneCount;
+            graph.AddDispatchIndirect("EmitSurfaceCommands",
+                                      CommandsPipeline::GetPipeline(),
+                                      commands,
+                                      Core::BufferView(work.m_emissionArguments.Get()));
         }
 
 
@@ -220,34 +221,32 @@ namespace FE::Graphics::Visibility
     void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, const EvaluationWorkInput& input,
                           SurfaceWork& work)
     {
-        FE_Assert(input.m_objectData && input.m_countPipeline && input.m_scatterPipeline);
+        FE_Assert(input.m_objectData.IsValid() && input.m_countPipeline && input.m_scatterPipeline);
         FE_Assert(input.m_visibility->GetDesc().GetSize2D() == work.m_resolution);
         UploadRouting(graph, uploader, *work.m_routing);
         Clear(graph, work);
 
         // Object producers supply visibility classification; no fallback can interpret their private payloads.
-        auto* count = graph.AllocatePassData<EvaluationCountPassDesc>();
-        count->m_pipeline = input.m_countPipeline;
-        SetClassificationGrid(count->m_constants, work);
-        count->m_constants.m_view = graph.GetSRV(input.m_objectData);
-        count->m_constants.m_visibility = graph.GetSRV(input.m_visibility);
-        count->m_constants.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        count->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
+        EvaluationCountConstants count{};
+        SetClassificationGrid(count, work);
+        count.m_view = input.m_objectData;
+        count.m_visibility = graph.GetSRV(input.m_visibility);
+        count.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
+        count.m_counts = graph.GetUAV(work.m_counts.Get());
         const Core::ComputeWorkGroupCount screenGroups = Math::CeilDivide(work.m_resolution, 16u);
-        graph.AddDispatchPass("CountSurfacePixels", count, screenGroups);
+        graph.AddDispatch("CountSurfacePixels", input.m_countPipeline, count, screenGroups);
 
         Scan(graph, work);
 
-        auto* scatter = graph.AllocatePassData<EvaluationScatterPassDesc>();
-        scatter->m_pipeline = input.m_scatterPipeline;
-        SetClassificationGrid(scatter->m_constants, work);
-        scatter->m_constants.m_view = graph.GetSRV(input.m_objectData);
-        scatter->m_constants.m_visibility = graph.GetSRV(input.m_visibility);
-        scatter->m_constants.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        scatter->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
-        scatter->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
-        scatter->m_constants.m_pixels = graph.GetUAV(work.m_pixels.Get());
-        graph.AddDispatchPass("ScatterSurfacePixels", scatter, screenGroups);
+        EvaluationScatterConstants scatter{};
+        SetClassificationGrid(scatter, work);
+        scatter.m_view = input.m_objectData;
+        scatter.m_visibility = graph.GetSRV(input.m_visibility);
+        scatter.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
+        scatter.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
+        scatter.m_cursors = graph.GetUAV(work.m_cursors.Get());
+        scatter.m_pixels = graph.GetUAV(work.m_pixels.Get());
+        graph.AddDispatch("ScatterSurfacePixels", input.m_scatterPipeline, scatter, screenGroups);
 
         EmitCommands(graph, work);
     }
@@ -259,26 +258,24 @@ namespace FE::Graphics::Visibility
         UploadRouting(graph, uploader, *work.m_routing);
         Clear(graph, work);
 
-        auto* count = graph.AllocatePassData<ShadingCountPassDesc>();
-        count->m_pipeline = CountPipeline::GetPipeline();
-        SetClassificationGrid(count->m_constants, work);
-        count->m_constants.m_g0Read = graph.GetSRV(input.m_g0);
-        count->m_constants.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        count->m_constants.m_counts = graph.GetUAV(work.m_counts.Get());
+        ShadingCountConstants count{};
+        SetClassificationGrid(count, work);
+        count.m_g0Read = graph.GetSRV(input.m_g0);
+        count.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
+        count.m_counts = graph.GetUAV(work.m_counts.Get());
         const Core::ComputeWorkGroupCount screenGroups = Math::CeilDivide(work.m_resolution, 16u);
-        graph.AddDispatchPass("CountSurfacePixels", count, screenGroups);
+        graph.AddDispatch("CountSurfacePixels", CountPipeline::GetPipeline(), count, screenGroups);
 
         Scan(graph, work);
 
-        auto* scatter = graph.AllocatePassData<ShadingScatterPassDesc>();
-        scatter->m_pipeline = ScatterPipeline::GetPipeline();
-        SetClassificationGrid(scatter->m_constants, work);
-        scatter->m_constants.m_g0Read = graph.GetSRV(input.m_g0);
-        scatter->m_constants.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        scatter->m_constants.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
-        scatter->m_constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
-        scatter->m_constants.m_pixels = graph.GetUAV(work.m_pixels.Get());
-        graph.AddDispatchPass("ScatterSurfacePixels", scatter, screenGroups);
+        ShadingScatterConstants scatter{};
+        SetClassificationGrid(scatter, work);
+        scatter.m_g0Read = graph.GetSRV(input.m_g0);
+        scatter.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
+        scatter.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
+        scatter.m_cursors = graph.GetUAV(work.m_cursors.Get());
+        scatter.m_pixels = graph.GetUAV(work.m_pixels.Get());
+        graph.AddDispatch("ScatterSurfacePixels", ScatterPipeline::GetPipeline(), scatter, screenGroups);
 
         EmitCommands(graph, work);
     }

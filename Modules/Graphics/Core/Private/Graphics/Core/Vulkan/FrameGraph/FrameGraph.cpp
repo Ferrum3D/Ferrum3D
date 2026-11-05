@@ -23,6 +23,7 @@ namespace FE::Graphics::Vulkan
     void FrameGraph::BeginFrame()
     {
         m_descriptorManager->BeginFrame(m_commandQueue->GetCurrentFence());
+        m_constantAllocator.BeginFrame();
     }
 
 
@@ -30,6 +31,7 @@ namespace FE::Graphics::Vulkan
     {
         // Transfer acquisitions must establish resource states before graph barriers are compiled.
         ImplCast(m_commandQueue)->GetCurrentCommandBuffer();
+        m_constantAllocator.EndFrame(m_commandQueue->GetCurrentFence());
         Common::FrameGraph::CompileAndExecute();
     }
 

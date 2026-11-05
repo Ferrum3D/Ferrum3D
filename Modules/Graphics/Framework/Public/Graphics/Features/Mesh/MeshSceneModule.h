@@ -236,10 +236,12 @@ namespace FE::Graphics
         void AddStaticChange(const MeshBatch* batch, const Aabb& bounds);
         //! Collect the cull dispatches of the batches that the culling view sees and that have any of the tags.
         void CollectCullDispatches(const Culling::PassData& culling, DrawTagMask tagFilter);
-        [[nodiscard]] MeshPass::MeshViewData CreateMeshViewData(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
-                                                                const Culling::PassData& culling) const;
-        void CullCollectedDispatches(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPass::MeshViewData& data,
-                                     uint32_t phase, const MeshCullViewResources& resources, CulledMeshView& culled);
+        [[nodiscard]] ConstantsPtr<MeshPass::MeshViewData> CreateMeshViewData(Core::FrameGraph& graph,
+                                                                              Core::FrameGraphBlackboard& blackboard,
+                                                                              const Culling::PassData& culling) const;
+        void CullCollectedDispatches(Core::FrameGraph& graph, Core::RingUploader& uploader,
+                                     ConstantsPtr<MeshPass::MeshViewData> view, uint32_t phase,
+                                     const MeshCullViewResources& resources, CulledMeshView& culled);
         [[nodiscard]] CulledMeshView CullIndependentView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
                                                          Core::RingUploader& uploader, const SceneRenderPass& pass);
         void AllocateMeshletVisibility(InstanceRecord& record);
@@ -282,8 +284,7 @@ namespace FE::Graphics
         Rc<MeshMemberTable> m_memberTable;
         festd::vector<MeshPipelineRegistry> m_registries;
         uint32_t m_evaluationWaveLaneCount = 32;
-        Rc<Core::Buffer> m_sceneData;
-        festd::array<uint64_t, 6> m_sceneTableAddresses{};
+        ConstantsPtr<MeshPass::MeshSceneData> m_sceneData;
         uint32_t m_visibilityType = 0;
         uint32_t m_revision = 1;
 

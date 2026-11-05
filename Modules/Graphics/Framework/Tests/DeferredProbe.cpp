@@ -84,12 +84,11 @@ namespace FE::Graphics::DeferredProbe
                 SurfaceEvaluation::AddPasses(*graph, blackboard);
                 GBufferDebug::AddPasses(*graph, blackboard);
 
-                auto* check = graph->AllocatePassData<PassDesc>();
-                check->m_pipeline = inspect;
-                check->m_constants.m_color = graph->GetSRV(color.Get());
-                check->m_constants.m_stats = graph->GetUAV(stats.Get());
-                check->m_constants.m_resolution = resolution;
-                graph->AddDispatchPass("InspectEmptyDebugColor", check, Math::CeilDivide(resolution, 8u));
+                Constants check{};
+                check.m_color = graph->GetSRV(color.Get());
+                check.m_stats = graph->GetUAV(stats.Get());
+                check.m_resolution = resolution;
+                graph->AddDispatch("InspectEmptyDebugColor", inspect, check, Math::CeilDivide(resolution, 8u));
                 graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(stats.Get()));
                 graph->CompileAndExecute();
                 uploader.CloseFrame(queue->GetCurrentFence());
@@ -131,11 +130,6 @@ namespace FE::Graphics::DeferredProbe
                 Core::Texture::Create(device, Fmt::FormatName("DeferredProbeG{}", plane), Core::Format::kR32_UINT, resolution);
 
         Rc<Core::Texture> depth = Core::Texture::Create(device, "DeferredProbeDepth", Core::Format::kR32_SFLOAT, resolution);
-        Rc<Core::Buffer> viewBuffer = Core::Buffer::CreateStructured<ViewData>(device, "DeferredProbeView", 1);
-        DB::Database database(device, pool);
-        Rc<GlobalLightingTable> lightingTable = Memory::DefaultNew<GlobalLightingTable>(&database);
-        const auto lightingRow = lightingTable->AllocateRow();
-        Rc<Core::Buffer> expectedLighting = Core::Buffer::CreateStructured<GlobalLightingData>(device, "ExpectedLighting", 1);
         Rc<Core::Buffer> stats = Core::Buffer::CreateByteAddress(device, "DeferredProbeStats", 16);
         Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "DeferredProbeReadback", 16);
         Rc<Core::Buffer> argsReadback = Core::Buffer::CreateByteAddress(device, "DeferredProbeArgsReadback", 36);
@@ -202,68 +196,63 @@ namespace FE::Graphics::DeferredProbe
                 lighting.m_directionalLightOrientation = Quaternion::RotationY(2.4f);
 
             const GlobalLightingData lightingData = testCase == 4 ? GlobalLightingData{} : lighting.BuildRenderData();
-            lightingTable->WriteRow(lightingRow).m_lighting.Get() = lightingData;
-            database.Update(*graph, queue->GetCurrentFence());
+            const ConstantsPtr<GlobalLightingData> lightingConstants = graph->CreateConstants(lightingData);
 
-            GlobalLightingBinding lightingBinding;
-            lightingBinding.m_table = lightingTable->GetDeviceAddress();
-            lightingBinding.m_row = testCase == 4 ? kInvalidIndex : lightingRow.m_rowIndex;
-            FE_Verify(uploader.Upload(*graph, expectedLighting.Get(), lightingData));
-            FE_Verify(uploader.Upload(*graph, viewBuffer.Get(), view));
-            auto* seed = graph->AllocatePassData<PassDesc>();
-            seed->m_pipeline = seedPipeline;
-            seed->m_constants.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
-            seed->m_constants.m_g1 = graph->GetUAV(Core::TextureView::Create(planes[1].Get()));
-            seed->m_constants.m_g2 = graph->GetUAV(Core::TextureView::Create(planes[2].Get()));
-            seed->m_constants.m_g3 = graph->GetUAV(Core::TextureView::Create(planes[3].Get()));
-            seed->m_constants.m_depth = graph->GetUAV(Core::TextureView::Create(depth.Get()));
-            seed->m_constants.m_stats = graph->GetUAV(stats.Get());
-            seed->m_constants.m_resolution = resolution;
-            seed->m_constants.m_empty = empty;
-            graph->AddDispatchPass("SeedDeferredProbe", seed, Math::CeilDivide(resolution, 8u));
-            auto* initialize = graph->AllocatePassData<Visibility::DeferredDirectPassDesc>();
-            initialize->m_pipeline = initializePipeline;
-            initialize->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
-            initialize->m_constants.m_lighting = lightingBinding;
-            initialize->m_constants.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
-            initialize->m_constants.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
-            initialize->m_constants.m_resolution = resolution;
-            initialize->m_constants.m_shaderCount = 3;
-            graph->AddDispatchPass("InitializeDeferredProbe", initialize, Math::CeilDivide(resolution, 8u));
+            // The case with zero lighting data also covers a scene without global lighting.
+            ViewLighting viewLighting{};
+            viewLighting.m_global = testCase == 4 ? ConstantsPtr<GlobalLightingData>{} : lightingConstants;
+            const ConstantsPtr<ViewLighting> viewLightingConstants = graph->CreateConstants(viewLighting);
+            const ConstantsPtr<ViewData> viewConstants = graph->CreateConstants(view);
+            Constants seed{};
+            seed.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
+            seed.m_g1 = graph->GetUAV(Core::TextureView::Create(planes[1].Get()));
+            seed.m_g2 = graph->GetUAV(Core::TextureView::Create(planes[2].Get()));
+            seed.m_g3 = graph->GetUAV(Core::TextureView::Create(planes[3].Get()));
+            seed.m_depth = graph->GetUAV(Core::TextureView::Create(depth.Get()));
+            seed.m_stats = graph->GetUAV(stats.Get());
+            seed.m_resolution = resolution;
+            seed.m_empty = empty;
+            graph->AddDispatch("SeedDeferredProbe", seedPipeline, seed, Math::CeilDivide(resolution, 8u));
+            Visibility::DeferredConstants initialize{};
+            initialize.m_view = viewConstants;
+            initialize.m_lighting = viewLightingConstants;
+            initialize.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
+            initialize.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
+            initialize.m_resolution = resolution;
+            initialize.m_shaderCount = 3;
+            graph->AddDispatch("InitializeDeferredProbe", initializePipeline, initialize, Math::CeilDivide(resolution, 8u));
             Visibility::BuildSurfaceWork(*graph, uploader, Visibility::ShadingWorkInput{ planes[0].Get() }, work);
             for (uint32_t slot = 0; slot < 3; ++slot)
             {
-                auto* shade = graph->AllocatePassData<Visibility::DeferredPassDesc>();
-                shade->m_pipeline = slot == 0 ? simple : pbr;
-                shade->m_arguments = Core::BufferView(work.m_arguments.Get()).Slice(slot * 12, 12);
-                shade->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
-                shade->m_constants.m_lighting = lightingBinding;
-                shade->m_constants.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
-                shade->m_constants.m_g1 = graph->GetSRV(Core::TextureView::Create(planes[1].Get()));
-                shade->m_constants.m_g2 = graph->GetSRV(Core::TextureView::Create(planes[2].Get()));
-                shade->m_constants.m_g3 = graph->GetSRV(Core::TextureView::Create(planes[3].Get()));
-                shade->m_constants.m_depth = graph->GetSRV(Core::TextureView::Create(depth.Get()));
-                shade->m_constants.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
-                shade->m_constants.m_pixels = graph->GetSRV(work.m_pixels.Get());
-                shade->m_constants.m_waves = graph->GetSRV(work.m_waves.Get());
-                shade->m_constants.m_ranges = graph->GetSRV(work.m_ranges.Get());
-                shade->m_constants.m_resolution = resolution;
-                shade->m_constants.m_tilesPerRow = 3;
-                shade->m_constants.m_shaderSlot = slot;
-                graph->AddPass("ShadeDeferredProbe", shade, [](Core::FrameGraphContext& context) {
-                    context.DispatchIndirect();
-                });
+                Visibility::DeferredConstants shade{};
+                shade.m_view = viewConstants;
+                shade.m_lighting = viewLightingConstants;
+                shade.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
+                shade.m_g1 = graph->GetSRV(Core::TextureView::Create(planes[1].Get()));
+                shade.m_g2 = graph->GetSRV(Core::TextureView::Create(planes[2].Get()));
+                shade.m_g3 = graph->GetSRV(Core::TextureView::Create(planes[3].Get()));
+                shade.m_depth = graph->GetSRV(Core::TextureView::Create(depth.Get()));
+                shade.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
+                shade.m_pixels = graph->GetSRV(work.m_pixels.Get());
+                shade.m_waves = graph->GetSRV(work.m_waves.Get());
+                shade.m_ranges = graph->GetSRV(work.m_ranges.Get());
+                shade.m_resolution = resolution;
+                shade.m_tilesPerRow = 3;
+                shade.m_shaderSlot = slot;
+                graph->AddDispatchIndirect("ShadeDeferredProbe",
+                                           slot == 0 ? simple : pbr,
+                                           shade,
+                                           Core::BufferView(work.m_arguments.Get()).Slice(slot * 12, 12));
             }
 
-            auto* inspect = graph->AllocatePassData<PassDesc>();
-            inspect->m_pipeline = inspectPipeline;
-            inspect->m_constants.m_view = graph->GetSRV(viewBuffer.Get());
-            inspect->m_constants.m_expectedLighting = graph->GetSRV(expectedLighting.Get());
-            inspect->m_constants.m_color = graph->GetSRV(Core::TextureView::Create(color.Get()));
-            inspect->m_constants.m_stats = graph->GetUAV(stats.Get());
-            inspect->m_constants.m_resolution = resolution;
-            inspect->m_constants.m_empty = empty;
-            graph->AddDispatchPass("InspectDeferredProbe", inspect, Math::CeilDivide(resolution, 8u));
+            Constants inspect{};
+            inspect.m_view = viewConstants;
+            inspect.m_expectedLighting = lightingConstants;
+            inspect.m_color = graph->GetSRV(Core::TextureView::Create(color.Get()));
+            inspect.m_stats = graph->GetUAV(stats.Get());
+            inspect.m_resolution = resolution;
+            inspect.m_empty = empty;
+            graph->AddDispatch("InspectDeferredProbe", inspectPipeline, inspect, Math::CeilDivide(resolution, 8u));
             graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(stats.Get()));
             graph->AddCopyPass(Core::BufferView(argsReadback.Get()), Core::BufferView(work.m_arguments.Get()));
             graph->CompileAndExecute();
@@ -294,7 +283,6 @@ namespace FE::Graphics::DeferredProbe
         }
 
         graph.Reset();
-        lightingTable->Free(lightingRow);
         uploader.Shutdown();
     }
 } // namespace FE::Graphics::DeferredProbe

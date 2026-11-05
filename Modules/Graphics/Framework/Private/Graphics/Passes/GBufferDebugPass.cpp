@@ -31,16 +31,17 @@ namespace FE::Graphics::GBufferDebug
 
 
         void AddGroupDebugPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
-                                 const Visibility::DebugPassDesc& debug)
+                                 const Visibility::DebugConstants& debug)
         {
             // Evaluation groups are producer-specific, so each object producer supplies its own classifier.
             for (const SurfaceEvaluationBatch& batch : blackboard.Get<SurfaceEvaluationInputs>())
             {
-                auto* groupDebug = graph.AllocatePassData<Visibility::DebugPassDesc>();
-                *groupDebug = debug;
-                groupDebug->m_pipeline = batch.m_surfaceDebugPipeline;
-                groupDebug->m_constants.m_view = graph.GetSRV(batch.m_objectData.Get());
-                graph.AddDispatchPass("SurfaceGroupDebug", groupDebug, Math::CeilDivide(debug.m_constants.m_resolution, 8u));
+                Visibility::DebugConstants groupDebug = debug;
+                groupDebug.m_view = batch.m_objectData;
+                graph.AddDispatch("SurfaceGroupDebug",
+                                  batch.m_surfaceDebugPipeline,
+                                  groupDebug,
+                                  Math::CeilDivide(debug.m_resolution, 8u));
             }
         }
     } // namespace
@@ -99,26 +100,25 @@ namespace FE::Graphics::GBufferDebug
         const Vector2UInt resolution = visibility->GetDesc().GetSize2D();
         const DebugMode mode = data->m_mode;
 
-        auto* debug = graph.AllocatePassData<Visibility::DebugPassDesc>();
-        debug->m_pipeline = SurfaceDebugPipeline::GetPipeline();
-        debug->m_constants.m_g0 = graph.GetSRV(targets[0].Get());
-        debug->m_constants.m_g1 = graph.GetSRV(targets[1].Get());
-        debug->m_constants.m_g2 = graph.GetSRV(targets[2].Get());
-        debug->m_constants.m_g3 = graph.GetSRV(targets[3].Get());
-        debug->m_constants.m_visibility = graph.GetSRV(visibility);
-        debug->m_constants.m_output = graph.GetUAV(view.m_mainColorTarget);
-        debug->m_constants.m_resolution = resolution;
-        debug->m_constants.m_mode = festd::to_underlying(mode);
+        Visibility::DebugConstants debug{};
+        debug.m_g0 = graph.GetSRV(targets[0].Get());
+        debug.m_g1 = graph.GetSRV(targets[1].Get());
+        debug.m_g2 = graph.GetSRV(targets[2].Get());
+        debug.m_g3 = graph.GetSRV(targets[3].Get());
+        debug.m_visibility = graph.GetSRV(visibility);
+        debug.m_output = graph.GetUAV(view.m_mainColorTarget);
+        debug.m_resolution = resolution;
+        debug.m_mode = festd::to_underlying(mode);
         view.m_isMainColorWritten = true;
 
         if (mode != DebugMode::kEvaluationGroup)
         {
-            graph.AddDispatchPass("GBufferDebug", debug, Math::CeilDivide(resolution, 8u));
+            graph.AddDispatch("GBufferDebug", SurfaceDebugPipeline::GetPipeline(), debug, Math::CeilDivide(resolution, 8u));
             return;
         }
 
         // Group shaders only write covered pixels of their own producer.
         Visibility::InitializeDebugColor(graph, view.m_mainColorTarget);
-        AddGroupDebugPasses(graph, blackboard, *debug);
+        AddGroupDebugPasses(graph, blackboard, debug);
     }
 } // namespace FE::Graphics::GBufferDebug

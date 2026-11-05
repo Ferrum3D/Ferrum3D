@@ -31,18 +31,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     };
 
 
-    struct ClearSurfacePassDesc final
-    {
-        ClearSurfaceConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("08DBD2A2-814B-4473-9167-9269FFA9D67A");
-    };
-
-
     struct EvaluationCountConstants final
     {
-        ByteAddressBufferDescriptor m_view;
+        AnyConstantsPtr m_view;
         Texture2DDescriptor<uint2> m_visibility;
         StructuredBufferDescriptor<SurfaceRoute> m_lookup;
         RWStructuredBufferDescriptor<uint32_t> m_counts;
@@ -55,18 +46,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     };
 
 
-    struct EvaluationCountPassDesc final
-    {
-        EvaluationCountConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("B6CD22E2-880F-46ED-B2C2-3F2E0D9D1F79");
-    };
-
-
     struct EvaluationScatterConstants final
     {
-        ByteAddressBufferDescriptor m_view;
+        AnyConstantsPtr m_view;
         Texture2DDescriptor<uint2> m_visibility;
         StructuredBufferDescriptor<SurfaceRoute> m_lookup;
         StructuredBufferDescriptor<uint2> m_offsets;
@@ -81,15 +63,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     };
 
 
-    struct EvaluationScatterPassDesc final
-    {
-        EvaluationScatterConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("7A3210EE-260E-48D4-88A5-99C0CCBFF485");
-    };
-
-
     struct ShadingCountConstants final
     {
         Texture2DDescriptor<uint32_t> m_g0Read;
@@ -101,15 +74,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         uint32_t m_groupRowCount;
 
         FE_RTTI_Reflect("6CF96F7D-92DD-43F5-8C14-FE570FA2880A");
-    };
-
-
-    struct ShadingCountPassDesc final
-    {
-        ShadingCountConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("649C3406-616D-417F-8E1C-182E6A871AC0");
     };
 
 
@@ -129,15 +93,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     };
 
 
-    struct ShadingScatterPassDesc final
-    {
-        ShadingScatterConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("86E490C4-9AC8-455F-BF43-BA2E04B5C0BB");
-    };
-
-
     struct SurfaceScanConstants final
     {
         StructuredBufferDescriptor<uint32_t> m_countsRead;
@@ -154,15 +109,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     };
 
 
-    struct SurfaceScanPassDesc final
-    {
-        SurfaceScanConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("A33FF480-B773-4D16-A69F-F02CC7103E18");
-    };
-
-
     struct SurfacePropagateConstants final
     {
         RWStructuredBufferDescriptor<uint2> m_scanOutput;
@@ -170,15 +116,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         uint32_t m_scanCount;
 
         FE_RTTI_Reflect("12CA5527-DCD8-448D-9141-19BD100B9D80");
-    };
-
-
-    struct SurfacePropagatePassDesc final
-    {
-        SurfacePropagateConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("1A8AA576-3169-4D36-91E2-8D60537D00C7");
     };
 
 
@@ -198,15 +135,5 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         uint32_t m_waveLaneCount;
 
         FE_RTTI_Reflect("339FD18D-EA19-42AA-8F6F-33B9AE92142E");
-    };
-
-
-    struct SurfaceCommandsPassDesc final
-    {
-        SurfaceCommandsConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-        Core::PassIndirectArgs m_arguments;
-
-        FE_RTTI_Reflect("1CA2DFF4-7A05-429D-A488-C79A5F2B9F17");
     };
 FE_HOST_END_NAMESPACE

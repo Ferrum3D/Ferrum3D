@@ -43,6 +43,24 @@ namespace FE::Graphics::Common
         }
 
 
+        //! Calls the visitor with the access a value of the node's type declares, if any.
+        template<class TDescriptorAccess, class TVisitor>
+        void VisitDescriptorNode(const Rtti::VisitNode& node, TVisitor&& visitor)
+        {
+            using Kind = typename TDescriptorAccess::Kind;
+
+            const Rtti::TypeID id = node.m_type.m_id;
+            if (id == Rtti::GetTypeID<TextureSRVDescriptor>())
+                visitor(TDescriptorAccess{ Kind::kTextureSRV, static_cast<const TextureSRVDescriptor*>(node.m_value)->m_value });
+            else if (id == Rtti::GetTypeID<TextureUAVDescriptor>())
+                visitor(TDescriptorAccess{ Kind::kTextureUAV, static_cast<const TextureUAVDescriptor*>(node.m_value)->m_value });
+            else if (id == Rtti::GetTypeID<BufferSRVDescriptor>())
+                visitor(TDescriptorAccess{ Kind::kBufferSRV, static_cast<const BufferSRVDescriptor*>(node.m_value)->m_value });
+            else if (id == Rtti::GetTypeID<BufferUAVDescriptor>())
+                visitor(TDescriptorAccess{ Kind::kBufferUAV, static_cast<const BufferUAVDescriptor*>(node.m_value)->m_value });
+        }
+
+
         bool AreOverlapping(const Core::BufferSlice lhs, const Core::BufferSlice rhs)
         {
             return lhs.m_offset < rhs.m_offset + rhs.m_size && rhs.m_offset < lhs.m_offset + lhs.m_size;
@@ -87,7 +105,7 @@ namespace FE::Graphics::Common
         m_descriptorViews.clear();
         m_textureViews.clear();
         m_bufferViews.clear();
-        m_bufferDependencies.clear();
+        m_constantsAccesses.clear();
         m_uploadCopies.clear();
 
         // These keep their storage after clear(), but the pages are about to be recycled.
@@ -98,39 +116,47 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraph::AddBufferDependency(Core::Buffer* buffer, Core::Buffer* dependency)
+    AnyConstantsPtr FrameGraph::CreateConstantsInternal(const Rtti::Type& type, const void* data)
     {
-        FE_Assert(buffer != nullptr && dependency != nullptr && buffer != dependency);
-        auto& entry = m_bufferDependencies[buffer->GetResourceID()];
-        entry.m_buffer = buffer;
-        for (const Rc<Core::Buffer>& existing : entry.m_reads)
+        FE_PROFILER_ZONE();
+        FE_AssertDebug(type.m_alignment <= ConstantAllocator::kAlignment);
+
+        const ConstantAllocator::Allocation allocation = m_constantAllocator.Allocate(type.m_size);
+        memcpy(allocation.m_hostPointer, data, type.m_size);
+
+        // Nested constants exist before the constants that reference them, so their lists are already complete.
+        Memory::FiberTempAllocator temp;
+        festd::pmr::vector<DescriptorAccess> accesses{ &temp };
+        Rtti::VisitConst(type, data, Rtti::VisitFlags::kNone, [&](const Rtti::VisitNode& node) {
+            if (node.m_type.m_id == Rtti::GetTypeID<AnyConstantsPtr>())
+            {
+                const auto* nested = static_cast<const AnyConstantsPtr*>(node.m_value);
+                const auto entry = m_constantsAccesses.find(nested->m_ptr.GetDeviceAddress());
+                if (entry != m_constantsAccesses.end())
+                    accesses.insert(accesses.end(), entry->second.begin(), entry->second.end());
+            }
+            else
+            {
+                VisitDescriptorNode<DescriptorAccess>(node, [&](const DescriptorAccess access) {
+                    if (access.m_descriptor != kInvalidIndex)
+                        accesses.push_back(access);
+                });
+            }
+
+            return Rtti::VisitResult::kContinue;
+        });
+
+        if (!accesses.empty())
         {
-            if (existing.Get() == dependency)
-                return;
+            auto* stored = static_cast<DescriptorAccess*>(
+                m_linearAllocator.allocate(accesses.size() * sizeof(DescriptorAccess), alignof(DescriptorAccess)));
+            festd::copy(accesses, stored);
+            m_constantsAccesses.emplace(allocation.m_deviceAddress, festd::span<const DescriptorAccess>(stored, accesses.size()));
         }
 
-        entry.m_reads.emplace_back(dependency);
-    }
-
-
-    void FrameGraph::AddBufferDependency(Core::Buffer* buffer, const BufferSRVDescriptor dependency)
-    {
-        const auto& info = GetResourceInfo(dependency.m_value, Core::DescriptorType::kSRV);
-        AddBufferDependency(buffer, Rtti::AssertCast<Core::Buffer*>(info.m_resource.Get()));
-    }
-
-
-    void FrameGraph::RegisterBufferDependencies(Core::Resource* resource, PassNode& pass, const Core::BarrierSyncFlags syncFlags)
-    {
-        const auto entry = m_bufferDependencies.find(resource->GetResourceID());
-        if (entry == m_bufferDependencies.end())
-            return;
-
-        BufferAccess read;
-        read.m_syncFlags = syncFlags;
-        read.m_accessFlags = Core::BarrierAccessFlags::kShaderRead;
-        for (const Rc<Core::Buffer>& dependency : entry->second.m_reads)
-            RegisterResource(dependency.Get(), pass, read);
+        AnyConstantsPtr result;
+        result.m_ptr = BufferPointer{ allocation.m_deviceAddress };
+        return result;
     }
 
 
@@ -239,7 +265,8 @@ namespace FE::Graphics::Common
 
 
     FrameGraph::FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool)
-        : m_passes(&m_linearAllocator)
+        : m_constantAllocator(resourcePool)
+        , m_passes(&m_linearAllocator)
         , m_scopeEvents(&m_linearAllocator)
         , m_resources(&m_linearAllocator)
     {
@@ -398,7 +425,10 @@ namespace FE::Graphics::Common
         passNode.m_userPassDescTypeID = desc.m_userPassDescTypeID;
         passNode.m_userPassDescPtr = desc.m_userPassDescPtr;
         passNode.m_basePassDescToken = desc.m_basePassDescToken;
-        PreparePassCompileInfo(passNode);
+        if (desc.m_computePipeline != nullptr)
+            PrepareComputePass(passNode, desc);
+        else
+            PreparePassCompileInfo(passNode);
     }
 
 
@@ -440,77 +470,134 @@ namespace FE::Graphics::Common
         }
 
         // Descriptor fields and arrays of them name the resources a pass accesses.
-        const auto registerDescriptor = [&](const Rtti::Type& descriptorType, const void* value) {
-            if (descriptorType.m_id == Rtti::GetTypeID<TextureSRVDescriptor>())
-            {
-                const TextureSRVDescriptor descriptor = *static_cast<const TextureSRVDescriptor*>(value);
-                if (descriptor.m_value == kInvalidIndex)
-                    return;
-
-                const Core::ResourceDescriptorInfo& resourceInfo =
-                    GetResourceInfo(descriptor.m_value, Core::DescriptorType::kSRV);
-                FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kTexture);
-
-                TextureAccess access;
-                access.m_syncFlags = shaderSyncFlags;
-                access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead;
-                access.m_layout = Core::BarrierLayout::kShaderRead;
-                access.m_subresource = resourceInfo.m_textureSubresource;
-                RegisterResource(resourceInfo.m_resource.Get(), pass, access);
-            }
-            else if (descriptorType.m_id == Rtti::GetTypeID<TextureUAVDescriptor>())
-            {
-                const TextureUAVDescriptor descriptor = *static_cast<const TextureUAVDescriptor*>(value);
-                if (descriptor.m_value == kInvalidIndex)
-                    return;
-
-                const Core::ResourceDescriptorInfo& resourceInfo =
-                    GetResourceInfo(descriptor.m_value, Core::DescriptorType::kUAV);
-                FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kTexture);
-
-                TextureAccess access;
-                access.m_syncFlags = shaderSyncFlags;
-                access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite;
-                access.m_layout = Core::BarrierLayout::kShaderReadWrite;
-                access.m_subresource = resourceInfo.m_textureSubresource;
-                RegisterResource(resourceInfo.m_resource.Get(), pass, access);
-            }
-            else if (descriptorType.m_id == Rtti::GetTypeID<BufferSRVDescriptor>())
-            {
-                const BufferSRVDescriptor descriptor = *static_cast<const BufferSRVDescriptor*>(value);
-                if (descriptor.m_value == kInvalidIndex)
-                    return;
-
-                const Core::ResourceDescriptorInfo& resourceInfo =
-                    GetResourceInfo(descriptor.m_value, Core::DescriptorType::kSRV);
-                FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kBuffer);
-
-                BufferAccess access;
-                access.m_syncFlags = shaderSyncFlags;
-                access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead;
-                RegisterResource(resourceInfo.m_resource.Get(), pass, access);
-            }
-            else if (descriptorType.m_id == Rtti::GetTypeID<BufferUAVDescriptor>())
-            {
-                const BufferUAVDescriptor descriptor = *static_cast<const BufferUAVDescriptor*>(value);
-                if (descriptor.m_value == kInvalidIndex)
-                    return;
-
-                const Core::ResourceDescriptorInfo& resourceInfo =
-                    GetResourceInfo(descriptor.m_value, Core::DescriptorType::kUAV);
-                FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kBuffer);
-
-                BufferAccess access;
-                access.m_syncFlags = shaderSyncFlags;
-                access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite;
-                RegisterResource(resourceInfo.m_resource.Get(), pass, access);
-            }
-        };
-
         Rtti::VisitConst(type, data, Rtti::VisitFlags::kNone, [&](const Rtti::VisitNode& node) {
-            registerDescriptor(node.m_type, node.m_value);
+            if (node.m_type.m_id == Rtti::GetTypeID<AnyConstantsPtr>())
+            {
+                RegisterConstantsAccesses(pass, *static_cast<const AnyConstantsPtr*>(node.m_value), shaderSyncFlags);
+            }
+            else
+            {
+                VisitDescriptorNode<DescriptorAccess>(node, [&](const DescriptorAccess access) {
+                    RegisterDescriptorAccess(pass, access, shaderSyncFlags);
+                });
+            }
+
             return Rtti::VisitResult::kContinue;
         });
+    }
+
+
+    void FrameGraph::RegisterDescriptorAccess(PassNode& pass, const DescriptorAccess access,
+                                              const Core::BarrierSyncFlags shaderSyncFlags)
+    {
+        if (access.m_descriptor == kInvalidIndex)
+            return;
+
+        const auto registerTexture =
+            [&](const Core::DescriptorType type, const Core::BarrierAccessFlags flags, const Core::BarrierLayout layout) {
+                const Core::ResourceDescriptorInfo& info = GetResourceInfo(access.m_descriptor, type);
+                FE_Assert(info.m_resource->GetType() == Core::ResourceType::kTexture);
+
+                TextureAccess textureAccess;
+                textureAccess.m_syncFlags = shaderSyncFlags;
+                textureAccess.m_accessFlags = flags;
+                textureAccess.m_layout = layout;
+                textureAccess.m_subresource = info.m_textureSubresource;
+                RegisterResource(info.m_resource.Get(), pass, textureAccess);
+            };
+
+        const auto registerBuffer = [&](const Core::DescriptorType type, const Core::BarrierAccessFlags flags) {
+            const Core::ResourceDescriptorInfo& info = GetResourceInfo(access.m_descriptor, type);
+            FE_Assert(info.m_resource->GetType() == Core::ResourceType::kBuffer);
+
+            BufferAccess bufferAccess;
+            bufferAccess.m_syncFlags = shaderSyncFlags;
+            bufferAccess.m_accessFlags = flags;
+            RegisterResource(info.m_resource.Get(), pass, bufferAccess);
+        };
+
+        constexpr auto kReadWrite = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite;
+        switch (access.m_kind)
+        {
+        case DescriptorAccess::Kind::kTextureSRV:
+            registerTexture(Core::DescriptorType::kSRV, Core::BarrierAccessFlags::kShaderRead, Core::BarrierLayout::kShaderRead);
+            break;
+
+        case DescriptorAccess::Kind::kTextureUAV:
+            registerTexture(Core::DescriptorType::kUAV, kReadWrite, Core::BarrierLayout::kShaderReadWrite);
+            break;
+
+        case DescriptorAccess::Kind::kBufferSRV:
+            registerBuffer(Core::DescriptorType::kSRV, Core::BarrierAccessFlags::kShaderRead);
+            break;
+
+        case DescriptorAccess::Kind::kBufferUAV:
+            registerBuffer(Core::DescriptorType::kUAV, kReadWrite);
+            break;
+
+        case DescriptorAccess::Kind::kNone:
+        default:
+            FE_DebugBreak();
+            break;
+        }
+    }
+
+
+    void FrameGraph::RegisterConstantsAccesses(PassNode& pass, const AnyConstantsPtr constants,
+                                               const Core::BarrierSyncFlags shaderSyncFlags)
+    {
+        if (!constants.IsValid())
+            return;
+
+        const uint64_t address = constants.m_ptr.GetDeviceAddress();
+        FE_AssertDebug(m_constantAllocator.IsCurrentFrameAddress(address), "Constants do not belong to this frame");
+
+        const auto entry = m_constantsAccesses.find(address);
+        if (entry == m_constantsAccesses.end())
+            return;
+
+        for (const DescriptorAccess access : entry->second)
+            RegisterDescriptorAccess(pass, access, shaderSyncFlags);
+    }
+
+
+    void FrameGraph::SetPassPushConstants(PassNode& pass, const Rtti::Type& type, const void* data)
+    {
+        FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kPushConstants));
+        FE_Assert(type.m_size <= Core::Limits::Pipeline::kMaxPushConstantsByteSize);
+        FE_Assert(Bit::AllSet(type.m_flags, Rtti::TypeFlags::kStandardLayout));
+
+        pass.m_pushConstants = festd::span(static_cast<const std::byte*>(data), type.m_size);
+        pass.m_specifiedStatesMask |= PassStateFlags::kPushConstants;
+        ParsePassPushConstants(pass, type, data);
+    }
+
+
+    void FrameGraph::SetPassIndirectArgs(PassNode& pass, const Core::BufferView arguments)
+    {
+        FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kIndirectArgs));
+        FE_Assert(arguments.IsValid());
+
+        BufferAccess access;
+        access.m_syncFlags = Core::BarrierSyncFlags::kExecuteIndirect;
+        access.m_accessFlags = Core::BarrierAccessFlags::kIndirectArgument;
+        RegisterResource(arguments.m_resource, pass, access);
+
+        pass.m_indirectArgs = arguments;
+        pass.m_specifiedStatesMask |= PassStateFlags::kIndirectArgs;
+    }
+
+
+    void FrameGraph::PrepareComputePass(PassNode& pass, const PassNodeDesc& desc)
+    {
+        FE_PROFILER_ZONE_TEXT("%s", pass.m_name.c_str());
+
+        pass.m_pipeline = const_cast<Core::ComputePipeline*>(desc.m_computePipeline);
+        pass.m_specifiedStatesMask |= PassStateFlags::kComputePipeline;
+        if (desc.m_indirectArgs.IsValid())
+            SetPassIndirectArgs(pass, desc.m_indirectArgs);
+
+        SetPassPushConstants(pass, *desc.m_constantsType, desc.m_constants);
     }
 
 
@@ -635,18 +722,7 @@ namespace FE::Graphics::Common
             else if (fieldType == Rtti::GetTypeID<Core::PassIndirectArgs>())
             {
                 FE_Assert(elements.m_count == 1, "Indirect arguments can only be specified once");
-                FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kIndirectArgs));
-
-                const Core::PassIndirectArgs indirectArgs = elements.Get<Core::PassIndirectArgs>(field, binding.m_data);
-                FE_Assert(indirectArgs.m_arguments.IsValid());
-
-                BufferAccess access;
-                access.m_syncFlags = Core::BarrierSyncFlags::kExecuteIndirect;
-                access.m_accessFlags = Core::BarrierAccessFlags::kIndirectArgument;
-                RegisterResource(indirectArgs.m_arguments.m_resource, pass, access);
-
-                pass.m_indirectArgs = indirectArgs.m_arguments;
-                pass.m_specifiedStatesMask |= PassStateFlags::kIndirectArgs;
+                SetPassIndirectArgs(pass, elements.Get<Core::PassIndirectArgs>(field, binding.m_data).m_arguments);
             }
             else if (fieldType == Rtti::GetTypeID<Core::PassColorTarget>())
             {
@@ -744,21 +820,8 @@ namespace FE::Graphics::Common
             else
             {
                 // Other arbitrary types are interpreted as push constants.
-                FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kPushConstants));
                 FE_Assert(elements.m_count == 1);
-
-                const std::byte* pushConstantsPtr = static_cast<const std::byte*>(binding.m_data) + field.m_offset;
-                const uint32_t pushConstantsSize = field.m_size;
-                FE_Assert(pushConstantsSize <= Core::Limits::Pipeline::kMaxPushConstantsByteSize);
-
-                pass.m_pushConstants = festd::span(pushConstantsPtr, pushConstantsSize);
-                pass.m_pushConstantsTypeID = fieldType;
-                pass.m_specifiedStatesMask |= PassStateFlags::kPushConstants;
-
-                const Rtti::Type* pushConstantsType = elements.m_type;
-                FE_Assert(pushConstantsType);
-                FE_Assert(Bit::AllSet(pushConstantsType->m_flags, Rtti::TypeFlags::kStandardLayout));
-                ParsePassPushConstants(pass, *pushConstantsType, pushConstantsPtr);
+                SetPassPushConstants(pass, *elements.m_type, static_cast<const std::byte*>(binding.m_data) + field.m_offset);
             }
         }
     }
@@ -1076,7 +1139,12 @@ namespace FE::Graphics::Common
             ExecutePassBarriersInternal(pass);
 
             if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kPushConstants))
+            {
+                const uint32_t shaderByteSize = pass.m_pipeline->GetRootConstantsByteSize();
+                FE_Assert(shaderByteSize == 0 || shaderByteSize == pass.m_pushConstants.size_bytes(),
+                          "Push constants do not match the shader");
                 m_currentContext->PushConstants(pass.m_pushConstants.data(), pass.m_pushConstants.size_bytes());
+            }
 
             if (Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kRenderTargets))
             {
@@ -1197,14 +1265,8 @@ namespace FE::Graphics::Common
             if (other.m_localResourceIndex != localResourceIndex)
                 continue;
 
-            const bool addsShaderRead = Bit::AnySet(access.m_accessFlags, Core::BarrierAccessFlags::kShaderRead)
-                && (!Bit::AnySet(other.m_accessFlags, Core::BarrierAccessFlags::kShaderRead)
-                    || !Bit::AllSet(other.m_syncFlags, access.m_syncFlags));
             other.m_syncFlags |= access.m_syncFlags;
             other.m_accessFlags |= access.m_accessFlags;
-            if (addsShaderRead)
-                RegisterBufferDependencies(resource, pass, access.m_syncFlags);
-
             return localResourceIndex;
         }
 
@@ -1213,8 +1275,6 @@ namespace FE::Graphics::Common
 
         BufferAccess& bufferAccess = pass.m_accessedBuffers.emplace_back(access);
         bufferAccess.m_localResourceIndex = localResourceIndex;
-        if (Bit::AnySet(access.m_accessFlags, Core::BarrierAccessFlags::kShaderRead))
-            RegisterBufferDependencies(resource, pass, access.m_syncFlags);
 
         return localResourceIndex;
     }

@@ -108,7 +108,7 @@ namespace SunShadow
         if (!binding.m_data.IsValid())
             return 1.0f;
 
-        const SunShadowData data = binding.m_data.Load(0);
+        const SunShadowData data = binding.m_data.Load();
         const Projection center = Project(data, worldPosition);
         if (!center.m_isValid)
             return 1.0f;

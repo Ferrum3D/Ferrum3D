@@ -3,6 +3,7 @@
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
+#include <Shaders/Lighting/ViewLighting.h>
 
 namespace FE::Graphics
 {
@@ -15,7 +16,9 @@ namespace FE::Graphics
         Core::Texture* m_mainDepthTarget = nullptr;
         RectF m_viewportRect{ kForceInit };
         Core::RingUploader* m_renderQueueUploader = nullptr;
-        Rc<Core::Buffer> m_constants;
+        ConstantsPtr<ViewData> m_constants;
+        //! Created after the shadow passes of the view.
+        ConstantsPtr<ViewLighting> m_lighting;
         bool m_isMainColorWritten = false;
     };
 } // namespace FE::Graphics

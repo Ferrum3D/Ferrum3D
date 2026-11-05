@@ -50,6 +50,20 @@ namespace FE::Graphics
                 context.ClearRenderTargets();
             });
         }
+
+
+        ConstantsPtr<ViewLighting> CreateViewLighting(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
+        {
+            ViewLighting lighting{};
+            if (const auto* global = blackboard.TryGet<ConstantsPtr<GlobalLightingData>>())
+                lighting.m_global = *global;
+            if (const auto* local = blackboard.TryGet<LocalLightingBinding>())
+                lighting.m_local = *local;
+            if (const auto* sunShadow = blackboard.TryGet<SunShadowBinding>())
+                lighting.m_sunShadow = *sunShadow;
+
+            return graph.CreateConstants(lighting);
+        }
     } // namespace
 
 
@@ -404,8 +418,7 @@ namespace FE::Graphics
         const RectF rect = viewData.m_viewportRect;
         constants.m_viewport = PackedVector4F(rect.left, rect.top, rect.Width(), rect.Height());
         constants.m_backgroundColor = PackedVector4F(Vector4(Colors::kBlack));
-        viewData.m_constants = Core::Buffer::CreateStructured<ViewData>(graph.GetDevice(), "View", 1);
-        FE_Verify(m_renderQueueUploader.Upload(graph, viewData.m_constants.Get(), constants));
+        viewData.m_constants = graph.CreateConstants(constants);
 
         blackboard.Add<SceneData*>(&scene.GetRenderData());
         blackboard.Add<SurfaceEvaluationInputs>();
@@ -420,6 +433,7 @@ namespace FE::Graphics
         ShadowAtlas::AddPasses(graph, blackboard);
         DepthPyramidPass::AddPasses(graph, blackboard);
         SunShadow::AddPasses(graph, blackboard);
+        viewData.m_lighting = CreateViewLighting(graph, blackboard);
         Visibility::AddDebugPasses(graph, blackboard);
         SurfaceEvaluation::AddPasses(graph, blackboard);
         GBufferDebug::AddPasses(graph, blackboard);

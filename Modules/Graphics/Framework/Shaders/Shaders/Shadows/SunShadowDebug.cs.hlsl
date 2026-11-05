@@ -15,7 +15,7 @@ float3 GetLocalShadowColor(const float3 worldPosition, const float3 normal, cons
     if (!lighting.m_clusters.IsValid() || !camera.m_isValid)
         return kNoLocalShadowColor;
 
-    const LightClusterData clusters = lighting.m_clusters.Load(0);
+    const LightClusterData clusters = lighting.m_clusters.Load();
     const uint base = GetLightClusterBase(clusters, worldPosition, pixel);
     float visibility = 2.0f;
     for (uint word = 0; word < clusters.m_wordCount; ++word)
@@ -61,7 +61,7 @@ void main(uint3 thread : SV_DispatchThreadID)
         return;
     }
 
-    const ViewData view = GConstants.m_view.Load(0);
+    const ViewData view = GConstants.m_view.Load();
     const float2 viewportPosition = (float2(pixel) + 0.5f - view.m_viewport.xy) / view.m_viewport.zw;
     const float2 ndc = viewportPosition * float2(2, -2) + float2(-1, 1);
     const float4 homogeneousWorld = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
@@ -79,7 +79,7 @@ void main(uint3 thread : SV_DispatchThreadID)
     }
     else if (GConstants.m_shadow.m_data.IsValid())
     {
-        const SunShadowData data = GConstants.m_shadow.m_data.Load(0);
+        const SunShadowData data = GConstants.m_shadow.m_data.Load();
         const SunShadow::Projection projection = SunShadow::Project(data, worldPosition);
         if (!projection.m_isValid)
         {

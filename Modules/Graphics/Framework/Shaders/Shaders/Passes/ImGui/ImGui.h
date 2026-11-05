@@ -33,13 +33,4 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::ImGuiPass)
         FE_RTTI_Reflect("4ACED814-F36A-4A91-B35C-83220229A7CD");
     };
 
-
-    struct TextureUploadPassDesc final
-    {
-        TextureUploadConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("841AE091-DA76-4CA7-B3E4-E640715966B2");
-    };
-
 FE_HOST_END_NAMESPACE

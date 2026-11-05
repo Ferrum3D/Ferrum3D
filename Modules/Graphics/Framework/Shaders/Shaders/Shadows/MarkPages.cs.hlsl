@@ -15,13 +15,13 @@ void main(uint3 thread : SV_DispatchThreadID)
     if (depth <= 0.0f)
         return;
 
-    const ViewData view = GConstants.m_view.Load(0);
+    const ViewData view = GConstants.m_view.Load();
     const float2 viewportPosition = (float2(pixel) + 0.5f - view.m_viewport.xy) / view.m_viewport.zw;
     const float2 ndc = viewportPosition * float2(2, -2) + float2(-1, 1);
     const float4 homogeneousWorld = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
     const float3 worldPosition = homogeneousWorld.xyz / homogeneousWorld.w;
 
-    const SunShadowData data = GConstants.m_data.Load(0);
+    const SunShadowData data = GConstants.m_data.Load();
     RWStructuredBuffer<uint> pageTable = GConstants.m_pageTable.Get();
     SunShadow::RequestPages(pageTable, data, worldPosition);
     LocalShadow::RequestPages(pageTable,

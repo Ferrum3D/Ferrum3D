@@ -86,6 +86,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         float m_level0TexelSize;
         //! Clip-space depth per world unit along the light direction.
         float m_depthPerUnit;
+        FE_RTTI_Reflect("28DC5AE5-CDBC-4AC3-9EFC-C6C58106A648");
     };
 
 
@@ -125,7 +126,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     //! Sun shadow inputs of shading passes; an invalid m_data leaves the sun unshadowed.
     struct SunShadowBinding final
     {
-        StructuredBufferDescriptor<SunShadowData> m_data;
+        ConstantsPtr<SunShadowData> m_data;
         StructuredBufferDescriptor<uint32_t> m_pageTable;
         Texture2DDescriptor<uint32_t> m_atlas;
         StructuredBufferDescriptor<LocalShadowMapData> m_localMaps;
@@ -150,15 +151,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
-    struct SunShadowUpdatePassDesc final
-    {
-        SunShadowUpdateConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("71C23B37-0AD2-4648-B1C0-877EEFFF8DAC");
-    };
-
-
     //! Frees the pages of every block that overlap world bounds where static casters changed.
     struct SunShadowInvalidateConstants final
     {
@@ -172,19 +164,10 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
-    struct SunShadowInvalidatePassDesc final
-    {
-        SunShadowInvalidateConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("655EBBC8-EA6F-43A9-B5E6-694297A27895");
-    };
-
-
     struct SunShadowMarkConstants final
     {
-        StructuredBufferDescriptor<SunShadowData> m_data;
-        StructuredBufferDescriptor<ViewData> m_view;
+        ConstantsPtr<SunShadowData> m_data;
+        ConstantsPtr<ViewData> m_view;
         Texture2DDescriptor<float> m_depth;
         RWStructuredBufferDescriptor<uint32_t> m_pageTable;
         LocalLightingBinding m_localLighting;
@@ -193,15 +176,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint2 m_resolution;
 
         FE_RTTI_Reflect("E507BE80-30F5-4F93-9007-4765C56FEFEC");
-    };
-
-
-    struct SunShadowMarkPassDesc final
-    {
-        SunShadowMarkConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("39B4514B-8578-45E2-9956-842A912A5492");
     };
 
 
@@ -215,15 +189,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         RWStructuredBufferDescriptor<uint32_t> m_counters;
 
         FE_RTTI_Reflect("B1F80779-5448-495F-B829-360D17BA8DA6");
-    };
-
-
-    struct SunShadowCollectPassDesc final
-    {
-        SunShadowCollectConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("D22FBFFF-429E-4255-8661-7BCC623876D0");
     };
 
 
@@ -241,15 +206,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
-    struct SunShadowAllocatePassDesc final
-    {
-        SunShadowAllocateConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("ADD73EEE-AE3C-4F58-AB51-0D4A1E02EF7B");
-    };
-
-
     //! Clears the static atlas pages that are drawn this frame.
     struct SunShadowClearAtlasConstants final
     {
@@ -258,15 +214,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         RWTexture2DDescriptor<uint32_t> m_atlas;
 
         FE_RTTI_Reflect("1872DD60-1782-4F94-BB67-43E9B7D4A097");
-    };
-
-
-    struct SunShadowClearAtlasPassDesc final
-    {
-        SunShadowClearAtlasConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("6C9D3917-12BA-43F5-A35A-CAF959977CDD");
     };
 
 
@@ -279,15 +226,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         RWTexture2DDescriptor<uint32_t> m_target;
 
         FE_RTTI_Reflect("E0B9E7A5-DC51-4E6F-A9FF-E4D063D5B436");
-    };
-
-
-    struct SunShadowCopyPagesPassDesc final
-    {
-        SunShadowCopyPagesConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("BB4B538A-A31A-42A4-B888-E58F6F80F3F7");
     };
 
 
@@ -306,15 +244,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
-    struct SunShadowPageMaskPassDesc final
-    {
-        SunShadowPageMaskConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("C93A083C-AA67-42C2-8027-A6AA90A4132E");
-    };
-
-
     //! Read by the shadow depth pixel shader through MeshViewData::m_passData; it writes pages with all of m_requiredFlags.
     struct SunShadowRasterData final
     {
@@ -323,6 +252,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_level;
         uint32_t m_requiredFlags;
         int2 m_pageOrigin;
+        FE_RTTI_Reflect("C9438732-66F5-451D-A219-B71D3A5FB449");
     };
 
 
@@ -332,7 +262,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         //! Left invalid: it declares the render target state of a pass without attachments.
         Core::PassDepthTarget m_depthTarget;
         Core::PassViewport m_viewport;
-        Core::PassTextureAccess m_atlas;
 
         FE_RTTI_Reflect("A3E1523A-9A5E-43EF-959C-ED7B9D428905");
     };
@@ -341,11 +270,12 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     //! Read by the page marking pixel shader of transparent surfaces through MeshViewData::m_passData.
     struct SunShadowMarkRasterData final
     {
-        StructuredBufferDescriptor<SunShadowData> m_data;
+        ConstantsPtr<SunShadowData> m_data;
         RWStructuredBufferDescriptor<uint32_t> m_pageTable;
         LocalLightingBinding m_localLighting;
         StructuredBufferDescriptor<LocalShadowMapData> m_localMaps;
         StructuredBufferDescriptor<uint32_t> m_localLightMaps;
+        FE_RTTI_Reflect("F1905EB0-46BE-4F0C-9DCE-40D78AA3F97F");
     };
 
 
@@ -355,7 +285,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         //! Tested but not written, so only surfaces in front of opaque geometry request pages.
         Core::PassDepthTarget m_depthTarget;
         Core::PassViewport m_viewport;
-        Core::PassBufferAccess m_pageTable;
 
         FE_RTTI_Reflect("465C550C-FB30-48C4-9955-941047DDFB20");
     };
@@ -365,7 +294,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     {
         SunShadowBinding m_shadow;
         LocalLightingBinding m_localLighting;
-        StructuredBufferDescriptor<ViewData> m_view;
+        ConstantsPtr<ViewData> m_view;
         Texture2DDescriptor<float> m_depth;
         Texture2DDescriptor<uint32_t> m_g1;
         RWTexture2DDescriptor<float3> m_output;
@@ -373,15 +302,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_mode;
 
         FE_RTTI_Reflect("B505A020-55DF-4B11-94EC-974A31F91BE4");
-    };
-
-
-    struct SunShadowDebugPassDesc final
-    {
-        SunShadowDebugConstants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("37935C6A-33F7-4E65-AD33-0A9CC1828412");
     };
 
 #if FE_HOST

@@ -10,12 +10,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         float4 m_skyRadiance;
         float4 m_sunIlluminance;
         float4 m_groundRadiance;
-    };
-
-
-    struct GlobalLightingBinding final
-    {
-        BufferPointer m_table FE_INIT({});
-        uint32_t m_row FE_INIT(kInvalidIndex);
+        FE_RTTI_Reflect("BCCE76B0-9747-4DE6-A642-3E6DD300E60B");
     };
 FE_HOST_END_NAMESPACE

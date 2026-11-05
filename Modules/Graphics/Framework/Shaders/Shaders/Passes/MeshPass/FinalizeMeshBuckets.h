@@ -15,13 +15,4 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::FinalizeMeshBuckets)
 
         FE_RTTI_Reflect("2B82E380-8B59-44EB-BBAC-DA2970D24BD4");
     };
-
-
-    struct PassDesc final
-    {
-        Constants m_constants;
-        Core::PassComputePipeline m_pipeline;
-
-        FE_RTTI_Reflect("9FB458CC-A1DE-4758-B0AC-D0A818BB01DF");
-    };
 FE_HOST_END_NAMESPACE

@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Containers/SegmentedVector.h>
 #include <Graphics/Core/Barrier.h>
+#include <Graphics/Core/Common/FrameGraph/ConstantAllocator.h>
 #include <Graphics/Core/Common/ResourceBarrierBatcher.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
@@ -51,8 +52,6 @@ namespace FE::Graphics::Common
         BufferSRVDescriptor GetSRV(Core::BufferView buffer) override;
         BufferUAVDescriptor GetUAV(Core::BufferView buffer) override;
         SamplerDescriptor GetSampler(Core::SamplerState sampler) override;
-        void AddBufferDependency(Core::Buffer* buffer, Core::Buffer* dependency) override;
-        void AddBufferDependency(Core::Buffer* buffer, BufferSRVDescriptor dependency) override;
 
         void AddCopyPass(const Core::BufferView& destination, const Core::BufferView& source) override;
         void AddUploadCopy(const Core::BufferView& destination, const Core::BufferView& source) override;
@@ -104,7 +103,6 @@ namespace FE::Graphics::Common
             Rc<Core::PipelineBase> m_pipeline;
 
             festd::span<const std::byte> m_pushConstants;
-            Rtti::TypeID m_pushConstantsTypeID = Rtti::TypeID::kNull;
 
             festd::fixed_vector<uint32_t, Core::Limits::Pipeline::kMaxColorAttachments> m_colorTargetAccessIndices;
             uint32_t m_depthTargetAccessIndex = kInvalidIndex;
@@ -143,6 +141,7 @@ namespace FE::Graphics::Common
         FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool);
 
         void AddPassInternal(const PassNodeDesc& desc) override;
+        [[nodiscard]] AnyConstantsPtr CreateConstantsInternal(const Rtti::Type& type, const void* data) override;
 
         virtual void PrepareExecuteInternal() = 0;
         virtual void FinishExecuteInternal() = 0;
@@ -150,7 +149,28 @@ namespace FE::Graphics::Common
         virtual void ExecutePassBarriersInternal(PassNode& pass) = 0;
         virtual void EndMarkerInternal() = 0;
 
+        //! A resource access that a descriptor in constants or push constants declares.
+        struct DescriptorAccess final
+        {
+            enum class Kind : uint32_t
+            {
+                kNone,
+                kTextureSRV,
+                kTextureUAV,
+                kBufferSRV,
+                kBufferUAV,
+            };
+
+            Kind m_kind = Kind::kNone;
+            uint32_t m_descriptor = kInvalidIndex;
+        };
+
+        void RegisterDescriptorAccess(PassNode& pass, DescriptorAccess access, Core::BarrierSyncFlags shaderSyncFlags);
+        void RegisterConstantsAccesses(PassNode& pass, AnyConstantsPtr constants, Core::BarrierSyncFlags shaderSyncFlags);
         void ParsePassPushConstants(PassNode& pass, const Rtti::Type& type, const void* data);
+        void SetPassPushConstants(PassNode& pass, const Rtti::Type& type, const void* data);
+        void SetPassIndirectArgs(PassNode& pass, Core::BufferView arguments);
+        void PrepareComputePass(PassNode& pass, const PassNodeDesc& desc);
         void PreparePassCompileInfo(PassNode& pass);
         void AccumulateBindFlags(ResourceNode& resource);
         void CompilePassBarriers(PassNode& pass);
@@ -160,8 +180,6 @@ namespace FE::Graphics::Common
 
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access);
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access);
-
-        void RegisterBufferDependencies(Core::Resource* resource, PassNode& pass, Core::BarrierSyncFlags syncFlags);
 
         //! The first two passes of every graph: batched upload copies and the barriers to their first readers.
         static constexpr uint32_t kUploadPassIndex = 0;
@@ -180,14 +198,10 @@ namespace FE::Graphics::Common
 
         festd::vector<UploadCopy> m_uploadCopies;
 
-        struct BufferDependencies final
-        {
-            Rc<Core::Buffer> m_buffer;
-            festd::inline_vector<Rc<Core::Buffer>, 4> m_reads;
-        };
+        ConstantAllocator m_constantAllocator;
 
-
-        festd::unordered_dense_map<uint32_t, BufferDependencies> m_bufferDependencies;
+        //! Descriptors of each constants allocation of this frame that holds any, including those of nested constants.
+        festd::unordered_dense_map<uint64_t, festd::span<const DescriptorAccess>> m_constantsAccesses;
 
         struct TextureViewKey final
         {
