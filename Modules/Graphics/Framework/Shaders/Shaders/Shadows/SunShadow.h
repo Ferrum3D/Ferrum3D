@@ -73,12 +73,14 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_padding;
         //! World page at the first page of the level; world page (u, v) shows at page (u - x, v + y) of the level.
         int2 m_pageOrigin;
+        FE_RTTI_Reflect("3F6A9C21-7B4E-4D18-A2C6-9E1D07B5F384");
     };
 
 
     struct SunShadowData final
     {
-        SunShadowLevel m_levels[kSunShadowMaxLevelCount];
+        //! m_levelCount elements, loaded one at a time.
+        ConstantsPtr<SunShadowLevel> m_levels;
         //! xyz: position of the camera that requested pages; w: world size of one of its pixels at unit distance.
         float4 m_cameraPosition;
         uint32_t m_levelCount;
@@ -306,6 +308,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
 
 #if FE_HOST
     static_assert(sizeof(SunShadowLevel) == 80);
-    static_assert(sizeof(SunShadowData) == kSunShadowMaxLevelCount * sizeof(SunShadowLevel) + 32);
+    static_assert(sizeof(SunShadowData) == 40);
 #endif
 FE_HOST_END_NAMESPACE

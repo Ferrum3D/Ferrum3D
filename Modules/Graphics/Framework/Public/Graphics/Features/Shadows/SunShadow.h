@@ -53,8 +53,11 @@ namespace FE::Graphics::SunShadow
     };
 
 
-    [[nodiscard]] SunShadowData BuildShadowData(const Settings& settings, festd::span<const LevelSetup> levels,
-                                                const CameraDesc& camera);
+    [[nodiscard]] festd::fixed_vector<SunShadowLevel, kSunShadowMaxLevelCount> BuildShadowLevels(
+        festd::span<const LevelSetup> levels);
+
+    //! The result does not reference its levels yet: set SunShadowData::m_levels to constants made from BuildShadowLevels.
+    [[nodiscard]] SunShadowData BuildShadowData(const Settings& settings, const CameraDesc& camera);
 
 
     struct PageCache;

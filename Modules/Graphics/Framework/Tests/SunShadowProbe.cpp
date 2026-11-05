@@ -51,7 +51,15 @@ namespace FE::Graphics::SunShadowProbe
         }
 
 
-        Vector2 ProjectTexel(const SunShadowData& data, const uint32_t level, const Vector3 worldPosition, float& depth)
+        //! The levels stay readable on the host, unlike those that SunShadowData points to.
+        struct ProbeShadow final
+        {
+            SunShadowData m_header{};
+            festd::fixed_vector<SunShadowLevel, kSunShadowMaxLevelCount> m_levels;
+        };
+
+
+        Vector2 ProjectTexel(const ProbeShadow& data, const uint32_t level, const Vector3 worldPosition, float& depth)
         {
             const Vector4 clip = Vector4(worldPosition, 1.0f) * data.m_levels[level].m_viewProjection;
             depth = clip.z;
@@ -60,7 +68,7 @@ namespace FE::Graphics::SunShadowProbe
 
 
         // Mirrors SunShadow::GetWorldPage and SunShadow::GetEntryIndex.
-        uint32_t GetEntryIndex(const SunShadowData& data, const uint32_t level, const Vector2Int levelPage)
+        uint32_t GetEntryIndex(const ProbeShadow& data, const uint32_t level, const Vector2Int levelPage)
         {
             const Vector2Int origin = data.m_levels[level].m_pageOrigin;
             const int32_t mask = int32_t(kSunShadowLevelPagesPerAxis - 1);
@@ -72,11 +80,12 @@ namespace FE::Graphics::SunShadowProbe
 
         // Mirrors SunShadow::Project in SunShadow.hlsli and the requests of MarkPages.cs.hlsl, including the toroidal entry
         // addressing of SunShadow::GetPageIndex.
-        void RequestPages(const SunShadowData& data, const Vector3 worldPosition, festd::vector<uint32_t>& entries)
+        void RequestPages(const ProbeShadow& data, const Vector3 worldPosition, festd::vector<uint32_t>& entries)
         {
-            const float pixelSize = data.m_cameraPosition.w;
-            const uint32_t levelBias = uint32_t(Math::Floor(std::log2(Math::Max(pixelSize / data.m_level0TexelSize, 1.0f))));
-            for (uint32_t level = levelBias; level < data.m_levelCount; ++level)
+            const float pixelSize = data.m_header.m_cameraPosition.w;
+            const uint32_t levelBias =
+                uint32_t(Math::Floor(std::log2(Math::Max(pixelSize / data.m_header.m_level0TexelSize, 1.0f))));
+            for (uint32_t level = levelBias; level < data.m_header.m_levelCount; ++level)
             {
                 float depth;
                 const Vector2 texel = ProjectTexel(data, level, worldPosition, depth);
@@ -99,7 +108,7 @@ namespace FE::Graphics::SunShadowProbe
         }
 
 
-        festd::vector<uint32_t> CalculateExpectedEntries(const SunShadowData& data, const ViewData& view, const float depth)
+        festd::vector<uint32_t> CalculateExpectedEntries(const ProbeShadow& data, const ViewData& view, const float depth)
         {
             festd::vector<uint32_t> entries;
             for (uint32_t y = kBackgroundRows; y < kImageSize; ++y)
@@ -174,7 +183,7 @@ namespace FE::Graphics::SunShadowProbe
         }
 
 
-        FrameResult RunFrame(ProbeContext& context, const ProbeCamera& camera, const SunShadowData& data,
+        FrameResult RunFrame(ProbeContext& context, const ProbeCamera& camera, const ProbeShadow& data,
                              const festd::span<const SunShadow::LevelSetup> levels, const festd::span<const Aabb> staticChanges)
         {
             Core::Device* device = context.m_device;
@@ -196,7 +205,9 @@ namespace FE::Graphics::SunShadowProbe
                               Math::CeilDivide(Vector2UInt(kImageSize), kThreadGroupSize));
 
             SunShadow::PageInputs inputs;
-            inputs.m_data = graph.CreateConstants(data);
+            SunShadowData header = data.m_header;
+            header.m_levels = graph.CreateConstantsArray(festd::span<const SunShadowLevel>(data.m_levels));
+            inputs.m_data = graph.CreateConstants(header);
             inputs.m_view = graph.CreateConstants(camera.m_view);
             inputs.m_depth = depth.Get();
             inputs.m_settings = context.m_settings;
@@ -251,11 +262,11 @@ namespace FE::Graphics::SunShadowProbe
 
 
         //! Pyramid texels are 0 exactly over the entries of the set; texels map to entries through the level origins.
-        uint32_t CountPyramidMismatches(const SunShadowData& data, const festd::vector<float>& pyramids,
+        uint32_t CountPyramidMismatches(const ProbeShadow& data, const festd::vector<float>& pyramids,
                                         const festd::vector<uint32_t>& sortedEntries)
         {
             uint32_t mismatchCount = 0;
-            for (uint32_t level = 0; level < data.m_levelCount; ++level)
+            for (uint32_t level = 0; level < data.m_header.m_levelCount; ++level)
             {
                 for (uint32_t texel = 0; texel < kSunShadowLevelPageCount; ++texel)
                 {
@@ -313,15 +324,16 @@ namespace FE::Graphics::SunShadowProbe
         const auto prepare = [&context](const Vector3 cameraPosition,
                                         festd::fixed_vector<SunShadow::LevelSetup, kSunShadowMaxLevelCount>& levels,
                                         ProbeCamera& camera,
-                                        SunShadowData& data) {
+                                        ProbeShadow& data) {
             camera = CreateCamera(cameraPosition);
             SunShadow::CalculateLevels(context.m_settings, camera.m_desc.m_position, Vector3::AxisY(), levels);
-            data = SunShadow::BuildShadowData(context.m_settings, levels, camera.m_desc);
+            data.m_header = SunShadow::BuildShadowData(context.m_settings, camera.m_desc);
+            data.m_levels = SunShadow::BuildShadowLevels(levels);
         };
 
         festd::fixed_vector<SunShadow::LevelSetup, kSunShadowMaxLevelCount> levels;
         ProbeCamera camera;
-        SunShadowData data;
+        ProbeShadow data;
         prepare(Vector3(3.0f, kCameraHeight, 3.0f), levels, camera, data);
         const festd::vector<uint32_t> expected = CalculateExpectedEntries(data, camera.m_view, kPlaneDepth);
         ASSERT_EQ(expected.size(), 4u);

@@ -141,7 +141,7 @@ namespace FE::Graphics::Common
         FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool);
 
         void AddPassInternal(const PassNodeDesc& desc) override;
-        [[nodiscard]] AnyConstantsPtr CreateConstantsInternal(const Rtti::Type& type, const void* data) override;
+        [[nodiscard]] AnyConstantsPtr CreateConstantsInternal(const Rtti::Type& type, const void* data, uint32_t count) override;
 
         virtual void PrepareExecuteInternal() = 0;
         virtual void FinishExecuteInternal() = 0;

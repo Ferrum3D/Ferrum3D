@@ -2779,6 +2779,97 @@ namespace FE::Graphics::Visibility
 } // namespace FE::Graphics::Visibility
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID SunShadowLevel::TypeID = Rtti::TypeID{
+        0x3f, 0x6a, 0x9c, 0x21, 0x7b, 0x4e, 0x4d, 0x18, 0xa2, 0xc6, 0x9e, 0x1d, 0x07, 0xb5, 0xf3, 0x84,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_3f6a9c217b4e4d18a2c69e1d07b5f384(SunShadowLevel* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x3f, 0x6a, 0x9c, 0x21, 0x7b, 0x4e, 0x4d, 0x18,
+                0xa2, 0xc6, 0x9e, 0x1d, 0x07, 0xb5, 0xf3, 0x84, // FE::Graphics::SunShadowLevel (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_3f6a9c217b4e4d18a2c69e1d07b5f384()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SunShadowLevel::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_3f6a9c217b4e4d18a2c69e1d07b5f384();
+    }
+
+    void SunShadowLevel::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_3f6a9c217b4e4d18a2c69e1d07b5f384();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x3f, 0x6a, 0x9c, 0x21, 0x7b, 0x4e, 0x4d, 0x18,
+            0xa2, 0xc6, 0x9e, 0x1d, 0x07, 0xb5, 0xf3, 0x84, // FE::Graphics::SunShadowLevel
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewProjection = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_texelSize = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_padding = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pageOrigin = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_viewProjection",
+                                                     &SunShadowLevel::m_viewProjection,
+                                                     kAttributes_m_viewProjection,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_texelSize",
+                                                     &SunShadowLevel::m_texelSize,
+                                                     kAttributes_m_texelSize,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_padding",
+                                                     &SunShadowLevel::m_padding,
+                                                     kAttributes_m_padding,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_pageOrigin",
+                                                     &SunShadowLevel::m_pageOrigin,
+                                                     kAttributes_m_pageOrigin,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SunShadowLevel>(typeInstance,
+                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                             "FE::Graphics::SunShadowLevel",
+                                             kBaseClassTypeIDs,
+                                             kAttributes,
+                                             kFields,
+                                             Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_3f6a9c217b4e4d18a2c69e1d07b5f384(static_cast<SunShadowLevel*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_3f6a9c217b4e4d18a2c69e1d07b5f384(&SunShadowLevel::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::DeferredShading
 {
     const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{

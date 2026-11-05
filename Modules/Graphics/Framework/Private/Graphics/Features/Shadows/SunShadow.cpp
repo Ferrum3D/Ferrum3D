@@ -477,18 +477,24 @@ namespace FE::Graphics::SunShadow
     }
 
 
-    SunShadowData BuildShadowData(const Settings& settings, const festd::span<const LevelSetup> levels, const CameraDesc& camera)
+    festd::fixed_vector<SunShadowLevel, kSunShadowMaxLevelCount> BuildShadowLevels(const festd::span<const LevelSetup> levels)
     {
-        FE_Assert(levels.size() == settings.m_levelCount);
-
-        SunShadowData data{};
-        for (uint32_t levelIndex = 0; levelIndex < levels.size(); ++levelIndex)
+        festd::fixed_vector<SunShadowLevel, kSunShadowMaxLevelCount> result;
+        for (const LevelSetup& level : levels)
         {
-            data.m_levels[levelIndex].m_viewProjection = levels[levelIndex].m_viewProjection;
-            data.m_levels[levelIndex].m_texelSize = levels[levelIndex].m_texelSize;
-            data.m_levels[levelIndex].m_pageOrigin = levels[levelIndex].m_pageOrigin;
+            SunShadowLevel& shaderLevel = result.emplace_back();
+            shaderLevel.m_viewProjection = level.m_viewProjection;
+            shaderLevel.m_texelSize = level.m_texelSize;
+            shaderLevel.m_pageOrigin = level.m_pageOrigin;
         }
 
+        return result;
+    }
+
+
+    SunShadowData BuildShadowData(const Settings& settings, const CameraDesc& camera)
+    {
+        SunShadowData data{};
         data.m_cameraPosition = PackedVector4F(Vector4(camera.m_position, camera.m_pixelFootprint));
         data.m_levelCount = settings.m_levelCount;
         data.m_isOrthographicCamera = camera.m_isOrthographic ? 1 : 0;
@@ -853,7 +859,9 @@ namespace FE::Graphics::SunShadow
         }
 
         // Without the sun no position projects into a clip level, while local maps still select mips by the camera.
-        SunShadowData data = BuildShadowData(settings, levels, camera);
+        const auto shaderLevels = BuildShadowLevels(levels);
+        SunShadowData data = BuildShadowData(settings, camera);
+        data.m_levels = graph.CreateConstantsArray(festd::span<const SunShadowLevel>(shaderLevels));
         if (!hasSun)
             data.m_levelCount = 0;
 

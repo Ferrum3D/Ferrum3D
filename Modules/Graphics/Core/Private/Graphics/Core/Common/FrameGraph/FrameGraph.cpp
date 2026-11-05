@@ -116,18 +116,19 @@ namespace FE::Graphics::Common
     }
 
 
-    AnyConstantsPtr FrameGraph::CreateConstantsInternal(const Rtti::Type& type, const void* data)
+    AnyConstantsPtr FrameGraph::CreateConstantsInternal(const Rtti::Type& type, const void* data, const uint32_t count)
     {
         FE_PROFILER_ZONE();
         FE_AssertDebug(type.m_alignment <= ConstantAllocator::kAlignment);
+        FE_Assert(count > 0);
 
-        const ConstantAllocator::Allocation allocation = m_constantAllocator.Allocate(type.m_size);
-        memcpy(allocation.m_hostPointer, data, type.m_size);
+        const ConstantAllocator::Allocation allocation = m_constantAllocator.Allocate(type.m_size * count);
+        memcpy(allocation.m_hostPointer, data, type.m_size * count);
 
         // Nested constants exist before the constants that reference them, so their lists are already complete.
         Memory::FiberTempAllocator temp;
         festd::pmr::vector<DescriptorAccess> accesses{ &temp };
-        Rtti::VisitConst(type, data, Rtti::VisitFlags::kNone, [&](const Rtti::VisitNode& node) {
+        auto visitNode = [&](const Rtti::VisitNode& node) {
             if (node.m_type.m_id == Rtti::GetTypeID<AnyConstantsPtr>())
             {
                 const auto* nested = static_cast<const AnyConstantsPtr*>(node.m_value);
@@ -144,7 +145,10 @@ namespace FE::Graphics::Common
             }
 
             return Rtti::VisitResult::kContinue;
-        });
+        };
+
+        for (uint32_t index = 0; index < count; ++index)
+            Rtti::VisitConst(type, static_cast<const std::byte*>(data) + index * type.m_size, Rtti::VisitFlags::kNone, visitNode);
 
         if (!accesses.empty())
         {

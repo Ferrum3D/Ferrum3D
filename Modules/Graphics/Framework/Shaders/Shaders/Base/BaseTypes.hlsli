@@ -89,6 +89,12 @@ struct ConstantsPtr
         return m_ptr.Read<T>(0);
     }
 
+    //! An element of constants created with FrameGraph::CreateConstantsArray.
+    T LoadElement(const uint32_t index) FE_CONST
+    {
+        return m_ptr.Read<T>(index * sizeof(T));
+    }
+
     bool IsValid() FE_CONST
     {
         return m_ptr.GetDeviceAddress() != 0;

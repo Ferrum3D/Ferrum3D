@@ -16,7 +16,7 @@ namespace SunShadow
 
     float2 ProjectTexel(const SunShadowData data, const uint level, const float3 worldPosition, out float depth)
     {
-        const float4 clip = mul(float4(worldPosition, 1.0f), data.m_levels[level].m_viewProjection);
+        const float4 clip = mul(float4(worldPosition, 1.0f), data.m_levels.LoadElement(level).m_viewProjection);
         depth = clip.z;
         return (clip.xy * float2(0.5f, -0.5f) + 0.5f) * kSunShadowVirtualSize;
     }
@@ -82,7 +82,7 @@ namespace SunShadow
     void RequestPage(RWStructuredBuffer<uint> pageTable, const SunShadowData data, const uint level, const int2 texel)
     {
         const uint2 clamped = uint2(clamp(texel, 0, (int)kSunShadowVirtualSize - 1));
-        InterlockedOr(pageTable[GetPageIndex(level, data.m_levels[level].m_pageOrigin, clamped)], kSunShadowPageRequested);
+        InterlockedOr(pageTable[GetPageIndex(level, data.m_levels.LoadElement(level).m_pageOrigin, clamped)], kSunShadowPageRequested);
     }
 
 
@@ -114,13 +114,14 @@ namespace SunShadow
             return 1.0f;
 
         // Offset along the normal by a few texels of the chosen level to avoid self-shadowing.
-        const float texelSize = data.m_levels[center.m_level].m_texelSize;
+        const SunShadowLevel level = data.m_levels.LoadElement(center.m_level);
+        const float texelSize = level.m_texelSize;
         float receiverDepth;
         const float2 texel = ProjectTexel(data, center.m_level, worldPosition + normal * (2.0f * texelSize), receiverDepth);
         receiverDepth += texelSize * data.m_depthPerUnit;
 
         const int2 base = int2(floor(texel));
-        const int2 pageOrigin = data.m_levels[center.m_level].m_pageOrigin;
+        const int2 pageOrigin = level.m_pageOrigin;
         float visible = 0.0f;
         [unroll] for (int y = -1; y <= 1; ++y)
         {

@@ -78,7 +78,19 @@ namespace FE::Graphics::Core
         {
             static_assert(std::is_trivially_copyable_v<T>);
             static_assert(Rtti::Internal::kIsRTTIDefined<T>, "Constants must be reflected");
-            return ConstantsPtr<T>{ CreateConstantsInternal(Rtti::GetType<T>(), &value) };
+            return ConstantsPtr<T>{ CreateConstantsInternal(Rtti::GetType<T>(), &value, 1) };
+        }
+
+        //! Like CreateConstants for elements that shaders load one at a time with ConstantsPtr::LoadElement.
+        //!
+        //! Prefer this to an array field. Loading a struct through a device address and then indexing its array in a loop made
+        //! SunShadowData over a thousand times slower on an NVIDIA GPU than loading only the element it needed.
+        template<class T>
+        [[nodiscard]] ConstantsPtr<T> CreateConstantsArray(const festd::span<const T> values)
+        {
+            static_assert(std::is_trivially_copyable_v<T>);
+            static_assert(Rtti::Internal::kIsRTTIDefined<T>, "Constants must be reflected");
+            return ConstantsPtr<T>{ CreateConstantsInternal(Rtti::GetType<T>(), values.data(), values.size()) };
         }
 
         virtual void BeginScope(festd::string_view name) = 0;
@@ -154,7 +166,8 @@ namespace FE::Graphics::Core
         }
 
         virtual void AddPassInternal(const PassNodeDesc& desc) = 0;
-        [[nodiscard]] virtual AnyConstantsPtr CreateConstantsInternal(const Rtti::Type& type, const void* data) = 0;
+        [[nodiscard]] virtual AnyConstantsPtr CreateConstantsInternal(const Rtti::Type& type, const void* data,
+                                                                      uint32_t count) = 0;
 
         template<class TConstants, class TFunctor>
         void AddComputePass(festd::string_view name, const ComputePipeline* pipeline, const TConstants& constants,
