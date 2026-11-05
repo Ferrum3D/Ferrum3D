@@ -78,6 +78,14 @@ TRACY_API bool ProfilerAvailable();
 TRACY_API bool ProfilerAllocatorAvailable();
 TRACY_API int64_t GetFrequencyQpc();
 
+#if defined TRACY_FIBERS && defined TRACY_ON_DEMAND
+// Each returns whether the event should be sent to the server.
+TRACY_API bool TrackFiberEnter( const char* fiber, int32_t groupHint );
+TRACY_API bool TrackFiberLeave();
+// Must run before a zone begins, so the zone's end is matched on the same fiber's stack by the server.
+TRACY_API void SyncFiberAfterConnect();
+#endif
+
 #if defined TRACY_TIMER_FALLBACK && defined TRACY_HW_TIMER && ( defined __i386 || defined _M_IX86 || defined __x86_64__ || defined _M_X64 )
 TRACY_API bool HardwareSupportsInvariantTSC();  // check, if we need fallback scenario
 #else
@@ -722,7 +730,7 @@ public:
     {
 #ifdef TRACY_ON_DEMAND
         // The serial queue is only drained while connected, so fiber events would otherwise accumulate forever.
-        if( !GetProfiler().IsConnected() ) return;
+        if( !TrackFiberEnter( fiber, groupHint ) ) return;
 #endif
         TracyQueuePrepare( QueueType::FiberEnter );
         MemWrite( &item->fiberEnter.time, GetTime() );
@@ -734,7 +742,7 @@ public:
     static tracy_force_inline void LeaveFiber()
     {
 #ifdef TRACY_ON_DEMAND
-        if( !GetProfiler().IsConnected() ) return;
+        if( !TrackFiberLeave() ) return;
 #endif
         TracyQueuePrepare( QueueType::FiberLeave );
         MemWrite( &item->fiberLeave.time, GetTime() );

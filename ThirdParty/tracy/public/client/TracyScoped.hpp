@@ -33,6 +33,9 @@ public:
         if( !m_active ) return;
 #ifdef TRACY_ON_DEMAND
         m_connectionId = GetProfiler().ConnectionId();
+#  ifdef TRACY_FIBERS
+        SyncFiberAfterConnect();
+#  endif
 #endif
         auto zoneQueue = QueueType::ZoneBegin;
         if( depth > 0 && has_callstack() )
@@ -56,6 +59,9 @@ public:
         if( !m_active ) return;
 #ifdef TRACY_ON_DEMAND
         m_connectionId = GetProfiler().ConnectionId();
+#  ifdef TRACY_FIBERS
+        SyncFiberAfterConnect();
+#  endif
 #endif
         auto zoneQueue = QueueType::ZoneBeginAllocSrcLoc;
         if( depth > 0 && has_callstack() )

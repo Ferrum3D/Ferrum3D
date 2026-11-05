@@ -1394,6 +1394,51 @@ TRACY_API LuaZoneState& GetLuaZoneState() { return s_luaZoneState; }
 TRACY_API bool ProfilerAvailable() { return s_instance != nullptr; }
 TRACY_API bool ProfilerAllocatorAvailable() { return !RpThreadShutdown; }
 
+#if defined TRACY_FIBERS && defined TRACY_ON_DEMAND
+// Fiber switches made while disconnected are never sent, so a thread may be running a fiber the server doesn't
+// know about when a connection starts. These live out of line because a compiler may otherwise cache the
+// thread-local's address across a fiber switch, which can resume the caller on another thread.
+struct FiberTracking
+{
+    const char* fiber = nullptr;
+    int32_t groupHint = 0;
+    uint64_t connectionId = 0;  // The connection whose server last heard about this thread's fiber. Ids start at 1.
+};
+
+static thread_local FiberTracking t_fiberTracking;
+
+TRACY_API bool TrackFiberEnter( const char* fiber, int32_t groupHint )
+{
+    auto& tracking = t_fiberTracking;
+    tracking.fiber = fiber;
+    tracking.groupHint = groupHint;
+
+    auto& profiler = GetProfiler();
+    if( !profiler.IsConnected() ) return false;
+    tracking.connectionId = profiler.ConnectionId();
+    return true;
+}
+
+TRACY_API bool TrackFiberLeave()
+{
+    auto& tracking = t_fiberTracking;
+    tracking.fiber = nullptr;
+
+    // The server treats leaving a fiber it never saw entered as a fatal error.
+    auto& profiler = GetProfiler();
+    return profiler.IsConnected() && tracking.connectionId == profiler.ConnectionId();
+}
+
+TRACY_API void SyncFiberAfterConnect()
+{
+    const auto& tracking = t_fiberTracking;
+    if( tracking.fiber && tracking.connectionId != GetProfiler().ConnectionId() )
+    {
+        Profiler::EnterFiber( tracking.fiber, tracking.groupHint );
+    }
+}
+#endif
+
 constexpr static size_t SafeSendBufferSize = 65536;
 
 Profiler::Profiler()
@@ -2760,7 +2805,7 @@ Profiler::DequeueStatus Profiler::DequeueContextSwitches( tracy::moodycamel::Con
     { \
     case ThreadCtxStatus::Same: break; \
     case ThreadCtxStatus::Changed: assert( m_refTimeThread == 0 ); refThread = 0; break; \
-    case ThreadCtxStatus::ConnectionLost: return DequeueStatus::ConnectionLost; \
+    case ThreadCtxStatus::ConnectionLost: dropDequeue( item ); return DequeueStatus::ConnectionLost; \
     default: assert( false ); break; \
     }
 
@@ -2794,6 +2839,15 @@ Profiler::DequeueStatus Profiler::DequeueSerial()
 #endif
         auto item = m_serialDequeue.data();
         auto end = item + sz;
+
+        // Items before first had their payloads freed when sent. Leaving them queued after a lost connection would
+        // make ClearSerial free those payloads again when the next on-demand connection starts.
+        const auto dropDequeue = [this, end]( const QueueItem* first )
+        {
+            for( ; first != end; ++first ) FreeAssociatedMemory( *first );
+            m_serialDequeue.clear();
+        };
+
         while( item != end )
         {
             uint64_t ptr;
@@ -3074,7 +3128,11 @@ Profiler::DequeueStatus Profiler::DequeueSerial()
                 }
             }
 #endif
-            if( !AppendData( item, QueueDataSize[idx] ) ) return DequeueStatus::ConnectionLost;
+            if( !AppendData( item, QueueDataSize[idx] ) )
+            {
+                dropDequeue( item + 1 );
+                return DequeueStatus::ConnectionLost;
+            }
             item++;
         }
         m_refTimeSerial = refSerial;
