@@ -720,6 +720,10 @@ public:
 #ifdef TRACY_FIBERS
     static tracy_force_inline void EnterFiber( const char* fiber, int32_t groupHint )
     {
+#ifdef TRACY_ON_DEMAND
+        // The serial queue is only drained while connected, so fiber events would otherwise accumulate forever.
+        if( !GetProfiler().IsConnected() ) return;
+#endif
         TracyQueuePrepare( QueueType::FiberEnter );
         MemWrite( &item->fiberEnter.time, GetTime() );
         MemWrite( &item->fiberEnter.fiber, (uint64_t)fiber );
@@ -729,6 +733,9 @@ public:
 
     static tracy_force_inline void LeaveFiber()
     {
+#ifdef TRACY_ON_DEMAND
+        if( !GetProfiler().IsConnected() ) return;
+#endif
         TracyQueuePrepare( QueueType::FiberLeave );
         MemWrite( &item->fiberLeave.time, GetTime() );
         TracyQueueCommit( fiberLeave );

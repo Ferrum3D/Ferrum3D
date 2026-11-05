@@ -89,6 +89,12 @@ namespace FE::Graphics::Common
         m_bufferViews.clear();
         m_bufferDependencies.clear();
         m_uploadCopies.clear();
+
+        // These keep their storage after clear(), but the pages are about to be recycled.
+        m_passes.reset_lose_memory();
+        m_scopeEvents.reset_lose_memory();
+        m_resources.reset_lose_memory();
+        m_linearAllocator.Clear();
     }
 
 

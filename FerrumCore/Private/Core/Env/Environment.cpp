@@ -73,11 +73,18 @@ namespace FE
                 return kInvalidIndex;
             }
 
-            Env::Name::Record* Allocate(uint64_t hash, const size_t stringByteSize, uint32_t& handle)
+            uint32_t FindOrCreate(const uint64_t hash, const std::string_view str)
             {
-                std::lock_guard lk{ m_lock };
                 const size_t recordHeaderSize = offsetof(Env::Name::Record, m_data);
-                const size_t recordSize = AlignUp<1 << kNameBlockShift>(recordHeaderSize + stringByteSize);
+                const size_t recordSize = AlignUp<1 << kNameBlockShift>(recordHeaderSize + str.size() + 1);
+
+                std::lock_guard lk{ m_lock };
+
+                // Another thread may have created this name since the caller's lookup.
+                const auto it = m_map.find(hash);
+                if (it != m_map.end())
+                    return it->second;
+
                 if (recordSize + m_offset > kNamePageByteSize)
                 {
                     void* p = Memory::AllocateVirtual(kNamePageByteSize);
@@ -91,13 +98,20 @@ namespace FE
                 NameHandle result;
                 result.m_pageIndex = m_currentPageIndex;
                 result.m_blockIndex = m_offset >> kNameBlockShift;
-                handle = std::bit_cast<uint32_t>(result);
-                m_map.insert(std::make_pair(hash, handle));
+                const uint32_t handle = std::bit_cast<uint32_t>(result);
 
                 void* ptr = static_cast<uint8_t*>(m_pages[m_currentPageIndex]) + m_offset;
                 m_offset += static_cast<uint32_t>(recordSize);
                 FE_Assert((m_offset >> kNameBlockShift) << kNameBlockShift == m_offset);
-                return static_cast<Env::Name::Record*>(ptr);
+
+                auto* record = static_cast<Env::Name::Record*>(ptr);
+                record->m_size = static_cast<uint16_t>(str.size());
+                record->m_hash = hash;
+                memcpy(record->m_data, str.data(), str.size());
+
+                // Inserting publishes the record to lookups, so it must already be complete.
+                m_map.insert(std::make_pair(hash, handle));
+                return handle;
             }
 
             Env::Name::Record* ResolvePointer(const uint32_t handleValue) const
@@ -267,19 +281,15 @@ namespace FE
         auto& nameAllocator = GEnvironment.m_nameDataAllocator;
         const uint64_t hash = DefaultHash(str);
         m_handle = nameAllocator.TryFind(hash);
-        if (IsValid())
+        if (!IsValid())
         {
-            FE_Assert(str == GetRecord()->m_data, "Env::Name collision");
-            return;
+            const size_t recordHeaderSize = offsetof(Name::Record, m_data);
+            FE_Assert(str.size() < kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
+
+            m_handle = nameAllocator.FindOrCreate(hash, str);
         }
 
-        const size_t recordHeaderSize = offsetof(Name::Record, m_data);
-        FE_Assert(str.size() < kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
-
-        Record* record = nameAllocator.Allocate(hash, str.size() + 1, m_handle);
-        record->m_size = static_cast<uint16_t>(str.size());
-        record->m_hash = hash;
-        memcpy(record->m_data, str.data(), str.size());
+        FE_Assert(str == GetRecord()->m_data, "Env::Name collision");
     }
 
 
