@@ -12,7 +12,7 @@ void main(uint lane : SV_GroupThreadID, uint3 dispatch : SV_GroupID)
     const uint2 id = GConstants.m_visibility.Load(uint3(pixel, 0));
 
     MeshEvaluationContext context;
-    if (!LoadMeshEvaluation(view, id, pixel, GConstants.m_resolution, groupIndex, context, false, false))
+    if (!LoadMeshEvaluation(view, id, pixel, GConstants.m_work.m_resolution, groupIndex, context, false, false))
     {
         GConstants.m_g0.Store(pixel, 0xffff00ffu);
         return;

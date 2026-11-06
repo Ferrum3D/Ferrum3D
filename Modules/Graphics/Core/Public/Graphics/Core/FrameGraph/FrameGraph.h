@@ -70,6 +70,18 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual BufferUAVDescriptor GetUAV(BufferView buffer) = 0;
         [[nodiscard]] virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
 
+        template<class T>
+        [[nodiscard]] StructuredBufferDescriptor<T> GetSRV(const StructuredBufferPtr<T> buffer)
+        {
+            return StructuredBufferDescriptor<T>(GetSRV(BufferView(buffer)));
+        }
+
+        template<class T>
+        [[nodiscard]] RWStructuredBufferDescriptor<T> GetUAV(const StructuredBufferPtr<T> buffer)
+        {
+            return RWStructuredBufferDescriptor<T>(GetUAV(BufferView(buffer)));
+        }
+
         //! Copy constants into memory that shaders read through the returned pointer during this graph execution.
         //! T must be reflected, as must structs nested in it that hold descriptors: passes that reference the constants
         //! declare the accesses of those descriptors with their own shader stages.

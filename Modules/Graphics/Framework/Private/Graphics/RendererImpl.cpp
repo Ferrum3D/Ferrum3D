@@ -314,7 +314,7 @@ namespace FE::Graphics
         m_database->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
         m_materialParameters->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
 
-        // Publish scene constants after database uploads establish the current table addresses.
+        // Scene constants hold table addresses, which settle once module updates have grown the tables.
         for (Scene* scene : scenes)
         {
             scene->GetModules().ForEachActive([&](SceneModuleBase& module) {

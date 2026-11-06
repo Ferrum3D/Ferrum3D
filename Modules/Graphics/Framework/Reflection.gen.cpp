@@ -746,9 +746,7 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_projection = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_inverseViewProjection = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewData = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depth = {};
 
@@ -758,7 +756,7 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lightCount = {};
 
-        static const festd::array<Rtti::FieldInfo, 8> kFields = {
+        static const festd::array<Rtti::FieldInfo, 7> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &LightClusterData::m_view,
                                                      kAttributes_m_view,
@@ -767,13 +765,9 @@ namespace FE::Graphics
                                                      &LightClusterData::m_projection,
                                                      kAttributes_m_projection,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_inverseViewProjection",
-                                                     &LightClusterData::m_inverseViewProjection,
-                                                     kAttributes_m_inverseViewProjection,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_viewport",
-                                                     &LightClusterData::m_viewport,
-                                                     kAttributes_m_viewport,
+            Rtti::ReflectionContext::CreateFieldInfo("m_viewData",
+                                                     &LightClusterData::m_viewData,
+                                                     kAttributes_m_viewData,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_depth",
                                                      &LightClusterData::m_depth,
@@ -4095,17 +4089,11 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthPyramid = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthPyramidSize = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthPyramidUvScale = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthPyramidMipCount = {};
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshletVisibilityCapacity = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_phase = {};
 
-        static const festd::array<Rtti::FieldInfo, 15> kFields = {
+        static const festd::array<Rtti::FieldInfo, 12> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &Constants::m_view,
                                                      kAttributes_m_view,
@@ -4145,18 +4133,6 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshlets
             Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramid",
                                                      &Constants::m_depthPyramid,
                                                      kAttributes_m_depthPyramid,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidSize",
-                                                     &Constants::m_depthPyramidSize,
-                                                     kAttributes_m_depthPyramidSize,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidUvScale",
-                                                     &Constants::m_depthPyramidUvScale,
-                                                     kAttributes_m_depthPyramidUvScale,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidMipCount",
-                                                     &Constants::m_depthPyramidMipCount,
-                                                     kAttributes_m_depthPyramidMipCount,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_meshletVisibilityCapacity",
                                                      &Constants::m_meshletVisibilityCapacity,
@@ -5007,6 +4983,109 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Visibility
 {
+    const Rtti::TypeID SurfaceWorkBinding::TypeID = Rtti::TypeID{
+        0x6b, 0x2d, 0x8f, 0x14, 0x3a, 0x97, 0x4c, 0x05, 0xb1, 0xe8, 0x7d, 0x4c, 0x92, 0xa0, 0xf6, 0xe3,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_6b2d8f143a974c05b1e87d4c92a0f6e3(SurfaceWorkBinding* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x6b, 0x2d, 0x8f, 0x14, 0x3a, 0x97, 0x4c, 0x05,
+                0xb1, 0xe8, 0x7d, 0x4c, 0x92, 0xa0, 0xf6, 0xe3, // FE::Graphics::Visibility::SurfaceWorkBinding (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_6b2d8f143a974c05b1e87d4c92a0f6e3()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SurfaceWorkBinding::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_6b2d8f143a974c05b1e87d4c92a0f6e3();
+    }
+
+    void SurfaceWorkBinding::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_6b2d8f143a974c05b1e87d4c92a0f6e3();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x6b, 0x2d, 0x8f, 0x14, 0x3a, 0x97, 0x4c, 0x05,
+            0xb1, 0xe8, 0x7d, 0x4c, 0x92, 0xa0, 0xf6, 0xe3, // FE::Graphics::Visibility::SurfaceWorkBinding
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixels = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_waves = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_ranges = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderSlot = {};
+
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_pixels",
+                                                     &SurfaceWorkBinding::m_pixels,
+                                                     kAttributes_m_pixels,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_waves",
+                                                     &SurfaceWorkBinding::m_waves,
+                                                     kAttributes_m_waves,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_ranges",
+                                                     &SurfaceWorkBinding::m_ranges,
+                                                     kAttributes_m_ranges,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
+                                                     &SurfaceWorkBinding::m_resolution,
+                                                     kAttributes_m_resolution,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
+                                                     &SurfaceWorkBinding::m_tilesPerRow,
+                                                     kAttributes_m_tilesPerRow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shaderSlot",
+                                                     &SurfaceWorkBinding::m_shaderSlot,
+                                                     kAttributes_m_shaderSlot,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SurfaceWorkBinding>(typeInstance,
+                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                 "FE::Graphics::Visibility::SurfaceWorkBinding",
+                                                 kBaseClassTypeIDs,
+                                                 kAttributes,
+                                                 kFields,
+                                                 Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_6b2d8f143a974c05b1e87d4c92a0f6e3(static_cast<SurfaceWorkBinding*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_6b2d8f143a974c05b1e87d4c92a0f6e3(&SurfaceWorkBinding::Reflect);
+} // namespace FE::Graphics::Visibility
+
+
+namespace FE::Graphics::Visibility
+{
     const Rtti::TypeID ShadingCountConstants::TypeID = Rtti::TypeID{
         0x6c, 0xf9, 0x6f, 0x7d, 0x92, 0xdd, 0x43, 0xf5, 0x8c, 0x14, 0xfe, 0x57, 0x0f, 0xa2, 0x88, 0x0a,
     };
@@ -5059,15 +5138,9 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counts = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_grid = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tileCount = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
-
-        static const festd::array<Rtti::FieldInfo, 7> kFields = {
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_g0Read",
                                                      &ShadingCountConstants::m_g0Read,
                                                      kAttributes_m_g0Read,
@@ -5080,21 +5153,9 @@ namespace FE::Graphics::Visibility
                                                      &ShadingCountConstants::m_counts,
                                                      kAttributes_m_counts,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
-                                                     &ShadingCountConstants::m_resolution,
-                                                     kAttributes_m_resolution,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
-                                                     &ShadingCountConstants::m_tilesPerRow,
-                                                     kAttributes_m_tilesPerRow,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
-                                                     &ShadingCountConstants::m_tileCount,
-                                                     kAttributes_m_tileCount,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
-                                                     &ShadingCountConstants::m_groupRowCount,
-                                                     kAttributes_m_groupRowCount,
+            Rtti::ReflectionContext::CreateFieldInfo("m_grid",
+                                                     &ShadingCountConstants::m_grid,
+                                                     kAttributes_m_grid,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -5172,15 +5233,9 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixels = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_grid = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tileCount = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
-
-        static const festd::array<Rtti::FieldInfo, 9> kFields = {
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_g0Read",
                                                      &ShadingScatterConstants::m_g0Read,
                                                      kAttributes_m_g0Read,
@@ -5201,21 +5256,9 @@ namespace FE::Graphics::Visibility
                                                      &ShadingScatterConstants::m_pixels,
                                                      kAttributes_m_pixels,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
-                                                     &ShadingScatterConstants::m_resolution,
-                                                     kAttributes_m_resolution,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
-                                                     &ShadingScatterConstants::m_tilesPerRow,
-                                                     kAttributes_m_tilesPerRow,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
-                                                     &ShadingScatterConstants::m_tileCount,
-                                                     kAttributes_m_tileCount,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
-                                                     &ShadingScatterConstants::m_groupRowCount,
-                                                     kAttributes_m_groupRowCount,
+            Rtti::ReflectionContext::CreateFieldInfo("m_grid",
+                                                     &ShadingScatterConstants::m_grid,
+                                                     kAttributes_m_grid,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -6178,11 +6221,7 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_visibility = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixels = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_waves = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_ranges = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_work = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g0 = {};
 
@@ -6192,13 +6231,7 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_g3 = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderSlot = {};
-
-        static const festd::array<Rtti::FieldInfo, 12> kFields = {
+        static const festd::array<Rtti::FieldInfo, 7> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &SurfaceConstants::m_view,
                                                      kAttributes_m_view,
@@ -6207,17 +6240,9 @@ namespace FE::Graphics::Visibility
                                                      &SurfaceConstants::m_visibility,
                                                      kAttributes_m_visibility,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_pixels",
-                                                     &SurfaceConstants::m_pixels,
-                                                     kAttributes_m_pixels,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_waves",
-                                                     &SurfaceConstants::m_waves,
-                                                     kAttributes_m_waves,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_ranges",
-                                                     &SurfaceConstants::m_ranges,
-                                                     kAttributes_m_ranges,
+            Rtti::ReflectionContext::CreateFieldInfo("m_work",
+                                                     &SurfaceConstants::m_work,
+                                                     kAttributes_m_work,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_g0",
                                                      &SurfaceConstants::m_g0,
@@ -6234,18 +6259,6 @@ namespace FE::Graphics::Visibility
             Rtti::ReflectionContext::CreateFieldInfo("m_g3",
                                                      &SurfaceConstants::m_g3,
                                                      kAttributes_m_g3,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
-                                                     &SurfaceConstants::m_resolution,
-                                                     kAttributes_m_resolution,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
-                                                     &SurfaceConstants::m_tilesPerRow,
-                                                     kAttributes_m_tilesPerRow,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_shaderSlot",
-                                                     &SurfaceConstants::m_shaderSlot,
-                                                     kAttributes_m_shaderSlot,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -8339,6 +8352,97 @@ namespace FE::Graphics::MeshPass
 } // namespace FE::Graphics::MeshPass
 
 
+namespace FE::Graphics::MeshPass
+{
+    const Rtti::TypeID DepthPyramidBinding::TypeID = Rtti::TypeID{
+        0xa9, 0x1e, 0x36, 0xd7, 0x52, 0xc8, 0x4f, 0x0b, 0x8e, 0x64, 0x1b, 0x7f, 0x3d, 0x9c, 0x20, 0xa5,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_a91e36d752c84f0b8e641b7f3d9c20a5(DepthPyramidBinding* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xa9, 0x1e, 0x36, 0xd7, 0x52, 0xc8, 0x4f, 0x0b,
+                0x8e, 0x64, 0x1b, 0x7f, 0x3d, 0x9c, 0x20, 0xa5, // FE::Graphics::MeshPass::DepthPyramidBinding (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_a91e36d752c84f0b8e641b7f3d9c20a5()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& DepthPyramidBinding::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_a91e36d752c84f0b8e641b7f3d9c20a5();
+    }
+
+    void DepthPyramidBinding::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_a91e36d752c84f0b8e641b7f3d9c20a5();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xa9, 0x1e, 0x36, 0xd7, 0x52, 0xc8, 0x4f, 0x0b,
+            0x8e, 0x64, 0x1b, 0x7f, 0x3d, 0x9c, 0x20, 0xa5, // FE::Graphics::MeshPass::DepthPyramidBinding
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_texture = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_size = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_uvScale = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mipCount = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo("m_texture",
+                                                     &DepthPyramidBinding::m_texture,
+                                                     kAttributes_m_texture,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_size",
+                                                     &DepthPyramidBinding::m_size,
+                                                     kAttributes_m_size,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_uvScale",
+                                                     &DepthPyramidBinding::m_uvScale,
+                                                     kAttributes_m_uvScale,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_mipCount",
+                                                     &DepthPyramidBinding::m_mipCount,
+                                                     kAttributes_m_mipCount,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<DepthPyramidBinding>(typeInstance,
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                  "FE::Graphics::MeshPass::DepthPyramidBinding",
+                                                  kBaseClassTypeIDs,
+                                                  kAttributes,
+                                                  kFields,
+                                                  Rtti::TypeFlags::kNone);
+        typeInstance.m_cast = [](void* instance, Rtti::TypeID target) {
+            return RTTI_TryCastImpl_a91e36d752c84f0b8e641b7f3d9c20a5(static_cast<DepthPyramidBinding*>(instance), target);
+        };
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_a91e36d752c84f0b8e641b7f3d9c20a5(&DepthPyramidBinding::Reflect);
+} // namespace FE::Graphics::MeshPass
+
+
 namespace FE::Graphics::ImGuiPass
 {
     const Rtti::TypeID DrawConstants::TypeID = Rtti::TypeID{
@@ -8967,21 +9071,11 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_output = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixels = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_waves = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_ranges = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderSlot = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_work = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderCount = {};
 
-        static const festd::array<Rtti::FieldInfo, 15> kFields = {
+        static const festd::array<Rtti::FieldInfo, 10> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &DeferredConstants::m_view,
                                                      kAttributes_m_view,
@@ -9014,29 +9108,9 @@ namespace FE::Graphics::Visibility
                                                      &DeferredConstants::m_output,
                                                      kAttributes_m_output,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_pixels",
-                                                     &DeferredConstants::m_pixels,
-                                                     kAttributes_m_pixels,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_waves",
-                                                     &DeferredConstants::m_waves,
-                                                     kAttributes_m_waves,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_ranges",
-                                                     &DeferredConstants::m_ranges,
-                                                     kAttributes_m_ranges,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
-                                                     &DeferredConstants::m_resolution,
-                                                     kAttributes_m_resolution,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
-                                                     &DeferredConstants::m_tilesPerRow,
-                                                     kAttributes_m_tilesPerRow,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_shaderSlot",
-                                                     &DeferredConstants::m_shaderSlot,
-                                                     kAttributes_m_shaderSlot,
+            Rtti::ReflectionContext::CreateFieldInfo("m_work",
+                                                     &DeferredConstants::m_work,
+                                                     kAttributes_m_work,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_shaderCount",
                                                      &DeferredConstants::m_shaderCount,
@@ -10861,15 +10935,9 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixels = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_grid = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tileCount = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
-
-        static const festd::array<Rtti::FieldInfo, 10> kFields = {
+        static const festd::array<Rtti::FieldInfo, 7> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &EvaluationScatterConstants::m_view,
                                                      kAttributes_m_view,
@@ -10894,21 +10962,9 @@ namespace FE::Graphics::Visibility
                                                      &EvaluationScatterConstants::m_pixels,
                                                      kAttributes_m_pixels,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
-                                                     &EvaluationScatterConstants::m_resolution,
-                                                     kAttributes_m_resolution,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
-                                                     &EvaluationScatterConstants::m_tilesPerRow,
-                                                     kAttributes_m_tilesPerRow,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
-                                                     &EvaluationScatterConstants::m_tileCount,
-                                                     kAttributes_m_tileCount,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
-                                                     &EvaluationScatterConstants::m_groupRowCount,
-                                                     kAttributes_m_groupRowCount,
+            Rtti::ReflectionContext::CreateFieldInfo("m_grid",
+                                                     &EvaluationScatterConstants::m_grid,
+                                                     kAttributes_m_grid,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -11226,15 +11282,9 @@ namespace FE::Graphics::Visibility
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_counts = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolution = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_grid = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tilesPerRow = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_tileCount = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_groupRowCount = {};
-
-        static const festd::array<Rtti::FieldInfo, 8> kFields = {
+        static const festd::array<Rtti::FieldInfo, 5> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &EvaluationCountConstants::m_view,
                                                      kAttributes_m_view,
@@ -11251,21 +11301,9 @@ namespace FE::Graphics::Visibility
                                                      &EvaluationCountConstants::m_counts,
                                                      kAttributes_m_counts,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_resolution",
-                                                     &EvaluationCountConstants::m_resolution,
-                                                     kAttributes_m_resolution,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tilesPerRow",
-                                                     &EvaluationCountConstants::m_tilesPerRow,
-                                                     kAttributes_m_tilesPerRow,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_tileCount",
-                                                     &EvaluationCountConstants::m_tileCount,
-                                                     kAttributes_m_tileCount,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_groupRowCount",
-                                                     &EvaluationCountConstants::m_groupRowCount,
-                                                     kAttributes_m_groupRowCount,
+            Rtti::ReflectionContext::CreateFieldInfo("m_grid",
+                                                     &EvaluationCountConstants::m_grid,
+                                                     kAttributes_m_grid,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -11709,15 +11747,9 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_visibilityCapacity = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthPyramidSize = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthPyramidUvScale = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthPyramidMipCount = {};
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_phase = {};
 
-        static const festd::array<Rtti::FieldInfo, 12> kFields = {
+        static const festd::array<Rtti::FieldInfo, 9> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_view",
                                                      &Constants::m_view,
                                                      kAttributes_m_view,
@@ -11749,18 +11781,6 @@ namespace FE::Graphics::MeshPass::OcclusionCullMeshInstances
             Rtti::ReflectionContext::CreateFieldInfo("m_visibilityCapacity",
                                                      &Constants::m_visibilityCapacity,
                                                      kAttributes_m_visibilityCapacity,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidSize",
-                                                     &Constants::m_depthPyramidSize,
-                                                     kAttributes_m_depthPyramidSize,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidUvScale",
-                                                     &Constants::m_depthPyramidUvScale,
-                                                     kAttributes_m_depthPyramidUvScale,
-                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo("m_depthPyramidMipCount",
-                                                     &Constants::m_depthPyramidMipCount,
-                                                     kAttributes_m_depthPyramidMipCount,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo("m_phase",
                                                      &Constants::m_phase,

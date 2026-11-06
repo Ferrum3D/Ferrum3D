@@ -32,18 +32,6 @@ struct MeshGroupTable
         DB::ElementHandle<uint32_t, kOffset_m_finestResidentLod> m_finestResidentLod;
     };
 
-    struct Instance
-    {
-        BufferPointer m_pageTableAddress;
-    };
-
-    static MeshGroupTable Create(Instance instance)
-    {
-        MeshGroupTable table;
-        table.m_pageTableAddress = instance.m_pageTableAddress;
-        return table;
-    }
-
     Row ReadRow(const uint32_t rowIndex)
     {
         const uint32_t pageIndex = rowIndex / kRowsPerPage;

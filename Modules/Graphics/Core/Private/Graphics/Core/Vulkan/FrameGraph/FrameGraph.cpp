@@ -46,6 +46,7 @@ namespace FE::Graphics::Vulkan
         auto* context = Memory::DefaultNew<FrameGraphContext>(m_device, this, m_descriptorManager);
         context->Init(commandBuffer);
         m_currentContext = context;
+
     }
 
 

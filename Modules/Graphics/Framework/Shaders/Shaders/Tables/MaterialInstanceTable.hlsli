@@ -22,18 +22,6 @@ struct MaterialInstanceTable
         DB::ElementHandle<uint32_t, kOffset_m_shadingSlot> m_shadingSlot;
     };
 
-    struct Instance
-    {
-        BufferPointer m_pageTableAddress;
-    };
-
-    static MaterialInstanceTable Create(Instance instance)
-    {
-        MaterialInstanceTable table;
-        table.m_pageTableAddress = instance.m_pageTableAddress;
-        return table;
-    }
-
     Row ReadRow(const uint32_t rowIndex)
     {
         const uint32_t pageIndex = rowIndex / kRowsPerPage;

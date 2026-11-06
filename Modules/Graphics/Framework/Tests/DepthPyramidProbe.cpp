@@ -103,7 +103,7 @@ namespace FE::Graphics::DepthPyramidProbe
 
 
         void AddReadPasses(Core::FrameGraph& graph, Core::ComputePipeline* pipeline, const Tools::DepthPyramid::Output& pyramid,
-                           Core::Buffer* output, uint32_t& offset)
+                           const Core::StructuredBufferPtr<float> output, uint32_t& offset)
         {
             for (uint32_t mipIndex = 0; mipIndex < pyramid.m_mipCount; ++mipIndex)
             {
@@ -144,7 +144,7 @@ namespace FE::Graphics::DepthPyramidProbe
             const auto pyramids = Tools::DepthPyramid::AddPass(*graph, depth.Get());
             const uint32_t farthestCount = CalculateTexelCount(pyramids.m_farthest);
             const uint32_t byteSize = 2 * farthestCount * sizeof(float);
-            Rc<Core::Buffer> output = Core::Buffer::CreateByteAddress(device, "DepthPyramidProbeOutput", byteSize);
+            auto output = Core::Buffer::CreateStructured<float>(device, "DepthPyramidProbeOutput", byteSize / sizeof(float));
             Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "DepthPyramidProbeReadback", byteSize);
             Core::ResourceCommitParams readbackCommit;
             readbackCommit.m_memory = Core::ResourceMemory::kHostRandomAccess;

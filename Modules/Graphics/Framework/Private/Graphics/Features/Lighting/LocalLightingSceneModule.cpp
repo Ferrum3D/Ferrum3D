@@ -16,10 +16,6 @@ namespace FE::Graphics
     namespace
     {
         FE_COMPUTE_PIPELINE_SET(CullLocalLightsPipeline, "Shaders/Lighting/CullLocalLights.cs.hlsl");
-
-        static_assert(sizeof(LocalLightData) == 32);
-        static_assert(offsetof(LocalLightData, m_color) == 16);
-        static_assert(offsetof(LocalLightData, m_coneAngles) == 28);
     } // namespace
 
 
@@ -120,7 +116,7 @@ namespace FE::Graphics
         FE_Assert(!slot.m_active);
         slot.m_active = true;
         m_slotCount = Math::Max(m_slotCount, index + 1);
-        m_table->WriteRow(row).m_light.Get() = light;
+        WriteLightRow(index, light);
         return { index, slot.m_generation };
     }
 
@@ -134,7 +130,7 @@ namespace FE::Graphics
         if (!slot.m_active || slot.m_generation != handle.m_generation)
             return nullptr;
 
-        return &m_table->ReadRow(handle.m_value).m_light.Get();
+        return &slot.m_data;
     }
 
 
@@ -143,7 +139,7 @@ namespace FE::Graphics
         if (FindLight(handle) == nullptr)
             return;
 
-        m_table->WriteRow(handle.m_value).m_light.Get() = {};
+        WriteLightRow(handle.m_value, LocalLightData{});
         m_table->Free(DB::Ref<LocalLightTable>{ handle.m_value });
         Slot& slot = m_slots[handle.m_value];
         slot.m_active = false;
@@ -167,7 +163,17 @@ namespace FE::Graphics
         if (current == nullptr || std::memcmp(current, &light, sizeof(light)) == 0)
             return;
 
-        m_table->WriteRow(handle.m_value).m_light.Get() = light;
+        WriteLightRow(handle.m_value, light);
+    }
+
+
+    void LocalLightingSceneModule::WriteLightRow(const uint32_t rowIndex, const LocalLightData& light)
+    {
+        m_slots[rowIndex].m_data = light;
+
+        const LocalLightTable::RWRow row = m_table->WriteRow(rowIndex);
+        row.m_positionRange.Get() = light.m_positionRange;
+        row.m_shading.Get() = LocalLightShading{ light.m_color, light.m_colorMultiplier, light.m_direction, light.m_coneAngles };
     }
 
 
@@ -184,17 +190,16 @@ namespace FE::Graphics
         LightClusterData data{};
         data.m_view = view.m_view->GetViewMatrix();
         data.m_projection = view.m_view->GetProjectionMatrix();
-        data.m_inverseViewProjection = view.m_view->GetInverseViewProjectionMatrix();
-        data.m_viewport = blackboard.Get<ViewData>().m_viewport;
+        data.m_viewData = view.m_constants;
         const float nearPlane = Math::Max(view.m_view->GetNearPlane(), 0.001f);
         const float farPlane = Math::Max(view.m_view->GetFarPlane(), nearPlane + 0.001f);
         data.m_depth = { nearPlane,
                          farPlane,
                          kLightClusterSlices / std::log2(farPlane / nearPlane),
                          view.m_view->IsOrthographic() ? 1.0f : 0.0f };
-        data.m_tiles =
-            Math::CeilDivide(Vector2UInt(static_cast<uint32_t>(data.m_viewport.z), static_cast<uint32_t>(data.m_viewport.w)),
-                             kLightClusterTileSize);
+        const PackedVector4F viewport = blackboard.Get<ViewData>().m_viewport;
+        data.m_tiles = Math::CeilDivide(Vector2UInt(static_cast<uint32_t>(viewport.z), static_cast<uint32_t>(viewport.w)),
+                                        kLightClusterTileSize);
         data.m_lightCount = m_slotCount;
         data.m_wordCount = Math::CeilDivide(data.m_lightCount, 32u);
 
@@ -203,7 +208,7 @@ namespace FE::Graphics
         auto masks = Core::Buffer::CreateStructured<uint32_t>(device, "LightClusterMasks", clusterCount * data.m_wordCount);
 
         auto& binding = blackboard.Add<LocalLightingBinding>();
-        binding.m_lights = m_table->GetDeviceAddress();
+        binding.m_lights = m_table->GetInstance();
         binding.m_clusters = graph.CreateConstants(data);
         binding.m_masks = graph.GetSRV(masks.Get());
         CullLocalLightsConstants cull{};

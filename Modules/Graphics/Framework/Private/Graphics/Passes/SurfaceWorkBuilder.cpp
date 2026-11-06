@@ -60,10 +60,10 @@ namespace FE::Graphics::Visibility
 
         FE_Assert(firstBinding == sorted.size(), "Surface binding has an invalid shader slot");
         routing.m_lookup =
-            Core::Buffer::CreateByteAddress(device, "SurfaceBindingLookup", sizeof(SurfaceRoute) * routing.m_lookupData.size());
-        routing.m_bindings = Core::Buffer::CreateByteAddress(device, "SurfaceBindings", 4 * routing.m_bindingData.size());
+            Core::Buffer::CreateStructured<SurfaceRoute>(device, "SurfaceBindingLookup", routing.m_lookupData.size());
+        routing.m_bindings = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceBindings", routing.m_bindingData.size());
         routing.m_shaderBindings =
-            Core::Buffer::CreateByteAddress(device, "SurfaceShaderBindings", 8 * routing.m_shaderBindingData.size());
+            Core::Buffer::CreateStructured<uint2>(device, "SurfaceShaderBindings", routing.m_shaderBindingData.size());
         return routing;
     }
 
@@ -88,15 +88,16 @@ namespace FE::Graphics::Visibility
         work.m_waveCapacity = routing.m_bindingCount == 0
             ? 0
             : Math::Min(pixels, Math::CeilDivide(pixels, waveLaneCount) + Math::Min(pixels, work.m_bucketCount));
-        work.m_counts = Core::Buffer::CreateByteAddress(device, "SurfaceCounts", 4 * Math::Max(work.m_bucketCount, 1u));
-        work.m_cursors = Core::Buffer::CreateByteAddress(device, "SurfaceCursors", 4 * Math::Max(work.m_bucketCount, 1u));
-        work.m_pixels = Core::Buffer::CreateByteAddress(device,
-                                                        "SurfacePixels",
-                                                        4 * Math::Max(routing.m_bindingCount == 0 ? 0u : pixels, 1u));
-        work.m_waves = Core::Buffer::CreateByteAddress(device, "SurfaceWaves", 16 * Math::Max(work.m_waveCapacity, 1u));
-        work.m_ranges = Core::Buffer::CreateByteAddress(device, "SurfaceRanges", 8 * Math::Max(work.m_shaderCount, 1u));
-        work.m_arguments = Core::Buffer::CreateByteAddress(device, "SurfaceArguments", 12 * Math::Max(work.m_shaderCount, 1u));
-        work.m_emissionArguments = Core::Buffer::CreateByteAddress(device, "SurfaceEmissionArguments", sizeof(DispatchArguments));
+        work.m_counts = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceCounts", Math::Max(work.m_bucketCount, 1u));
+        work.m_cursors = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceCursors", Math::Max(work.m_bucketCount, 1u));
+        work.m_pixels = Core::Buffer::CreateStructured<uint32_t>(device,
+                                                                 "SurfacePixels",
+                                                                 Math::Max(routing.m_bindingCount == 0 ? 0u : pixels, 1u));
+        work.m_waves = Core::Buffer::CreateStructured<WaveCommand>(device, "SurfaceWaves", Math::Max(work.m_waveCapacity, 1u));
+        work.m_ranges = Core::Buffer::CreateStructured<ShaderRange>(device, "SurfaceRanges", Math::Max(work.m_shaderCount, 1u));
+        work.m_arguments =
+            Core::Buffer::CreateStructured<DispatchArguments>(device, "SurfaceArguments", Math::Max(work.m_shaderCount, 1u));
+        work.m_emissionArguments = Core::Buffer::CreateStructured<DispatchArguments>(device, "SurfaceEmissionArguments", 1);
 
         uint32_t count = Math::Max(work.m_bucketCount, 1u);
 
@@ -105,8 +106,8 @@ namespace FE::Graphics::Visibility
             const uint32_t blocks = Math::CeilDivide(count, kSurfaceBlockSize);
             SurfaceScanLevel level;
             level.m_count = count;
-            level.m_offsets = Core::Buffer::CreateByteAddress(device, "SurfaceOffsets", 8 * count);
-            level.m_sums = Core::Buffer::CreateByteAddress(device, "SurfaceBlockSums", 8 * blocks);
+            level.m_offsets = Core::Buffer::CreateStructured<uint2>(device, "SurfaceOffsets", count);
+            level.m_sums = Core::Buffer::CreateStructured<uint2>(device, "SurfaceBlockSums", blocks);
             work.m_scanLevels.push_back(level);
             if (blocks == 1)
                 break;
@@ -207,13 +208,62 @@ namespace FE::Graphics::Visibility
         }
 
 
-        template<class Constants>
-        void SetClassificationGrid(Constants& constants, const SurfaceWork& work)
+        ClassificationGrid CreateClassificationGrid(const SurfaceWork& work)
         {
-            constants.m_resolution = work.m_resolution;
-            constants.m_tilesPerRow = Math::CeilDivide(work.m_resolution.x, kTileSize);
-            constants.m_tileCount = work.m_tileCount;
-            constants.m_groupRowCount = work.m_routing->m_lookupData.size();
+            ClassificationGrid grid{};
+            grid.m_resolution = work.m_resolution;
+            grid.m_tilesPerRow = Math::CeilDivide(work.m_resolution.x, kTileSize);
+            grid.m_tileCount = work.m_tileCount;
+            grid.m_groupRowCount = work.m_routing->m_lookupData.size();
+            return grid;
+        }
+
+
+        // Object producers supply visibility classification; no fallback can interpret their private payloads.
+        template<class TConstants>
+        void SetClassificationSource(Core::FrameGraph& graph, const EvaluationWorkInput& input, TConstants& constants)
+        {
+            constants.m_view = input.m_objectData;
+            constants.m_visibility = graph.GetSRV(input.m_visibility);
+        }
+
+
+        template<class TConstants>
+        void SetClassificationSource(Core::FrameGraph& graph, const ShadingWorkInput& input, TConstants& constants)
+        {
+            constants.m_g0Read = graph.GetSRV(input.m_g0);
+        }
+
+
+        template<class TCountConstants, class TScatterConstants, class TInput>
+        void BuildClassifiedWork(Core::FrameGraph& graph, Core::RingUploader& uploader, const TInput& input,
+                                 const Core::ComputePipeline* countPipeline, const Core::ComputePipeline* scatterPipeline,
+                                 SurfaceWork& work)
+        {
+            UploadRouting(graph, uploader, *work.m_routing);
+            Clear(graph, work);
+
+            const Core::ComputeWorkGroupCount screenGroups = Math::CeilDivide(work.m_resolution, 16u);
+
+            TCountConstants count{};
+            count.m_grid = CreateClassificationGrid(work);
+            SetClassificationSource(graph, input, count);
+            count.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
+            count.m_counts = graph.GetUAV(work.m_counts.Get());
+            graph.AddDispatch("CountSurfacePixels", countPipeline, count, screenGroups);
+
+            Scan(graph, work);
+
+            TScatterConstants scatter{};
+            scatter.m_grid = count.m_grid;
+            SetClassificationSource(graph, input, scatter);
+            scatter.m_lookup = count.m_lookup;
+            scatter.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
+            scatter.m_cursors = graph.GetUAV(work.m_cursors.Get());
+            scatter.m_pixels = graph.GetUAV(work.m_pixels.Get());
+            graph.AddDispatch("ScatterSurfacePixels", scatterPipeline, scatter, screenGroups);
+
+            EmitCommands(graph, work);
         }
     } // namespace
 
@@ -223,60 +273,23 @@ namespace FE::Graphics::Visibility
     {
         FE_Assert(input.m_objectData.IsValid() && input.m_countPipeline && input.m_scatterPipeline);
         FE_Assert(input.m_visibility->GetDesc().GetSize2D() == work.m_resolution);
-        UploadRouting(graph, uploader, *work.m_routing);
-        Clear(graph, work);
-
-        // Object producers supply visibility classification; no fallback can interpret their private payloads.
-        EvaluationCountConstants count{};
-        SetClassificationGrid(count, work);
-        count.m_view = input.m_objectData;
-        count.m_visibility = graph.GetSRV(input.m_visibility);
-        count.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        count.m_counts = graph.GetUAV(work.m_counts.Get());
-        const Core::ComputeWorkGroupCount screenGroups = Math::CeilDivide(work.m_resolution, 16u);
-        graph.AddDispatch("CountSurfacePixels", input.m_countPipeline, count, screenGroups);
-
-        Scan(graph, work);
-
-        EvaluationScatterConstants scatter{};
-        SetClassificationGrid(scatter, work);
-        scatter.m_view = input.m_objectData;
-        scatter.m_visibility = graph.GetSRV(input.m_visibility);
-        scatter.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        scatter.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
-        scatter.m_cursors = graph.GetUAV(work.m_cursors.Get());
-        scatter.m_pixels = graph.GetUAV(work.m_pixels.Get());
-        graph.AddDispatch("ScatterSurfacePixels", input.m_scatterPipeline, scatter, screenGroups);
-
-        EmitCommands(graph, work);
+        BuildClassifiedWork<EvaluationCountConstants, EvaluationScatterConstants>(graph,
+                                                                                  uploader,
+                                                                                  input,
+                                                                                  input.m_countPipeline,
+                                                                                  input.m_scatterPipeline,
+                                                                                  work);
     }
 
 
     void BuildSurfaceWork(Core::FrameGraph& graph, Core::RingUploader& uploader, const ShadingWorkInput& input, SurfaceWork& work)
     {
         FE_Assert(input.m_g0->GetDesc().GetSize2D() == work.m_resolution);
-        UploadRouting(graph, uploader, *work.m_routing);
-        Clear(graph, work);
-
-        ShadingCountConstants count{};
-        SetClassificationGrid(count, work);
-        count.m_g0Read = graph.GetSRV(input.m_g0);
-        count.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        count.m_counts = graph.GetUAV(work.m_counts.Get());
-        const Core::ComputeWorkGroupCount screenGroups = Math::CeilDivide(work.m_resolution, 16u);
-        graph.AddDispatch("CountSurfacePixels", CountPipeline::GetPipeline(), count, screenGroups);
-
-        Scan(graph, work);
-
-        ShadingScatterConstants scatter{};
-        SetClassificationGrid(scatter, work);
-        scatter.m_g0Read = graph.GetSRV(input.m_g0);
-        scatter.m_lookup = graph.GetSRV(work.m_routing->m_lookup.Get());
-        scatter.m_offsets = graph.GetSRV(work.m_scanLevels.front().m_offsets.Get());
-        scatter.m_cursors = graph.GetUAV(work.m_cursors.Get());
-        scatter.m_pixels = graph.GetUAV(work.m_pixels.Get());
-        graph.AddDispatch("ScatterSurfacePixels", ScatterPipeline::GetPipeline(), scatter, screenGroups);
-
-        EmitCommands(graph, work);
+        BuildClassifiedWork<ShadingCountConstants, ShadingScatterConstants>(graph,
+                                                                            uploader,
+                                                                            input,
+                                                                            CountPipeline::GetPipeline(),
+                                                                            ScatterPipeline::GetPipeline(),
+                                                                            work);
     }
 } // namespace FE::Graphics::Visibility

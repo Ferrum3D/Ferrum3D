@@ -10,10 +10,7 @@ bool IsMeshletOccluded(const MeshViewData view, const float4 worldSphere)
     if (!ProjectBox(worldSphere.xyz, worldSphere.w, view.m_cull.m_occlusionViewProjection, screenBounds))
         return false;
 
-    const DepthPyramid pyramid = CreateDepthPyramid(GConstants.m_depthPyramid,
-                                                    GConstants.m_depthPyramidSize,
-                                                    GConstants.m_depthPyramidUvScale,
-                                                    GConstants.m_depthPyramidMipCount);
+    const DepthPyramid pyramid = CreateDepthPyramid(GConstants.m_depthPyramid);
     return IsOccluded(pyramid, screenBounds);
 }
 

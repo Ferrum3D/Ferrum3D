@@ -28,6 +28,8 @@
 #include <Graphics/Scene/ComputePassRegistry.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
+#include <Graphics/Tables/MeshGroupTable.h>
+#include <Graphics/Tables/MeshInstanceTable.h>
 #include <Shaders/Lighting/LocalLighting.h>
 #include <Shaders/Scene/ViewData.h>
 #include <cmath>
@@ -38,6 +40,15 @@ using namespace FE::Graphics;
 
 namespace
 {
+    // Shader data names buffers, constants and tables by type, so these mistakes do not compile.
+    static_assert(!std::is_assignable_v<StructuredBufferDescriptor<uint32_t>&, StructuredBufferDescriptor<float>>);
+    static_assert(!std::is_assignable_v<StructuredBufferDescriptor<uint32_t>&, RWStructuredBufferDescriptor<uint32_t>>);
+    static_assert(!std::is_assignable_v<StructuredBufferDescriptor<uint32_t>&, BufferSRVDescriptor>);
+    static_assert(!std::is_assignable_v<ConstantsPtr<ViewData>&, ConstantsPtr<GlobalLightingData>>);
+    static_assert(!std::is_assignable_v<DB::TableAddress<MeshInstanceTable>&, DB::TableAddress<MeshGroupTable>>);
+    static_assert(!std::is_convertible_v<Core::StructuredBufferPtr<uint32_t>, Core::StructuredBufferPtr<float>>);
+
+
     //! Nested and type-erased constants declare the accesses of their descriptors, across the chunks of several frames.
     void CheckConstants(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
                         Core::DescriptorManager* descriptors, Core::PipelineFactory* pipelines)
@@ -64,7 +75,7 @@ namespace
             queue->BeginFrame();
             graph->BeginFrame();
 
-            Rc<Core::Buffer> output = Core::Buffer::CreateStructured<uint32_t>(device, "ConstantsProbeOutput", 2);
+            auto output = Core::Buffer::CreateStructured<uint32_t>(device, "ConstantsProbeOutput", 2);
             ConstantsProbe::Inner inner{};
             inner.m_output = graph->GetUAV(output.Get());
             inner.m_value = frame + 2;
@@ -129,21 +140,22 @@ namespace
         LightClusterData clusters{};
         clusters.m_view = Matrix4x4::kIdentity;
         clusters.m_projection = Matrix4x4::Projection(1, 1, 0.1f, 100);
-        clusters.m_inverseViewProjection = Math::Invert(clusters.m_projection);
-        clusters.m_viewport = { 0, 0, 17, 19 };
+        ViewData clusterView{};
+        clusterView.m_inverseViewProjection = Math::Invert(clusters.m_projection);
+        clusterView.m_viewport = { 0, 0, 17, 19 };
         clusters.m_depth = { 0.1f, 100, kLightClusterSlices / std::log2(1000.0f), 0 };
         clusters.m_tiles = Vector2UInt(1, 1);
         clusters.m_lightCount = 34;
         clusters.m_wordCount = 2;
         const uint32_t bytes = kLightClusterSlices * 2 * sizeof(uint32_t);
-        const auto masks = Core::Buffer::CreateByteAddress(device, "ProbeMasks", bytes);
+        auto masks = Core::Buffer::CreateStructured<uint32_t>(device, "ProbeMasks", bytes / sizeof(uint32_t));
         const auto readback = Core::Buffer::CreateByteAddress(device, "ProbeMasksReadback", bytes);
         Core::ResourceCommitParams commit;
         commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
         commit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
         pool->CommitBufferMemory(readback.Get(), commit);
         const uint32_t decodedBytes = 34 * 16 * sizeof(float);
-        const auto decoded = Core::Buffer::CreateByteAddress(device, "DecodedLights", decodedBytes);
+        auto decoded = Core::Buffer::CreateStructured<uint32_t>(device, "DecodedLights", decodedBytes / sizeof(uint32_t));
         const auto decodedReadback = Core::Buffer::CreateByteAddress(device, "DecodedLightsReadback", decodedBytes);
         pool->CommitBufferMemory(decodedReadback.Get(), commit);
         Core::ComputePipelineRequest decodeRequest;
@@ -188,7 +200,8 @@ namespace
             graph->BeginFrame();
             database.Update(*graph, queue->GetCurrentFence());
             CullLocalLightsConstants pass{};
-            pass.m_lighting.m_lights = lightsModule.GetLightTable()->GetDeviceAddress();
+            pass.m_lighting.m_lights = lightsModule.GetLightTable()->GetInstance();
+            clusters.m_viewData = graph->CreateConstants(clusterView);
             pass.m_lighting.m_clusters = graph->CreateConstants(clusters);
             pass.m_masks = graph->GetUAV(masks.Get());
             graph->AddDispatch("ProbeClusterMasks", pipeline, pass, 1);
@@ -196,7 +209,7 @@ namespace
             if (frame == 0)
             {
                 Stage1Probe::Constants decode{};
-                decode.m_material = lightsModule.GetLightTable()->GetDeviceAddress();
+                decode.m_material = lightsModule.GetLightTable()->GetInstance().m_pageTableAddress;
                 decode.m_writeArguments = 3;
                 decode.m_words = graph->GetUAV(decoded.Get());
                 graph->AddDispatch("DecodePackedLights", decodePipeline, decode, 34);
@@ -387,7 +400,7 @@ namespace
             queue->BeginFrame();
             graph->BeginFrame();
             Stage1Probe::Constants pass{};
-            pass.m_words = descriptor;
+            pass.m_words = RWStructuredBufferDescriptor<uint32_t>(descriptor);
             pass.m_writeArguments = 0;
             graph->AddDispatch("FrozenDescriptorProbe", pipeline, pass, Core::ComputeWorkGroupCount(1));
             descriptors->Update(descriptor, frame % 2 == 0 ? second.Get() : first.Get());
@@ -787,7 +800,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_EQ(runtime.GetComputePipeline(Env::Name("MissingRole")), nullptr);
 
             Rc<Core::Buffer> arguments = Core::Buffer::CreateByteAddress(device.Get(), "IndirectProbeArguments", 32);
-            Rc<Core::Buffer> output = Core::Buffer::CreateByteAddress(device.Get(), "IndirectProbeOutput", 12);
+            auto output = Core::Buffer::CreateStructured<uint32_t>(device.Get(), "IndirectProbeOutput", 3);
             Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device.Get(), "IndirectProbeReadback", 12);
             Core::ResourceCommitParams commit;
             commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
@@ -801,7 +814,8 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             // Reserved views without shader consumers must not bind transfer-only storage to a shader descriptor.
             (void)graph->GetSRV(readback.Get());
             Stage1Probe::Constants write{};
-            write.m_words = graph->GetUAV(Core::BufferView(arguments.Get()).Slice(16, 12));
+            write.m_words =
+                RWStructuredBufferDescriptor<uint32_t>(graph->GetUAV(Core::BufferView(arguments.Get()).Slice(16, 12)));
             write.m_writeArguments = 1;
             graph->AddDispatch("WriteIndirectArguments", pipeline, write, Core::ComputeWorkGroupCount(1));
 
@@ -844,7 +858,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             Core::ComputePipeline* reconstructionPipeline = pipelines->CreateComputePipeline(reconstructionRequest);
             reconstructionPipeline->GetCompletionWaitGroup()->Wait();
             ASSERT_TRUE(reconstructionPipeline->IsReady());
-            Rc<Core::Buffer> reconstructed = Core::Buffer::CreateByteAddress(device.Get(), "ReconstructionProbe", 192);
+            auto reconstructed = Core::Buffer::CreateStructured<uint32_t>(device.Get(), "ReconstructionProbe", 48);
             Rc<Core::Buffer> reconstructionReadback =
                 Core::Buffer::CreateByteAddress(device.Get(), "ReconstructionReadback", 192);
             pool->CommitBufferMemory(reconstructionReadback.Get(), commit);

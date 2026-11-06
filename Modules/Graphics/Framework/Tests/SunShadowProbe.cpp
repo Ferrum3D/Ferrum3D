@@ -156,7 +156,8 @@ namespace FE::Graphics::SunShadowProbe
         };
 
 
-        void AddPyramidReadPasses(ProbeContext& context, const SunShadow::PageFrame& frame, Core::Buffer* output)
+        void AddPyramidReadPasses(ProbeContext& context, const SunShadow::PageFrame& frame,
+                                  const Core::StructuredBufferPtr<float> output)
         {
             Core::FrameGraph& graph = *context.m_graph;
             for (uint32_t levelIndex = 0; levelIndex < 2 * context.m_settings.m_levelCount; ++levelIndex)
@@ -219,8 +220,7 @@ namespace FE::Graphics::SunShadowProbe
             SunShadow::AddAllocatePasses(graph, context.m_cache, frame);
 
             const uint32_t pageCount = frame.m_pageCount;
-            Rc<Core::Buffer> pyramidTexels =
-                Core::Buffer::CreateStructured<float>(device, "SunShadowProbePyramids", 2 * pageCount);
+            auto pyramidTexels = Core::Buffer::CreateStructured<float>(device, "SunShadowProbePyramids", 2 * pageCount);
             AddPyramidReadPasses(context, frame, pyramidTexels.Get());
 
             const uint32_t pageBytes = pageCount * sizeof(uint32_t);

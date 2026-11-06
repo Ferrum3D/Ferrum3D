@@ -14,17 +14,17 @@ namespace FE::Graphics::Visibility
 
     struct SurfaceScanLevel final
     {
-        Rc<Core::Buffer> m_offsets;
-        Rc<Core::Buffer> m_sums;
+        Core::StructuredBuffer<uint2> m_offsets;
+        Core::StructuredBuffer<uint2> m_sums;
         uint32_t m_count = 0;
     };
 
 
     struct SurfaceRouting final
     {
-        Rc<Core::Buffer> m_lookup;
-        Rc<Core::Buffer> m_bindings;
-        Rc<Core::Buffer> m_shaderBindings;
+        Core::StructuredBuffer<SurfaceRoute> m_lookup;
+        Core::StructuredBuffer<uint32_t> m_bindings;
+        Core::StructuredBuffer<uint2> m_shaderBindings;
         festd::vector<SurfaceRoute> m_lookupData;
         festd::vector<uint32_t> m_bindingData;
         festd::vector<Vector2UInt> m_shaderBindingData;
@@ -37,13 +37,13 @@ namespace FE::Graphics::Visibility
     struct SurfaceWork final
     {
         SurfaceRouting* m_routing = nullptr;
-        Rc<Core::Buffer> m_counts;
-        Rc<Core::Buffer> m_cursors;
-        Rc<Core::Buffer> m_pixels;
-        Rc<Core::Buffer> m_waves;
-        Rc<Core::Buffer> m_ranges;
-        Rc<Core::Buffer> m_arguments;
-        Rc<Core::Buffer> m_emissionArguments;
+        Core::StructuredBuffer<uint32_t> m_counts;
+        Core::StructuredBuffer<uint32_t> m_cursors;
+        Core::StructuredBuffer<uint32_t> m_pixels;
+        Core::StructuredBuffer<WaveCommand> m_waves;
+        Core::StructuredBuffer<ShaderRange> m_ranges;
+        Core::StructuredBuffer<DispatchArguments> m_arguments;
+        Core::StructuredBuffer<DispatchArguments> m_emissionArguments;
         festd::fixed_vector<SurfaceScanLevel, 4> m_scanLevels;
         Vector2UInt m_resolution{ 0, 0 };
         uint32_t m_tileCount = 0;

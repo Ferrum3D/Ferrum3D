@@ -7,30 +7,20 @@
 #include <Shaders/Database/Base.hlsli>
 #include <Shaders/Tables/Forwards.hlsli>
 
-#include <Shaders/Lighting/LocalLighting.h>
+#include <Shaders/Lighting/LocalLightData.h>
 
 struct LocalLightTable
 {
-    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(LocalLightData));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(float4) + sizeof(LocalLightShading));
 
-    FE_CONSTEXPR uint32_t kOffset_m_light = 0;
+    FE_CONSTEXPR uint32_t kOffset_m_positionRange = 0;
+    FE_CONSTEXPR uint32_t kOffset_m_shading = kOffset_m_positionRange + sizeof(float4) * kRowsPerPage;
 
     struct Row
     {
-        DB::ElementHandle<LocalLightData, kOffset_m_light> m_light;
+        DB::ElementHandle<float4, kOffset_m_positionRange> m_positionRange;
+        DB::ElementHandle<LocalLightShading, kOffset_m_shading> m_shading;
     };
-
-    struct Instance
-    {
-        BufferPointer m_pageTableAddress;
-    };
-
-    static LocalLightTable Create(Instance instance)
-    {
-        LocalLightTable table;
-        table.m_pageTableAddress = instance.m_pageTableAddress;
-        return table;
-    }
 
     Row ReadRow(const uint32_t rowIndex)
     {
@@ -40,7 +30,8 @@ struct LocalLightTable
         const BufferPointer pageAddress = m_pageTableAddress.Read<BufferPointer>(pageIndex * sizeof(BufferPointer));
 
         Row row;
-        row.m_light.Setup(pageAddress, localRowIndex);
+        row.m_positionRange.Setup(pageAddress, localRowIndex);
+        row.m_shading.Setup(pageAddress, localRowIndex);
         return row;
     }
 

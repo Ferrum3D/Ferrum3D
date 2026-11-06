@@ -1,33 +1,26 @@
 #pragma once
-#include <Shaders/Base/Base.h>
+#include <Shaders/Database/Base.h>
 #include <Shaders/Lighting/GlobalLighting.h>
+#include <Shaders/Lighting/LocalLightData.h>
+#include <Shaders/Scene/ViewData.h>
+#if FE_HOST
+#    include <Graphics/Tables/Forwards.h>
+#else
+#    include <Shaders/Tables/LocalLightTable.hlsli>
+#endif
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     FE_CONSTEXPR uint32_t kLightClusterTileSize = 32;
     FE_CONSTEXPR uint32_t kLightClusterSlices = 24;
     FE_CONSTEXPR uint32_t kLightClusterThreadCount = 64;
 
-    FE_CONSTEXPR float kLocalLightConeAngleScale = 65534.0f / 1.5707963267948966f;
-    FE_CONSTEXPR uint32_t kLocalPointLightCone = 0xffffffffu;
-
-
-    struct LocalLightData final
-    {
-        float4 m_positionRange;
-        uint32_t m_color;
-        float m_colorMultiplier;
-        uint32_t m_direction;
-        //! Inner/outer half-angles as two UNORM16 values; 0xffffffff denotes a point light.
-        uint32_t m_coneAngles;
-    };
-
 
     struct LightClusterData final
     {
         float4x4 m_view;
         float4x4 m_projection;
-        float4x4 m_inverseViewProjection;
-        float4 m_viewport;
+        //! The camera of the clusters, for its viewport and inverse view projection.
+        ConstantsPtr<ViewData> m_viewData;
         //! near, far, reciprocal logarithmic slice width, orthographic flag.
         float4 m_depth;
         uint2 m_tiles;
@@ -39,7 +32,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
 
     struct LocalLightingBinding final
     {
-        BufferPointer m_lights;
+        DB::TableAddress<LocalLightTable> m_lights;
         ConstantsPtr<LightClusterData> m_clusters;
         StructuredBufferDescriptor<uint32_t> m_masks;
         FE_RTTI_Reflect("B274D017-6BDB-4FFD-BB75-09DBF5AF6A18");

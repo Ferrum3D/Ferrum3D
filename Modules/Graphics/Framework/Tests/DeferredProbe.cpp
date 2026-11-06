@@ -34,7 +34,7 @@ namespace FE::Graphics::DeferredProbe
             Rc<Core::Texture> color =
                 Core::Texture::Create(device, "EmptyDebugColor", Core::Format::kB10G11R11_UFLOAT, resolution);
             Rc<Core::Texture> depth = Core::Texture::Create(device, "EmptyDebugDepth", Core::Format::kD32_SFLOAT, resolution);
-            Rc<Core::Buffer> stats = Core::Buffer::CreateByteAddress(device, "EmptyDebugStats", bytes);
+            auto stats = Core::Buffer::CreateStructured<uint32_t>(device, "EmptyDebugStats", bytes / sizeof(uint32_t));
             Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "EmptyDebugReadback", bytes);
             Core::ResourceCommitParams commit;
             commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
@@ -130,7 +130,7 @@ namespace FE::Graphics::DeferredProbe
                 Core::Texture::Create(device, Fmt::FormatName("DeferredProbeG{}", plane), Core::Format::kR32_UINT, resolution);
 
         Rc<Core::Texture> depth = Core::Texture::Create(device, "DeferredProbeDepth", Core::Format::kR32_SFLOAT, resolution);
-        Rc<Core::Buffer> stats = Core::Buffer::CreateByteAddress(device, "DeferredProbeStats", 16);
+        auto stats = Core::Buffer::CreateStructured<uint32_t>(device, "DeferredProbeStats", 4);
         Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "DeferredProbeReadback", 16);
         Rc<Core::Buffer> argsReadback = Core::Buffer::CreateByteAddress(device, "DeferredProbeArgsReadback", 36);
         Core::ResourceCommitParams commit;
@@ -218,7 +218,7 @@ namespace FE::Graphics::DeferredProbe
             initialize.m_lighting = viewLightingConstants;
             initialize.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
             initialize.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
-            initialize.m_resolution = resolution;
+            initialize.m_work.m_resolution = resolution;
             initialize.m_shaderCount = 3;
             graph->AddDispatch("InitializeDeferredProbe", initializePipeline, initialize, Math::CeilDivide(resolution, 8u));
             Visibility::BuildSurfaceWork(*graph, uploader, Visibility::ShadingWorkInput{ planes[0].Get() }, work);
@@ -233,12 +233,12 @@ namespace FE::Graphics::DeferredProbe
                 shade.m_g3 = graph->GetSRV(Core::TextureView::Create(planes[3].Get()));
                 shade.m_depth = graph->GetSRV(Core::TextureView::Create(depth.Get()));
                 shade.m_output = graph->GetUAV(Core::TextureView::Create(color.Get()));
-                shade.m_pixels = graph->GetSRV(work.m_pixels.Get());
-                shade.m_waves = graph->GetSRV(work.m_waves.Get());
-                shade.m_ranges = graph->GetSRV(work.m_ranges.Get());
-                shade.m_resolution = resolution;
-                shade.m_tilesPerRow = 3;
-                shade.m_shaderSlot = slot;
+                shade.m_work.m_pixels = graph->GetSRV(work.m_pixels.Get());
+                shade.m_work.m_waves = graph->GetSRV(work.m_waves.Get());
+                shade.m_work.m_ranges = graph->GetSRV(work.m_ranges.Get());
+                shade.m_work.m_resolution = resolution;
+                shade.m_work.m_tilesPerRow = 3;
+                shade.m_work.m_shaderSlot = slot;
                 graph->AddDispatchIndirect("ShadeDeferredProbe",
                                            slot == 0 ? simple : pbr,
                                            shade,

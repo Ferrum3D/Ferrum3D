@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Shaders/Passes/Visibility/Contracts.h>
 #include <Shaders/Scene/ViewData.h>
 #if FE_HOST
@@ -194,6 +194,17 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     };
 
 
+    //! The depth pyramid that occlusion culling passes test against.
+    struct DepthPyramidBinding final
+    {
+        Texture2DDescriptor<float> m_texture;
+        uint2 m_size;
+        float2 m_uvScale;
+        uint32_t m_mipCount;
+        FE_RTTI_Reflect("A91E36D7-52C8-4F0B-8E64-1B7F3D9C20A5");
+    };
+
+
     //! Culling inputs of one view. Frustum culling and LOD selection may use a frozen camera. Occlusion culling uses the
     //! camera that produced the depth pyramid: the rendered camera, or the frozen one together with its frozen pyramid.
     struct MeshCullData final
@@ -212,12 +223,12 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     // Scene tables are shared by all mesh views and passes.
     struct MeshSceneData final
     {
-        MeshInstanceTable::Instance m_instances;
-        MeshGroupTable::Instance m_groups;
-        MeshLodInfoTable::Instance m_lods;
-        MaterialInstanceTable::Instance m_materials;
-        MeshBatchTable::Instance m_batches;
-        MeshMemberTable::Instance m_members;
+        DB::TableAddress<MeshInstanceTable> m_instances;
+        DB::TableAddress<MeshGroupTable> m_groups;
+        DB::TableAddress<MeshLodInfoTable> m_lods;
+        DB::TableAddress<MaterialInstanceTable> m_materials;
+        DB::TableAddress<MeshBatchTable> m_batches;
+        DB::TableAddress<MeshMemberTable> m_members;
         uint32_t m_visibilityType;
         FE_RTTI_Reflect("58299D8D-CAA1-4532-9B1A-FDBA525D1C50");
     };

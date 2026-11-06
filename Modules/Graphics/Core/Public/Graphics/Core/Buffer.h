@@ -43,6 +43,10 @@ namespace FE::Graphics::Core
     inline const BufferSlice BufferSlice::kInvalid = { kInvalidIndex, kInvalidIndex };
 
 
+    template<class T>
+    struct StructuredBuffer;
+
+
     struct Buffer : public Resource
     {
         FE_RTTI("2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
@@ -50,13 +54,7 @@ namespace FE::Graphics::Core
         static Rc<Buffer> Create(Device* device, Env::Name name, const BufferDesc& desc);
 
         template<class T>
-        static Rc<Buffer> CreateStructured(Device* device, const Env::Name name, const uint32_t elementCount)
-        {
-            BufferDesc desc;
-            desc.m_format = Format::kUndefined;
-            desc.m_size = sizeof(T) * elementCount;
-            return Create(device, name, desc);
-        }
+        static StructuredBuffer<T> CreateStructured(Device* device, Env::Name name, uint32_t elementCount);
 
         static Rc<Buffer> CreateByteAddress(Device* device, const Env::Name name, const uint32_t byteSize)
         {
@@ -151,6 +149,122 @@ namespace FE::Graphics::Core
     };
 
     inline const BufferView BufferView::kInvalid = { nullptr, BufferSlice::kInvalid };
+
+    //! Non-owning reference to a buffer of T.
+    template<class T>
+    struct StructuredBufferPtr final
+    {
+        Buffer* m_buffer = nullptr;
+
+        StructuredBufferPtr() = default;
+
+        StructuredBufferPtr(std::nullptr_t) {}
+
+        explicit StructuredBufferPtr(Buffer* buffer)
+            : m_buffer(buffer)
+        {
+        }
+
+        [[nodiscard]] operator BufferView() const
+        {
+            return BufferView(m_buffer);
+        }
+
+        [[nodiscard]] Buffer* operator->() const
+        {
+            return m_buffer;
+        }
+
+        [[nodiscard]] explicit operator bool() const
+        {
+            return m_buffer != nullptr;
+        }
+
+        friend bool operator==(const StructuredBufferPtr buffer, std::nullptr_t)
+        {
+            return buffer.m_buffer == nullptr;
+        }
+
+        friend bool operator!=(const StructuredBufferPtr buffer, std::nullptr_t)
+        {
+            return buffer.m_buffer != nullptr;
+        }
+
+        //! For data that shaders read in larger elements than they write, e.g. counters that form pairs.
+        template<class TOther>
+        [[nodiscard]] StructuredBufferPtr<TOther> As() const
+        {
+            FE_AssertDebug(m_buffer == nullptr || m_buffer->GetDesc().m_size % sizeof(TOther) == 0);
+            return StructuredBufferPtr<TOther>(m_buffer);
+        }
+    };
+
+
+    //! Owning reference to a buffer of T. FrameGraph::GetSRV and GetUAV keep T, so shader data cannot name the wrong buffer.
+    template<class T>
+    struct StructuredBuffer final
+    {
+        Rc<Buffer> m_buffer;
+
+        StructuredBuffer() = default;
+
+        StructuredBuffer(std::nullptr_t) {}
+
+        explicit StructuredBuffer(Rc<Buffer> buffer)
+            : m_buffer(std::move(buffer))
+        {
+        }
+
+        StructuredBuffer(const StructuredBufferPtr<T> buffer)
+            : m_buffer(buffer.m_buffer)
+        {
+        }
+
+        [[nodiscard]] StructuredBufferPtr<T> Get() const
+        {
+            return StructuredBufferPtr<T>(m_buffer.Get());
+        }
+
+        [[nodiscard]] operator StructuredBufferPtr<T>() const
+        {
+            return Get();
+        }
+
+        [[nodiscard]] Buffer* operator->() const
+        {
+            return m_buffer.Get();
+        }
+
+        [[nodiscard]] explicit operator bool() const
+        {
+            return m_buffer != nullptr;
+        }
+
+        void Reset()
+        {
+            m_buffer.Reset();
+        }
+
+        friend bool operator==(const StructuredBuffer& buffer, std::nullptr_t)
+        {
+            return buffer.m_buffer == nullptr;
+        }
+
+        friend bool operator!=(const StructuredBuffer& buffer, std::nullptr_t)
+        {
+            return buffer.m_buffer != nullptr;
+        }
+    };
+
+
+    template<class T>
+    StructuredBuffer<T> Buffer::CreateStructured(Device* device, const Env::Name name, const uint32_t elementCount)
+    {
+        BufferDesc desc;
+        desc.m_format = Format::kUndefined;
+        desc.m_size = sizeof(T) * elementCount;
+        return StructuredBuffer<T>(Create(device, name, desc));
+    }
 } // namespace FE::Graphics::Core
 
 

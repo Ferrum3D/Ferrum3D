@@ -11,6 +11,6 @@ uint SurfaceGroup(AnyConstantsPtr objectData, uint2 visibility)
         return kInvalidIndex;
 
     const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;
-    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(scene.m_instances).ReadRow(instanceIndex);
+    const MeshInstanceTable::Row instance = scene.m_instances.ReadRow(instanceIndex);
     return instance.m_meshGroup.Get().m_rowIndex;
 }

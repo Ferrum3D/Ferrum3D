@@ -33,9 +33,13 @@ namespace FE::Graphics::DB
     private:
         friend Database;
 
+        //! A row touches every column of its page, so blocks track writes more tightly than one byte range could.
+        static constexpr uint32_t kDirtyBlockByteSize = kTablePageSize / 64;
+
         static StoragePage* Allocate(Core::Device* device, Core::ResourcePool* resourcePool, uint32_t globalID);
 
         uint32_t m_globalID = kInvalidIndex;
+        uint64_t m_dirtyBlocks = 0;
 
         Rc<Core::Buffer> m_deviceStorage;
         std::byte m_hostStorage[kTablePageSize];
@@ -72,10 +76,11 @@ namespace FE::Graphics::DB
 
         [[nodiscard]] uint32_t GetReservedRowCount() const;
 
-        [[nodiscard]] BufferPointer GetDeviceAddress() const;
-
     protected:
         TableBase(Database* database, uint32_t rowsPerPage);
+
+        //! Null until the table has its first page.
+        [[nodiscard]] BufferPointer GetDeviceAddress() const;
 
         void AllocatePage();
 
@@ -98,7 +103,7 @@ namespace FE::Graphics::DB
 
         void Update(Core::FrameGraph& graph, const Core::FenceSyncPoint& fence);
 
-        void MarkPageDirty(const StoragePage* page);
+        void MarkBytesDirty(StoragePage* page, uint32_t byteOffset, uint32_t byteSize);
 
     private:
         friend TableBase;

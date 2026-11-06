@@ -83,8 +83,8 @@ namespace FE::Graphics::Tools::DepthPyramid
         }
 
 
-        void AddTilePass(Core::FrameGraph& graph, Core::Texture* depth, Core::Buffer* spdCounters, const Pyramids& pyramids,
-                         const bool buildsClosest)
+        void AddTilePass(Core::FrameGraph& graph, Core::Texture* depth, const Core::StructuredBufferPtr<uint32_t> spdCounters,
+                         const Pyramids& pyramids, const bool buildsClosest)
         {
             const Output& farthest = pyramids.m_farthest;
             FE_Assert(farthest.m_mipCount >= kTileMipCount);
@@ -112,7 +112,8 @@ namespace FE::Graphics::Tools::DepthPyramid
         }
 
 
-        void AddSpdPass(Core::FrameGraph& graph, Core::Buffer* counters, const Output& pyramid, const bool isFarthest)
+        void AddSpdPass(Core::FrameGraph& graph, const Core::StructuredBufferPtr<uint32_t> counters, const Output& pyramid,
+                        const bool isFarthest)
         {
             constexpr uint32_t kSourceMip = kTileMipCount - 1;
             const uint32_t mipCount = pyramid.m_mipCount - kTileMipCount;

@@ -68,7 +68,7 @@ namespace FE::Graphics::SurfaceEvaluation
         // Clear coverage once, then let each object producer classify only its own visibility IDs.
         SurfaceConstants clear{};
         clear.m_g0 = graph.GetUAV(targets[0].Get());
-        clear.m_resolution = resolution;
+        clear.m_work.m_resolution = resolution;
         clear.m_visibility = graph.GetSRV(visibility);
         graph.AddDispatch("ClearSurfaceG0", ClearSurfacePipeline::GetPipeline(), clear, Math::CeilDivide(resolution, 8u));
 
@@ -89,21 +89,21 @@ namespace FE::Graphics::SurfaceEvaluation
             SurfaceConstants constants{};
             constants.m_view = batch.m_objectData;
             constants.m_visibility = graph.GetSRV(visibility);
-            constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
-            constants.m_waves = graph.GetSRV(work.m_waves.Get());
-            constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
+            constants.m_work.m_pixels = graph.GetSRV(work.m_pixels.Get());
+            constants.m_work.m_waves = graph.GetSRV(work.m_waves.Get());
+            constants.m_work.m_ranges = graph.GetSRV(work.m_ranges.Get());
             constants.m_g0 = graph.GetUAV(targets[0].Get());
             constants.m_g1 = graph.GetUAV(targets[1].Get());
             constants.m_g2 = graph.GetUAV(targets[2].Get());
             constants.m_g3 = graph.GetUAV(targets[3].Get());
-            constants.m_resolution = resolution;
-            constants.m_tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
+            constants.m_work.m_resolution = resolution;
+            constants.m_work.m_tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
             for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
             {
                 if (batch.m_routing->m_shaderBindingData[slot].y == 0)
                     continue;
 
-                constants.m_shaderSlot = slot;
+                constants.m_work.m_shaderSlot = slot;
                 const Core::BufferView arguments =
                     Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
                 graph.AddDispatchIndirect("EvaluateSurface", pipelines[slot].m_pipeline.Get(), constants, arguments);

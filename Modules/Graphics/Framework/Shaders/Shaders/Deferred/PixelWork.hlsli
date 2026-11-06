@@ -55,3 +55,16 @@ bool LoadPixelWork(const ShaderRange range, StructuredBufferDescriptor<WaveComma
     result.m_pixel = tile * kTileSize + localPixel;
     return all(result.m_pixel < resolution);
 }
+
+
+bool LoadPixelWork(const SurfaceWorkBinding binding, const uint wave, const uint lane, out PixelWork result)
+{
+    return LoadPixelWork(LoadSurfaceRange(binding.m_ranges, binding.m_shaderSlot),
+                         binding.m_waves,
+                         binding.m_pixels,
+                         binding.m_resolution,
+                         binding.m_tilesPerRow,
+                         wave,
+                         lane,
+                         result);
+}

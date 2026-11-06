@@ -5,7 +5,7 @@ FE_NUM_THREADS(8, 8, 1)
 void main(uint3 dispatch : SV_DispatchThreadID)
 {
     const uint2 pixel = dispatch.xy;
-    if (any(pixel >= GConstants.m_resolution))
+    if (any(pixel >= GConstants.m_work.m_resolution))
         return;
 
     const uint g0 = GConstants.m_g0.Load(uint3(pixel, 0));

@@ -21,6 +21,29 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
     };
 
 
+    //! The compact pixel lists and wave commands of one evaluation or shading shader.
+    struct SurfaceWorkBinding final
+    {
+        StructuredBufferDescriptor<uint32_t> m_pixels;
+        StructuredBufferDescriptor<WaveCommand> m_waves;
+        StructuredBufferDescriptor<ShaderRange> m_ranges;
+        uint2 m_resolution;
+        uint32_t m_tilesPerRow;
+        uint32_t m_shaderSlot;
+        FE_RTTI_Reflect("6B2D8F14-3A97-4C05-B1E8-7D4C92A0F6E3");
+    };
+
+
+    //! How classification maps pixels to the buckets of a surface work.
+    struct ClassificationGrid final
+    {
+        uint2 m_resolution;
+        uint32_t m_tilesPerRow;
+        uint32_t m_tileCount;
+        uint32_t m_groupRowCount;
+    };
+
+
     struct ClearSurfaceConstants final
     {
         RWStructuredBufferDescriptor<uint32_t> m_counts;
@@ -37,10 +60,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         Texture2DDescriptor<uint2> m_visibility;
         StructuredBufferDescriptor<SurfaceRoute> m_lookup;
         RWStructuredBufferDescriptor<uint32_t> m_counts;
-        uint2 m_resolution;
-        uint32_t m_tilesPerRow;
-        uint32_t m_tileCount;
-        uint32_t m_groupRowCount;
+        ClassificationGrid m_grid;
 
         FE_RTTI_Reflect("E565E335-5FCC-4D69-866B-676D0DA1ACDA");
     };
@@ -54,10 +74,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         StructuredBufferDescriptor<uint2> m_offsets;
         RWStructuredBufferDescriptor<uint32_t> m_cursors;
         RWStructuredBufferDescriptor<uint32_t> m_pixels;
-        uint2 m_resolution;
-        uint32_t m_tilesPerRow;
-        uint32_t m_tileCount;
-        uint32_t m_groupRowCount;
+        ClassificationGrid m_grid;
 
         FE_RTTI_Reflect("E4BA6E37-1669-414A-98E7-A2F1FBDE4ADA");
     };
@@ -68,10 +85,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         Texture2DDescriptor<uint32_t> m_g0Read;
         StructuredBufferDescriptor<SurfaceRoute> m_lookup;
         RWStructuredBufferDescriptor<uint32_t> m_counts;
-        uint2 m_resolution;
-        uint32_t m_tilesPerRow;
-        uint32_t m_tileCount;
-        uint32_t m_groupRowCount;
+        ClassificationGrid m_grid;
 
         FE_RTTI_Reflect("6CF96F7D-92DD-43F5-8C14-FE570FA2880A");
     };
@@ -84,10 +98,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         StructuredBufferDescriptor<uint2> m_offsets;
         RWStructuredBufferDescriptor<uint32_t> m_cursors;
         RWStructuredBufferDescriptor<uint32_t> m_pixels;
-        uint2 m_resolution;
-        uint32_t m_tilesPerRow;
-        uint32_t m_tileCount;
-        uint32_t m_groupRowCount;
+        ClassificationGrid m_grid;
 
         FE_RTTI_Reflect("6E642C0F-1525-4DB2-A021-BA36728F1B91");
     };

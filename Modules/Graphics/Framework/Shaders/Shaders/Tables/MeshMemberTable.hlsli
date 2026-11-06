@@ -18,18 +18,6 @@ struct MeshMemberTable
         DB::ElementHandle<DB::Ref<MeshInstanceTable>, kOffset_m_instance> m_instance;
     };
 
-    struct Instance
-    {
-        BufferPointer m_pageTableAddress;
-    };
-
-    static MeshMemberTable Create(Instance instance)
-    {
-        MeshMemberTable table;
-        table.m_pageTableAddress = instance.m_pageTableAddress;
-        return table;
-    }
-
     Row ReadRow(const uint32_t rowIndex)
     {
         const uint32_t pageIndex = rowIndex / kRowsPerPage;

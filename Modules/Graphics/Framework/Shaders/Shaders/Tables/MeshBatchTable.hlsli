@@ -20,18 +20,6 @@ struct MeshBatchTable
         DB::ElementHandle<uint2, kOffset_m_drawTagMask> m_drawTagMask;
     };
 
-    struct Instance
-    {
-        BufferPointer m_pageTableAddress;
-    };
-
-    static MeshBatchTable Create(Instance instance)
-    {
-        MeshBatchTable table;
-        table.m_pageTableAddress = instance.m_pageTableAddress;
-        return table;
-    }
-
     Row ReadRow(const uint32_t rowIndex)
     {
         const uint32_t pageIndex = rowIndex / kRowsPerPage;

@@ -201,11 +201,11 @@ namespace FE::Graphics
         {
             const View* m_view = nullptr;
             uint64_t m_lastFrameIndex = 0;
-            Rc<Core::Buffer> m_visibility;
+            Core::StructuredBuffer<uint32_t> m_visibility;
             uint32_t m_visibilityCapacity = 0;
-            Rc<Core::Buffer> m_meshletVisibility;
+            Core::StructuredBuffer<uint32_t> m_meshletVisibility;
             uint32_t m_meshletVisibilityCapacity = 0;
-            Rc<Core::Buffer> m_stats;
+            Core::StructuredBuffer<uint32_t> m_stats;
             uint64_t m_nextStatsFrameIndex = 0;
             festd::array<CullingStatsReadback, kCullingStatsReadbackCount> m_readbacks;
         };

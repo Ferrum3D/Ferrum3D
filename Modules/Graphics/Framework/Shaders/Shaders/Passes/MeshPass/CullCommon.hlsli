@@ -115,13 +115,12 @@ InstanceBounds LoadInstanceBounds(const MeshGroupTable::Row group)
 }
 
 
-DepthPyramid CreateDepthPyramid(const Texture2DDescriptor<float> texture, const uint2 size, const float2 uvScale,
-                                const uint mipCount)
+DepthPyramid CreateDepthPyramid(const DepthPyramidBinding binding)
 {
     DepthPyramid pyramid;
-    pyramid.m_texture = texture;
-    pyramid.m_size = size;
-    pyramid.m_uvScale = uvScale;
-    pyramid.m_mipCount = mipCount;
+    pyramid.m_texture = binding.m_texture;
+    pyramid.m_size = binding.m_size;
+    pyramid.m_uvScale = binding.m_uvScale;
+    pyramid.m_mipCount = binding.m_mipCount;
     return pyramid;
 }

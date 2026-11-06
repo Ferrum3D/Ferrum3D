@@ -31,7 +31,7 @@ namespace FE::Graphics
             {%- endfor %}
         };
 
-        using Instance = BufferPointer;
+        using Instance = DB::TableAddress<{{ table.name }}>;
 
         {{ table.name }}(DB::Database* database)
             : TableBase(database, kRowsPerPage)
@@ -41,6 +41,12 @@ namespace FE::Graphics
         void DoRelease() override
         {
             Memory::DefaultDelete(this);
+        }
+
+        //! The address moves when the table grows, so publish it again after module updates.
+        [[nodiscard]] Instance GetInstance() const
+        {
+            return Instance{ GetDeviceAddress() };
         }
 
         [[nodiscard]] DB::Ref<{{ table.name }}> AllocateRow()
@@ -121,9 +127,8 @@ namespace FE::Graphics
             const uint32_t pageIndex = rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
-            DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
-            std::byte* storage = page->GetHostStorage();
+            MarkRowDirty(rowIndex);
+            std::byte* storage = m_pages[pageIndex]->GetHostStorage();
 
             RWRow row;
             {%- for column in table.columns %}
@@ -136,8 +141,25 @@ namespace FE::Graphics
         {
             return WriteRow(reference.m_rowIndex);
         }
+
+        //! Publish values written through pointers kept from WriteRow.
+        void MarkRowDirty(const uint32_t rowIndex)
+        {
+            const uint32_t pageIndex = rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = rowIndex % kRowsPerPage;
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            {%- for column in table.columns %}
+            m_database->MarkBytesDirty(page, kOffset_{{ column.name }} + localRowIndex * sizeof({{ column.typename }}), sizeof({{ column.typename }}));
+            {%- endfor %}
+        }
+
+        void MarkRowDirty(const DB::Ref<{{ table.name }}> reference)
+        {
+            MarkRowDirty(reference.m_rowIndex);
+        }
         {% for column in table.columns %}
-        void CopyColumn{% if table.columns | selectattr('typename', 'equalto', column.typename) | list | length > 1 %}_{{ column.name }}{% endif %}(const DB::Slice<{{ table.name }}> destination, const festd::span<const {{ column.typename }}> source)
+        void CopyColumn_{{ column.name }}(const DB::Slice<{{ table.name }}> destination, const festd::span<const {{ column.typename }}> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -149,7 +171,7 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page, kOffset_{{ column.name }} + localRowIndex * sizeof({{ column.typename }}), destination.m_count * sizeof({{ column.typename }}));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<{{ column.typename }}*>(storage + kOffset_{{ column.name }}) + localRowIndex;
             festd::copy(source, destinationData);

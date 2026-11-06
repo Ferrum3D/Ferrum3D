@@ -79,7 +79,7 @@ namespace FE::Graphics
             {
                 const Slot& slot = m_slots[index];
                 if (slot.m_active && slot.m_castsShadows)
-                    function(LightHandle{ index, slot.m_generation }, m_table->ReadRow(index).m_light.Get());
+                    function(LightHandle{ index, slot.m_generation }, slot.m_data);
             }
         }
 
@@ -99,8 +99,12 @@ namespace FE::Graphics
     private:
         void DoRelease() override;
 
+        void WriteLightRow(uint32_t rowIndex, const LocalLightData& light);
+
         struct Slot final
         {
+            //! Host copy of the columns of the row of this slot.
+            LocalLightData m_data{};
             uint32_t m_generation = 1;
             bool m_active = false;
             bool m_castsShadows = false;

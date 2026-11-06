@@ -22,12 +22,13 @@ bool LoadMeshEvaluation(const MeshViewData view, const uint2 visibility, const u
         return false;
 
     const uint instanceIndex = (visibility.x & kObjectIndexMask) - 1;
-    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(scene.m_instances).ReadRow(instanceIndex);
-    const MeshGroupTable::Row group = MeshGroupTable::Create(scene.m_groups).ReadRow(groupIndex);
+    const MeshInstanceTable::Row instance = scene.m_instances.ReadRow(instanceIndex);
+    const MeshGroupTable::Row group = scene.m_groups.ReadRow(groupIndex);
 
     // Every pixel command belongs to one evaluation binding, but instances of its group may select different LODs.
-    const uint firstLod = SurfaceWaveUniform(group.m_lods.Get().m_rowIndex);
-    const MeshLodInfoTable::Row lod = MeshLodInfoTable::Create(scene.m_lods).ReadRow(firstLod + DecodeLod(visibility.y));
+    DB::Slice<MeshLodInfoTable> lods = group.m_lods.Get();
+    lods.m_rowIndex = SurfaceWaveUniform(lods.m_rowIndex);
+    const MeshLodInfoTable::Row lod = scene.m_lods.ReadRow(lods.At(DecodeLod(visibility.y)));
     const MeshDrawData draw = CreateMeshDrawData(instance, group, lod);
     const float2 pixelCenter = float2(pixel) + 0.5f;
     if (!ReconstructAttributes(view, visibility, pixelCenter, float2(resolution), draw, result.m_attributes, needUV, needTangent))
@@ -36,7 +37,7 @@ bool LoadMeshEvaluation(const MeshViewData view, const uint2 visibility, const u
     }
 
     const uint materialIndex = SurfaceWaveUniform(group.m_materialInstance.Get().m_rowIndex);
-    const MaterialInstanceTable::Row material = MaterialInstanceTable::Create(scene.m_materials).ReadRow(materialIndex);
+    const MaterialInstanceTable::Row material = scene.m_materials.ReadRow(materialIndex);
     const uint slot = SurfaceWaveUniform(material.m_shadingSlot.Get());
     result.m_materialParameters.m_deviceAddress = SurfaceWaveUniform(material.m_materialParameters.Get().m_deviceAddress);
     result.m_instanceParameters = draw.m_instance.m_instanceData.Get();

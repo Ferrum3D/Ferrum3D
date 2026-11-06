@@ -7,7 +7,7 @@
 #include <Graphics/Database/Database.h>
 #include <Graphics/Tables/Forwards.h>
 
-#include <Shaders/Lighting/LocalLighting.h>
+#include <Shaders/Lighting/LocalLightData.h>
 
 namespace FE::Graphics
 {
@@ -15,23 +15,26 @@ namespace FE::Graphics
     {
         FE_RTTI("B7797910-A4A6-5C9B-96F8-2F3F6E47A758");
 
-        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(LocalLightData));
+        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(float4) + sizeof(LocalLightShading));
 
-        static constexpr uint32_t kOffset_m_light = 0;
+        static constexpr uint32_t kOffset_m_positionRange = 0;
+        static constexpr uint32_t kOffset_m_shading = kOffset_m_positionRange + sizeof(float4) * kRowsPerPage;
 
         static_assert(kRowsPerPage > 0);
 
         struct Row final
         {
-            DB::ElementHandle<LocalLightData, kOffset_m_light> m_light;
+            DB::ElementHandle<float4, kOffset_m_positionRange> m_positionRange;
+            DB::ElementHandle<LocalLightShading, kOffset_m_shading> m_shading;
         };
 
         struct RWRow final
         {
-            DB::RWElementHandle<LocalLightData, kOffset_m_light> m_light;
+            DB::RWElementHandle<float4, kOffset_m_positionRange> m_positionRange;
+            DB::RWElementHandle<LocalLightShading, kOffset_m_shading> m_shading;
         };
 
-        using Instance = BufferPointer;
+        using Instance = DB::TableAddress<LocalLightTable>;
 
         LocalLightTable(DB::Database* database)
             : TableBase(database, kRowsPerPage)
@@ -43,11 +46,18 @@ namespace FE::Graphics
             Memory::DefaultDelete(this);
         }
 
+        //! The address moves when the table grows, so publish it again after module updates.
+        [[nodiscard]] Instance GetInstance() const
+        {
+            return Instance{ GetDeviceAddress() };
+        }
+
         [[nodiscard]] DB::Ref<LocalLightTable> AllocateRow()
         {
             const uint32_t rowIndex = AllocateRowUninitialized();
             const RWRow row = WriteRow(rowIndex);
-            row.m_light.Construct();
+            row.m_positionRange.Construct();
+            row.m_shading.Construct();
             return DB::Ref<LocalLightTable>{ rowIndex };
         }
 
@@ -58,7 +68,8 @@ namespace FE::Graphics
             for (uint32_t rowIndex = 0; rowIndex < rowCount; ++rowIndex)
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
-                row.m_light.Construct();
+                row.m_positionRange.Construct();
+                row.m_shading.Construct();
             }
 
             return DB::Slice<LocalLightTable>{ range.m_offset, range.m_size };
@@ -73,7 +84,8 @@ namespace FE::Graphics
             for (uint32_t rowIndex = rows.m_count; rowIndex < rowCount; ++rowIndex)
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
-                row.m_light.Construct();
+                row.m_positionRange.Construct();
+                row.m_shading.Construct();
             }
 
             rows = { range.m_offset, range.m_size };
@@ -99,7 +111,8 @@ namespace FE::Graphics
             const std::byte* storage = page->GetHostStorage();
 
             Row row;
-            row.m_light.Setup(storage, localRowIndex);
+            row.m_positionRange.Setup(storage, localRowIndex);
+            row.m_shading.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -113,12 +126,12 @@ namespace FE::Graphics
             const uint32_t pageIndex = rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
-            DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
-            std::byte* storage = page->GetHostStorage();
+            MarkRowDirty(rowIndex);
+            std::byte* storage = m_pages[pageIndex]->GetHostStorage();
 
             RWRow row;
-            row.m_light.Setup(storage, localRowIndex);
+            row.m_positionRange.Setup(storage, localRowIndex);
+            row.m_shading.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -127,7 +140,25 @@ namespace FE::Graphics
             return WriteRow(reference.m_rowIndex);
         }
 
-        void CopyColumn(const DB::Slice<LocalLightTable> destination, const festd::span<const LocalLightData> source)
+        //! Publish values written through pointers kept from WriteRow.
+        void MarkRowDirty(const uint32_t rowIndex)
+        {
+            const uint32_t pageIndex = rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = rowIndex % kRowsPerPage;
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkBytesDirty(page, kOffset_m_positionRange + localRowIndex * sizeof(float4), sizeof(float4));
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_shading + localRowIndex * sizeof(LocalLightShading),
+                                       sizeof(LocalLightShading));
+        }
+
+        void MarkRowDirty(const DB::Ref<LocalLightTable> reference)
+        {
+            MarkRowDirty(reference.m_rowIndex);
+        }
+
+        void CopyColumn_m_positionRange(const DB::Slice<LocalLightTable> destination, const festd::span<const float4> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -139,9 +170,31 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_positionRange + localRowIndex * sizeof(float4),
+                                       destination.m_count * sizeof(float4));
             std::byte* storage = page->GetHostStorage();
-            auto* destinationData = reinterpret_cast<LocalLightData*>(storage + kOffset_m_light) + localRowIndex;
+            auto* destinationData = reinterpret_cast<float4*>(storage + kOffset_m_positionRange) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn_m_shading(const DB::Slice<LocalLightTable> destination, const festd::span<const LocalLightShading> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            if (destination.m_count == 0)
+                return;
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_shading + localRowIndex * sizeof(LocalLightShading),
+                                       destination.m_count * sizeof(LocalLightShading));
+            std::byte* storage = page->GetHostStorage();
+            auto* destinationData = reinterpret_cast<LocalLightShading*>(storage + kOffset_m_shading) + localRowIndex;
             festd::copy(source, destinationData);
         }
     };

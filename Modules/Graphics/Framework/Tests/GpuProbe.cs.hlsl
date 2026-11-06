@@ -31,7 +31,7 @@ void main(uint3 group : SV_GroupID)
     else if (GConstants.m_writeArguments == 3)
     {
         LocalLightingBinding binding = (LocalLightingBinding)0;
-        binding.m_lights = GConstants.m_material;
+        binding.m_lights.m_pageTableAddress = GConstants.m_material;
         const DecodedLocalLight light = LoadLocalLight(binding, group.x);
         [unroll] for (uint channel = 0; channel < 4; ++channel)
         {

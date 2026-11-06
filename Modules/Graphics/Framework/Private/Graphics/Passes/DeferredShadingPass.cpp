@@ -55,7 +55,7 @@ namespace FE::Graphics::DeferredShading
         constants.m_lighting = view.m_lighting;
         constants.m_g0 = graph.GetSRV(Core::TextureView::Create(gBufferTargets[0].Get()));
         constants.m_output = graph.GetUAV(Core::TextureView::Create(view.m_mainColorTarget));
-        constants.m_resolution = resolution;
+        constants.m_work.m_resolution = resolution;
         constants.m_shaderCount = shaderCount;
         graph.AddDispatch("InitializeDeferredColor",
                           InitializeDeferredPipeline::GetPipeline(),
@@ -90,16 +90,16 @@ namespace FE::Graphics::DeferredShading
         constants.m_g2 = graph.GetSRV(gBufferTargets[2].Get());
         constants.m_g3 = graph.GetSRV(gBufferTargets[3].Get());
         constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
-        constants.m_pixels = graph.GetSRV(work.m_pixels.Get());
-        constants.m_waves = graph.GetSRV(work.m_waves.Get());
-        constants.m_ranges = graph.GetSRV(work.m_ranges.Get());
-        constants.m_tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
+        constants.m_work.m_pixels = graph.GetSRV(work.m_pixels.Get());
+        constants.m_work.m_waves = graph.GetSRV(work.m_waves.Get());
+        constants.m_work.m_ranges = graph.GetSRV(work.m_ranges.Get());
+        constants.m_work.m_tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
         for (uint32_t slot = 0; slot < pipelines.size(); ++slot)
         {
             if (pipelines[slot].m_pipeline == nullptr)
                 continue;
 
-            constants.m_shaderSlot = slot;
+            constants.m_work.m_shaderSlot = slot;
             const Core::BufferView arguments =
                 Core::BufferView(work.m_arguments.Get()).Slice(slot * sizeof(DispatchArguments), sizeof(DispatchArguments));
             graph.AddDispatchIndirect("ShadeSurface", pipelines[slot].m_pipeline.Get(), constants, arguments);

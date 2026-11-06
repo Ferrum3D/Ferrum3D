@@ -2,6 +2,7 @@
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <Graphics/Passes/Tools/DepthPyramid.h>
 #include <Shaders/Passes/MeshPass/GpuWork.h>
+#include <Shaders/Passes/MeshPass/IndirectArguments.h>
 #include <festd/fixed_function.h>
 #include <festd/vector.h>
 
@@ -29,8 +30,8 @@ namespace FE::Graphics
         uint32_t m_revision = 0;
         festd::vector<MeshPipelineSlot> m_slots;
         festd::vector<MeshPipelineSubmission> m_submissions;
-        Rc<Core::Buffer> m_routing;
-        Rc<Core::Buffer> m_layouts;
+        Core::StructuredBuffer<MeshPass::PipelineRouting> m_routing;
+        Core::StructuredBuffer<MeshPass::BucketLayout> m_layouts;
         uint32_t m_instanceCapacity = 0;
         uint32_t m_workCapacity = 0;
         uint32_t m_commandCapacity = 0;
@@ -41,13 +42,13 @@ namespace FE::Graphics
     struct MeshCullViewResources final
     {
         //! One MeshPass::InstanceVisibility word per instance row.
-        Core::Buffer* m_visibility = nullptr;
+        Core::StructuredBufferPtr<uint32_t> m_visibility;
         uint32_t m_visibilityCapacity = 0;
         //! One bit per meshlet of each instance, at the word offset stored in its instance row.
-        Core::Buffer* m_meshletVisibility = nullptr;
+        Core::StructuredBufferPtr<uint32_t> m_meshletVisibility;
         uint32_t m_meshletVisibilityCapacity = 0;
         //! MeshPass::CullStat counters of this frame.
-        Core::Buffer* m_stats = nullptr;
+        Core::StructuredBufferPtr<uint32_t> m_stats;
         //! An occluder pyramid tested in the single phase; null otherwise.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
     };
@@ -56,13 +57,13 @@ namespace FE::Graphics
     struct CulledMeshView final
     {
         ConstantsPtr<MeshPass::MeshViewData> m_view;
-        Rc<Core::Buffer> m_dispatches;
-        Rc<Core::Buffer> m_visibility;
-        Rc<Core::Buffer> m_meshletVisibility;
-        Rc<Core::Buffer> m_stats;
+        Core::StructuredBuffer<MeshPass::CullDispatch> m_dispatches;
+        Core::StructuredBuffer<uint32_t> m_visibility;
+        Core::StructuredBuffer<uint32_t> m_meshletVisibility;
+        Core::StructuredBuffer<uint32_t> m_stats;
         //! Instance classification of the single or early phase, and of the late phase once it was culled.
-        Rc<Core::Buffer> m_classification;
-        Rc<Core::Buffer> m_lateClassification;
+        Core::StructuredBuffer<MeshPass::InstanceClassification> m_classification;
+        Core::StructuredBuffer<MeshPass::InstanceClassification> m_lateClassification;
         uint32_t m_visibilityCapacity = 0;
         uint32_t m_meshletVisibilityCapacity = 0;
         uint32_t m_dispatchCount = 0;
@@ -74,9 +75,9 @@ namespace FE::Graphics
     {
         ConstantsPtr<MeshPass::MeshViewData> m_view;
         ConstantsPtr<MeshPass::MeshPassData> m_pass;
-        Rc<Core::Buffer> m_meshlets;
-        Rc<Core::Buffer> m_commands;
-        Rc<Core::Buffer> m_arguments;
+        Core::StructuredBuffer<MeshPass::VisibleMeshlet> m_meshlets;
+        Core::StructuredBuffer<MeshPass::MeshCommandRange> m_commands;
+        Core::StructuredBuffer<MeshPass::MeshDispatchArguments> m_arguments;
         festd::vector<MeshPipelineSubmission> m_submissions;
     };
 
@@ -88,7 +89,7 @@ namespace FE::Graphics
         //! Built from the early depth in the late phase, or the occluders of the single phase; occlusion is tested when set.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Receives meshlet and rendered instance counters when not null.
-        Core::Buffer* m_stats = nullptr;
+        Core::StructuredBufferPtr<uint32_t> m_stats;
         //! Published to the pass shaders as MeshPassData::m_passData.
         AnyConstantsPtr m_passData;
     };

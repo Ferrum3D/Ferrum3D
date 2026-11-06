@@ -32,7 +32,7 @@ uint SelectLod(const MeshCullData cull, MeshLodInfoTable lods, const MeshGroupTa
     uint selectedLod = finestLod;
     for (uint lod = finestLod + 1; lod < slice.m_count; ++lod)
     {
-        if (lods.ReadRow(slice.m_rowIndex + lod).m_error.Get() * errorScale > distance)
+        if (lods.ReadRow(slice.At(lod)).m_error.Get() * errorScale > distance)
             break;
 
         selectedLod = lod;
@@ -65,10 +65,10 @@ InstanceCullResult CullMember(const MeshViewData view, const MeshSceneData scene
     if (memberIndex >= members.m_count)
         return result;
 
-    MeshMemberTable membership = MeshMemberTable::Create(scene.m_members);
-    MeshInstanceTable instances = MeshInstanceTable::Create(scene.m_instances);
-    MeshGroupTable groups = MeshGroupTable::Create(scene.m_groups);
-    MeshLodInfoTable lods = MeshLodInfoTable::Create(scene.m_lods);
+    MeshMemberTable membership = scene.m_members;
+    MeshInstanceTable instances = scene.m_instances;
+    MeshGroupTable groups = scene.m_groups;
+    MeshLodInfoTable lods = scene.m_lods;
 
     const DB::Ref<MeshInstanceTable> instanceId = membership.ReadRow(members.m_rowIndex + memberIndex).m_instance.Get();
     const MeshInstanceTable::Row instance = instances.ReadRow(instanceId);
@@ -135,7 +135,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     const MeshViewData view = LoadMeshView(GConstants.m_view);
     const MeshSceneData scene = LoadMeshScene(view.m_scene);
     const CullDispatch dispatch = GConstants.m_dispatches.Load(group.x);
-    MeshBatchTable batches = MeshBatchTable::Create(scene.m_batches);
+    MeshBatchTable batches = scene.m_batches;
     const MeshBatchTable::Row batch = batches.ReadRow(dispatch.m_batchId);
 
     const DB::Slice<MeshMemberTable> members = batch.m_members.Get();

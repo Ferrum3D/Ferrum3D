@@ -32,7 +32,7 @@ namespace FE::Graphics
             DB::RWElementHandle<uint2, kOffset_m_drawTagMask> m_drawTagMask;
         };
 
-        using Instance = BufferPointer;
+        using Instance = DB::TableAddress<MeshBatchTable>;
 
         MeshBatchTable(DB::Database* database)
             : TableBase(database, kRowsPerPage)
@@ -42,6 +42,12 @@ namespace FE::Graphics
         void DoRelease() override
         {
             Memory::DefaultDelete(this);
+        }
+
+        //! The address moves when the table grows, so publish it again after module updates.
+        [[nodiscard]] Instance GetInstance() const
+        {
+            return Instance{ GetDeviceAddress() };
         }
 
         [[nodiscard]] DB::Ref<MeshBatchTable> AllocateRow()
@@ -118,9 +124,8 @@ namespace FE::Graphics
             const uint32_t pageIndex = rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
-            DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
-            std::byte* storage = page->GetHostStorage();
+            MarkRowDirty(rowIndex);
+            std::byte* storage = m_pages[pageIndex]->GetHostStorage();
 
             RWRow row;
             row.m_members.Setup(storage, localRowIndex);
@@ -133,7 +138,26 @@ namespace FE::Graphics
             return WriteRow(reference.m_rowIndex);
         }
 
-        void CopyColumn(const DB::Slice<MeshBatchTable> destination, const festd::span<const DB::Slice<MeshMemberTable>> source)
+        //! Publish values written through pointers kept from WriteRow.
+        void MarkRowDirty(const uint32_t rowIndex)
+        {
+            const uint32_t pageIndex = rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = rowIndex % kRowsPerPage;
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_members + localRowIndex * sizeof(DB::Slice<MeshMemberTable>),
+                                       sizeof(DB::Slice<MeshMemberTable>));
+            m_database->MarkBytesDirty(page, kOffset_m_drawTagMask + localRowIndex * sizeof(uint2), sizeof(uint2));
+        }
+
+        void MarkRowDirty(const DB::Ref<MeshBatchTable> reference)
+        {
+            MarkRowDirty(reference.m_rowIndex);
+        }
+
+        void CopyColumn_m_members(const DB::Slice<MeshBatchTable> destination,
+                                  const festd::span<const DB::Slice<MeshMemberTable>> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -145,13 +169,15 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_members + localRowIndex * sizeof(DB::Slice<MeshMemberTable>),
+                                       destination.m_count * sizeof(DB::Slice<MeshMemberTable>));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<DB::Slice<MeshMemberTable>*>(storage + kOffset_m_members) + localRowIndex;
             festd::copy(source, destinationData);
         }
 
-        void CopyColumn(const DB::Slice<MeshBatchTable> destination, const festd::span<const uint2> source)
+        void CopyColumn_m_drawTagMask(const DB::Slice<MeshBatchTable> destination, const festd::span<const uint2> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -163,7 +189,9 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_drawTagMask + localRowIndex * sizeof(uint2),
+                                       destination.m_count * sizeof(uint2));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<uint2*>(storage + kOffset_m_drawTagMask) + localRowIndex;
             festd::copy(source, destinationData);

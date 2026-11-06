@@ -80,18 +80,60 @@ namespace FE::Graphics
     FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture2DArrayDescriptor, TextureUAVDescriptor);
 
     FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(BufferDescriptor, BufferSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(StructuredBufferDescriptor, BufferSRVDescriptor);
     using ByteAddressBufferDescriptor = BufferSRVDescriptor;
 
     FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWBufferDescriptor, BufferUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWStructuredBufferDescriptor, BufferUAVDescriptor);
     using RWByteAddressBufferDescriptor = BufferUAVDescriptor;
 
     FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentStructuredBufferDescriptor, BufferUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWStructuredBufferDescriptor, BufferUAVDescriptor);
     using GloballyCoherentRWByteAddressBufferDescriptor = BufferUAVDescriptor;
 
 #undef FE_FRAME_GRAPH_ALIAS_DESCRIPTOR
+
+
+    //! Read-only view of a buffer of T, obtained from FrameGraph::GetSRV of a Core::StructuredBuffer<T>.
+    template<class T>
+    struct StructuredBufferDescriptor final
+    {
+        BufferSRVDescriptor m_descriptor;
+
+        StructuredBufferDescriptor() = default;
+
+        //! For views the type system cannot follow, e.g. a slice of a buffer.
+        explicit StructuredBufferDescriptor(const BufferSRVDescriptor descriptor)
+            : m_descriptor(descriptor)
+        {
+        }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_descriptor.IsValid();
+        }
+    };
+
+
+    //! Read-write view of a buffer of T, obtained from FrameGraph::GetUAV of a Core::StructuredBuffer<T>.
+    template<class T>
+    struct RWStructuredBufferDescriptor final
+    {
+        BufferUAVDescriptor m_descriptor;
+
+        RWStructuredBufferDescriptor() = default;
+
+        //! For views the type system cannot follow, e.g. a slice of a buffer.
+        explicit RWStructuredBufferDescriptor(const BufferUAVDescriptor descriptor)
+            : m_descriptor(descriptor)
+        {
+        }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_descriptor.IsValid();
+        }
+    };
+
+    template<class T>
+    using GloballyCoherentRWStructuredBufferDescriptor = RWStructuredBufferDescriptor<T>;
 
 
     //! Constants of a type known only to the shaders that read them, e.g. the payload of a technique role.
@@ -132,6 +174,29 @@ namespace FE::Graphics
 
 namespace FE::Rtti
 {
+    //! Traversal sees one untyped descriptor, so frame graphs recognize every instance by a single type.
+    template<class T>
+    struct Shape<Graphics::StructuredBufferDescriptor<T>>
+    {
+        static void Bind(Type& type)
+        {
+            static_assert(sizeof(Graphics::StructuredBufferDescriptor<T>) == sizeof(Graphics::BufferSRVDescriptor));
+            Internal::BindFixedArrayShape<Graphics::StructuredBufferDescriptor<T>, Graphics::BufferSRVDescriptor, 1>(type);
+        }
+    };
+
+
+    template<class T>
+    struct Shape<Graphics::RWStructuredBufferDescriptor<T>>
+    {
+        static void Bind(Type& type)
+        {
+            static_assert(sizeof(Graphics::RWStructuredBufferDescriptor<T>) == sizeof(Graphics::BufferUAVDescriptor));
+            Internal::BindFixedArrayShape<Graphics::RWStructuredBufferDescriptor<T>, Graphics::BufferUAVDescriptor, 1>(type);
+        }
+    };
+
+
     //! Traversal sees one untyped pointer, so frame graphs recognize every ConstantsPtr instance by a single type.
     template<class T>
     struct Shape<Graphics::ConstantsPtr<T>>

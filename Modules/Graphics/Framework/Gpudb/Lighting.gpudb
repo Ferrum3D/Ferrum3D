@@ -1,11 +1,12 @@
 import LocalLighting
 {
-    cpp <Shaders/Lighting/LocalLighting.h>
-    hlsl <Shaders/Lighting/LocalLighting.h>
+    cpp <Shaders/Lighting/LocalLightData.h>
+    hlsl <Shaders/Lighting/LocalLightData.h>
 }
 
 table LocalLightTable
     : LocalLighting
 {
-    LocalLightData m_light;
+    float4 m_positionRange;
+    LocalLightShading m_shading;
 }

@@ -34,8 +34,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         struct CountInput final
         {
-            Core::Buffer* m_classification;
-            Core::Buffer* m_routing;
+            Core::StructuredBufferPtr<MeshPass::InstanceClassification> m_classification;
+            Core::StructuredBufferPtr<MeshPass::PipelineRouting> m_routing;
             uint32_t m_dispatchCount;
             Vector2UInt m_drawTagMask;
         };
@@ -43,27 +43,27 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         struct CountOutput final
         {
-            Rc<Core::Buffer> m_counts;
-            Rc<Core::Buffer> m_cursors;
-            Rc<Core::Buffer> m_meshletCounts;
-            Rc<Core::Buffer> m_instanceBuckets;
+            Core::StructuredBuffer<uint32_t> m_counts;
+            Core::StructuredBuffer<uint32_t> m_cursors;
+            Core::StructuredBuffer<uint32_t> m_meshletCounts;
+            Core::StructuredBuffer<uint32_t> m_instanceBuckets;
         };
 
 
         struct FinalizeOutput final
         {
-            Rc<Core::Buffer> m_buckets;
-            Rc<Core::Buffer> m_cullDispatch;
+            Core::StructuredBuffer<MeshPass::PipelineBucket> m_buckets;
+            Core::StructuredBuffer<MeshPass::MeshletCullDispatch> m_cullDispatch;
         };
 
 
         struct ScatterInput final
         {
-            Core::Buffer* m_classification;
-            Core::Buffer* m_instanceBuckets;
-            Core::Buffer* m_buckets;
-            Core::Buffer* m_cursors;
-            Core::Buffer* m_stats;
+            Core::StructuredBufferPtr<MeshPass::InstanceClassification> m_classification;
+            Core::StructuredBufferPtr<uint32_t> m_instanceBuckets;
+            Core::StructuredBufferPtr<MeshPass::PipelineBucket> m_buckets;
+            Core::StructuredBufferPtr<uint32_t> m_cursors;
+            Core::StructuredBufferPtr<uint32_t> m_stats;
             uint32_t m_dispatchCount;
             uint32_t m_instanceCapacity;
             uint32_t m_workCapacity;
@@ -73,21 +73,21 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         struct ScatterOutput final
         {
-            Rc<Core::Buffer> m_instances;
-            Rc<Core::Buffer> m_work;
+            Core::StructuredBuffer<MeshPass::VisibleInstance> m_instances;
+            Core::StructuredBuffer<MeshPass::MeshletWorkChunk> m_work;
         };
 
 
         struct MeshletCullInput final
         {
             ConstantsPtr<MeshPass::MeshViewData> m_view;
-            Core::Buffer* m_instances;
-            Core::Buffer* m_work;
-            Core::Buffer* m_buckets;
-            Core::Buffer* m_cullDispatch;
-            Core::Buffer* m_meshletCounts;
-            Core::Buffer* m_meshletVisibility;
-            Core::Buffer* m_stats;
+            Core::StructuredBufferPtr<MeshPass::VisibleInstance> m_instances;
+            Core::StructuredBufferPtr<MeshPass::MeshletWorkChunk> m_work;
+            Core::StructuredBufferPtr<MeshPass::PipelineBucket> m_buckets;
+            Core::StructuredBufferPtr<MeshPass::MeshletCullDispatch> m_cullDispatch;
+            Core::StructuredBufferPtr<uint32_t> m_meshletCounts;
+            Core::StructuredBufferPtr<uint32_t> m_meshletVisibility;
+            Core::StructuredBufferPtr<uint32_t> m_stats;
             const Tools::DepthPyramid::Output* m_depthPyramid;
             uint32_t m_meshletVisibilityCapacity;
             uint32_t m_meshletCapacity;
@@ -96,18 +96,19 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
 
         //! Survivors of frustum culling that an occlusion pass tests, with the indirect arguments that cover them.
+        template<class TCandidate>
         struct OcclusionCandidates final
         {
-            Rc<Core::Buffer> m_candidates;
-            Rc<Core::Buffer> m_dispatch;
+            Core::StructuredBuffer<TCandidate> m_candidates;
+            Core::StructuredBuffer<MeshPass::OcclusionCullDispatch> m_dispatch;
         };
 
 
         struct CommandInput final
         {
-            Core::Buffer* m_buckets;
-            Core::Buffer* m_meshletCounts;
-            Core::Buffer* m_layouts;
+            Core::StructuredBufferPtr<MeshPass::PipelineBucket> m_buckets;
+            Core::StructuredBufferPtr<uint32_t> m_meshletCounts;
+            Core::StructuredBufferPtr<MeshPass::BucketLayout> m_layouts;
             uint32_t m_bucketCount;
             uint32_t m_commandCapacity;
         };
@@ -115,35 +116,35 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         struct CommandOutput final
         {
-            Rc<Core::Buffer> m_commands;
-            Rc<Core::Buffer> m_arguments;
+            Core::StructuredBuffer<MeshPass::MeshCommandRange> m_commands;
+            Core::StructuredBuffer<MeshPass::MeshDispatchArguments> m_arguments;
         };
 
 
-        template<class TConstants>
-        void SetDepthPyramid(Core::FrameGraph& graph, const Tools::DepthPyramid::Output* depthPyramid, TConstants& constants)
+        MeshPass::DepthPyramidBinding CreateDepthPyramidBinding(Core::FrameGraph& graph,
+                                                                const Tools::DepthPyramid::Output& pyramid)
         {
-            if (depthPyramid == nullptr)
-                return;
-
-            constants.m_depthPyramid = graph.GetSRV(depthPyramid->m_texture.Get());
-            constants.m_depthPyramidSize = depthPyramid->m_size;
-            constants.m_depthPyramidUvScale = depthPyramid->m_uvScale;
-            constants.m_depthPyramidMipCount = depthPyramid->m_mipCount;
+            MeshPass::DepthPyramidBinding binding{};
+            binding.m_texture = graph.GetSRV(pyramid.m_texture.Get());
+            binding.m_size = pyramid.m_size;
+            binding.m_uvScale = pyramid.m_uvScale;
+            binding.m_mipCount = pyramid.m_mipCount;
+            return binding;
         }
 
 
-        BufferUAVDescriptor GetOptionalUAV(Core::FrameGraph& graph, Core::Buffer* buffer)
+        template<class T>
+        RWStructuredBufferDescriptor<T> GetOptionalUAV(Core::FrameGraph& graph, const Core::StructuredBufferPtr<T> buffer)
         {
-            return buffer != nullptr ? graph.GetUAV(buffer) : BufferUAVDescriptor{};
+            return buffer ? graph.GetUAV(buffer) : RWStructuredBufferDescriptor<T>{};
         }
 
 
         template<class TCandidate>
-        OcclusionCandidates CreateOcclusionCandidates(Core::FrameGraph& graph, Core::RingUploader& uploader, const Env::Name name,
-                                                      const uint32_t capacity)
+        OcclusionCandidates<TCandidate> CreateOcclusionCandidates(Core::FrameGraph& graph, Core::RingUploader& uploader,
+                                                                  const Env::Name name, const uint32_t capacity)
         {
-            OcclusionCandidates result;
+            OcclusionCandidates<TCandidate> result;
             result.m_candidates = Core::Buffer::CreateStructured<TCandidate>(graph.GetDevice(), name, capacity);
             result.m_dispatch =
                 Core::Buffer::CreateStructured<MeshPass::OcclusionCullDispatch>(graph.GetDevice(), "OcclusionCullDispatch", 1);
@@ -152,15 +153,17 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         }
 
 
-        Core::BufferView GetOcclusionArguments(const OcclusionCandidates& candidates)
+        template<class TCandidate>
+        Core::BufferView GetOcclusionArguments(const OcclusionCandidates<TCandidate>& candidates)
         {
             return Core::BufferView(candidates.m_dispatch.Get()).Slice(0, sizeof(MeshPass::MeshDispatchArguments));
         }
 
 
         void OcclusionCullInstances(Core::FrameGraph& graph, const CulledMeshView& culled, const uint32_t phase,
-                                    const Tools::DepthPyramid::Output& depthPyramid, Core::Buffer* classification,
-                                    const OcclusionCandidates& candidates)
+                                    const Tools::DepthPyramid::Output& depthPyramid,
+                                    const Core::StructuredBufferPtr<MeshPass::InstanceClassification> classification,
+                                    const OcclusionCandidates<uint32_t>& candidates)
         {
             MeshPass::OcclusionCullMeshInstances::Constants constants{};
             constants.m_view = culled.m_view;
@@ -171,7 +174,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_stats = GetOptionalUAV(graph, culled.m_stats.Get());
             constants.m_visibilityCapacity = culled.m_visibilityCapacity;
             constants.m_phase = phase;
-            SetDepthPyramid(graph, &depthPyramid, constants);
+            constants.m_depthPyramid = CreateDepthPyramidBinding(graph, depthPyramid);
             graph.AddDispatchIndirect("OcclusionCullMeshInstances",
                                       OcclusionCullMeshInstancesPipeline::GetPipeline(),
                                       constants,
@@ -180,8 +183,10 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
 
         // Frustum culling and LOD selection run first; a separate pass tests only their survivors against the depth pyramid.
-        Rc<Core::Buffer> CullInstances(Core::FrameGraph& graph, Core::RingUploader& uploader, const CulledMeshView& culled,
-                                       const uint32_t phase, const Tools::DepthPyramid::Output* depthPyramid)
+        Core::StructuredBuffer<MeshPass::InstanceClassification> CullInstances(Core::FrameGraph& graph,
+                                                                               Core::RingUploader& uploader,
+                                                                               const CulledMeshView& culled, const uint32_t phase,
+                                                                               const Tools::DepthPyramid::Output* depthPyramid)
         {
             const bool isLate = phase == MeshPass::CullPhase::kLate;
             const Env::Name name(isLate ? "MeshLateClassification" : "MeshClassification");
@@ -190,7 +195,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                 name,
                 culled.m_dispatchCount * MeshPass::kInstancesPerCullGroup);
 
-            OcclusionCandidates candidates;
+            OcclusionCandidates<uint32_t> candidates;
             if (depthPyramid != nullptr)
             {
                 candidates = CreateOcclusionCandidates<uint32_t>(graph,
@@ -263,17 +268,19 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         }
 
 
-        Rc<Core::Buffer> Scan(Core::FrameGraph& graph, Core::Buffer* counts, const uint32_t bucketCount)
+        Core::StructuredBuffer<uint2> Scan(Core::FrameGraph& graph, const Core::StructuredBufferPtr<uint32_t> counts,
+                                           const uint32_t bucketCount)
         {
             struct ScanLevel final
             {
-                Rc<Core::Buffer> m_offsets;
+                Core::StructuredBuffer<uint2> m_offsets;
                 uint32_t m_count;
             };
 
             // Scan block sums recursively, then propagate offsets back to the bucket level.
             festd::fixed_vector<ScanLevel, 4> levels;
-            Rc<Core::Buffer> input = counts;
+            // Each bucket counts pixels and waves, which the scan reads as one pair.
+            Core::StructuredBuffer<uint2> input = counts.As<uint2>();
             uint32_t count = bucketCount;
             for (;;)
             {
@@ -312,8 +319,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         }
 
 
-        FinalizeOutput FinalizeBuckets(Core::FrameGraph& graph, Core::Buffer* counts, Core::Buffer* offsets,
-                                       const uint32_t bucketCount)
+        FinalizeOutput FinalizeBuckets(Core::FrameGraph& graph, const Core::StructuredBufferPtr<uint32_t> counts,
+                                       const Core::StructuredBufferPtr<uint2> offsets, const uint32_t bucketCount)
         {
             Core::Device* device = graph.GetDevice();
             FinalizeOutput output;
@@ -359,8 +366,9 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         }
 
 
-        void OcclusionCullMeshlets(Core::FrameGraph& graph, const MeshletCullInput& input, Core::Buffer* meshlets,
-                                   const OcclusionCandidates& candidates)
+        void OcclusionCullMeshlets(Core::FrameGraph& graph, const MeshletCullInput& input,
+                                   const Core::StructuredBufferPtr<MeshPass::VisibleMeshlet> meshlets,
+                                   const OcclusionCandidates<MeshPass::MeshletOcclusionCandidate>& candidates)
         {
             MeshPass::OcclusionCullMeshlets::Constants constants{};
             constants.m_view = input.m_view;
@@ -374,7 +382,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_stats = GetOptionalUAV(graph, input.m_stats);
             constants.m_meshletVisibilityCapacity = input.m_meshletVisibilityCapacity;
             constants.m_phase = input.m_phase;
-            SetDepthPyramid(graph, input.m_depthPyramid, constants);
+            constants.m_depthPyramid = CreateDepthPyramidBinding(graph, *input.m_depthPyramid);
             graph.AddDispatchIndirect("OcclusionCullMeshlets",
                                       OcclusionCullMeshletsPipeline::GetPipeline(),
                                       constants,
@@ -384,13 +392,14 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         // Frustum culling and the visibility history decide most meshlets; a separate pass tests the frustum survivors that
         // need an occlusion test against the depth pyramid.
-        Rc<Core::Buffer> CullMeshlets(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshletCullInput& input)
+        Core::StructuredBuffer<MeshPass::VisibleMeshlet> CullMeshlets(Core::FrameGraph& graph, Core::RingUploader& uploader,
+                                                                      const MeshletCullInput& input)
         {
             auto meshlets = Core::Buffer::CreateStructured<MeshPass::VisibleMeshlet>(graph.GetDevice(),
                                                                                      "VisibleMeshlets",
                                                                                      input.m_meshletCapacity);
 
-            OcclusionCandidates candidates;
+            OcclusionCandidates<MeshPass::MeshletOcclusionCandidate> candidates;
             if (input.m_depthPyramid != nullptr)
             {
                 candidates = CreateOcclusionCandidates<MeshPass::MeshletOcclusionCandidate>(graph,
@@ -511,8 +520,9 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             return;
 
         const bool isLate = phase.m_phase == MeshPass::CullPhase::kLate;
-        Core::Buffer* classification = isLate ? culled.m_lateClassification.Get() : culled.m_classification.Get();
-        FE_Assert(classification != nullptr);
+        const Core::StructuredBufferPtr<MeshPass::InstanceClassification> classification =
+            isLate ? culled.m_lateClassification.Get() : culled.m_classification.Get();
+        FE_Assert(classification);
         FE_Assert(!isLate || phase.m_depthPyramid != nullptr);
 
         // Each stage owns its outputs and names only the inputs it consumes.

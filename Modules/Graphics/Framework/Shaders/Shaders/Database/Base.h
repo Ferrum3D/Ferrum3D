@@ -27,6 +27,19 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         };
 
 
+        //! A field of shader data that holds the address of a table; shaders call its ReadRow directly.
+#if FE_HOST
+        template<class T>
+        struct TableAddress final
+        {
+            BufferPointer m_pageTableAddress{ UINT64_C(0) };
+        };
+#else
+        template<typename T>
+        using TableAddress = T;
+#endif
+
+
         template<typename T>
         struct Slice
         {
@@ -44,6 +57,13 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
                 Slice value;
                 value.Invalidate();
                 return value;
+            }
+
+            Ref<T> At(const uint32_t index) FE_CONST
+            {
+                Ref<T> row;
+                row.m_rowIndex = m_rowIndex + index;
+                return row;
             }
         };
     } // namespace DB

@@ -18,18 +18,6 @@ struct {{ table.name }}
         {%- endfor %}
     };
 
-    struct Instance
-    {
-        BufferPointer m_pageTableAddress;
-    };
-
-    static {{ table.name }} Create(Instance instance)
-    {
-        {{ table.name }} table;
-        table.m_pageTableAddress = instance.m_pageTableAddress;
-        return table;
-    }
-
     Row ReadRow(const uint32_t rowIndex)
     {
         const uint32_t pageIndex = rowIndex / kRowsPerPage;

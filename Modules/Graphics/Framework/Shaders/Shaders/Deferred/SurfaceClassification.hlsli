@@ -20,7 +20,7 @@
 
 uint ClassifyPixel(uint2 pixel)
 {
-    if (any(pixel >= GConstants.m_resolution))
+    if (any(pixel >= GConstants.m_grid.m_resolution))
         return kInvalidIndex;
 
 #ifdef SURFACE_GROUP_HEADER
@@ -37,13 +37,13 @@ uint ClassifyPixel(uint2 pixel)
 
     const uint group = shadingRoute - 1;
 #endif
-    if (group >= GConstants.m_groupRowCount)
+    if (group >= GConstants.m_grid.m_groupRowCount)
         return kInvalidIndex;
 
     const SurfaceRoute route = GConstants.m_lookup.Load(group);
     if (route.m_firstBinding == kInvalidIndex)
         return kInvalidIndex;
 
-    const uint tile = pixel.x / kTileSize + pixel.y / kTileSize * GConstants.m_tilesPerRow;
-    return route.m_firstBinding * GConstants.m_tileCount + tile * route.m_bindingCount + route.m_bindingIndex;
+    const uint tile = pixel.x / kTileSize + pixel.y / kTileSize * GConstants.m_grid.m_tilesPerRow;
+    return route.m_firstBinding * GConstants.m_grid.m_tileCount + tile * route.m_bindingCount + route.m_bindingIndex;
 }

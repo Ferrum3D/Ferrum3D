@@ -50,7 +50,7 @@ namespace FE::Graphics
             DB::RWElementHandle<uint32_t, kOffset_m_finestResidentLod> m_finestResidentLod;
         };
 
-        using Instance = BufferPointer;
+        using Instance = DB::TableAddress<MeshGroupTable>;
 
         MeshGroupTable(DB::Database* database)
             : TableBase(database, kRowsPerPage)
@@ -60,6 +60,12 @@ namespace FE::Graphics
         void DoRelease() override
         {
             Memory::DefaultDelete(this);
+        }
+
+        //! The address moves when the table grows, so publish it again after module updates.
+        [[nodiscard]] Instance GetInstance() const
+        {
+            return Instance{ GetDeviceAddress() };
         }
 
         [[nodiscard]] DB::Ref<MeshGroupTable> AllocateRow()
@@ -152,9 +158,8 @@ namespace FE::Graphics
             const uint32_t pageIndex = rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
-            DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
-            std::byte* storage = page->GetHostStorage();
+            MarkRowDirty(rowIndex);
+            std::byte* storage = m_pages[pageIndex]->GetHostStorage();
 
             RWRow row;
             row.m_geometry.Setup(storage, localRowIndex);
@@ -171,7 +176,33 @@ namespace FE::Graphics
             return WriteRow(reference.m_rowIndex);
         }
 
-        void CopyColumn(const DB::Slice<MeshGroupTable> destination, const festd::span<const BufferPointer> source)
+        //! Publish values written through pointers kept from WriteRow.
+        void MarkRowDirty(const uint32_t rowIndex)
+        {
+            const uint32_t pageIndex = rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = rowIndex % kRowsPerPage;
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkBytesDirty(page, kOffset_m_geometry + localRowIndex * sizeof(BufferPointer), sizeof(BufferPointer));
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_lods + localRowIndex * sizeof(DB::Slice<MeshLodInfoTable>),
+                                       sizeof(DB::Slice<MeshLodInfoTable>));
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_materialInstance + localRowIndex * sizeof(DB::Ref<MaterialInstanceTable>),
+                                       sizeof(DB::Ref<MaterialInstanceTable>));
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_bounds + localRowIndex * sizeof(Core::MeshBoundsInfo),
+                                       sizeof(Core::MeshBoundsInfo));
+            m_database->MarkBytesDirty(page, kOffset_m_renderable + localRowIndex * sizeof(uint32_t), sizeof(uint32_t));
+            m_database->MarkBytesDirty(page, kOffset_m_finestResidentLod + localRowIndex * sizeof(uint32_t), sizeof(uint32_t));
+        }
+
+        void MarkRowDirty(const DB::Ref<MeshGroupTable> reference)
+        {
+            MarkRowDirty(reference.m_rowIndex);
+        }
+
+        void CopyColumn_m_geometry(const DB::Slice<MeshGroupTable> destination, const festd::span<const BufferPointer> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -183,13 +214,16 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_geometry + localRowIndex * sizeof(BufferPointer),
+                                       destination.m_count * sizeof(BufferPointer));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<BufferPointer*>(storage + kOffset_m_geometry) + localRowIndex;
             festd::copy(source, destinationData);
         }
 
-        void CopyColumn(const DB::Slice<MeshGroupTable> destination, const festd::span<const DB::Slice<MeshLodInfoTable>> source)
+        void CopyColumn_m_lods(const DB::Slice<MeshGroupTable> destination,
+                               const festd::span<const DB::Slice<MeshLodInfoTable>> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -201,14 +235,16 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_lods + localRowIndex * sizeof(DB::Slice<MeshLodInfoTable>),
+                                       destination.m_count * sizeof(DB::Slice<MeshLodInfoTable>));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<DB::Slice<MeshLodInfoTable>*>(storage + kOffset_m_lods) + localRowIndex;
             festd::copy(source, destinationData);
         }
 
-        void CopyColumn(const DB::Slice<MeshGroupTable> destination,
-                        const festd::span<const DB::Ref<MaterialInstanceTable>> source)
+        void CopyColumn_m_materialInstance(const DB::Slice<MeshGroupTable> destination,
+                                           const festd::span<const DB::Ref<MaterialInstanceTable>> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -220,14 +256,17 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_materialInstance + localRowIndex * sizeof(DB::Ref<MaterialInstanceTable>),
+                                       destination.m_count * sizeof(DB::Ref<MaterialInstanceTable>));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData =
                 reinterpret_cast<DB::Ref<MaterialInstanceTable>*>(storage + kOffset_m_materialInstance) + localRowIndex;
             festd::copy(source, destinationData);
         }
 
-        void CopyColumn(const DB::Slice<MeshGroupTable> destination, const festd::span<const Core::MeshBoundsInfo> source)
+        void CopyColumn_m_bounds(const DB::Slice<MeshGroupTable> destination,
+                                 const festd::span<const Core::MeshBoundsInfo> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -239,7 +278,9 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_bounds + localRowIndex * sizeof(Core::MeshBoundsInfo),
+                                       destination.m_count * sizeof(Core::MeshBoundsInfo));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<Core::MeshBoundsInfo*>(storage + kOffset_m_bounds) + localRowIndex;
             festd::copy(source, destinationData);
@@ -257,7 +298,9 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_renderable + localRowIndex * sizeof(uint32_t),
+                                       destination.m_count * sizeof(uint32_t));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<uint32_t*>(storage + kOffset_m_renderable) + localRowIndex;
             festd::copy(source, destinationData);
@@ -275,7 +318,9 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_finestResidentLod + localRowIndex * sizeof(uint32_t),
+                                       destination.m_count * sizeof(uint32_t));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<uint32_t*>(storage + kOffset_m_finestResidentLod) + localRowIndex;
             festd::copy(source, destinationData);

@@ -7,16 +7,9 @@
 
 bool LoadShadingPixel(uint3 dispatch, uint lane, out uint2 pixel)
 {
-    const ShaderRange range = LoadSurfaceRange(GConstants.m_ranges, GConstants.m_shaderSlot);
     PixelWork work;
-    const bool valid = LoadPixelWork(range,
-                                     GConstants.m_waves,
-                                     GConstants.m_pixels,
-                                     GConstants.m_resolution,
-                                     GConstants.m_tilesPerRow,
-                                     dispatch.x * kSurfaceWavesPerGroup + lane / EVALUATION_LANES,
-                                     lane % EVALUATION_LANES,
-                                     work);
+    const bool valid =
+        LoadPixelWork(GConstants.m_work, dispatch.x * kSurfaceWavesPerGroup + lane / EVALUATION_LANES, lane % EVALUATION_LANES, work);
     pixel = work.m_pixel;
     return valid;
 }

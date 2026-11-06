@@ -16,10 +16,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::OcclusionCullMeshlets)
         RWStructuredBufferDescriptor<VisibleMeshlet> m_meshlets;
         RWStructuredBufferDescriptor<uint32_t> m_meshletVisibility;
         RWStructuredBufferDescriptor<uint32_t> m_stats;
-        Texture2DDescriptor<float> m_depthPyramid;
-        uint2 m_depthPyramidSize;
-        float2 m_depthPyramidUvScale;
-        uint32_t m_depthPyramidMipCount;
+        DepthPyramidBinding m_depthPyramid;
         uint32_t m_meshletVisibilityCapacity;
         uint32_t m_phase;
 

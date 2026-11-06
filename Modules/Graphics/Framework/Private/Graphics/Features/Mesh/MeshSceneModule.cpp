@@ -82,16 +82,16 @@ namespace FE::Graphics
         constexpr uint32_t kMeshletVisibilityArenaWords = 1u << 22;
 
 
-        Rc<Core::Buffer> CreateZeroedViewBuffer(Core::FrameGraph& graph, Core::RingUploader& uploader, const Env::Name name,
-                                                const uint32_t wordCount)
+        Core::StructuredBuffer<uint32_t> CreateZeroedViewBuffer(Core::FrameGraph& graph, Core::RingUploader& uploader,
+                                                                const Env::Name name, const uint32_t wordCount)
         {
-            Rc<Core::Buffer> buffer = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), name, wordCount);
+            auto buffer = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), name, wordCount);
 
             Core::ResourceCommitParams commitParams;
             commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
             commitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
                 | Core::BarrierAccessFlags::kCopyDest;
-            graph.GetResourcePool()->CommitBufferMemory(buffer.Get(), commitParams);
+            graph.GetResourcePool()->CommitBufferMemory(buffer.m_buffer.Get(), commitParams);
             FE_Verify(uploader.UploadGenerated(graph, buffer.Get(), wordCount * sizeof(uint32_t), [wordCount](void* target) {
                 memset(target, 0, wordCount * sizeof(uint32_t));
             }));
@@ -395,7 +395,7 @@ namespace FE::Graphics
                 continue;
 
             FE_Assert(instance.m_tableRef.m_rowIndex != kInvalidIndex);
-            (void)m_meshInstanceTable->WriteRow(instance.m_tableRef);
+            m_meshInstanceTable->MarkRowDirty(instance.m_tableRef);
             m_boundsDirty.set(instance.m_batch->m_tableRef.m_rowIndex);
             instance.m_transformDirty = false;
         }
@@ -469,7 +469,7 @@ namespace FE::Graphics
         row.m_drawTagMask.Get() =
             Vector2UInt(static_cast<uint32_t>(drawTagMask.m_value), static_cast<uint32_t>(drawTagMask.m_value >> 32));
 
-        m_memberTable->CopyColumn(batch->m_members, festd::span(batch->m_meshInstances));
+        m_memberTable->CopyColumn_m_instance(batch->m_members, festd::span(batch->m_meshInstances));
     }
 
 
@@ -710,12 +710,12 @@ namespace FE::Graphics
         FE_PROFILER_ZONE();
 
         MeshPass::MeshSceneData sceneData{};
-        sceneData.m_instances = m_meshInstanceTable->GetDeviceAddress();
-        sceneData.m_groups = m_meshGroupTable->GetDeviceAddress();
-        sceneData.m_lods = m_meshLodInfoTable->GetDeviceAddress();
-        sceneData.m_materials = m_materialInstanceTable->GetDeviceAddress();
-        sceneData.m_batches = m_batchTable->GetDeviceAddress();
-        sceneData.m_members = m_memberTable->GetDeviceAddress();
+        sceneData.m_instances = m_meshInstanceTable->GetInstance();
+        sceneData.m_groups = m_meshGroupTable->GetInstance();
+        sceneData.m_lods = m_meshLodInfoTable->GetInstance();
+        sceneData.m_materials = m_materialInstanceTable->GetInstance();
+        sceneData.m_batches = m_batchTable->GetInstance();
+        sceneData.m_members = m_memberTable->GetInstance();
         sceneData.m_visibilityType = m_visibilityType;
 
         m_sceneData = graph.CreateConstants(sceneData);
@@ -1349,9 +1349,9 @@ namespace FE::Graphics
                 geometryOffset += CalculateLodPayloadSize(*mesh.Get(), assetLodIndex);
             }
 
-            m_meshLodInfoTable->CopyColumn(group->m_lodsRef, festd::span<const Core::MeshLodInfo>(lodInfos));
-            m_meshLodInfoTable->CopyColumn(group->m_lodsRef, festd::span<const uint32_t>(geometryOffsets));
-            m_meshLodInfoTable->CopyColumn(group->m_lodsRef, festd::span<const float>(lodErrors));
+            m_meshLodInfoTable->CopyColumn_m_info(group->m_lodsRef, festd::span<const Core::MeshLodInfo>(lodInfos));
+            m_meshLodInfoTable->CopyColumn_m_geometryOffset(group->m_lodsRef, festd::span<const uint32_t>(geometryOffsets));
+            m_meshLodInfoTable->CopyColumn_m_error(group->m_lodsRef, festd::span<const float>(lodErrors));
 
             const uint32_t finestResidentLod = lodCount - mesh->m_residentLod - 1;
             FE_Assert(geometryOffsets[finestResidentLod] < mesh->m_buffer->GetDesc().m_size);

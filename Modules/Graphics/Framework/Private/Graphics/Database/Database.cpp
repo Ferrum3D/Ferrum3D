@@ -1,6 +1,7 @@
 #include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Database/Database.h>
+#include <bit>
 
 namespace FE::Graphics::DB
 {
@@ -134,6 +135,9 @@ namespace FE::Graphics::DB
 
     BufferPointer TableBase::GetDeviceAddress() const
     {
+        if (!m_devicePageTableAllocation.IsValid())
+            return BufferPointer{ UINT64_C(0) };
+
         const uint64_t pageTableDeviceAddress = m_database->m_pageTableDeviceAddress;
         const uint32_t offset = m_devicePageTableAllocation.m_offset;
         const uint32_t byteOffset = offset * sizeof(BufferPointer);
@@ -180,6 +184,7 @@ namespace FE::Graphics::DB
 
         StoragePage* page = m_database->AllocatePage();
         page->Setup(m_rowsPerPage);
+        m_database->MarkBytesDirty(page, 0, kTablePageSize);
         m_pages.push_back(page);
         m_pageTableDirty = true;
         FE_Assert(m_pages.size() == pageCount);
@@ -197,6 +202,7 @@ namespace FE::Graphics::DB
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
         commitParams.m_bindFlags = Core::BarrierAccessFlags::kCopySourceAndDest | Core::BarrierAccessFlags::kShaderRead;
         resourcePool->CommitBufferMemory(m_pageTableDeviceStorage.Get(), commitParams);
+        m_pageTableDeviceAddress = m_pageTableDeviceStorage->GetDeviceAddress();
 
         m_pageTableHostStorage.resize(kPageTableSize);
         m_pageTableAllocator.Setup(kPageTableSize);
@@ -218,11 +224,16 @@ namespace FE::Graphics::DB
     }
 
 
-    void Database::MarkPageDirty(const StoragePage* page)
+    void Database::MarkBytesDirty(StoragePage* page, const uint32_t byteOffset, const uint32_t byteSize)
     {
         const uint32_t pageIndex = page->m_globalID;
         FE_AssertDebug(!m_freePages.test(pageIndex));
         FE_AssertDebug(m_pages[pageIndex] == page);
+        FE_AssertDebug(byteSize > 0 && byteOffset + byteSize <= kTablePageSize);
+
+        const uint32_t firstBlock = byteOffset / StoragePage::kDirtyBlockByteSize;
+        const uint32_t blockCount = (byteOffset + byteSize - 1) / StoragePage::kDirtyBlockByteSize - firstBlock + 1;
+        page->m_dirtyBlocks |= (blockCount == 64 ? ~UINT64_C(0) : (UINT64_C(1) << blockCount) - 1) << firstBlock;
         m_dirtyPages.set(pageIndex);
     }
 
@@ -302,8 +313,26 @@ namespace FE::Graphics::DB
         FE_FG_SCOPE(graph, "UploadDirtyPages");
 
         Bit::Traverse(m_dirtyPages.view(), [&](const uint32_t pageIndex) {
-            const StoragePage* page = m_pages[pageIndex];
-            FE_Verify(m_uploader.UploadBytes(graph, page->m_deviceStorage.Get(), page->m_hostStorage, kTablePageSize));
+            StoragePage* page = m_pages[pageIndex];
+            const Core::BufferView destination(page->m_deviceStorage.Get());
+
+            // Each run of adjacent dirty blocks is one copy.
+            uint32_t block = 0;
+            while (block < 64 && (page->m_dirtyBlocks >> block) != 0)
+            {
+                block += std::countr_zero(page->m_dirtyBlocks >> block);
+                const uint32_t blockCount = std::countr_one(page->m_dirtyBlocks >> block);
+
+                const uint32_t byteOffset = block * StoragePage::kDirtyBlockByteSize;
+                const uint32_t byteSize = blockCount * StoragePage::kDirtyBlockByteSize;
+                FE_Verify(m_uploader.UploadBytes(graph,
+                                                 destination.Slice(byteOffset, byteSize),
+                                                 page->m_hostStorage + byteOffset,
+                                                 byteSize));
+                block += blockCount;
+            }
+
+            page->m_dirtyBlocks = 0;
         });
 
         // Shader accesses to the Database pages are not known to the FrameGraph.
@@ -330,7 +359,6 @@ namespace FE::Graphics::DB
 
         constexpr auto kUploadOptions = Core::RingUploader::Options::kDisableBarriers;
 
-        m_pageTableDeviceAddress = m_pageTableDeviceStorage->GetDeviceAddress();
         bool hasDirtyTable = false;
         for (const TableBase* table : m_tables)
             hasDirtyTable |= table != nullptr && table->m_pageTableDirty;

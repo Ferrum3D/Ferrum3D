@@ -35,8 +35,8 @@ namespace FE::Graphics::SunShadow
     //! casters did not change are not drawn again. The clip levels of the sun and the maps of local lights share them.
     struct PageCache final
     {
-        Rc<Core::Buffer> m_pageTable;
-        Rc<Core::Buffer> m_owners;
+        Core::StructuredBuffer<uint32_t> m_pageTable;
+        Core::StructuredBuffer<uint32_t> m_owners;
         Rc<Core::Texture> m_staticAtlas;
         uint32_t m_levelCount = 0;
 
@@ -62,10 +62,10 @@ namespace FE::Graphics::SunShadow
     //! Frame-local resources of the page passes.
     struct PageFrame final
     {
-        Rc<Core::Buffer> m_counters;
-        Rc<Core::Buffer> m_freePages;
-        Rc<Core::Buffer> m_evictablePages;
-        Rc<Core::Buffer> m_dirtyPages;
+        Core::StructuredBuffer<uint32_t> m_counters;
+        Core::StructuredBuffer<uint32_t> m_freePages;
+        Core::StructuredBuffer<uint32_t> m_evictablePages;
+        Core::StructuredBuffer<uint32_t> m_dirtyPages;
         //! The static atlas pages of requested entries with this frame's dynamic casters added.
         Rc<Core::Texture> m_atlas;
         //! Per block, pyramids of the pages whose static casters are drawn (dirty) and of the pages sampled this frame.
@@ -101,8 +101,8 @@ namespace FE::Graphics::SunShadow
         //! A bit per local map whose cached pages are discarded.
         uint32_t m_localResetMask = 0;
         //! Structured buffers of LocalShadowMapData and of the first map of every light slot.
-        Core::Buffer* m_localMaps = nullptr;
-        Core::Buffer* m_localLightMaps = nullptr;
+        Core::StructuredBufferPtr<LocalShadowMapData> m_localMaps;
+        Core::StructuredBufferPtr<uint32_t> m_localLightMaps;
         LocalLightingBinding m_localLighting;
     };
 

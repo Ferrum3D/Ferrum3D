@@ -24,18 +24,6 @@ struct MeshLodInfoTable
         DB::ElementHandle<float, kOffset_m_error> m_error;
     };
 
-    struct Instance
-    {
-        BufferPointer m_pageTableAddress;
-    };
-
-    static MeshLodInfoTable Create(Instance instance)
-    {
-        MeshLodInfoTable table;
-        table.m_pageTableAddress = instance.m_pageTableAddress;
-        return table;
-    }
-
     Row ReadRow(const uint32_t rowIndex)
     {
         const uint32_t pageIndex = rowIndex / kRowsPerPage;

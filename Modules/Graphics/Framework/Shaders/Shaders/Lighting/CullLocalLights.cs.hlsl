@@ -2,12 +2,12 @@
 
 [[vk::push_constant]] CullLocalLightsConstants GConstants;
 
-float3 ClusterCorner(LightClusterData data, uint2 tile, float z)
+float3 ClusterCorner(LightClusterData data, ViewData view, uint2 tile, float z)
 {
-    const float2 pixel = min(float2(tile * kLightClusterTileSize), data.m_viewport.zw);
-    const float2 ndc = pixel / data.m_viewport.zw * float2(2, -2) + float2(-1, 1);
+    const float2 pixel = min(float2(tile * kLightClusterTileSize), view.m_viewport.zw);
+    const float2 ndc = pixel / view.m_viewport.zw * float2(2, -2) + float2(-1, 1);
     const float4 projected = mul(float4(0, 0, z, 1), data.m_projection);
-    const float4 world = mul(float4(ndc, projected.z / projected.w, 1), data.m_inverseViewProjection);
+    const float4 world = mul(float4(ndc, projected.z / projected.w, 1), view.m_inverseViewProjection);
     return world.xyz / world.w;
 }
 
@@ -35,13 +35,14 @@ bool IntersectsCone(const DecodedLocalLight light, const float3 center, const fl
 
 
 // One thread per cluster. All threads walk the lights in the same order, so the light addresses are uniform across the wave.
-// Each light is read in two halves: the sphere test needs only the first, and the rest is loaded and decoded only when the
-// sphere touches a cluster of the wave. The branch is uniform, so the loads stay scalar.
+// The sphere test needs only the first column of a light; the rest is loaded and decoded only when the sphere touches a
+// cluster of the wave. The branch is uniform, so the loads stay scalar.
 FE_NUM_THREADS(kLightClusterThreadCount, 1, 1)
 void main(uint3 thread : SV_DispatchThreadID)
 {
     const LocalLightingBinding lighting = GConstants.m_lighting;
     const LightClusterData data = lighting.m_clusters.Load();
+    const ViewData view = data.m_viewData.Load();
     const uint clusterIndex = thread.x;
     if (clusterIndex >= data.m_tiles.x * data.m_tiles.y * kLightClusterSlices)
         return;
@@ -55,7 +56,7 @@ void main(uint3 thread : SV_DispatchThreadID)
     float3 upper = (float3)-1e30;
     [unroll] for (uint corner = 0; corner < 8; ++corner)
     {
-        const float3 p = ClusterCorner(data, cluster.xy + uint2(corner & 1, (corner >> 1) & 1), (corner & 4) != 0 ? z1 : z0);
+        const float3 p = ClusterCorner(data, view, cluster.xy + uint2(corner & 1, (corner >> 1) & 1), (corner & 4) != 0 ? z1 : z0);
         lower = min(lower, p);
         upper = max(upper, p);
     }
@@ -69,14 +70,14 @@ void main(uint3 thread : SV_DispatchThreadID)
         const uint bitCount = min(32u, data.m_lightCount - word * 32);
         for (uint bit = 0; bit < bitCount; ++bit)
         {
-            const BufferPointer address = GetLocalLightAddress(lighting.m_lights, word * 32 + bit);
-            const float4 positionRange = LoadLocalLightPositionRange(address);
+            const LocalLightTable::Row light = lighting.m_lights.ReadRow(word * 32 + bit);
+            const float4 positionRange = light.m_positionRange.Get();
             const bool touchesSphere = IntersectsSphere(positionRange, lower, upper);
             if (!WaveActiveAnyTrue(touchesSphere))
                 continue;
 
-            const DecodedLocalLight light = DecodeLocalLight(LoadLocalLightRemainder(address, positionRange));
-            if (touchesSphere && IntersectsCone(light, center, radius))
+            const DecodedLocalLight decoded = DecodeLocalLight(positionRange, light.m_shading.Get());
+            if (touchesSphere && IntersectsCone(decoded, center, radius))
                 mask |= 1u << bit;
         }
 

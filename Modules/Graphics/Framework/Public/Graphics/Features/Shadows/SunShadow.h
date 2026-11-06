@@ -130,11 +130,11 @@ namespace FE::Graphics::SunShadow
     //! their accesses themselves.
     struct Output final
     {
-        Rc<Core::Buffer> m_pageTable;
+        Core::StructuredBuffer<uint32_t> m_pageTable;
         Rc<Core::Texture> m_atlas;
         //! Null when no local light casts shadows.
-        Rc<Core::Buffer> m_localMaps;
-        Rc<Core::Buffer> m_localLightMaps;
+        Core::StructuredBuffer<LocalShadowMapData> m_localMaps;
+        Core::StructuredBuffer<uint32_t> m_localLightMaps;
     };
 
 
@@ -152,7 +152,7 @@ namespace FE::Graphics::ShadowAtlas
     //! Frame inputs of one clip level, set by the camera view before its passes are added.
     struct LevelInputs final
     {
-        Core::Buffer* m_pageTable = nullptr;
+        Core::StructuredBufferPtr<uint32_t> m_pageTable;
         Core::Texture* m_atlas = nullptr;
         //! Culls casters that touch no page drawn this frame; null disables occlusion culling.
         const Tools::DepthPyramid::Output* m_pagePyramid = nullptr;

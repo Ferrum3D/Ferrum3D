@@ -7,8 +7,8 @@
 bool IsInstanceOccluded(const MeshViewData view, const InstanceClassification item)
 {
     const MeshSceneData scene = LoadMeshScene(view.m_scene);
-    const MeshInstanceTable::Row instance = MeshInstanceTable::Create(scene.m_instances).ReadRow(item.m_instanceId);
-    const MeshGroupTable::Row group = MeshGroupTable::Create(scene.m_groups).ReadRow(item.m_groupId);
+    const MeshInstanceTable::Row instance = scene.m_instances.ReadRow(item.m_instanceId);
+    const MeshGroupTable::Row group = scene.m_groups.ReadRow(item.m_groupId);
     const InstanceBounds bounds = LoadInstanceBounds(group);
 
     ScreenBounds screenBounds;
@@ -16,10 +16,7 @@ bool IsInstanceOccluded(const MeshViewData view, const InstanceClassification it
     if (!ProjectBox(bounds.m_center, bounds.m_extent, localToClip, screenBounds))
         return false;
 
-    const DepthPyramid pyramid = CreateDepthPyramid(GConstants.m_depthPyramid,
-                                                    GConstants.m_depthPyramidSize,
-                                                    GConstants.m_depthPyramidUvScale,
-                                                    GConstants.m_depthPyramidMipCount);
+    const DepthPyramid pyramid = CreateDepthPyramid(GConstants.m_depthPyramid);
     return IsOccluded(pyramid, screenBounds);
 }
 

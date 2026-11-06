@@ -29,7 +29,7 @@ namespace FE::Graphics
             DB::RWElementHandle<DB::Ref<MeshInstanceTable>, kOffset_m_instance> m_instance;
         };
 
-        using Instance = BufferPointer;
+        using Instance = DB::TableAddress<MeshMemberTable>;
 
         MeshMemberTable(DB::Database* database)
             : TableBase(database, kRowsPerPage)
@@ -39,6 +39,12 @@ namespace FE::Graphics
         void DoRelease() override
         {
             Memory::DefaultDelete(this);
+        }
+
+        //! The address moves when the table grows, so publish it again after module updates.
+        [[nodiscard]] Instance GetInstance() const
+        {
+            return Instance{ GetDeviceAddress() };
         }
 
         [[nodiscard]] DB::Ref<MeshMemberTable> AllocateRow()
@@ -111,9 +117,8 @@ namespace FE::Graphics
             const uint32_t pageIndex = rowIndex / kRowsPerPage;
             const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
-            DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
-            std::byte* storage = page->GetHostStorage();
+            MarkRowDirty(rowIndex);
+            std::byte* storage = m_pages[pageIndex]->GetHostStorage();
 
             RWRow row;
             row.m_instance.Setup(storage, localRowIndex);
@@ -125,7 +130,25 @@ namespace FE::Graphics
             return WriteRow(reference.m_rowIndex);
         }
 
-        void CopyColumn(const DB::Slice<MeshMemberTable> destination, const festd::span<const DB::Ref<MeshInstanceTable>> source)
+        //! Publish values written through pointers kept from WriteRow.
+        void MarkRowDirty(const uint32_t rowIndex)
+        {
+            const uint32_t pageIndex = rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = rowIndex % kRowsPerPage;
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_instance + localRowIndex * sizeof(DB::Ref<MeshInstanceTable>),
+                                       sizeof(DB::Ref<MeshInstanceTable>));
+        }
+
+        void MarkRowDirty(const DB::Ref<MeshMemberTable> reference)
+        {
+            MarkRowDirty(reference.m_rowIndex);
+        }
+
+        void CopyColumn_m_instance(const DB::Slice<MeshMemberTable> destination,
+                                   const festd::span<const DB::Ref<MeshInstanceTable>> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -137,7 +160,9 @@ namespace FE::Graphics
             FE_Assert(destination.m_count <= kRowsPerPage - localRowIndex, "The whole range must fit in a single page");
 
             DB::StoragePage* page = m_pages[pageIndex];
-            m_database->MarkPageDirty(page);
+            m_database->MarkBytesDirty(page,
+                                       kOffset_m_instance + localRowIndex * sizeof(DB::Ref<MeshInstanceTable>),
+                                       destination.m_count * sizeof(DB::Ref<MeshInstanceTable>));
             std::byte* storage = page->GetHostStorage();
             auto* destinationData = reinterpret_cast<DB::Ref<MeshInstanceTable>*>(storage + kOffset_m_instance) + localRowIndex;
             festd::copy(source, destinationData);

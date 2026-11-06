@@ -70,15 +70,16 @@ namespace FE::Graphics::SunShadow
         }
 
 
-        Rc<Core::Buffer> CreatePersistentBuffer(Core::FrameGraph& graph, const Env::Name name, const uint32_t count)
+        Core::StructuredBuffer<uint32_t> CreatePersistentBuffer(Core::FrameGraph& graph, const Env::Name name,
+                                                                const uint32_t count)
         {
-            Rc<Core::Buffer> buffer = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), name, count);
+            auto buffer = Core::Buffer::CreateStructured<uint32_t>(graph.GetDevice(), name, count);
             Core::ResourceCommitParams commitParams;
             commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
             // Copies read the cache back for diagnostics and tests.
             commitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite
                 | Core::BarrierAccessFlags::kCopySource;
-            graph.GetResourcePool()->CommitBufferMemory(buffer.Get(), commitParams);
+            graph.GetResourcePool()->CommitBufferMemory(buffer.m_buffer.Get(), commitParams);
             return buffer;
         }
 
@@ -229,8 +230,7 @@ namespace FE::Graphics::SunShadow
                                const PageCache& cache, const PageFrame& frame)
         {
             const uint32_t regionCount = inputs.m_staticChanges.size();
-            Rc<Core::Buffer> regions =
-                Core::Buffer::CreateStructured<PackedVector4F>(graph.GetDevice(), "SunShadowRegions", 2 * regionCount);
+            auto regions = Core::Buffer::CreateStructured<PackedVector4F>(graph.GetDevice(), "SunShadowRegions", 2 * regionCount);
             const auto writeRegions = [&inputs](void* target) {
                 auto* corners = static_cast<PackedVector4F*>(target);
                 for (const Aabb& bounds : inputs.m_staticChanges)
@@ -242,8 +242,7 @@ namespace FE::Graphics::SunShadow
             FE_Verify(uploader.UploadGenerated(graph, regions.Get(), 2 * regionCount * sizeof(PackedVector4F), writeRegions));
 
             const uint32_t blockCount = frame.m_blocks.size();
-            Rc<Core::Buffer> blocks =
-                Core::Buffer::CreateStructured<SunShadowBlock>(graph.GetDevice(), "SunShadowBlocks", blockCount);
+            auto blocks = Core::Buffer::CreateStructured<SunShadowBlock>(graph.GetDevice(), "SunShadowBlocks", blockCount);
             FE_Verify(uploader.UploadArray(graph, blocks.Get(), festd::span<const SunShadowBlock>(frame.m_blocks)));
 
             SunShadowInvalidateConstants invalidate{};
@@ -310,7 +309,7 @@ namespace FE::Graphics::SunShadow
             cache.m_pageOrigins.push_back(level.m_pageOrigin);
 
         Core::Device* device = graph.GetDevice();
-        Rc<Core::Buffer> scrollBuffer = Core::Buffer::CreateStructured<SunShadowScroll>(device, "SunShadowScroll", blockCount);
+        auto scrollBuffer = Core::Buffer::CreateStructured<SunShadowScroll>(device, "SunShadowScroll", blockCount);
         FE_Verify(uploader.UploadArray(graph, scrollBuffer.Get(), festd::span<const SunShadowScroll>(scroll)));
         frame.m_counters = Core::Buffer::CreateStructured<uint32_t>(device, "SunShadowCounters", kSunShadowCounterCount);
         frame.m_freePages = Core::Buffer::CreateStructured<uint32_t>(device, "SunShadowFreePages", kSunShadowPhysicalPageCount);
@@ -614,8 +613,8 @@ namespace FE::Graphics::SunShadow
         {
             festd::array<LocalShadowMapData, kLocalShadowMaxMapCount> m_maps{};
             festd::fixed_vector<SunShadowBlock, kLocalShadowMaxMapCount * kLocalShadowMipCount> m_blocks;
-            Rc<Core::Buffer> m_mapBuffer;
-            Rc<Core::Buffer> m_lightMapBuffer;
+            Core::StructuredBuffer<LocalShadowMapData> m_mapBuffer;
+            Core::StructuredBuffer<uint32_t> m_lightMapBuffer;
             uint32_t m_resetMask = 0;
             bool m_hasMaps = false;
         };
@@ -774,7 +773,7 @@ namespace FE::Graphics::SunShadow
 
         // Transparent surfaces are absent from the camera depth, so they rasterize their own requests in front of it.
         void AddTransparentRequestPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
-                                         const PageInputs& inputs, Core::Buffer* pageTable)
+                                         const PageInputs& inputs, const Core::StructuredBufferPtr<uint32_t> pageTable)
         {
             if (!blackboard.Contains<ForwardTransparency::ViewModule*>())
                 return;

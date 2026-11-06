@@ -163,10 +163,10 @@ namespace FE::Graphics::SurfaceProbe
         Rc<Core::Texture> visibility =
             Core::Texture::Create(device, "SurfaceProbeVisibility", Core::Format::kR32G32_UINT, kResolution);
         Rc<Core::Texture> g0 = Core::Texture::Create(device, "SurfaceProbeG0", Core::Format::kR32_UINT, kResolution);
-        Rc<Core::Buffer> marks = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceProbeMarks", kPixelCount * 2);
+        auto marks = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceProbeMarks", kPixelCount * 2);
         Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "SurfaceProbeReadback", kPixelCount * 8);
         Rc<Core::Buffer> argsReadback = Core::Buffer::CreateByteAddress(device, "SurfaceProbeArgsReadback", 3 * 17 * 12);
-        Rc<Core::Buffer> codec = Core::Buffer::CreateByteAddress(device, "SurfaceCodecProbe", 32);
+        auto codec = Core::Buffer::CreateStructured<uint32_t>(device, "SurfaceCodecProbe", 8);
         Rc<Core::Buffer> codecReadback = Core::Buffer::CreateByteAddress(device, "SurfaceCodecReadback", 32);
         Core::ResourceCommitParams commit;
         commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
@@ -261,9 +261,9 @@ namespace FE::Graphics::SurfaceProbe
             database.Update(*graph, queue->GetCurrentFence());
             MeshPass::MeshViewData view{};
             MeshPass::MeshSceneData scene{};
-            scene.m_instances = instances.GetDeviceAddress();
-            scene.m_groups = groups.GetDeviceAddress();
-            scene.m_materials = materials.GetDeviceAddress();
+            scene.m_instances = instances.GetInstance();
+            scene.m_groups = groups.GetInstance();
+            scene.m_materials = materials.GetInstance();
             view.m_scene = graph->CreateConstants(scene);
             const ConstantsPtr<MeshPass::MeshViewData> viewConstants = graph->CreateConstants(view);
             ProbeConstants seed{};
