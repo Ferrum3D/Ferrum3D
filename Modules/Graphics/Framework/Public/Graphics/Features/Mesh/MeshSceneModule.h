@@ -181,6 +181,20 @@ namespace FE::Graphics
             return m_staticChanges;
         }
 
+        [[nodiscard]] festd::span<const Aabb> GetDynamicBounds() const
+        {
+            return m_dynamicBounds;
+        }
+
+        //! World bounds of the batches drawn by forward transparency, as of the last Update().
+        [[nodiscard]] festd::span<const Aabb> GetTransparentBounds() const
+        {
+            return m_transparentBounds;
+        }
+
+        void CullShadowInstances(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, const Matrix4x4& viewProjection,
+                                 CulledMeshView& result);
+
     private:
         void DoRelease() override;
 
@@ -200,6 +214,7 @@ namespace FE::Graphics
         struct ViewCullingState final
         {
             const View* m_view = nullptr;
+            Culling::Stats* m_statsTarget = nullptr;
             uint64_t m_lastFrameIndex = 0;
             Core::StructuredBuffer<uint32_t> m_visibility;
             uint32_t m_visibilityCapacity = 0;
@@ -246,7 +261,8 @@ namespace FE::Graphics
                                                          Core::RingUploader& uploader, const SceneRenderPass& pass);
         void AllocateMeshletVisibility(InstanceRecord& record);
         void FreeMeshletVisibility(InstanceRecord& record);
-        ViewCullingState& AcquireViewCullingState(Core::FrameGraph& graph, Core::RingUploader& uploader, const View* view);
+        ViewCullingState& AcquireViewCullingState(Core::FrameGraph& graph, Core::RingUploader& uploader, const View* view,
+                                                  Culling::Stats* statsTarget = nullptr);
         void ReleaseUnusedViewCullingStates();
         void ResolveCullingStats(ViewCullingState& state, Culling::Stats* output) const;
         void ScheduleCullingStatsReadback(Core::FrameGraph& graph, ViewCullingState& state) const;
@@ -268,6 +284,8 @@ namespace FE::Graphics
         festd::vector<Aabb> m_dirtyBatchBounds;
         festd::vector<Aabb> m_pendingStaticChanges;
         festd::vector<Aabb> m_staticChanges;
+        festd::vector<Aabb> m_dynamicBounds;
+        festd::vector<Aabb> m_transparentBounds;
         festd::vector<MeshPass::CullDispatch> m_cullDispatches[Octree::kMaxTraversalTasks];
         festd::vector<festd::unique_ptr<ViewCullingState>> m_viewCullingStates;
         Memory::BuddyAllocator m_meshletVisibilityAllocator;

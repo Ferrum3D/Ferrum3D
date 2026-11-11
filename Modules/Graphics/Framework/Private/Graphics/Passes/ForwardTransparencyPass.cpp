@@ -1,4 +1,5 @@
 #include <Graphics/Core/PipelineVariantSet.h>
+#include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/ForwardTransparencyPass.h>
@@ -61,7 +62,12 @@ namespace FE::Graphics::ForwardTransparency
         pass.m_passDescToken = graph.AddBasePassDesc(targets);
         pass.m_drawTag = DrawTags::Transparent;
         pass.m_techniqueRole = "ForwardTransparency";
-        pass.m_passData = view.m_lighting;
+        TransparencyLighting lighting{};
+        lighting.m_lighting = view.m_lighting;
+        if (const auto* shadows = blackboard.TryGet<SunShadow::Output>())
+            lighting.m_shadowFeedback = graph.GetUAV(shadows->m_feedback.Get());
+
+        pass.m_passData = graph.CreateConstants(lighting);
         pass.m_independentCulling = true;
         if (const auto* pyramids = blackboard.TryGet<DepthPyramidPass::Output>())
             pass.m_depthPyramid = &pyramids->m_farthest;

@@ -5,11 +5,53 @@ namespace FE::Graphics::Culling
 {
     namespace
     {
+        uint32_t CalculateCullFlags(const Culling::Settings& settings)
+        {
+            uint32_t flags = 0;
+            if (settings.m_instanceFrustumCulling)
+                flags |= MeshPass::CullFlags::kInstanceFrustum;
+            if (settings.m_instanceOcclusionCulling)
+                flags |= MeshPass::CullFlags::kInstanceOcclusion;
+            if (settings.m_meshletFrustumCulling)
+                flags |= MeshPass::CullFlags::kMeshletFrustum;
+            if (settings.m_meshletOcclusionCulling)
+                flags |= MeshPass::CullFlags::kMeshletOcclusion;
+            if (settings.m_lodSelection)
+                flags |= MeshPass::CullFlags::kLodSelection;
+
+            return flags;
+        }
+
+
         float GetProjectionScaleY(const View& view)
         {
             return view.GetProjectionMatrix().m_11;
         }
     } // namespace
+
+
+    MeshPass::MeshCullData BuildMeshCullData(const PassData& culling, const float viewportHeight)
+    {
+        // An LOD is acceptable when error * scale / distance * projection * height / 2 <= threshold. Orthographic views
+        // compare against a unit distance.
+        const Culling::PassData& reference = culling.m_lodReference != nullptr ? *culling.m_lodReference : culling;
+        const float height = culling.m_lodReference != nullptr ? culling.m_lodViewportHeight : viewportHeight;
+        const float threshold = Math::Max(reference.m_settings.m_lodErrorThreshold, 1e-3f);
+        const float lodScale = reference.m_projectionScaleY * height * 0.5f / threshold;
+
+        MeshPass::MeshCullData cull{};
+        cull.m_viewProjection = culling.m_viewProjection;
+        cull.m_occlusionViewProjection = culling.m_occlusionViewProjection;
+        cull.m_cameraPosition = PackedVector4F(Vector4(reference.m_cameraPosition, lodScale));
+        cull.m_flags = CalculateCullFlags(culling.m_settings);
+        cull.m_flags &= ~MeshPass::CullFlags::kLodSelection;
+        if (reference.m_settings.m_lodSelection)
+            cull.m_flags |= MeshPass::CullFlags::kLodSelection;
+        if (reference.m_isOrthographic)
+            cull.m_flags |= MeshPass::CullFlags::kOrthographic;
+
+        return cull;
+    }
 
 
     ViewModule::ViewModule(View* view)

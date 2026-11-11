@@ -11,6 +11,8 @@ int main(int argc, char** argv)
     FE::Env::Init(info, argc, const_cast<const char**>(argv));
     FE::CallLinkerAnchor_GraphicsTests();
     FE::Graphics::Core::AddShaderSourceDirectory(FE_GRAPHICS_TESTS_SHADER_DIRECTORY, "Shaders/Tests");
+    FE::Graphics::Core::AddShaderSourceDirectory(FE_GRAPHICS_TESTS_SHADER_DIRECTORY "/../Shaders");
+    FE::Graphics::Core::AddShaderSourceDirectory(FE_GRAPHICS_TESTS_SHADER_DIRECTORY "/../Shaders/ThirdParty/FidelityFX");
     testing::InitGoogleTest(&argc, argv);
 
     int result = 0;

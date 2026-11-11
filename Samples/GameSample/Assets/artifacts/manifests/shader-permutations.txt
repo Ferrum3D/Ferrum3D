@@ -63,3 +63,4 @@ cs Shaders/Shadows/UpdatePages.cs.hlsl
 cs Shaders/Shadows/InvalidatePages.cs.hlsl
 ms Shaders/Shadows/MarkTransparentPages.ms.hlsl
 ps Shaders/Shadows/MarkTransparentPages.ps.hlsl
+cs Shaders/Shadows/InvalidateLods.cs.hlsl

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Shaders/Shadows/SunShadow.h>
 
 namespace SunShadow
@@ -22,13 +22,14 @@ namespace SunShadow
     }
 
 
-    // The finest level whose texels are no larger than the camera pixel at this position and that still covers it with a
+    // The finest level whose texels are no smaller than the camera pixel at this position and that still covers it with a
     // margin for filtering. Marking and sampling must agree, so both call this function.
-    Projection Project(const SunShadowData data, const float3 worldPosition)
+    Projection Project(const SunShadowData data, const float3 worldPosition, const uint extraBias = 0)
     {
         const float distance = length(worldPosition - data.m_cameraPosition.xyz);
         const float pixelSize = data.m_cameraPosition.w * (data.m_isOrthographicCamera != 0 ? 1.0f : distance);
-        const float levelBias = floor(log2(max(pixelSize / data.m_level0TexelSize, 1.0f)));
+        const uint levelBias = min((uint)(ceil(log2(max(pixelSize / data.m_level0TexelSize, 1.0f))) + data.m_levelBias) + extraBias,
+                                   data.m_levelCount > 0 ? data.m_levelCount - 1 : 0);
 
         Projection result = (Projection)0;
         for (uint level = (uint)levelBias; level < data.m_levelCount; ++level)
@@ -79,26 +80,68 @@ namespace SunShadow
     }
 
 
-    void RequestPage(RWStructuredBuffer<uint> pageTable, const SunShadowData data, const uint level, const int2 texel)
+    //! Whether the page holds this frame's casters and may be sampled.
+    bool IsBacked(const uint entry)
     {
-        const uint2 clamped = uint2(clamp(texel, 0, (int)kSunShadowVirtualSize - 1));
-        InterlockedOr(pageTable[GetPageIndex(level, data.m_levels.LoadElement(level).m_pageOrigin, clamped)], kSunShadowPageRequested);
+        const uint flags = kSunShadowPageAllocated | kSunShadowPageRequested;
+        return (entry & (flags | kSunShadowPageUndrawn)) == flags;
     }
 
 
-    //! Request the pages that sampling the position reads. Entries keep their backing, so requests only set a bit.
-    void RequestPages(RWStructuredBuffer<uint> pageTable, const SunShadowData data, const float3 worldPosition)
+    void RequestEntry(RWStructuredBuffer<uint> requests, const uint index, const uint flags, const bool isFeedback)
     {
-        const Projection projection = Project(data, worldPosition);
+        const uint address = isFeedback ? index / 32 : index;
+        const uint bits = isFeedback ? 1u << (index % 32) : flags;
+        if ((requests[address] & bits) != bits)
+            InterlockedOr(requests[address], bits);
+    }
+
+
+    void RequestFootprint(RWStructuredBuffer<uint> requests, const uint4 indices, const uint flags, const bool isFeedback)
+    {
+        RequestEntry(requests, indices.x, flags, isFeedback);
+        if (indices.y != indices.x)
+            RequestEntry(requests, indices.y, flags, isFeedback);
+        if (indices.z != indices.x && indices.z != indices.y)
+            RequestEntry(requests, indices.z, flags, isFeedback);
+        if (indices.w != indices.x && indices.w != indices.y && indices.w != indices.z)
+            RequestEntry(requests, indices.w, flags, isFeedback);
+    }
+
+
+    void RequestProjection(RWStructuredBuffer<uint> requests, const SunShadowData data, const Projection projection,
+                           const uint flags, const bool isFeedback)
+    {
         if (!projection.m_isValid)
             return;
 
-        // Sampling offsets the receiver by a few texels and filters a 3x3 footprint, so request the pages around it.
         const int2 texel = int2(floor(projection.m_texel));
-        RequestPage(pageTable, data, projection.m_level, texel + int2(-3, -3));
-        RequestPage(pageTable, data, projection.m_level, texel + int2(3, -3));
-        RequestPage(pageTable, data, projection.m_level, texel + int2(-3, 3));
-        RequestPage(pageTable, data, projection.m_level, texel + int2(3, 3));
+        const int2 origin = data.m_levels.LoadElement(projection.m_level).m_pageOrigin;
+        const uint2 lo = uint2(clamp(texel - 3, 0, (int)kSunShadowVirtualSize - 1));
+        const uint2 hi = uint2(clamp(texel + 3, 0, (int)kSunShadowVirtualSize - 1));
+        const uint4 indices = uint4(GetPageIndex(projection.m_level, origin, lo),
+                                    GetPageIndex(projection.m_level, origin, uint2(hi.x, lo.y)),
+                                    GetPageIndex(projection.m_level, origin, uint2(lo.x, hi.y)),
+                                    GetPageIndex(projection.m_level, origin, hi));
+        RequestFootprint(requests, indices, flags, isFeedback);
+    }
+
+
+    void RequestPages(RWStructuredBuffer<uint> pageTable, const SunShadowData data, const float3 worldPosition,
+                      const uint extraBias = 0)
+    {
+        const uint flags = kSunShadowPageRequested | (extraBias != 0 ? kSunShadowPageCoarse : 0);
+        RequestProjection(pageTable, data, Project(data, worldPosition, extraBias), flags, false);
+    }
+
+
+    float LoadDepth(const SunShadowBinding binding, const uint entry, const uint2 tap)
+    {
+        const uint3 atlasTexel = uint3(GetAtlasTexel(entry, tap), 0);
+        [branch] if ((entry & kSunShadowPageDynamic) != 0)
+            return asfloat(binding.m_atlas.Load(atlasTexel));
+
+        return asfloat(binding.m_staticAtlas.Load(atlasTexel));
     }
 
 
@@ -109,8 +152,29 @@ namespace SunShadow
             return 1.0f;
 
         const SunShadowData data = binding.m_data.Load();
-        const Projection center = Project(data, worldPosition);
+        Projection center = Project(data, worldPosition);
         if (!center.m_isValid)
+            return 1.0f;
+
+        if (binding.m_feedback.IsValid())
+            RequestProjection(binding.m_feedback.Get(), data, center, kSunShadowPageRequested, true);
+
+        bool isBacked = false;
+        for (uint index = center.m_level; index < data.m_levelCount; ++index)
+        {
+            center.m_level = index;
+            center.m_texel = ProjectTexel(data, index, worldPosition, center.m_depth);
+            const bool isInside = all(center.m_texel >= 2.0f) && all(center.m_texel <= kSunShadowVirtualSize - 2.0f);
+            if (!isInside)
+                continue;
+
+            const int2 origin = data.m_levels.LoadElement(index).m_pageOrigin;
+            isBacked = IsBacked(binding.m_pageTable.Load(GetPageIndex(index, origin, uint2(center.m_texel))));
+            if (isBacked)
+                break;
+        }
+
+        if (!isBacked)
             return 1.0f;
 
         // Offset along the normal by a few texels of the chosen level to avoid self-shadowing.
@@ -130,15 +194,14 @@ namespace SunShadow
                 const uint2 tap = uint2(clamp(base + int2(x, y), 0, (int)kSunShadowVirtualSize - 1));
                 // Marking requested every page the filter reads; others may hold content cached for other pixels.
                 const uint entry = binding.m_pageTable.Load(GetPageIndex(center.m_level, pageOrigin, tap));
-                const uint backedFlags = kSunShadowPageAllocated | kSunShadowPageRequested;
-                if ((entry & backedFlags) != backedFlags)
+                if (!IsBacked(entry))
                 {
                     visible += 1.0f;
                     continue;
                 }
 
                 // Reverse Z: the occluder is closer to the sun when its depth is larger.
-                const float occluderDepth = asfloat(binding.m_atlas.Load(uint3(GetAtlasTexel(entry, tap), 0)));
+                const float occluderDepth = LoadDepth(binding, entry, tap);
                 visible += occluderDepth > receiverDepth ? 0.0f : 1.0f;
             }
         }

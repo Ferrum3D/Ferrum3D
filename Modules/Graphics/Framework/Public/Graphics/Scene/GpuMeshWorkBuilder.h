@@ -85,6 +85,7 @@ namespace FE::Graphics
     //! The inputs of one rendering phase of a mesh pass.
     struct MeshPassPhase final
     {
+        uint32_t m_viewMask = 0;
         uint32_t m_phase = MeshPass::CullPhase::kSingle;
         //! Built from the early depth in the late phase, or the occluders of the single phase; occlusion is tested when set.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;

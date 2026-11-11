@@ -37,6 +37,11 @@ namespace FE::Graphics::SunShadow
     {
         Core::StructuredBuffer<uint32_t> m_pageTable;
         Core::StructuredBuffer<uint32_t> m_owners;
+        Core::StructuredBuffer<uint32_t> m_feedback;
+        Core::StructuredBuffer<uint32_t> m_lodHistory;
+        Core::StructuredBuffer<uint32_t> m_lodChanges;
+        uint32_t m_lodCapacity = 0;
+        uint32_t m_lodFrame = 0;
         Rc<Core::Texture> m_staticAtlas;
         uint32_t m_levelCount = 0;
 
@@ -51,10 +56,13 @@ namespace FE::Graphics::SunShadow
         festd::array<uint8_t, kSunShadowMaxBlockCount> m_blockAges{};
         //! Whether the static casters of each block were skipped in the previous frame, so that its dirty pages wait for them.
         festd::array<bool, kSunShadowMaxBlockCount> m_isStaticSkipped{};
-        //! Requested and dirty pages of each block in the newest completed readback.
-        festd::array<uint32_t, kSunShadowMaxBlockCount> m_requestedPages{};
+        //! Pages with dynamic casters and dirty pages of each block in the newest completed readback.
+        festd::array<uint32_t, kSunShadowMaxBlockCount> m_dynamicPages{};
         festd::array<uint32_t, kSunShadowMaxBlockCount> m_dirtyPages{};
         bool m_hasFeedback = false;
+
+        uint32_t m_levelBias = 0;
+        uint32_t m_framesWithoutOverflow = 0;
         festd::array<FeedbackReadback, 4> m_readbacks;
     };
 
@@ -66,6 +74,8 @@ namespace FE::Graphics::SunShadow
         Core::StructuredBuffer<uint32_t> m_freePages;
         Core::StructuredBuffer<uint32_t> m_evictablePages;
         Core::StructuredBuffer<uint32_t> m_dirtyPages;
+        Core::StructuredBuffer<uint32_t> m_requestRanks;
+        Core::StructuredBuffer<SunShadowScroll> m_scroll;
         //! The static atlas pages of requested entries with this frame's dynamic casters added.
         Rc<Core::Texture> m_atlas;
         //! Per block, pyramids of the pages whose static casters are drawn (dirty) and of the pages sampled this frame.
@@ -74,7 +84,7 @@ namespace FE::Graphics::SunShadow
         festd::fixed_vector<Tools::DepthPyramid::Output, kSunShadowMaxBlockCount> m_dynamicPyramids;
         festd::fixed_vector<SunShadowBlock, kSunShadowMaxBlockCount> m_blocks;
         //! Whether the views of each block draw their static and dynamic casters this frame. Blocks whose page counts were
-        //! read back as zero have nothing to draw.
+        //! read back as zero have nothing to draw; pages that turn out to need a skipped layer are marked undrawn.
         festd::array<bool, kSunShadowMaxBlockCount> m_drawsStatic{};
         festd::array<bool, kSunShadowMaxBlockCount> m_drawsDynamic{};
         uint32_t m_pageCount = 0;
@@ -93,6 +103,16 @@ namespace FE::Graphics::SunShadow
         festd::span<const LevelSetup> m_levels;
         //! World bounds where static casters changed since the previous frame.
         festd::span<const Aabb> m_staticChanges;
+        festd::span<const Aabb> m_dynamicBounds;
+        //! Request coarse pages through the camera frustum in front of the depth, for receivers that are absent from it.
+        bool m_requestsCoarse = false;
+        //! Where coarse pages are requested: minimum and maximum normalized device coordinates, and the nearest and farthest
+        //! distance from the camera. The defaults cover the whole frustum.
+        Vector4 m_coarseRect = Vector4(-1.0f, -1.0f, 1.0f, 1.0f);
+        Vector2 m_coarseRange = Vector2(0.0f, Constants::kMaxFloat);
+        festd::span<const CulledMeshView> m_casterCulls;
+        uint32_t m_instanceCapacity = 0;
+        Vector2UInt m_staticTag = Vector2UInt::kZero;
         //! Without the sun, the clip levels request and draw nothing.
         bool m_hasSun = true;
 
@@ -117,7 +137,8 @@ namespace FE::Graphics::SunShadow
     //! pyramids of the levels.
     void AddAllocatePasses(Core::FrameGraph& graph, const PageCache& cache, PageFrame& frame);
 
-    //! Read the page counts of the blocks back, so that later frames can skip the views of blocks without pages.
+    //! Read the page counts of the blocks back, so that later frames can skip the views of blocks without pages, along with
+    //! the allocation pressure for adaptive level selection.
     void ScheduleFeedbackReadback(Core::FrameGraph& graph, PageCache& cache, const PageFrame& frame, Core::FenceSyncPoint fence);
 
     //! Copy the static pages of requested entries into the frame atlas, after the static casters of dirty pages are drawn.

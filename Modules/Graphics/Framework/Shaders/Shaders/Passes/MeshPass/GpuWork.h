@@ -68,6 +68,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
         FE_CONSTEXPR uint32_t kRenderedEarly = 1u << 0;
         //! The meshlet visibility bits of the instance describe its selected LOD.
         FE_CONSTEXPR uint32_t kMeshletHistory = 1u << 1;
+        //! The upper sixteen bits select the shadow levels that draw this instance.
+        FE_CONSTEXPR uint32_t kViewMaskShift = 16;
     } // namespace InstanceFlags
 
 

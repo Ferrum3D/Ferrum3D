@@ -38,6 +38,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             Core::StructuredBufferPtr<MeshPass::PipelineRouting> m_routing;
             uint32_t m_dispatchCount;
             Vector2UInt m_drawTagMask;
+            uint32_t m_viewMask;
         };
 
 
@@ -260,6 +261,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_instanceBuckets = graph.GetUAV(output.m_instanceBuckets.Get());
             constants.m_counts = graph.GetUAV(output.m_counts.Get());
             constants.m_drawTagMask = input.m_drawTagMask;
+            constants.m_viewMask = input.m_viewMask;
             graph.AddDispatch("CountEligibleMeshInstances",
                               CountMeshInstancesPipeline::GetPipeline(),
                               constants,
@@ -527,7 +529,11 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         // Each stage owns its outputs and names only the inputs it consumes.
         const uint32_t bucketCount = registry.m_slots.size();
-        const CountInput countInput{ classification, registry.m_routing.Get(), culled.m_dispatchCount, drawTagMask };
+        const CountInput countInput{ classification,
+                                     registry.m_routing.Get(),
+                                     culled.m_dispatchCount,
+                                     drawTagMask,
+                                     phase.m_viewMask };
         const CountOutput counts = Count(graph, countInput, bucketCount);
         const auto offsets = Scan(graph, counts.m_counts.Get(), bucketCount);
         const FinalizeOutput buckets = FinalizeBuckets(graph, counts.m_counts.Get(), offsets.Get(), bucketCount);

@@ -12,5 +12,8 @@ void main(float4 position : SV_Position)
         return;
 
     RWTexture2D<uint> atlas = data.m_atlas.Get();
-    InterlockedMax(atlas[SunShadow::GetAtlasTexel(entry, texel)], asuint(saturate(position.z)));
+    const uint2 target = SunShadow::GetAtlasTexel(entry, texel);
+    const uint depth = asuint(saturate(position.z));
+    if (atlas[target] < depth)
+        InterlockedMax(atlas[target], depth);
 }

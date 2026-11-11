@@ -164,7 +164,17 @@ namespace FE::Graphics::SunShadowProbe
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_outputOffset = {};
 
-        static const festd::array<Rtti::FieldInfo, 8> kFields = {
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shadow = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_atlas = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_requests = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_position = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_level = {};
+
+        static const festd::array<Rtti::FieldInfo, 13> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo("m_target",
                                                      &Constants::m_target,
                                                      kAttributes_m_target,
@@ -196,6 +206,26 @@ namespace FE::Graphics::SunShadowProbe
             Rtti::ReflectionContext::CreateFieldInfo("m_outputOffset",
                                                      &Constants::m_outputOffset,
                                                      kAttributes_m_outputOffset,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_shadow",
+                                                     &Constants::m_shadow,
+                                                     kAttributes_m_shadow,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_atlas",
+                                                     &Constants::m_atlas,
+                                                     kAttributes_m_atlas,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_requests",
+                                                     &Constants::m_requests,
+                                                     kAttributes_m_requests,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_position",
+                                                     &Constants::m_position,
+                                                     kAttributes_m_position,
+                                                     Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo("m_level",
+                                                     &Constants::m_level,
+                                                     kAttributes_m_level,
                                                      Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 

@@ -1,6 +1,7 @@
 #include <Shaders/Shadows/SunShadow.hlsli>
 
 [[vk::push_constant]] SunShadowUpdateConstants GConstants;
+groupshared uint Feedback[kSunShadowThreadCount / 32];
 
 // The world page an entry addresses while its level starts at the origin page.
 int2 GetEntryWorldPage(const uint2 slot, const int2 pageOrigin)
@@ -11,9 +12,18 @@ int2 GetEntryWorldPage(const uint2 slot, const int2 pageOrigin)
 
 
 FE_NUM_THREADS(kSunShadowThreadCount, 1, 1)
-void main(uint3 thread : SV_DispatchThreadID)
+void main(uint3 thread : SV_DispatchThreadID, uint lane : SV_GroupThreadID)
 {
     const uint index = thread.x;
+    if (lane < kSunShadowThreadCount / 32)
+    {
+        const uint word = (index - lane) / 32 + lane;
+        Feedback[lane] = GConstants.m_isReset != 0 ? 0 : GConstants.m_feedback.Load(word);
+        GConstants.m_feedback.Store(word, 0);
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+    const bool wasRequested = (Feedback[lane / 32] & (1u << (index % 32))) != 0;
     if (index < kSunShadowCounterCount)
         GConstants.m_counters.Store(index, 0);
 
@@ -45,6 +55,7 @@ void main(uint3 thread : SV_DispatchThreadID)
         return;
     }
 
-    const uint clearedFlags = kSunShadowPageRequested | (scroll.m_keepsDirty != 0 ? 0 : kSunShadowPageDirty);
-    GConstants.m_pageTable.Store(index, entry & ~clearedFlags);
+    const uint clearedFlags = kSunShadowPageRequested | kSunShadowPageDynamic | kSunShadowPageCoarse | kSunShadowPageAdmitted
+        | kSunShadowPageUndrawn | (scroll.m_keepsDirty != 0 ? 0 : kSunShadowPageDirty);
+    GConstants.m_pageTable.Store(index, (entry & ~clearedFlags) | (wasRequested ? kSunShadowPageRequested : 0));
 }

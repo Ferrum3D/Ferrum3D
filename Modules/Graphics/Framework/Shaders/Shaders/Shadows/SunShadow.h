@@ -1,9 +1,15 @@
 #pragma once
 #include <Shaders/Base/Base.h>
 #include <Shaders/Lighting/LocalLighting.h>
+#include <Shaders/Passes/MeshPass/GpuWork.h>
 #include <Shaders/Scene/ViewData.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
+#if FE_HOST
+    using MeshPass::DepthPyramidBinding;
+    using MeshPass::InstanceClassification;
+    using MeshPass::MeshViewData;
+#endif
     //! Each clip level is a virtual 4096x4096 shadow map split into pages; requested pages are backed by atlas pages.
     FE_CONSTEXPR uint32_t kSunShadowMaxLevelCount = 16;
     FE_CONSTEXPR uint32_t kSunShadowPageSize = 128;
@@ -21,6 +27,14 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     FE_CONSTEXPR uint32_t kSunShadowPageRequested = 1u << 30;
     //! Backed this frame, so its static casters are drawn into the static atlas.
     FE_CONSTEXPR uint32_t kSunShadowPageDirty = 1u << 29;
+    //! Overlapped by dynamic caster bounds this frame; other pages sample the static atlas directly.
+    FE_CONSTEXPR uint32_t kSunShadowPageDynamic = 1u << 28;
+    //! Coarse receiver coverage is allocated before fine requests.
+    FE_CONSTEXPR uint32_t kSunShadowPageCoarse = 1u << 27;
+    FE_CONSTEXPR uint32_t kSunShadowPageAdmitted = 1u << 26;
+    //! Requested, but the casters it needs are not drawn this frame because the views of its block were skipped. It is not
+    //! sampled, so receivers fall back to coarser pages until the block is drawn.
+    FE_CONSTEXPR uint32_t kSunShadowPageUndrawn = 1u << 25;
     FE_CONSTEXPR uint32_t kSunShadowPhysicalPageMask = 0xffffu;
     //! Owner of an atlas page that backs no page table entry.
     FE_CONSTEXPR uint32_t kSunShadowNoOwner = 0xffffffffu;
@@ -52,11 +66,12 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     FE_CONSTEXPR uint32_t kLocalShadowPointFlag = 1u << 31;
     FE_CONSTEXPR uint32_t kLocalShadowNoMap = 0xffffffffu;
 
-    //! Per block, the requested pages and the dirty pages after allocation. They are read back to skip the views of blocks
-    //! that have nothing to draw.
-    FE_CONSTEXPR uint32_t kSunShadowBlockRequestCounter = 8;
-    FE_CONSTEXPR uint32_t kSunShadowBlockDirtyCounter = kSunShadowBlockRequestCounter + kSunShadowMaxBlockCount;
-    FE_CONSTEXPR uint32_t kSunShadowCounterCount = kSunShadowBlockDirtyCounter + kSunShadowMaxBlockCount;
+    //! Per block, the pages that dynamic casters are drawn into and the dirty pages after allocation. They are read back to
+    //! skip the views of blocks that have nothing to draw.
+    FE_CONSTEXPR uint32_t kSunShadowBlockDynamicCounter = 8;
+    FE_CONSTEXPR uint32_t kSunShadowBlockDirtyCounter = kSunShadowBlockDynamicCounter + kSunShadowMaxBlockCount;
+    FE_CONSTEXPR uint32_t kSunShadowPendingCounter = kSunShadowBlockDirtyCounter + kSunShadowMaxBlockCount;
+    FE_CONSTEXPR uint32_t kSunShadowCounterCount = kSunShadowPendingCounter + 2 * kSunShadowMaxBlockCount;
 
     FE_CONSTEXPR uint32_t kSunShadowDebugLevel = 0;
     FE_CONSTEXPR uint32_t kSunShadowDebugPage = 1;
@@ -88,6 +103,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         float m_level0TexelSize;
         //! Clip-space depth per world unit along the light direction.
         float m_depthPerUnit;
+        float m_levelBias;
         FE_RTTI_Reflect("28DC5AE5-CDBC-4AC3-9EFC-C6C58106A648");
     };
 
@@ -100,6 +116,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_isReset;
         //! The static casters of the block were not drawn in the previous frame, so its dirty pages stay dirty.
         uint32_t m_keepsDirty;
+        //! The static or dynamic casters of the block are not drawn this frame; pages that need them become undrawn.
+        uint32_t m_skipsStatic;
+        uint32_t m_skipsDynamic;
     };
 
 
@@ -131,6 +150,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         ConstantsPtr<SunShadowData> m_data;
         StructuredBufferDescriptor<uint32_t> m_pageTable;
         Texture2DDescriptor<uint32_t> m_atlas;
+        Texture2DDescriptor<uint32_t> m_staticAtlas;
+        //! Set only by forward transparency, which declares its UAV separately.
+        RWStructuredBufferDescriptor<uint32_t> m_feedback;
         StructuredBufferDescriptor<LocalShadowMapData> m_localMaps;
         //! Indexed by light slot, see kLocalShadowPointFlag.
         StructuredBufferDescriptor<uint32_t> m_localLightMaps;
@@ -148,6 +170,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         StructuredBufferDescriptor<SunShadowScroll> m_scroll;
         uint32_t m_pageCount;
         uint32_t m_isReset;
+        RWStructuredBufferDescriptor<uint32_t> m_feedback;
 
         FE_RTTI_Reflect("28CB9DB3-34D8-4ACF-8D95-622B4FB7E51D");
     };
@@ -161,8 +184,38 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         StructuredBufferDescriptor<float4> m_regions;
         RWStructuredBufferDescriptor<uint32_t> m_pageTable;
         RWStructuredBufferDescriptor<uint32_t> m_owners;
+        uint32_t m_marksDynamic;
 
         FE_RTTI_Reflect("989CB824-D885-4004-A298-672C2B610EE6");
+    };
+
+
+    struct SunShadowCullLevel final
+    {
+        //! Converts the shared light-space projection's UVs to this level's UVs.
+        float4 m_uvScaleBias;
+        DepthPyramidBinding m_staticPages;
+        DepthPyramidBinding m_dynamicPages;
+        FE_RTTI_Reflect("702B5713-F3FB-4006-BE9C-6342B6A36060");
+    };
+
+
+    struct SunShadowLodConstants final
+    {
+        ConstantsPtr<MeshViewData> m_view;
+        RWStructuredBufferDescriptor<InstanceClassification> m_instances;
+        RWStructuredBufferDescriptor<uint32_t> m_history;
+        RWStructuredBufferDescriptor<uint32_t> m_changes;
+        StructuredBufferDescriptor<SunShadowBlock> m_blocks;
+        RWStructuredBufferDescriptor<uint32_t> m_pageTable;
+        RWStructuredBufferDescriptor<uint32_t> m_owners;
+        uint2 m_staticTag;
+        uint32_t m_instanceCount;
+        uint32_t m_frame;
+        uint32_t m_checksLods;
+        ConstantsPtr<SunShadowCullLevel> m_levels;
+        uint32_t m_levelCount;
+        FE_RTTI_Reflect("F8B9AFBD-6556-4A42-AE0C-C767F0BC9B75");
     };
 
 
@@ -176,6 +229,11 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         StructuredBufferDescriptor<LocalShadowMapData> m_localMaps;
         StructuredBufferDescriptor<uint32_t> m_localLightMaps;
         uint2 m_resolution;
+        uint32_t m_isCoarse;
+        //! Coarse requests only: minimum and maximum normalized device coordinates of the tiles that request pages.
+        float4 m_coarseRect;
+        //! Coarse requests only: the nearest and farthest distance from the camera that requests pages.
+        float2 m_coarseRange;
 
         FE_RTTI_Reflect("E507BE80-30F5-4F93-9007-4765C56FEFEC");
     };
@@ -203,6 +261,10 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         RWStructuredBufferDescriptor<uint32_t> m_dirtyPages;
         RWStructuredBufferDescriptor<uint32_t> m_counters;
         uint32_t m_pageCount;
+        uint32_t m_levelCount;
+        uint32_t m_phase;
+        RWStructuredBufferDescriptor<uint32_t> m_requestRanks;
+        StructuredBufferDescriptor<SunShadowScroll> m_scroll;
 
         FE_RTTI_Reflect("473BC936-CCD3-46BE-A165-BB6B8FA356BE");
     };
@@ -226,22 +288,28 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         StructuredBufferDescriptor<uint32_t> m_owners;
         Texture2DDescriptor<uint32_t> m_source;
         RWTexture2DDescriptor<uint32_t> m_target;
+        uint32_t m_block;
 
         FE_RTTI_Reflect("E0B9E7A5-DC51-4E6F-A9FF-E4D063D5B436");
     };
 
 
-    //! Writes the page mask of one level: 0 (farthest) where pages with all of m_requiredFlags are drawn, 1 (nearest)
-    //! elsewhere. Its farthest depth pyramid then culls casters that touch no drawn page with the regular occlusion test.
-    struct SunShadowPageMaskConstants final
+    //! One page pyramid, written together with all other blocks and layers in a single dispatch.
+    struct SunShadowPageMaskTarget final
     {
-        StructuredBufferDescriptor<uint32_t> m_pageTable;
-        RWTexture2DDescriptor<float> m_mask;
+        RWTexture2DDescriptor<float> m_mips[6];
         uint32_t m_level;
         uint32_t m_requiredFlags;
         int2 m_pageOrigin;
         uint32_t m_pagesPerAxis;
+        FE_RTTI_Reflect("F485988A-52DB-4031-9FCD-BE5D55BAAAE9");
+    };
 
+
+    struct SunShadowPageMaskConstants final
+    {
+        StructuredBufferDescriptor<uint32_t> m_pageTable;
+        ConstantsPtr<SunShadowPageMaskTarget> m_targets;
         FE_RTTI_Reflect("DA1D75B4-3D68-491F-B2F5-4F3ABDD108D3");
     };
 
@@ -308,6 +376,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
 
 #if FE_HOST
     static_assert(sizeof(SunShadowLevel) == 80);
-    static_assert(sizeof(SunShadowData) == 40);
+    static_assert(sizeof(SunShadowData) == 44);
 #endif
 FE_HOST_END_NAMESPACE

@@ -9,6 +9,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::CountMeshInstances)
         RWStructuredBufferDescriptor<uint32_t> m_instanceBuckets;
         RWStructuredBufferDescriptor<uint32_t> m_counts;
         uint2 m_drawTagMask;
+        uint32_t m_viewMask;
 
         FE_RTTI_Reflect("0F0748C2-1D73-4B58-A9E2-48E75C6C51F0");
     };

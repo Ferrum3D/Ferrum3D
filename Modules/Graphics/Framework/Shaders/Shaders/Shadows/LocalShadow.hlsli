@@ -86,12 +86,12 @@ namespace LocalShadow
 
     // The finest mip whose texels are no smaller than the camera pixel at the position. Marking and sampling must agree, so
     // both call this function.
-    uint SelectMip(const Camera camera, const LocalShadowMapData map, const float3 worldPosition)
+    uint SelectMip(const Camera camera, const LocalShadowMapData map, const float3 worldPosition, const float levelBias = 0.0f)
     {
         const float distance = length(worldPosition - camera.m_positionFootprint.xyz);
         const float pixelSize = camera.m_positionFootprint.w * (camera.m_isOrthographic ? 1.0f : distance);
         const float texelSize = GetTexelSize(map, 0, worldPosition);
-        return (uint)clamp(floor(log2(max(pixelSize / texelSize, 1.0f))), 0.0f, float(kLocalShadowMipCount - 1));
+        return (uint)clamp(ceil(log2(max(pixelSize / texelSize, 1.0f))) + levelBias, 0.0f, float(kLocalShadowMipCount - 1));
     }
 
 
@@ -120,34 +120,42 @@ namespace LocalShadow
 
     bool IsBacked(const uint entry)
     {
-        const uint backedFlags = kSunShadowPageAllocated | kSunShadowPageRequested;
-        return (entry & backedFlags) == backedFlags;
+        return SunShadow::IsBacked(entry);
     }
 
 
-    //! Request the pages that sampling the shadow of one light at the position reads.
-    void RequestLightPages(RWStructuredBuffer<uint> pageTable, const StructuredBufferDescriptor<LocalShadowMapData> maps,
-                           const Camera camera, const uint lightMaps, const float3 worldPosition)
+    void RequestProjection(RWStructuredBuffer<uint> requests, const Projection projection, const uint flags,
+                           const bool isFeedback)
     {
-        const LocalShadowMapData first = maps.Load(lightMaps & ~kLocalShadowPointFlag);
-        const LocalShadowMapData map = maps.Load(SelectMap(lightMaps, first.m_positionTexelScale.xyz, worldPosition));
-        const Projection projection = ProjectMip(map, SelectMip(camera, map, worldPosition), worldPosition);
         if (!projection.m_isValid)
             return;
 
-        // Sampling offsets the receiver by a few texels and filters a 3x3 footprint, so request the pages around it.
         const int2 texel = int2(floor(projection.m_texel));
-        InterlockedOr(pageTable[GetPageIndex(projection, texel + int2(-3, -3))], kSunShadowPageRequested);
-        InterlockedOr(pageTable[GetPageIndex(projection, texel + int2(3, -3))], kSunShadowPageRequested);
-        InterlockedOr(pageTable[GetPageIndex(projection, texel + int2(-3, 3))], kSunShadowPageRequested);
-        InterlockedOr(pageTable[GetPageIndex(projection, texel + int2(3, 3))], kSunShadowPageRequested);
+        const uint4 indices = uint4(GetPageIndex(projection, texel + int2(-3, -3)),
+                                    GetPageIndex(projection, texel + int2(3, -3)),
+                                    GetPageIndex(projection, texel + int2(-3, 3)),
+                                    GetPageIndex(projection, texel + int2(3, 3)));
+        SunShadow::RequestFootprint(requests, indices, flags, isFeedback);
+    }
+
+
+    void RequestLightPages(RWStructuredBuffer<uint> pageTable, const StructuredBufferDescriptor<LocalShadowMapData> maps,
+                           const Camera camera, const uint lightMaps, const float3 worldPosition, const float levelBias,
+                           const uint extraBias)
+    {
+        const LocalShadowMapData first = maps.Load(lightMaps & ~kLocalShadowPointFlag);
+        const LocalShadowMapData map = maps.Load(SelectMap(lightMaps, first.m_positionTexelScale.xyz, worldPosition));
+        const uint mip = min(SelectMip(camera, map, worldPosition, levelBias) + extraBias, kLocalShadowMipCount - 1);
+        const uint flags = kSunShadowPageRequested | (extraBias != 0 ? kSunShadowPageCoarse : 0);
+        RequestProjection(pageTable, ProjectMip(map, mip, worldPosition), flags, false);
     }
 
 
     //! Request the pages of every shadowed light in the light cluster of the position.
     void RequestPages(RWStructuredBuffer<uint> pageTable, const SunShadowData data, const LocalLightingBinding lighting,
                       const StructuredBufferDescriptor<LocalShadowMapData> maps,
-                      const StructuredBufferDescriptor<uint32_t> lightMaps, const float3 worldPosition, const float2 pixel)
+                      const StructuredBufferDescriptor<uint32_t> lightMaps, const float3 worldPosition, const float2 pixel,
+                      const uint extraBias = 0)
     {
         if (!lighting.m_clusters.IsValid() || !lightMaps.IsValid())
             return;
@@ -168,7 +176,7 @@ namespace LocalShadow
                 if (lightMap == kLocalShadowNoMap || (mask & (1u << bit)) == 0)
                     continue;
 
-                RequestLightPages(pageTable, maps, camera, lightMap, worldPosition);
+                RequestLightPages(pageTable, maps, camera, lightMap, worldPosition, data.m_levelBias, extraBias);
             }
         }
     }
@@ -185,10 +193,14 @@ namespace LocalShadow
         const uint mapIndex = SelectMap(lightMaps, first.m_positionTexelScale.xyz, worldPosition);
         const LocalShadowMapData map = binding.m_localMaps.Load(mapIndex);
 
+        const uint selectedMip = SelectMip(camera, map, worldPosition, binding.m_data.Load().m_levelBias);
+        if (binding.m_feedback.IsValid())
+            RequestProjection(binding.m_feedback.Get(), ProjectMip(map, selectedMip, worldPosition), kSunShadowPageRequested, true);
+
         // Positions that requested no pages, e.g. transparent surfaces behind others, fall back to coarser mips.
         Projection center = (Projection)0;
         bool isBacked = false;
-        for (uint mip = SelectMip(camera, map, worldPosition); mip < kLocalShadowMipCount && !isBacked; ++mip)
+        for (uint mip = selectedMip; mip < kLocalShadowMipCount && !isBacked; ++mip)
         {
             center = ProjectMip(map, mip, worldPosition);
             if (!center.m_isValid)
@@ -220,7 +232,7 @@ namespace LocalShadow
                 }
 
                 // Reverse Z: the occluder is closer to the light when its depth is larger.
-                const float occluderDepth = asfloat(binding.m_atlas.Load(uint3(SunShadow::GetAtlasTexel(entry, tap), 0)));
+                const float occluderDepth = SunShadow::LoadDepth(binding, entry, tap);
                 visible += occluderDepth > receiver.m_depth ? 0.0f : 1.0f;
             }
         }

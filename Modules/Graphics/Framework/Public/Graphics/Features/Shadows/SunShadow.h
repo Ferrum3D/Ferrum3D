@@ -19,7 +19,7 @@ namespace FE::Graphics::SunShadow
         //! Width of the finest clip level in world units.
         float m_level0Size = 16.0f;
         //! Distance along the light that each level covers, centred on the camera.
-        float m_depthRange = 1000.0f;
+        float m_depthRange = 65536.0f;
 
         [[nodiscard]] bool Validate() const;
     };
@@ -41,7 +41,8 @@ namespace FE::Graphics::SunShadow
 
     //! Clip level views around the camera position for a light that shines towards -directionToLight.
     void CalculateLevels(const Settings& settings, Vector3 cameraPosition, Vector3 directionToLight,
-                         festd::fixed_vector<LevelSetup, kSunShadowMaxLevelCount>& levels);
+                         festd::fixed_vector<LevelSetup, kSunShadowMaxLevelCount>& levels,
+                         const float* previousDepthOrigin = nullptr);
 
 
     //! The camera whose pixels request pages; pixelFootprint is the world size of a pixel at unit distance.
@@ -61,6 +62,7 @@ namespace FE::Graphics::SunShadow
 
 
     struct PageCache;
+    struct PageFrame;
 
 
     //! Static casters are drawn into cached pages when the pages are backed; dynamic casters are drawn every frame.
@@ -94,9 +96,9 @@ namespace FE::Graphics::SunShadow
             return m_debugMode;
         }
 
-        [[nodiscard]] View* GetLevelView(const uint32_t levelIndex, const Layer layer) const
+        [[nodiscard]] View* GetLevelView(const uint32_t levelIndex, const Layer /*layer*/) const
         {
-            return m_levelViews[festd::to_underlying(layer)][levelIndex].Get();
+            return m_levelViews[levelIndex].Get();
         }
 
         //! Culling counters of a layer summed over the clip levels; invalid until every level has read back its counters.
@@ -118,8 +120,8 @@ namespace FE::Graphics::SunShadow
     private:
         void DoRelease() override;
 
-        festd::fixed_vector<Rc<View>, kSunShadowMaxLevelCount> m_levelViews[kLayerCount];
-        festd::array<Rc<View>, kLocalShadowMaxMapCount * kLocalShadowMipCount> m_localViews[kLayerCount];
+        festd::fixed_vector<Rc<View>, kSunShadowMaxLevelCount> m_levelViews;
+        festd::array<Rc<View>, kLocalShadowMaxMapCount * kLocalShadowMipCount> m_localViews;
         festd::unique_ptr<PageCache> m_pageCache;
         LocalShadows::MapAllocation m_localMaps;
         uint32_t m_debugMode = kInvalidIndex;
@@ -132,6 +134,8 @@ namespace FE::Graphics::SunShadow
     {
         Core::StructuredBuffer<uint32_t> m_pageTable;
         Rc<Core::Texture> m_atlas;
+        Rc<Core::Texture> m_staticAtlas;
+        Core::StructuredBuffer<uint32_t> m_feedback;
         //! Null when no local light casts shadows.
         Core::StructuredBuffer<LocalShadowMapData> m_localMaps;
         Core::StructuredBuffer<uint32_t> m_localLightMaps;
@@ -152,15 +156,15 @@ namespace FE::Graphics::ShadowAtlas
     //! Frame inputs of one clip level, set by the camera view before its passes are added.
     struct LevelInputs final
     {
-        Core::StructuredBufferPtr<uint32_t> m_pageTable;
-        Core::Texture* m_atlas = nullptr;
-        //! Culls casters that touch no page drawn this frame; null disables occlusion culling.
-        const Tools::DepthPyramid::Output* m_pagePyramid = nullptr;
-        //! Casters drawn by the level, and the page table flags of the pages they are drawn into.
-        DrawTag m_drawTag;
-        uint32_t m_requiredPageFlags = 0;
-        Vector2Int m_pageOrigin = Vector2Int::kZero;
+        const SunShadow::PageCache* m_cache = nullptr;
+        const SunShadow::PageFrame* m_frame = nullptr;
+        const CulledMeshView* m_sharedInstances = nullptr;
+        const Culling::PassData* m_lodReference = nullptr;
+        float m_lodViewportHeight = 0.0f;
+        uint32_t m_viewMask = 0;
         uint32_t m_level = 0;
+        //! The layer whose casters this set of passes draws; a view renders its two layers as separate sets.
+        SunShadow::Layer m_layer = SunShadow::Layer::kStatic;
     };
 
 
@@ -176,16 +180,21 @@ namespace FE::Graphics::ShadowAtlas
 
         void Update(Core::FrameGraphBlackboard& blackboard) override;
 
-        //! Culling counters of the clip level, read back a few frames later.
-        [[nodiscard]] const Culling::Stats& GetStats() const
+        [[nodiscard]] Culling::Stats& GetStats(const SunShadow::Layer layer)
         {
-            return m_stats;
+            return m_stats[festd::to_underlying(layer)];
+        }
+
+        //! Culling counters of the clip level, read back a few frames later.
+        [[nodiscard]] const Culling::Stats& GetStats(const SunShadow::Layer layer) const
+        {
+            return m_stats[festd::to_underlying(layer)];
         }
 
     private:
         void DoRelease() override;
 
-        Culling::Stats m_stats;
+        Culling::Stats m_stats[SunShadow::kLayerCount];
     };
 
 

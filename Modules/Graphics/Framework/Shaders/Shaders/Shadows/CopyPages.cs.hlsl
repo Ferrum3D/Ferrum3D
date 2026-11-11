@@ -10,7 +10,14 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
 {
     const uint physicalPage = group.x;
     const uint owner = GConstants.m_owners.Load(physicalPage);
-    if (owner == kSunShadowNoOwner || (GConstants.m_pageTable.Load(owner) & kSunShadowPageRequested) == 0)
+    if (owner == kSunShadowNoOwner)
+        return;
+
+    if (GConstants.m_block != kSunShadowNoOwner && owner / kSunShadowLevelPageCount != GConstants.m_block)
+        return;
+
+    const uint flags = kSunShadowPageRequested | kSunShadowPageDynamic;
+    if ((GConstants.m_pageTable.Load(owner) & flags) != flags)
         return;
 
     const uint2 pageOrigin = uint2(physicalPage % kSunShadowAtlasPagesPerAxis, physicalPage / kSunShadowAtlasPagesPerAxis);

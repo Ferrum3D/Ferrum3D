@@ -7,6 +7,8 @@
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Features/Shadows/SunShadowPages.h>
+#include <Graphics/Tables/MeshGroupTable.h>
+#include <Graphics/Tables/MeshInstanceTable.h>
 #include <Shaders/Scene/ViewData.h>
 #include <algorithm>
 #include <cmath>
@@ -84,7 +86,7 @@ namespace FE::Graphics::SunShadowProbe
         {
             const float pixelSize = data.m_header.m_cameraPosition.w;
             const uint32_t levelBias =
-                uint32_t(Math::Floor(std::log2(Math::Max(pixelSize / data.m_header.m_level0TexelSize, 1.0f))));
+                uint32_t(Math::Ceil(std::log2(Math::Max(pixelSize / data.m_header.m_level0TexelSize, 1.0f))));
             for (uint32_t level = levelBias; level < data.m_header.m_levelCount; ++level)
             {
                 float depth;
@@ -139,7 +141,10 @@ namespace FE::Graphics::SunShadowProbe
             festd::vector<uint32_t> m_entries;
             festd::vector<float> m_staticPyramids;
             festd::vector<float> m_dynamicPyramids;
+            festd::vector<float> m_staticMips;
+            festd::vector<float> m_dynamicMips;
             uint32_t m_counters[kSunShadowCounterCount] = {};
+            float m_visibility = 1.0f;
         };
 
 
@@ -180,12 +185,41 @@ namespace FE::Graphics::SunShadowProbe
                                   context.m_pipeline,
                                   read,
                                   Math::CeilDivide(pyramid.m_size, kThreadGroupSize));
+                uint32_t mipOffset =
+                    2 * frame.m_pageCount + (isStatic ? 0 : frame.m_pageCount) + level * kSunShadowLevelPageCount;
+                for (uint32_t mip = 1; mip < pyramid.m_mipCount; ++mip)
+                {
+                    read.m_level = mip;
+                    read.m_size = Vector2UInt(Math::Max(pyramid.m_size.x >> mip, 1u), Math::Max(pyramid.m_size.y >> mip, 1u));
+                    read.m_outputOffset = mipOffset;
+                    graph.AddDispatch("ReadSunShadowPageMip",
+                                      context.m_pipeline,
+                                      read,
+                                      Math::CeilDivide(read.m_size, kThreadGroupSize));
+                    mipOffset += read.m_size.x * read.m_size.y;
+                }
             }
         }
 
 
+        struct FrameOptions final
+        {
+            bool m_requestsCoarse = false;
+            bool m_hasDynamicCasters = true;
+            bool m_samples = false;
+            bool m_writesFeedback = false;
+            bool m_fillsAtlas = false;
+            float m_depth = kPlaneDepth;
+            uint32_t m_fillLevel = 0;
+            uint32_t m_requestFirstBlock = kInvalidIndex;
+            uint32_t m_requestBlockCount = 1;
+            Vector3 m_position = Vector3(3.25f, 5.0f, 3.25f);
+        };
+
+
         FrameResult RunFrame(ProbeContext& context, const ProbeCamera& camera, const ProbeShadow& data,
-                             const festd::span<const SunShadow::LevelSetup> levels, const festd::span<const Aabb> staticChanges)
+                             const festd::span<const SunShadow::LevelSetup> levels, const festd::span<const Aabb> staticChanges,
+                             const FrameOptions& options = {})
         {
             Core::Device* device = context.m_device;
             Core::FrameGraph& graph = *context.m_graph;
@@ -197,7 +231,7 @@ namespace FE::Graphics::SunShadowProbe
             Constants fill{};
             fill.m_target = graph.GetUAV(depth.Get());
             fill.m_size = Vector2UInt(kImageSize);
-            fill.m_depth = kPlaneDepth;
+            fill.m_depth = options.m_depth;
             fill.m_backgroundRows = kBackgroundRows;
             fill.m_mode = kFillMode;
             graph.AddDispatch("FillSunShadowProbeDepth",
@@ -215,17 +249,69 @@ namespace FE::Graphics::SunShadowProbe
             inputs.m_directionToLight = Vector3::AxisY();
             inputs.m_levels = levels;
             inputs.m_staticChanges = staticChanges;
+            inputs.m_requestsCoarse = options.m_requestsCoarse;
+            const Aabb dynamicBounds(Vector3(-1000.0f), Vector3(1000.0f));
+            if (options.m_hasDynamicCasters)
+                inputs.m_dynamicBounds = festd::span(&dynamicBounds, 1);
             SunShadow::PageFrame frame;
             SunShadow::AddRequestPasses(graph, *context.m_uploader, inputs, context.m_cache, frame);
+            if (options.m_requestFirstBlock != kInvalidIndex)
+            {
+                Constants request{};
+                request.m_mode = kRequestMode;
+                request.m_requests = graph.GetUAV(context.m_cache.m_pageTable.Get());
+                request.m_size = Vector2UInt(kSunShadowLevelPageCount, options.m_requestBlockCount);
+                request.m_outputOffset = options.m_requestFirstBlock * kSunShadowLevelPageCount;
+                graph.AddDispatch("RequestProbeBlocks",
+                                  context.m_pipeline,
+                                  request,
+                                  Math::CeilDivide(request.m_size, kThreadGroupSize));
+            }
+
             SunShadow::AddAllocatePasses(graph, context.m_cache, frame);
 
+            auto sample = Core::Buffer::CreateStructured<float>(device, "SunShadowProbeSample", 1);
+            if (options.m_fillsAtlas)
+            {
+                Constants fillAtlas{};
+                fillAtlas.m_mode = kFillAtlasMode;
+                fillAtlas.m_size = Vector2UInt(kSunShadowPageSize);
+                fillAtlas.m_shadow.m_data = inputs.m_data;
+                fillAtlas.m_shadow.m_pageTable = graph.GetSRV(context.m_cache.m_pageTable.Get());
+                fillAtlas.m_atlas = graph.GetUAV(context.m_cache.m_staticAtlas.Get());
+                fillAtlas.m_position = PackedVector3F(options.m_position);
+                fillAtlas.m_level = options.m_fillLevel;
+                graph.AddDispatch("FillProbeAtlasPage",
+                                  context.m_pipeline,
+                                  fillAtlas,
+                                  Math::CeilDivide(fillAtlas.m_size, kThreadGroupSize));
+            }
+
+            if (options.m_samples)
+            {
+                Constants sampleConstants{};
+                sampleConstants.m_mode = kSampleMode;
+                sampleConstants.m_size = Vector2UInt(1);
+                sampleConstants.m_shadow.m_data = inputs.m_data;
+                sampleConstants.m_shadow.m_pageTable = graph.GetSRV(context.m_cache.m_pageTable.Get());
+                sampleConstants.m_shadow.m_atlas = graph.GetSRV(frame.m_atlas.Get());
+                sampleConstants.m_shadow.m_staticAtlas = graph.GetSRV(context.m_cache.m_staticAtlas.Get());
+                if (options.m_writesFeedback)
+                    sampleConstants.m_shadow.m_feedback = graph.GetUAV(context.m_cache.m_feedback.Get());
+
+                sampleConstants.m_position = PackedVector3F(options.m_position);
+                sampleConstants.m_output = graph.GetUAV(sample.Get());
+                graph.AddDispatch("SampleProbeShadow", context.m_pipeline, sampleConstants, 1);
+            }
+
             const uint32_t pageCount = frame.m_pageCount;
-            auto pyramidTexels = Core::Buffer::CreateStructured<float>(device, "SunShadowProbePyramids", 2 * pageCount);
+            auto pyramidTexels = Core::Buffer::CreateStructured<float>(device, "SunShadowProbePyramids", 4 * pageCount);
             AddPyramidReadPasses(context, frame, pyramidTexels.Get());
 
             const uint32_t pageBytes = pageCount * sizeof(uint32_t);
-            const uint32_t countersOffset = 3 * pageBytes;
-            const uint32_t byteSize = countersOffset + kSunShadowCounterCount * sizeof(uint32_t);
+            const uint32_t countersOffset = 5 * pageBytes;
+            const uint32_t sampleOffset = countersOffset + kSunShadowCounterCount * sizeof(uint32_t);
+            const uint32_t byteSize = sampleOffset + sizeof(float);
             Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "SunShadowProbeReadback", byteSize);
             Core::ResourceCommitParams readbackCommit;
             readbackCommit.m_memory = Core::ResourceMemory::kHostRandomAccess;
@@ -233,10 +319,14 @@ namespace FE::Graphics::SunShadowProbe
             context.m_pool->CommitBufferMemory(readback.Get(), readbackCommit);
             graph.AddCopyPass(Core::BufferView(readback.Get()).Slice(0, pageBytes),
                               Core::BufferView(context.m_cache.m_pageTable.Get()));
-            graph.AddCopyPass(Core::BufferView(readback.Get()).Slice(pageBytes, 2 * pageBytes),
+            graph.AddCopyPass(Core::BufferView(readback.Get()).Slice(pageBytes, 4 * pageBytes),
                               Core::BufferView(pyramidTexels.Get()));
             graph.AddCopyPass(Core::BufferView(readback.Get()).Slice(countersOffset, kSunShadowCounterCount * sizeof(uint32_t)),
                               Core::BufferView(frame.m_counters.Get()));
+
+            if (options.m_samples)
+                graph.AddCopyPass(Core::BufferView(readback.Get()).Slice(sampleOffset, sizeof(float)),
+                                  Core::BufferView(sample.Get()));
 
             graph.CompileAndExecute();
             context.m_uploader->CloseFrame(context.m_queue->GetCurrentFence());
@@ -255,9 +345,160 @@ namespace FE::Graphics::SunShadowProbe
             result.m_entries.assign(words, words + pageCount);
             result.m_staticPyramids.assign(pyramidValues, pyramidValues + pageCount);
             result.m_dynamicPyramids.assign(pyramidValues + pageCount, pyramidValues + 2 * pageCount);
-            std::copy(words + 3 * pageCount, words + 3 * pageCount + kSunShadowCounterCount, result.m_counters);
+            result.m_staticMips.assign(pyramidValues + 2 * pageCount, pyramidValues + 3 * pageCount);
+            result.m_dynamicMips.assign(pyramidValues + 3 * pageCount, pyramidValues + 4 * pageCount);
+            std::copy(words + 5 * pageCount, words + 5 * pageCount + kSunShadowCounterCount, result.m_counters);
+            if (options.m_samples)
+                memcpy(&result.m_visibility, reinterpret_cast<const uint8_t*>(words) + sampleOffset, sizeof(float));
+
             readback->Unmap();
             return result;
+        }
+
+
+        void CheckLodHistory(ProbeContext& context, Core::PipelineFactory* pipelines)
+        {
+            Core::ComputePipelineRequest request;
+            request.m_desc.SetComputeShader("Shaders/Shadows/InvalidateLods.cs.hlsl");
+            Core::ComputePipeline* pipeline = pipelines->CreateComputePipeline(request);
+            pipeline->GetCompletionWaitGroup()->Wait();
+            ASSERT_TRUE(pipeline->IsReady());
+
+            Core::FrameGraph& graph = *context.m_graph;
+            context.m_queue->BeginFrame();
+            graph.BeginFrame();
+
+            auto history = Core::Buffer::CreateStructured<uint32_t>(context.m_device, "LodHistoryProbe", 1);
+            auto changes = Core::Buffer::CreateStructured<uint32_t>(context.m_device, "LodChangesProbe", 1);
+            const uint32_t zero = 0;
+            FE_Verify(context.m_uploader->UploadArray(graph, history.Get(), festd::span(&zero, 1)));
+            FE_Verify(context.m_uploader->UploadArray(graph, changes.Get(), festd::span(&zero, 1)));
+
+            Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(context.m_device, "LodHistoryReadback", 24);
+            Core::ResourceCommitParams commit;
+            commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
+            commit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
+            context.m_pool->CommitBufferMemory(readback.Get(), commit);
+            for (uint32_t frame = 1; frame <= 3; ++frame)
+            {
+                MeshPass::InstanceClassification item{};
+                item.m_instanceId = 0;
+                item.m_lodIndex = frame == 3 ? 2u : 1u;
+                item.m_meshletCount = 1;
+                item.m_drawTagMask = Vector2UInt(1, 0);
+                auto instances =
+                    Core::Buffer::CreateStructured<MeshPass::InstanceClassification>(context.m_device, "LodProbeInstance", 1);
+                FE_Verify(context.m_uploader->UploadArray(graph,
+                                                          instances.Get(),
+                                                          festd::span<const MeshPass::InstanceClassification>(&item, 1)));
+
+                SunShadowLodConstants constants{};
+                constants.m_history = graph.GetUAV(history.Get());
+                constants.m_changes = graph.GetUAV(changes.Get());
+                constants.m_instances = graph.GetUAV(instances.Get());
+                constants.m_staticTag = Vector2UInt(1, 0);
+                constants.m_instanceCount = 1;
+                constants.m_checksLods = 1;
+                constants.m_frame = frame;
+                graph.AddDispatch("CheckLodHistoryProbe", pipeline, constants, 1);
+                graph.AddCopyPass(Core::BufferView(readback.Get()).Slice((frame - 1) * 8, 4), Core::BufferView(history.Get()));
+                graph.AddCopyPass(Core::BufferView(readback.Get()).Slice((frame - 1) * 8 + 4, 4),
+                                  Core::BufferView(changes.Get()));
+            }
+
+            DB::Database database(context.m_device, context.m_pool);
+            MeshInstanceTable instanceTable(&database);
+            MeshGroupTable groupTable(&database);
+            const auto instanceId = instanceTable.AllocateRow();
+            const auto groupId = groupTable.AllocateRow();
+            instanceTable.WriteRow(instanceId).m_transform.Get() = Matrix3x4::FromMatrix4x4(Matrix4x4::kIdentity);
+            groupTable.WriteRow(groupId).m_bounds.Get() = { PackedVector3F(-0.1f, -0.1f, 0.4f),
+                                                            PackedVector3F(0.1f, 0.1f, 0.6f) };
+            database.Update(graph, context.m_queue->GetCurrentFence());
+            MeshPass::MeshSceneData scene{};
+            scene.m_instances = instanceTable.GetInstance();
+            scene.m_groups = groupTable.GetInstance();
+            MeshPass::MeshViewData view{};
+            view.m_scene = graph.CreateConstants(scene);
+            view.m_cull.m_viewProjection = Matrix4x4::kIdentity;
+
+            auto visible = Core::Texture::Create(context.m_device, "VisiblePageMask", Core::Format::kR32_SFLOAT, Vector2UInt(1));
+            auto hidden = Core::Texture::Create(context.m_device, "HiddenPageMask", Core::Format::kR32_SFLOAT, Vector2UInt(1));
+            for (uint32_t mask = 0; mask < 2; ++mask)
+            {
+                Constants fill{};
+                fill.m_mode = kFillMode;
+                fill.m_size = Vector2UInt(1);
+                fill.m_depth = float(mask);
+                fill.m_target = graph.GetUAV(mask == 0 ? visible.Get() : hidden.Get());
+                graph.AddDispatch("FillCasterMaskProbe", context.m_pipeline, fill, 1);
+            }
+
+            SunShadowCullLevel levels[2]{};
+            levels[0].m_uvScaleBias = PackedVector4F(1, 1, 0, 0);
+            levels[0].m_staticPages.m_texture = graph.GetSRV(visible.Get());
+            levels[0].m_staticPages.m_size = Vector2UInt(1);
+            levels[0].m_staticPages.m_uvScale = Vector2(1);
+            levels[0].m_staticPages.m_mipCount = 1;
+            levels[0].m_dynamicPages = levels[0].m_staticPages;
+            levels[0].m_dynamicPages.m_texture = graph.GetSRV(hidden.Get());
+            levels[1] = levels[0];
+            levels[1].m_uvScaleBias = PackedVector4F(1, 1, 2, 0);
+
+            MeshPass::InstanceClassification items[2]{};
+            for (uint32_t item = 0; item < 2; ++item)
+            {
+                items[item].m_instanceId = instanceId.m_rowIndex;
+                items[item].m_groupId = groupId.m_rowIndex;
+                items[item].m_meshletCount = 1;
+                items[item].m_drawTagMask = Vector2UInt(1u << item, 0);
+                items[item].m_flags = 1;
+            }
+
+            auto classifications =
+                Core::Buffer::CreateStructured<MeshPass::InstanceClassification>(context.m_device, "CasterMaskProbe", 2);
+            FE_Verify(context.m_uploader->UploadArray(graph,
+                                                      classifications.Get(),
+                                                      festd::span<const MeshPass::InstanceClassification>(items)));
+            SunShadowLodConstants maskConstants{};
+            maskConstants.m_view = graph.CreateConstants(view);
+            maskConstants.m_instances = graph.GetUAV(classifications.Get());
+            maskConstants.m_staticTag = Vector2UInt(1, 0);
+            maskConstants.m_instanceCount = 2;
+            maskConstants.m_checksLods = 2;
+            maskConstants.m_levels = graph.CreateConstantsArray(festd::span<const SunShadowCullLevel>(levels));
+            maskConstants.m_levelCount = 2;
+            graph.AddDispatch("CheckCasterViewMaskProbe", pipeline, maskConstants, 1);
+
+            constexpr uint32_t kMaskBytes = 2 * sizeof(MeshPass::InstanceClassification);
+            auto maskReadback = Core::Buffer::CreateByteAddress(context.m_device, "CasterMaskReadback", kMaskBytes);
+            context.m_pool->CommitBufferMemory(maskReadback.Get(), commit);
+            graph.AddCopyPass(Core::BufferView(maskReadback.Get()), Core::BufferView(classifications.Get()));
+
+            graph.CompileAndExecute();
+            context.m_uploader->CloseFrame(context.m_queue->GetCurrentFence());
+            Vulkan::CommandBuffer* commands = Vulkan::ImplCast(context.m_queue)->GetCurrentCommandBuffer();
+            const Core::FenceSyncPoint fence = context.m_queue->CloseFrame();
+            commands->EnqueueFenceToSignal(fence);
+            commands->Submit();
+            fence.Wait();
+            context.m_device->WaitIdle();
+
+            const auto* values = static_cast<const uint32_t*>(readback->Map());
+            readback->InvalidateMappedRange(0, 24);
+            EXPECT_EQ(values[0], 2u);
+            EXPECT_EQ(values[1], 1u);
+            EXPECT_EQ(values[2], 2u);
+            EXPECT_EQ(values[3], 1u);
+            EXPECT_EQ(values[4], 3u);
+            EXPECT_EQ(values[5], 3u);
+            readback->Unmap();
+
+            const auto* masks = static_cast<const MeshPass::InstanceClassification*>(maskReadback->Map());
+            maskReadback->InvalidateMappedRange(0, kMaskBytes);
+            EXPECT_EQ(masks[0].m_flags, 1u | (1u << MeshPass::InstanceFlags::kViewMaskShift));
+            EXPECT_EQ(masks[1].m_flags, 1u);
+            maskReadback->Unmap();
         }
 
 
@@ -278,6 +519,35 @@ namespace FE::Graphics::SunShadowProbe
             }
 
             return mismatchCount;
+        }
+
+
+        uint32_t CountMipMismatches(const uint32_t levelCount, const festd::vector<float>& bases,
+                                    const festd::vector<float>& mips)
+        {
+            uint32_t mismatches = 0;
+            for (uint32_t level = 0; level < levelCount; ++level)
+            {
+                festd::array<float, kSunShadowLevelPageCount> values;
+                festd::copy_n(bases.data() + level * kSunShadowLevelPageCount, kSunShadowLevelPageCount, values.data());
+                uint32_t offset = level * kSunShadowLevelPageCount;
+                for (uint32_t size = kSunShadowLevelPagesPerAxis; size > 1; size /= 2)
+                {
+                    const uint32_t nextSize = size / 2;
+                    for (uint32_t index = 0; index < nextSize * nextSize; ++index)
+                    {
+                        const uint32_t source = index / nextSize * 2 * size + index % nextSize * 2;
+                        const float minimum = Math::Min(Math::Min(values[source], values[source + 1]),
+                                                        Math::Min(values[source + size], values[source + size + 1]));
+                        values[index] = minimum;
+                        mismatches += mips[offset + index] == minimum ? 0u : 1u;
+                    }
+
+                    offset += nextSize * nextSize;
+                }
+            }
+
+            return mismatches;
         }
 
 
@@ -346,6 +616,8 @@ namespace FE::Graphics::SunShadowProbe
         EXPECT_EQ(FindEntries(first, kSunShadowPageAllocated), expected);
         EXPECT_EQ(CountPyramidMismatches(data, first.m_staticPyramids, expected), 0u);
         EXPECT_EQ(CountPyramidMismatches(data, first.m_dynamicPyramids, expected), 0u);
+        EXPECT_EQ(CountMipMismatches(context.m_settings.m_levelCount, first.m_staticPyramids, first.m_staticMips), 0u);
+        EXPECT_EQ(CountMipMismatches(context.m_settings.m_levelCount, first.m_dynamicPyramids, first.m_dynamicMips), 0u);
 
         festd::vector<uint32_t> physicalPages;
         for (const uint32_t entry : expected)
@@ -362,6 +634,8 @@ namespace FE::Graphics::SunShadowProbe
             EXPECT_EQ(second.m_entries[entry] & kSunShadowPhysicalPageMask, first.m_entries[entry] & kSunShadowPhysicalPageMask);
         EXPECT_EQ(CountPyramidMismatches(data, second.m_staticPyramids, {}), 0u);
         EXPECT_EQ(CountPyramidMismatches(data, second.m_dynamicPyramids, expected), 0u);
+        EXPECT_EQ(CountMipMismatches(context.m_settings.m_levelCount, second.m_staticPyramids, second.m_staticMips), 0u);
+        EXPECT_EQ(CountMipMismatches(context.m_settings.m_levelCount, second.m_dynamicPyramids, second.m_dynamicMips), 0u);
 
         // A static change under the centre of the view discards the one page it covers, which is drawn again.
         const Aabb change(Vector3(2.9f, -0.1f, 2.9f), Vector3(3.1f, 0.1f, 3.1f));
@@ -392,6 +666,70 @@ namespace FE::Graphics::SunShadowProbe
         EXPECT_EQ(fourth.m_counters[kSunShadowAllocatedCounter], moved.size() - keptCount);
         EXPECT_EQ(fourth.m_counters[kSunShadowOverflowCounter], 0u);
         EXPECT_EQ(FindEntries(fourth, kSunShadowPageAllocated | kSunShadowPageRequested), moved);
+
+        // No dynamic overlap means sampling the static atlas directly, with an entirely occluded dynamic mask.
+        FrameOptions staticOnly;
+        staticOnly.m_hasDynamicCasters = false;
+        const FrameResult noDynamic = RunFrame(context, camera, data, levels, {}, staticOnly);
+        EXPECT_TRUE(FindEntries(noDynamic, kSunShadowPageDynamic).empty());
+        EXPECT_EQ(CountPyramidMismatches(data, noDynamic.m_dynamicPyramids, {}), 0u);
+
+        // Coarse requests cover transparent receivers even with no opaque depth. Sampling emits fine feedback for the next frame.
+        context.m_cache = {};
+        prepare(Vector3(3.0f, kCameraHeight, 3.0f), levels, camera, data);
+        FrameOptions transparent;
+        transparent.m_depth = 0.0f;
+        transparent.m_hasDynamicCasters = false;
+        transparent.m_requestsCoarse = true;
+        transparent.m_samples = true;
+        transparent.m_writesFeedback = true;
+        transparent.m_fillsAtlas = true;
+        transparent.m_fillLevel = context.m_settings.m_levelCount - 1;
+        const FrameResult coarse = RunFrame(context, camera, data, levels, {}, transparent);
+        EXPECT_FALSE(FindEntries(coarse, kSunShadowPageAllocated | kSunShadowPageCoarse).empty());
+        EXPECT_FLOAT_EQ(coarse.m_visibility, 0.0f);
+
+        festd::vector<uint32_t> feedbackEntries;
+        RequestPages(data, transparent.m_position, feedbackEntries);
+        std::sort(feedbackEntries.begin(), feedbackEntries.end());
+        feedbackEntries.erase(std::unique(feedbackEntries.begin(), feedbackEntries.end()), feedbackEntries.end());
+        transparent.m_requestsCoarse = false;
+        transparent.m_writesFeedback = false;
+        transparent.m_fillsAtlas = false;
+        const FrameResult feedback = RunFrame(context, camera, data, levels, {}, transparent);
+        EXPECT_EQ(FindEntries(feedback, kSunShadowPageAllocated | kSunShadowPageRequested), feedbackEntries);
+        EXPECT_FLOAT_EQ(feedback.m_visibility, 1.0f);
+        const FrameResult consumed = RunFrame(context, camera, data, levels, {}, transparent);
+        EXPECT_TRUE(FindEntries(consumed, kSunShadowPageRequested).empty());
+
+        // A scroll discards feedback for toroidal slots that now describe different world pages.
+        transparent.m_writesFeedback = true;
+        RunFrame(context, camera, data, levels, {}, transparent);
+        prepare(Vector3(100000.0f, kCameraHeight, 3.0f), levels, camera, data);
+        transparent.m_writesFeedback = false;
+        transparent.m_samples = false;
+        const FrameResult scrolled = RunFrame(context, camera, data, levels, {}, transparent);
+        EXPECT_TRUE(FindEntries(scrolled, kSunShadowPageRequested).empty());
+
+        // Existing far residency cannot defeat new near requests when the atlas overflows.
+        context.m_cache = {};
+        context.m_settings.m_levelCount = 2;
+        prepare(Vector3(3.0f, kCameraHeight, 3.0f), levels, camera, data);
+        FrameOptions pressure;
+        pressure.m_depth = 0.0f;
+        pressure.m_hasDynamicCasters = false;
+        pressure.m_requestFirstBlock = 1;
+        const FrameResult far = RunFrame(context, camera, data, levels, {}, pressure);
+        EXPECT_EQ(far.m_counters[kSunShadowAllocatedCounter], kSunShadowPhysicalPageCount);
+        pressure.m_requestFirstBlock = 0;
+        pressure.m_requestBlockCount = 2;
+        const FrameResult overflow = RunFrame(context, camera, data, levels, {}, pressure);
+        const auto admitted = FindEntries(overflow, kSunShadowPageAllocated);
+        ASSERT_EQ(admitted.size(), kSunShadowPhysicalPageCount);
+        EXPECT_LT(admitted.back(), kSunShadowLevelPageCount);
+        EXPECT_EQ(overflow.m_counters[kSunShadowOverflowCounter], kSunShadowLevelPageCount);
+
+        CheckLodHistory(context, pipelines);
 
         context.m_cache = {};
         graph.Reset();
@@ -425,7 +763,7 @@ TEST(SunShadow, ClipLevelsSnapToWholePages)
 
         const Vector4 clip = Vector4(cameraPosition, 1.0f) * level.m_viewProjection;
         EXPECT_GT(clip.z, 0.25f - 1e-4f);
-        EXPECT_LE(clip.z, 0.5f + 1e-4f);
+        EXPECT_LE(clip.z, 0.75f + 1e-4f);
 
         // Snapping moves the level by less than a page, in whole pages, so the camera stays in the centre pages.
         const float texelX = (clip.x * 0.5f + 0.5f) * kSunShadowVirtualSize;
@@ -447,4 +785,19 @@ TEST(SunShadow, ClipLevelsSnapToWholePages)
     const float pageSize = levels.back().m_size / kSunShadowLevelPagesPerAxis;
     SunShadow::CalculateLevels(settings, cameraPosition + lightRight * pageSize, directionToLight, moved);
     EXPECT_EQ(moved.back().m_pageOrigin, levels.back().m_pageOrigin + Vector2Int(1, 0));
+}
+
+
+TEST(SunShadow, DepthOriginRemainsStableAcrossOrdinaryCameraMotion)
+{
+    using namespace FE;
+    using namespace FE::Graphics;
+
+    const SunShadow::Settings settings;
+    festd::fixed_vector<SunShadow::LevelSetup, kSunShadowMaxLevelCount> first;
+    festd::fixed_vector<SunShadow::LevelSetup, kSunShadowMaxLevelCount> moved;
+    SunShadow::CalculateLevels(settings, Vector3(0.0f, 1.0f, 0.0f), Vector3::AxisY(), first);
+    const float origin = first[0].m_depthOrigin;
+    SunShadow::CalculateLevels(settings, Vector3(0.0f, -300.0f, 0.0f), Vector3::AxisY(), moved, &origin);
+    EXPECT_FLOAT_EQ(moved[0].m_depthOrigin, origin);
 }

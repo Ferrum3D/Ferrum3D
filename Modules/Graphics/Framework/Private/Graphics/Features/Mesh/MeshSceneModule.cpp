@@ -118,43 +118,6 @@ namespace FE::Graphics
         }
 
 
-        uint32_t CalculateCullFlags(const Culling::Settings& settings)
-        {
-            uint32_t flags = 0;
-            if (settings.m_instanceFrustumCulling)
-                flags |= MeshPass::CullFlags::kInstanceFrustum;
-            if (settings.m_instanceOcclusionCulling)
-                flags |= MeshPass::CullFlags::kInstanceOcclusion;
-            if (settings.m_meshletFrustumCulling)
-                flags |= MeshPass::CullFlags::kMeshletFrustum;
-            if (settings.m_meshletOcclusionCulling)
-                flags |= MeshPass::CullFlags::kMeshletOcclusion;
-            if (settings.m_lodSelection)
-                flags |= MeshPass::CullFlags::kLodSelection;
-
-            return flags;
-        }
-
-
-        MeshPass::MeshCullData CreateCullData(const Culling::PassData& culling, const float viewportHeight)
-        {
-            // An LOD is acceptable when error * scale / distance * projection * height / 2 <= threshold. Orthographic views
-            // compare against a unit distance.
-            const float threshold = Math::Max(culling.m_settings.m_lodErrorThreshold, 1e-3f);
-            const float lodScale = culling.m_projectionScaleY * viewportHeight * 0.5f / threshold;
-
-            MeshPass::MeshCullData cull{};
-            cull.m_viewProjection = culling.m_viewProjection;
-            cull.m_occlusionViewProjection = culling.m_occlusionViewProjection;
-            cull.m_cameraPosition = PackedVector4F(Vector4(culling.m_cameraPosition, lodScale));
-            cull.m_flags = CalculateCullFlags(culling.m_settings);
-            if (culling.m_isOrthographic)
-                cull.m_flags |= MeshPass::CullFlags::kOrthographic;
-
-            return cull;
-        }
-
-
         Culling::Stats ConvertCullingStats(const uint32_t (&values)[MeshPass::CullStat::kCount])
         {
             Culling::Stats stats;
@@ -414,6 +377,19 @@ namespace FE::Graphics
             AddStaticChange(batch, batch->m_octreeEntry.GetBounds());
             AddStaticChange(batch, m_dirtyBatchBounds[i]);
             m_octree.InsertOrUpdate(batch->m_octreeEntry, m_dirtyBatchBounds[i]);
+        }
+
+        m_dynamicBounds.clear();
+        m_transparentBounds.clear();
+        for (const MeshBatch* batch : m_batches)
+        {
+            if (batch == nullptr || batch->m_handles.empty())
+                continue;
+
+            if (batch->m_mobility == MeshMobility::kDynamic)
+                m_dynamicBounds.push_back(batch->m_octreeEntry.GetBounds());
+            if (batch->m_drawTagMask.Intersects(DrawTagMask(DrawTags::Transparent)))
+                m_transparentBounds.push_back(batch->m_octreeEntry.GetBounds());
         }
 
         // Changes recorded between updates and by this one are published together.
@@ -781,6 +757,28 @@ namespace FE::Graphics
     }
 
 
+    void MeshSceneModule::CullShadowInstances(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                              const Matrix4x4& viewProjection, CulledMeshView& result)
+    {
+        Culling::PassData culling = Culling::GetPassData(blackboard);
+        culling.m_viewProjection = viewProjection;
+        culling.m_settings.m_instanceOcclusionCulling = false;
+        CollectCullDispatches(culling, DrawTagMask(DrawTags::Static) | DrawTagMask(DrawTags::Dynamic));
+
+        const auto& view = blackboard.Get<RendererViewData>();
+        const ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
+        MeshCullViewResources resources;
+        resources.m_visibility = state.m_visibility.Get();
+        resources.m_meshletVisibility = state.m_meshletVisibility.Get();
+        CullCollectedDispatches(graph,
+                                *view.m_renderQueueUploader,
+                                CreateMeshViewData(graph, blackboard, culling),
+                                MeshPass::CullPhase::kSingle,
+                                resources,
+                                result);
+    }
+
+
     void MeshSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
                                             Core::RingUploader& uploader)
     {
@@ -790,13 +788,20 @@ namespace FE::Graphics
         const Culling::PassData& culling = Culling::GetPassData(blackboard);
         auto& culled = blackboard.Add<CulledMeshView>();
 
+        const auto viewConstants = CreateMeshViewData(graph, blackboard, culling);
+        blackboard.Add<ConstantsPtr<MeshPass::MeshViewData>>(viewConstants);
+        if (culling.m_sharedInstances != nullptr)
+        {
+            culled = *culling.m_sharedInstances;
+            culled.m_view = viewConstants;
+            return;
+        }
+
         ViewCullingState& state = AcquireViewCullingState(graph, uploader, view.m_view);
         blackboard.Add<ViewCullingState*>(&state);
         ResolveCullingStats(state, culling.m_stats);
 
         CollectCullDispatches(culling, DrawTagMask(~UINT64_C(0)));
-        const auto viewConstants = CreateMeshViewData(graph, blackboard, culling);
-        blackboard.Add<ConstantsPtr<MeshPass::MeshViewData>>(viewConstants);
 
         // An occluder pyramid replaces the two phases with a single one, matching Visibility::AddPasses.
         const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
@@ -832,7 +837,7 @@ namespace FE::Graphics
     {
         MeshPass::MeshViewData data{};
         data.m_view = blackboard.Get<ViewData>();
-        data.m_cull = CreateCullData(culling, blackboard.Get<RendererViewData>().m_viewportRect.Height());
+        data.m_cull = Culling::BuildMeshCullData(culling, blackboard.Get<RendererViewData>().m_viewportRect.Height());
         data.m_scene = m_sceneData;
         return graph.CreateConstants(data);
     }
@@ -920,7 +925,12 @@ namespace FE::Graphics
             independent = CullIndependentView(graph, blackboard, uploader, pass);
 
         CulledMeshView& culled = pass.m_independentCulling ? independent : blackboard.Get<CulledMeshView>();
-        ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
+        ViewCullingState& state = pass.m_cullingStats != nullptr
+            ? AcquireViewCullingState(graph, uploader, blackboard.Get<RendererViewData>().m_view, pass.m_cullingStats)
+            : *blackboard.Get<ViewCullingState*>();
+        if (pass.m_cullingStats != nullptr)
+            ResolveCullingStats(state, pass.m_cullingStats);
+
         const bool isLate = pass.m_phase == SceneRenderPhase::kLate;
         FE_FG_SCOPE(graph, isLate ? "LateMeshes" : "Meshes");
 
@@ -941,6 +951,7 @@ namespace FE::Graphics
         }
 
         MeshPassPhase phase;
+        phase.m_viewMask = pass.m_viewMask;
         phase.m_phase = festd::to_underlying(pass.m_phase);
         phase.m_depthPyramid = pass.m_depthPyramid;
         phase.m_stats = pass.m_reportsStats ? state.m_stats.Get() : nullptr;
@@ -991,14 +1002,15 @@ namespace FE::Graphics
 
 
     MeshSceneModule::ViewCullingState& MeshSceneModule::AcquireViewCullingState(Core::FrameGraph& graph,
-                                                                                Core::RingUploader& uploader, const View* view)
+                                                                                Core::RingUploader& uploader, const View* view,
+                                                                                Culling::Stats* statsTarget)
     {
         FE_PROFILER_ZONE();
 
         ViewCullingState* state = nullptr;
         for (const festd::unique_ptr<ViewCullingState>& candidate : m_viewCullingStates)
         {
-            if (candidate->m_view == view)
+            if (candidate->m_view == view && candidate->m_statsTarget == statsTarget)
             {
                 state = candidate.get();
                 break;
@@ -1009,20 +1021,21 @@ namespace FE::Graphics
         {
             state = m_viewCullingStates.emplace_back(festd::make_unique<ViewCullingState>()).get();
             state->m_view = view;
+            state->m_statsTarget = statsTarget;
         }
 
         state->m_lastFrameIndex = m_frameIndex;
 
         // Visibility is indexed by instance row; new buffers start with everything unseen, so it is tested in the late phase.
         const uint32_t rowCount = Math::Max(m_meshInstanceTable->GetReservedRowCount(), 1u);
-        if (state->m_visibilityCapacity < rowCount)
+        if (statsTarget == nullptr && state->m_visibilityCapacity < rowCount)
         {
             state->m_visibilityCapacity = Math::CeilPowerOfTwo(rowCount);
             state->m_visibility = CreateZeroedViewBuffer(graph, uploader, "MeshInstanceVisibility", state->m_visibilityCapacity);
         }
 
         const uint32_t meshletWordCount = Math::Max(m_meshletVisibilityWordCount, 1u);
-        if (state->m_meshletVisibilityCapacity < meshletWordCount)
+        if (statsTarget == nullptr && state->m_meshletVisibilityCapacity < meshletWordCount)
         {
             state->m_meshletVisibilityCapacity = Math::CeilPowerOfTwo(meshletWordCount);
             state->m_meshletVisibility =

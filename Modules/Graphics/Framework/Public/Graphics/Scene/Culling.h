@@ -1,6 +1,12 @@
 #pragma once
 #include <Graphics/Passes/Tools/DepthPyramid.h>
 #include <Graphics/Scene/View.h>
+#include <Shaders/Passes/MeshPass/GpuWork.h>
+
+namespace FE::Graphics
+{
+    struct CulledMeshView;
+}
 
 namespace FE::Graphics::Culling
 {
@@ -50,6 +56,11 @@ namespace FE::Graphics::Culling
     struct PassData final
     {
         Settings m_settings;
+        //! Shadow views retain their light frustum while selecting LODs exactly as the camera view does.
+        const PassData* m_lodReference = nullptr;
+        float m_lodViewportHeight = 0.0f;
+        //! Reuse instance classification across shadow levels and layers; meshlets still use this view's frustum and mask.
+        const CulledMeshView* m_sharedInstances = nullptr;
         //! The camera used for frustum culling and LOD selection.
         Matrix4x4 m_viewProjection = Matrix4x4::kIdentity;
         //! The camera of the depth pyramid that occlusion culling tests against.
@@ -77,6 +88,10 @@ namespace FE::Graphics::Culling
             return isCaptured ? m_frozenDepthPyramid : nullptr;
         }
     };
+
+
+    //! Builds GPU inputs while keeping a shadow view's light frustum independent of its camera LOD reference.
+    [[nodiscard]] MeshPass::MeshCullData BuildMeshCullData(const PassData& culling, float viewportHeight);
 
 
     //! Exposes culling settings and statistics of a view and can freeze its culling camera for inspection.

@@ -11,11 +11,14 @@ struct MaterialParameters
 };
 
 
+[earlydepthstencil]
 void main(PixelAttributes input, out float4 accumulation : SV_Target0, out float4 revealage : SV_Target1)
 {
     const MaterialInstanceTable table = GView.m_scene.Load().m_materials;
     const MaterialParameters parameters = table.ReadRow(input.m_materialRow).m_materialParameters.Get().Read<MaterialParameters>(0);
-    const ViewLighting lighting = GPass.m_passData.As<ViewLighting>().Load();
+    const TransparencyLighting pass = GPass.m_passData.As<TransparencyLighting>().Load();
+    ViewLighting lighting = pass.m_lighting.Load();
+    lighting.m_sunShadow.m_feedback = pass.m_shadowFeedback;
     Shading::MaterialEvaluation material;
     material.m_surface.m_diffuseAlbedo = parameters.BaseColor.rgb * (1 - parameters.Properties.y);
     material.m_surface.m_f0 = lerp((float3)0.04f, parameters.BaseColor.rgb, parameters.Properties.y);

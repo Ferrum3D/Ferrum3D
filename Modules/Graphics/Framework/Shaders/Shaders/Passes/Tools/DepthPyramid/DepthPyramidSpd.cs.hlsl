@@ -107,6 +107,7 @@ void DownsampleMips01(const uint x, const uint y, const uint2 workGroup, const u
 void DownsampleMip2(const uint x, const uint y, const uint2 workGroup, const uint index, const uint mip)
 {
     const float value = ReduceQuad(GIntermediate[x][y]);
+    GroupMemoryBarrierWithGroupSync();
     if (index % 4 == 0)
     {
         Store(workGroup * 8 + uint2(x / 2, y / 2), value, mip);
@@ -117,11 +118,12 @@ void DownsampleMip2(const uint x, const uint y, const uint2 workGroup, const uin
 
 void DownsampleMip3(const uint x, const uint y, const uint2 workGroup, const uint index, const uint mip)
 {
-    if (index >= 64)
-        return;
+    float value = 0.0f;
+    if (index < 64)
+        value = ReduceQuad(GIntermediate[x * 2 + y % 2][y * 2]);
 
-    const float value = ReduceQuad(GIntermediate[x * 2 + y % 2][y * 2]);
-    if (index % 4 == 0)
+    GroupMemoryBarrierWithGroupSync();
+    if (index < 64 && index % 4 == 0)
     {
         Store(workGroup * 4 + uint2(x / 2, y / 2), value, mip);
         GIntermediate[x * 2 + y / 2][y * 2] = value;
@@ -131,11 +133,12 @@ void DownsampleMip3(const uint x, const uint y, const uint2 workGroup, const uin
 
 void DownsampleMip4(const uint x, const uint y, const uint2 workGroup, const uint index, const uint mip)
 {
-    if (index >= 16)
-        return;
+    float value = 0.0f;
+    if (index < 16)
+        value = ReduceQuad(GIntermediate[x * 4 + y][y * 4]);
 
-    const float value = ReduceQuad(GIntermediate[x * 4 + y][y * 4]);
-    if (index % 4 == 0)
+    GroupMemoryBarrierWithGroupSync();
+    if (index < 16 && index % 4 == 0)
     {
         Store(workGroup * 2 + uint2(x / 2, y / 2), value, mip);
         GIntermediate[x / 2 + y][0] = value;
