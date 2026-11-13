@@ -51,12 +51,17 @@ namespace FE::Graphics
         Core::StructuredBufferPtr<uint32_t> m_stats;
         //! An occluder pyramid tested in the single phase; null otherwise.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
+        //! The occluder pyramid of every view of a multi-view pass, tested in the single phase; empty otherwise. The view
+        //! constants then hold one element per view, and each dispatch names its view.
+        festd::span<const Tools::DepthPyramid::Output* const> m_viewPyramids;
     };
 
 
     struct CulledMeshView final
     {
         ConstantsPtr<MeshPass::MeshViewData> m_view;
+        //! Valid for multi-view passes, see MeshCullViewResources::m_viewPyramids.
+        ConstantsPtr<MeshPass::DepthPyramidBinding> m_viewPyramids;
         Core::StructuredBuffer<MeshPass::CullDispatch> m_dispatches;
         Core::StructuredBuffer<uint32_t> m_visibility;
         Core::StructuredBuffer<uint32_t> m_meshletVisibility;
@@ -85,7 +90,6 @@ namespace FE::Graphics
     //! The inputs of one rendering phase of a mesh pass.
     struct MeshPassPhase final
     {
-        uint32_t m_viewMask = 0;
         uint32_t m_phase = MeshPass::CullPhase::kSingle;
         //! Built from the early depth in the late phase, or the occluders of the single phase; occlusion is tested when set.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
@@ -93,6 +97,12 @@ namespace FE::Graphics
         Core::StructuredBufferPtr<uint32_t> m_stats;
         //! Published to the pass shaders as MeshPassData::m_passData.
         AnyConstantsPtr m_passData;
+        //! The views of a multi-view pass, each of which may draw every instance of the registry.
+        uint32_t m_viewCount = 1;
+        //! Upper bounds on the instances and meshlet work chunks that the culled dispatches of the pass hold over all of its
+        //! views. Zero sizes the pass by the registry, which holds every instance once; multi-view passes state both.
+        uint32_t m_instanceCapacity = 0;
+        uint32_t m_workCapacity = 0;
     };
 
 

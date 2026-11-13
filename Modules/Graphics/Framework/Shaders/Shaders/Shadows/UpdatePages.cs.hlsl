@@ -23,7 +23,7 @@ void main(uint3 thread : SV_DispatchThreadID, uint lane : SV_GroupThreadID)
     }
 
     GroupMemoryBarrierWithGroupSync();
-    const bool wasRequested = (Feedback[lane / 32] & (1u << (index % 32))) != 0;
+    const bool wasRequested = GConstants.m_forceCoarsePages == 0 && (Feedback[lane / 32] & (1u << (index % 32))) != 0;
     if (index < kSunShadowCounterCount)
         GConstants.m_counters.Store(index, 0);
 

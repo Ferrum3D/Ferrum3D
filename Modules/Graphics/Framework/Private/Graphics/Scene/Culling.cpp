@@ -34,20 +34,15 @@ namespace FE::Graphics::Culling
     {
         // An LOD is acceptable when error * scale / distance * projection * height / 2 <= threshold. Orthographic views
         // compare against a unit distance.
-        const Culling::PassData& reference = culling.m_lodReference != nullptr ? *culling.m_lodReference : culling;
-        const float height = culling.m_lodReference != nullptr ? culling.m_lodViewportHeight : viewportHeight;
-        const float threshold = Math::Max(reference.m_settings.m_lodErrorThreshold, 1e-3f);
-        const float lodScale = reference.m_projectionScaleY * height * 0.5f / threshold;
+        const float threshold = Math::Max(culling.m_settings.m_lodErrorThreshold, 1e-3f);
+        const float lodScale = culling.m_projectionScaleY * viewportHeight * 0.5f / threshold;
 
         MeshPass::MeshCullData cull{};
         cull.m_viewProjection = culling.m_viewProjection;
         cull.m_occlusionViewProjection = culling.m_occlusionViewProjection;
-        cull.m_cameraPosition = PackedVector4F(Vector4(reference.m_cameraPosition, lodScale));
+        cull.m_cameraPosition = PackedVector4F(Vector4(culling.m_cameraPosition, lodScale));
         cull.m_flags = CalculateCullFlags(culling.m_settings);
-        cull.m_flags &= ~MeshPass::CullFlags::kLodSelection;
-        if (reference.m_settings.m_lodSelection)
-            cull.m_flags |= MeshPass::CullFlags::kLodSelection;
-        if (reference.m_isOrthographic)
+        if (culling.m_isOrthographic)
             cull.m_flags |= MeshPass::CullFlags::kOrthographic;
 
         return cull;

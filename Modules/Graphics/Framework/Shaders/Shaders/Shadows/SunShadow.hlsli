@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <Shaders/Shadows/ScreenTrace.hlsli>
 #include <Shaders/Shadows/SunShadow.h>
 
 namespace SunShadow
@@ -14,11 +15,17 @@ namespace SunShadow
     };
 
 
-    float2 ProjectTexel(const SunShadowData data, const uint level, const float3 worldPosition, out float depth)
+    float2 ProjectTexel(const SunShadowLevel level, const float3 worldPosition, out float depth)
     {
-        const float4 clip = mul(float4(worldPosition, 1.0f), data.m_levels.LoadElement(level).m_viewProjection);
+        const float4 clip = mul(float4(worldPosition, 1.0f), level.m_viewProjection);
         depth = clip.z;
         return (clip.xy * float2(0.5f, -0.5f) + 0.5f) * kSunShadowVirtualSize;
+    }
+
+
+    float2 ProjectTexel(const SunShadowData data, const uint level, const float3 worldPosition, out float depth)
+    {
+        return ProjectTexel(data.m_levels.LoadElement(level), worldPosition, depth);
     }
 
 
@@ -145,47 +152,70 @@ namespace SunShadow
     }
 
 
-    //! Fraction of the sun visible from the position; 1 without shadow data or outside the clip levels.
-    float SampleVisibility(const SunShadowBinding binding, const float3 worldPosition, const float3 normal)
+    //! The level that the lookups of a position read.
+    struct LevelSelection
     {
-        if (!binding.m_data.IsValid())
-            return 1.0f;
+        SunShadowLevel m_level;
+        uint m_index;
+        bool m_isBacked;
+    };
 
-        const SunShadowData data = binding.m_data.Load();
+
+    //! The level that Project() selects for the position, or the next coarser one whose page under the position is backed.
+    //! Pages are requested for this position, so the selection must not use one that is offset from it.
+    LevelSelection SelectBackedLevel(const SunShadowBinding binding, const SunShadowData data, const float3 worldPosition)
+    {
+        LevelSelection result = (LevelSelection)0;
         Projection center = Project(data, worldPosition);
         if (!center.m_isValid)
-            return 1.0f;
+            return result;
 
         if (binding.m_feedback.IsValid())
             RequestProjection(binding.m_feedback.Get(), data, center, kSunShadowPageRequested, true);
 
-        bool isBacked = false;
-        for (uint index = center.m_level; index < data.m_levelCount; ++index)
+        // Each level is loaded once and reused by the filter; Project() has already projected the position into the first.
+        const uint firstLevel = center.m_level;
+        for (uint index = firstLevel; index < data.m_levelCount && !result.m_isBacked; ++index)
         {
-            center.m_level = index;
-            center.m_texel = ProjectTexel(data, index, worldPosition, center.m_depth);
+            result.m_level = data.m_levels.LoadElement(index);
+            result.m_index = index;
+            if (index != firstLevel)
+                center.m_texel = ProjectTexel(result.m_level, worldPosition, center.m_depth);
+
             const bool isInside = all(center.m_texel >= 2.0f) && all(center.m_texel <= kSunShadowVirtualSize - 2.0f);
             if (!isInside)
                 continue;
 
-            const int2 origin = data.m_levels.LoadElement(index).m_pageOrigin;
-            isBacked = IsBacked(binding.m_pageTable.Load(GetPageIndex(index, origin, uint2(center.m_texel))));
-            if (isBacked)
-                break;
+            const uint entryIndex = GetPageIndex(index, result.m_level.m_pageOrigin, uint2(center.m_texel));
+            result.m_isBacked = IsBacked(binding.m_pageTable.Load(entryIndex));
         }
 
-        if (!isBacked)
-            return 1.0f;
+        return result;
+    }
 
+
+    //! Fraction of the sun visible from the receiver in the selected level. The receiver may be offset along the light from
+    //! the position that selected the level, which keeps its texels.
+    float FilterLevel(const SunShadowBinding binding, const SunShadowData data, const LevelSelection selection,
+                      const float3 receiverPosition, const float3 normal)
+    {
         // Offset along the normal by a few texels of the chosen level to avoid self-shadowing.
-        const SunShadowLevel level = data.m_levels.LoadElement(center.m_level);
+        const SunShadowLevel level = selection.m_level;
         const float texelSize = level.m_texelSize;
         float receiverDepth;
-        const float2 texel = ProjectTexel(data, center.m_level, worldPosition + normal * (2.0f * texelSize), receiverDepth);
+        const float2 texel = ProjectTexel(level, receiverPosition + normal * (2.0f * texelSize), receiverDepth);
         receiverDepth += texelSize * data.m_depthPerUnit;
 
         const int2 base = int2(floor(texel));
         const int2 pageOrigin = level.m_pageOrigin;
+
+        // The taps usually fall into one page, which then needs a single page table load.
+        const uint2 tapMin = uint2(clamp(base - 1, 0, (int)kSunShadowVirtualSize - 1));
+        const uint2 tapMax = uint2(clamp(base + 1, 0, (int)kSunShadowVirtualSize - 1));
+        const uint firstEntryIndex = GetPageIndex(selection.m_index, pageOrigin, tapMin);
+        const bool isOnePage = firstEntryIndex == GetPageIndex(selection.m_index, pageOrigin, tapMax);
+        const uint firstEntry = binding.m_pageTable.Load(firstEntryIndex);
+
         float visible = 0.0f;
         [unroll] for (int y = -1; y <= 1; ++y)
         {
@@ -193,7 +223,10 @@ namespace SunShadow
             {
                 const uint2 tap = uint2(clamp(base + int2(x, y), 0, (int)kSunShadowVirtualSize - 1));
                 // Marking requested every page the filter reads; others may hold content cached for other pixels.
-                const uint entry = binding.m_pageTable.Load(GetPageIndex(center.m_level, pageOrigin, tap));
+                uint entry = firstEntry;
+                [branch] if (!isOnePage)
+                    entry = binding.m_pageTable.Load(GetPageIndex(selection.m_index, pageOrigin, tap));
+
                 if (!IsBacked(entry))
                 {
                     visible += 1.0f;
@@ -207,5 +240,49 @@ namespace SunShadow
         }
 
         return visible / 9.0f;
+    }
+
+
+    //! Fraction of the sun visible from the position; 1 without shadow data or outside the clip levels.
+    float SampleVisibility(const SunShadowBinding binding, const float3 worldPosition, const float3 normal)
+    {
+        if (!binding.m_data.IsValid())
+            return 1.0f;
+
+        const SunShadowData data = binding.m_data.Load();
+        const LevelSelection selection = SelectBackedLevel(binding, data, worldPosition);
+        if (!selection.m_isBacked)
+            return 1.0f;
+
+        return FilterLevel(binding, data, selection, worldPosition, normal);
+    }
+
+
+    //! SampleVisibility for a surface in the camera depth. Shadow casters are drawn at LODs selected for the resolution of
+    //! their shadow pages, so close to a surface they differ from the triangles the camera sees. A short ray through the
+    //! camera depth finds the occluders within a few shadow texels of the surface, and the shadow lookup starts where the
+    //! ray ends. The surface selects the level, as it did when its pages were requested, and the texels of that level give
+    //! the ray its length.
+    float SampleVisibility(const SunShadowBinding binding, const ScreenTrace::Context trace, const float3 worldPosition,
+                           const float3 normal, const float3 directionToLight)
+    {
+        if (!binding.m_data.IsValid())
+            return 1.0f;
+
+        const SunShadowData data = binding.m_data.Load();
+        const LevelSelection selection = SelectBackedLevel(binding, data, worldPosition);
+        if (!selection.m_isBacked)
+            return 1.0f;
+
+        const bool isEnabled = trace.m_isValid && data.m_screenTraceTexels > 0.0f && data.m_isOrthographicCamera == 0;
+        if (!isEnabled || dot(normal, directionToLight) <= 0.0f)
+            return FilterLevel(binding, data, selection, worldPosition, normal);
+
+        const float pixelSize = data.m_cameraPosition.w * length(worldPosition - data.m_cameraPosition.xyz);
+        const float rayLength = selection.m_level.m_texelSize * data.m_screenTraceTexels;
+        if (ScreenTrace::IsOccluded(trace, worldPosition + normal * pixelSize, directionToLight, rayLength, pixelSize, 8))
+            return 0.0f;
+
+        return FilterLevel(binding, data, selection, worldPosition + directionToLight * rayLength, normal);
     }
 } // namespace SunShadow

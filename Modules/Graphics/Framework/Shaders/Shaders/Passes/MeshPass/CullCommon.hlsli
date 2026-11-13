@@ -83,6 +83,7 @@ void AppendVisibleMeshlet(RWStructuredBufferDescriptor<uint32_t> meshletCounts,
             VisibleMeshlet meshlet;
             meshlet.m_instanceId = instance.m_instanceId;
             meshlet.m_lodMeshlet = (instance.m_lodIndex << kVisibleMeshletLodShift) | meshletIndex;
+            meshlet.m_viewIndex = GetViewIndex(instance.m_flags);
             meshlets.Store(buckets.Load(bucket).m_firstWorkChunk * kMeshletsPerWorkChunk + firstOutput + prefix, meshlet);
         }
 
@@ -115,6 +116,18 @@ InstanceBounds LoadInstanceBounds(const MeshGroupTable::Row group)
 }
 
 
+//! The view of an occlusion candidate. The candidates of a multi-view pass mix views within a wave; other passes have one
+//! view, which is loaded once per wave.
+MeshViewData LoadCandidateMeshView(const ConstantsPtr<MeshViewData> views, const ConstantsPtr<DepthPyramidBinding> viewPyramids,
+                                   const uint instanceFlags)
+{
+    if (viewPyramids.IsValid())
+        return LoadLaneMeshView(views, GetViewIndex(instanceFlags));
+
+    return LoadMeshView(views);
+}
+
+
 DepthPyramid CreateDepthPyramid(const DepthPyramidBinding binding)
 {
     DepthPyramid pyramid;
@@ -123,4 +136,15 @@ DepthPyramid CreateDepthPyramid(const DepthPyramidBinding binding)
     pyramid.m_uvScale = binding.m_uvScale;
     pyramid.m_mipCount = binding.m_mipCount;
     return pyramid;
+}
+
+
+//! The pyramid that occlusion culling tests a candidate against: the one of its view in a multi-view pass.
+DepthPyramid LoadOcclusionPyramid(const DepthPyramidBinding binding, const ConstantsPtr<DepthPyramidBinding> viewPyramids,
+                                  const uint viewIndex)
+{
+    if (viewPyramids.IsValid())
+        return CreateDepthPyramid(viewPyramids.LoadElement(viewIndex));
+
+    return CreateDepthPyramid(binding);
 }

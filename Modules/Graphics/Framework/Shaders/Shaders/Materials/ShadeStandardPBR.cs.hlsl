@@ -29,13 +29,19 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
     const float3 worldPosition = homogeneousWorld.xyz / homogeneousWorld.w;
     const ViewLighting viewLighting = GConstants.m_lighting.Load();
     const GlobalLightingData lighting = LoadGlobalLighting(viewLighting.m_global);
-    const float sunVisibility = SunShadow::SampleVisibility(viewLighting.m_sunShadow, worldPosition, surface.m_normal);
+    const ScreenTrace::Context trace = ScreenTrace::CreateContext(GConstants.m_depth, view);
+    const float sunVisibility = SunShadow::SampleVisibility(viewLighting.m_sunShadow,
+                                                            trace,
+                                                            worldPosition,
+                                                            surface.m_normal,
+                                                            lighting.m_directionIlluminance.xyz);
     const float3 color = Shading::ComputeShading(material,
                                                  worldPosition,
                                                  view.m_cameraPosition.xyz,
                                                  lighting,
                                                  viewLighting.m_local,
                                                  viewLighting.m_sunShadow,
+                                                 trace,
                                                  float2(pixel) + 0.5f,
                                                  sunVisibility)
                              .rgb;

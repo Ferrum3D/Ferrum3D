@@ -182,49 +182,79 @@ namespace LocalShadow
     }
 
 
-    //! Fraction of a local light visible from the position; 1 for lights without a shadow map.
-    float SampleVisibility(const SunShadowBinding binding, const Camera camera, const uint lightMaps, const float3 worldPosition,
-                           const float3 normal)
+    //! The map and mip that the lookups of a position read.
+    struct MipSelection
     {
-        if (!camera.m_isValid || lightMaps == kLocalShadowNoMap)
-            return 1.0f;
+        LocalShadowMapData m_map;
+        uint m_mip;
+        bool m_isBacked;
+    };
 
+
+    //! The map of the light that shows the position, with the mip that SelectMip() selects or the next coarser one whose page
+    //! under the position is backed. Pages are requested for this position, so the selection must not use one that is offset
+    //! from it.
+    MipSelection SelectBackedMip(const SunShadowBinding binding, const Camera camera, const uint lightMaps,
+                                 const float3 worldPosition)
+    {
+        MipSelection result = (MipSelection)0;
         const LocalShadowMapData first = binding.m_localMaps.Load(lightMaps & ~kLocalShadowPointFlag);
         const uint mapIndex = SelectMap(lightMaps, first.m_positionTexelScale.xyz, worldPosition);
-        const LocalShadowMapData map = binding.m_localMaps.Load(mapIndex);
+        result.m_map = binding.m_localMaps.Load(mapIndex);
 
-        const uint selectedMip = SelectMip(camera, map, worldPosition, binding.m_data.Load().m_levelBias);
+        const uint selectedMip = SelectMip(camera, result.m_map, worldPosition, binding.m_data.Load().m_levelBias);
         if (binding.m_feedback.IsValid())
-            RequestProjection(binding.m_feedback.Get(), ProjectMip(map, selectedMip, worldPosition), kSunShadowPageRequested, true);
-
-        // Positions that requested no pages, e.g. transparent surfaces behind others, fall back to coarser mips.
-        Projection center = (Projection)0;
-        bool isBacked = false;
-        for (uint mip = selectedMip; mip < kLocalShadowMipCount && !isBacked; ++mip)
         {
-            center = ProjectMip(map, mip, worldPosition);
-            if (!center.m_isValid)
-                return 1.0f;
-
-            isBacked = IsBacked(binding.m_pageTable.Load(GetPageIndex(center, int2(floor(center.m_texel)))));
+            const Projection requested = ProjectMip(result.m_map, selectedMip, worldPosition);
+            RequestProjection(binding.m_feedback.Get(), requested, kSunShadowPageRequested, true);
         }
 
-        if (!isBacked)
-            return 1.0f;
+        // Positions that requested no pages, e.g. transparent surfaces behind others, fall back to coarser mips.
+        for (uint mip = selectedMip; mip < kLocalShadowMipCount && !result.m_isBacked; ++mip)
+        {
+            const Projection center = ProjectMip(result.m_map, mip, worldPosition);
+            if (!center.m_isValid)
+                return result;
 
+            result.m_mip = mip;
+            result.m_isBacked = IsBacked(binding.m_pageTable.Load(GetPageIndex(center, int2(floor(center.m_texel)))));
+        }
+
+        return result;
+    }
+
+
+    //! Fraction of the light visible from the receiver in the selected mip. The receiver may be offset towards the light
+    //! from the position that selected the mip, which keeps its texels.
+    float FilterMip(const SunShadowBinding binding, const MipSelection selection, const float3 receiverPosition,
+                    const float3 normal)
+    {
         // Offset along the normal and towards the light by a few texels of the chosen mip to avoid self-shadowing.
-        const float texelSize = GetTexelSize(map, center.m_mip, worldPosition);
-        const float3 toLight = normalize(map.m_positionTexelScale.xyz - worldPosition);
-        const Projection receiver = ProjectMip(map, center.m_mip, worldPosition + (normal * 2.0f + toLight) * texelSize);
+        const LocalShadowMapData map = selection.m_map;
+        const float texelSize = GetTexelSize(map, selection.m_mip, receiverPosition);
+        const float3 toLight = normalize(map.m_positionTexelScale.xyz - receiverPosition);
+        const float3 offsetPosition = receiverPosition + (normal * 2.0f + toLight) * texelSize;
+        const Projection receiver = ProjectMip(map, selection.m_mip, offsetPosition);
         const int2 base = int2(floor(receiver.m_texel));
         const int size = int(kSunShadowVirtualSize >> receiver.m_mip);
+
+        // The taps usually fall into one page, which then needs a single page table load.
+        const uint2 tapMin = uint2(clamp(base - 1, 0, size - 1));
+        const uint2 tapMax = uint2(clamp(base + 1, 0, size - 1));
+        const uint firstEntryIndex = SunShadow::GetPageIndex(receiver.m_block, int2(0, 0), tapMin);
+        const bool isOnePage = firstEntryIndex == SunShadow::GetPageIndex(receiver.m_block, int2(0, 0), tapMax);
+        const uint firstEntry = binding.m_pageTable.Load(firstEntryIndex);
+
         float visible = 0.0f;
         [unroll] for (int y = -1; y <= 1; ++y)
         {
             [unroll] for (int x = -1; x <= 1; ++x)
             {
                 const uint2 tap = uint2(clamp(base + int2(x, y), 0, size - 1));
-                const uint entry = binding.m_pageTable.Load(SunShadow::GetPageIndex(receiver.m_block, int2(0, 0), tap));
+                uint entry = firstEntry;
+                [branch] if (!isOnePage)
+                    entry = binding.m_pageTable.Load(SunShadow::GetPageIndex(receiver.m_block, int2(0, 0), tap));
+
                 if (!IsBacked(entry))
                 {
                     visible += 1.0f;
@@ -238,5 +268,52 @@ namespace LocalShadow
         }
 
         return visible / 9.0f;
+    }
+
+
+    //! Fraction of a local light visible from the position; 1 for lights without a shadow map.
+    float SampleVisibility(const SunShadowBinding binding, const Camera camera, const uint lightMaps, const float3 worldPosition,
+                           const float3 normal)
+    {
+        if (!camera.m_isValid || lightMaps == kLocalShadowNoMap)
+            return 1.0f;
+
+        const MipSelection selection = SelectBackedMip(binding, camera, lightMaps, worldPosition);
+        if (!selection.m_isBacked)
+            return 1.0f;
+
+        return FilterMip(binding, selection, worldPosition, normal);
+    }
+
+
+    //! SampleVisibility for a surface in the camera depth, with the short ray of SunShadow::SampleVisibility towards the
+    //! light. The ray passes through the light, so the lookup at its end reads the same texels as at the surface, which
+    //! selects the map and the mip.
+    float SampleVisibility(const SunShadowBinding binding, const Camera camera, const uint lightMaps,
+                           const ScreenTrace::Context trace, const float3 worldPosition, const float3 normal,
+                           const float3 directionToLight)
+    {
+        if (!camera.m_isValid || lightMaps == kLocalShadowNoMap)
+            return 1.0f;
+
+        const MipSelection selection = SelectBackedMip(binding, camera, lightMaps, worldPosition);
+        if (!selection.m_isBacked)
+            return 1.0f;
+
+        const float traceTexels = binding.m_data.Load().m_screenTraceTexels;
+        const bool isEnabled = trace.m_isValid && traceTexels > 0.0f && !camera.m_isOrthographic;
+        if (!isEnabled || dot(normal, directionToLight) <= 0.0f)
+            return FilterMip(binding, selection, worldPosition, normal);
+
+        // The ray stays well short of the light.
+        const LocalShadowMapData map = selection.m_map;
+        const float lightDistance = length(map.m_positionTexelScale.xyz - worldPosition);
+        const float texelSize = GetTexelSize(map, selection.m_mip, worldPosition);
+        const float rayLength = min(texelSize * traceTexels, lightDistance * 0.5f);
+        const float pixelSize = camera.m_positionFootprint.w * length(worldPosition - camera.m_positionFootprint.xyz);
+        if (ScreenTrace::IsOccluded(trace, worldPosition + normal * pixelSize, directionToLight, rayLength, pixelSize, 4))
+            return 0.0f;
+
+        return FilterMip(binding, selection, worldPosition + directionToLight * rayLength, normal);
     }
 } // namespace LocalShadow

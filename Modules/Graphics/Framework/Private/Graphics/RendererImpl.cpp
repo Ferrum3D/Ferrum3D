@@ -430,7 +430,6 @@ namespace FE::Graphics
         });
 
         Visibility::AddPasses(graph, blackboard);
-        ShadowAtlas::AddPasses(graph, blackboard);
         DepthPyramidPass::AddPasses(graph, blackboard);
         SunShadow::AddPasses(graph, blackboard);
         viewData.m_lighting = CreateViewLighting(graph, blackboard);

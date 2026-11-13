@@ -16,8 +16,8 @@ bool IsInstanceOccluded(const MeshViewData view, const InstanceClassification it
     if (!ProjectBox(bounds.m_center, bounds.m_extent, localToClip, screenBounds))
         return false;
 
-    const DepthPyramid pyramid = CreateDepthPyramid(GConstants.m_depthPyramid);
-    return IsOccluded(pyramid, screenBounds);
+    const uint viewIndex = GetViewIndex(item.m_flags);
+    return IsOccluded(LoadOcclusionPyramid(GConstants.m_depthPyramid, GConstants.m_viewPyramids, viewIndex), screenBounds);
 }
 
 
@@ -30,9 +30,9 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     bool isOccluded = false;
     if (isCandidate)
     {
-        const MeshViewData view = LoadMeshView(GConstants.m_view);
         const uint slot = GConstants.m_candidates.Load(candidateIndex);
         const InstanceClassification item = GConstants.m_classification.Load(slot);
+        const MeshViewData view = LoadCandidateMeshView(GConstants.m_view, GConstants.m_viewPyramids, item.m_flags);
         isOccluded = IsInstanceOccluded(view, item);
         if (isOccluded)
         {

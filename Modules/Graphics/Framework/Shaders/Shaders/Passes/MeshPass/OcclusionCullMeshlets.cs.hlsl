@@ -4,14 +4,13 @@
 
 [[vk::push_constant]] Constants GConstants;
 
-bool IsMeshletOccluded(const MeshViewData view, const float4 worldSphere)
+bool IsMeshletOccluded(const MeshViewData view, const float4 worldSphere, const uint viewIndex)
 {
     ScreenBounds screenBounds;
     if (!ProjectBox(worldSphere.xyz, worldSphere.w, view.m_cull.m_occlusionViewProjection, screenBounds))
         return false;
 
-    const DepthPyramid pyramid = CreateDepthPyramid(GConstants.m_depthPyramid);
-    return IsOccluded(pyramid, screenBounds);
+    return IsOccluded(LoadOcclusionPyramid(GConstants.m_depthPyramid, GConstants.m_viewPyramids, viewIndex), screenBounds);
 }
 
 
@@ -28,13 +27,13 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     uint triangleCount = 0;
     if (isCandidate)
     {
-        const MeshViewData view = LoadMeshView(GConstants.m_view);
         const MeshletOcclusionCandidate candidate = GConstants.m_candidates.Load(candidateIndex);
         instance = GConstants.m_instances.Load(candidate.m_visibleInstanceIndex);
+        const MeshViewData view = LoadCandidateMeshView(GConstants.m_view, GConstants.m_viewPyramids, instance.m_flags);
         meshletIndex = candidate.m_meshlet & ~kCandidateRenderedEarlyBit;
 
         const MeshDrawData draw = ResolveMeshDrawData(view, instance.m_instanceId, instance.m_lodIndex);
-        isOccluded = IsMeshletOccluded(view, LoadMeshletWorldSphere(draw, meshletIndex));
+        isOccluded = IsMeshletOccluded(view, LoadMeshletWorldSphere(draw, meshletIndex), GetViewIndex(instance.m_flags));
 
         const uint wordIndex = GetMeshletHistoryWordIndex(draw, meshletIndex, GConstants.m_meshletVisibilityCapacity);
         if (GConstants.m_phase == CullPhase::kLate && !isOccluded && wordIndex != kInvalidIndex)

@@ -8,8 +8,7 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     const uint index = group.x * kInstancesPerCullGroup + lane;
     const InstanceClassification item = GConstants.m_classification.Load(index);
     uint bucket = kInvalidIndex;
-    const bool isInView = GConstants.m_viewMask == 0 || (item.m_flags & GConstants.m_viewMask) != 0;
-    if (isInView && item.m_meshletCount != 0 && any(item.m_drawTagMask & GConstants.m_drawTagMask))
+    if (item.m_meshletCount != 0 && any(item.m_drawTagMask & GConstants.m_drawTagMask))
         bucket = GConstants.m_routing.Load(item.m_groupId).m_bucket;
 
     GConstants.m_instanceBuckets.Store(index, bucket);

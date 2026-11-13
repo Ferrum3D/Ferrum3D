@@ -2,6 +2,7 @@
 #include "DeferredProbe.h"
 #include "DepthPyramidProbe.h"
 #include "GpuProbe.h"
+#include "MultiViewProbe.h"
 #include "RasterProbe.h"
 #include "SunShadowProbe.h"
 #include "SurfaceProbe.h"
@@ -111,6 +112,73 @@ namespace
             readback->Unmap();
         }
 
+        device->WaitIdle();
+    }
+
+
+    //! Shaders index the views and pyramids of a multi-view pass by the view index in the instance flags.
+    void CheckMultiViewConstants(Core::Device* device, Core::ResourcePool* pool, Core::GraphicsQueue* queue,
+                                 Core::DescriptorManager* descriptors, Core::PipelineFactory* pipelines)
+    {
+        Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
+
+        Core::ComputePipelineRequest request;
+        request.m_desc.SetComputeShader(Env::Name("Shaders/Tests/MultiViewProbe.cs.hlsl"));
+        Core::ComputePipeline* pipeline = pipelines->CreateComputePipeline(request);
+        pipeline->GetCompletionWaitGroup()->Wait();
+        ASSERT_TRUE(pipeline->IsReady());
+
+        constexpr uint32_t kViewCount = 5;
+        constexpr uint32_t kWordCount = kViewCount * MultiViewProbe::kWordsPerView;
+        constexpr uint32_t kByteSize = kWordCount * sizeof(uint32_t);
+        Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "MultiViewProbeReadback", kByteSize);
+        Core::ResourceCommitParams commit;
+        commit.m_memory = Core::ResourceMemory::kHostRandomAccess;
+        commit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
+        pool->CommitBufferMemory(readback.Get(), commit);
+
+        queue->BeginFrame();
+        graph->BeginFrame();
+
+        // Every view differs in each field that the probe reads, so a wrong element stride or index shows in its words.
+        MeshPass::MeshViewData views[kViewCount]{};
+        MeshPass::DepthPyramidBinding pyramids[kViewCount]{};
+        for (uint32_t viewIndex = 0; viewIndex < kViewCount; ++viewIndex)
+        {
+            views[viewIndex].m_view.m_viewport = PackedVector4F(0.0f, 0.0f, float(4096u >> viewIndex), float(4096u >> viewIndex));
+            views[viewIndex].m_cull.m_flags = 0x100u + viewIndex;
+            views[viewIndex].m_cull.m_cameraPosition = PackedVector4F(1.0f, 2.0f, 3.0f, float(7 * (viewIndex + 1)));
+            pyramids[viewIndex].m_mipCount = 3 + viewIndex;
+        }
+
+        auto output = Core::Buffer::CreateStructured<uint32_t>(device, "MultiViewProbeOutput", kWordCount);
+        MultiViewProbe::Constants constants{};
+        constants.m_views = graph->CreateConstantsArray(festd::span<const MeshPass::MeshViewData>(views));
+        constants.m_pyramids = graph->CreateConstantsArray(festd::span<const MeshPass::DepthPyramidBinding>(pyramids));
+        constants.m_output = graph->GetUAV(output.Get());
+        constants.m_viewCount = kViewCount;
+        graph->AddDispatch("MultiViewProbe", pipeline, constants, Core::ComputeWorkGroupCount(1));
+        graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(output.Get()));
+        graph->CompileAndExecute();
+
+        const Core::FenceSyncPoint completion = queue->GetCurrentFence();
+        queue->SubmitFrame();
+        completion.Wait();
+
+        const auto* words = static_cast<const uint32_t*>(readback->Map());
+        readback->InvalidateMappedRange(0, kByteSize);
+        for (uint32_t viewIndex = 0; viewIndex < kViewCount; ++viewIndex)
+        {
+            SCOPED_TRACE(viewIndex);
+
+            const uint32_t* viewWords = words + viewIndex * MultiViewProbe::kWordsPerView;
+            EXPECT_EQ(viewWords[0], 4096u >> viewIndex);
+            EXPECT_EQ(viewWords[1], 0x100u + viewIndex);
+            EXPECT_EQ(viewWords[2], 7 * (viewIndex + 1));
+            EXPECT_EQ(viewWords[3], 3 + viewIndex);
+        }
+
+        readback->Unmap();
         device->WaitIdle();
     }
 
@@ -898,6 +966,7 @@ TEST(VisibilityGpu, ComputeWrittenIndirectArgumentsAndRegistryDeduplication)
             EXPECT_NEAR(std::bit_cast<float>(results[3]), 0.1f / 0.525f, 1e-6f);
             reconstructionReadback->Unmap();
             CheckConstants(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
+            CheckMultiViewConstants(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             CheckLightClusterMasks(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());
             CheckLocalShadowSelection(device.Get(), pool.Get());
             RasterProbe::Check(device.Get(), pool.Get(), queue.Get(), descriptors.Get(), pipelines.Get());

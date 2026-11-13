@@ -1,15 +1,9 @@
 #pragma once
 #include <Shaders/Base/Base.h>
 #include <Shaders/Lighting/LocalLighting.h>
-#include <Shaders/Passes/MeshPass/GpuWork.h>
 #include <Shaders/Scene/ViewData.h>
 
 FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
-#if FE_HOST
-    using MeshPass::DepthPyramidBinding;
-    using MeshPass::InstanceClassification;
-    using MeshPass::MeshViewData;
-#endif
     //! Each clip level is a virtual 4096x4096 shadow map split into pages; requested pages are backed by atlas pages.
     FE_CONSTEXPR uint32_t kSunShadowMaxLevelCount = 16;
     FE_CONSTEXPR uint32_t kSunShadowPageSize = 128;
@@ -104,6 +98,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         //! Clip-space depth per world unit along the light direction.
         float m_depthPerUnit;
         float m_levelBias;
+        //! Length in shadow texels of the ray traced through the camera depth before the shadow lookup; zero disables it.
+        float m_screenTraceTexels;
         FE_RTTI_Reflect("28DC5AE5-CDBC-4AC3-9EFC-C6C58106A648");
     };
 
@@ -171,12 +167,14 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_pageCount;
         uint32_t m_isReset;
         RWStructuredBufferDescriptor<uint32_t> m_feedback;
+        uint32_t m_forceCoarsePages;
 
         FE_RTTI_Reflect("28CB9DB3-34D8-4ACF-8D95-622B4FB7E51D");
     };
 
 
-    //! Frees the pages of every block that overlap world bounds where static casters changed.
+    //! Frees the pages of every block that overlap world bounds where static casters changed, or marks the pages that
+    //! the bounds of dynamic casters overlap. One group handles one region in one block.
     struct SunShadowInvalidateConstants final
     {
         StructuredBufferDescriptor<SunShadowBlock> m_blocks;
@@ -187,35 +185,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         uint32_t m_marksDynamic;
 
         FE_RTTI_Reflect("989CB824-D885-4004-A298-672C2B610EE6");
-    };
-
-
-    struct SunShadowCullLevel final
-    {
-        //! Converts the shared light-space projection's UVs to this level's UVs.
-        float4 m_uvScaleBias;
-        DepthPyramidBinding m_staticPages;
-        DepthPyramidBinding m_dynamicPages;
-        FE_RTTI_Reflect("702B5713-F3FB-4006-BE9C-6342B6A36060");
-    };
-
-
-    struct SunShadowLodConstants final
-    {
-        ConstantsPtr<MeshViewData> m_view;
-        RWStructuredBufferDescriptor<InstanceClassification> m_instances;
-        RWStructuredBufferDescriptor<uint32_t> m_history;
-        RWStructuredBufferDescriptor<uint32_t> m_changes;
-        StructuredBufferDescriptor<SunShadowBlock> m_blocks;
-        RWStructuredBufferDescriptor<uint32_t> m_pageTable;
-        RWStructuredBufferDescriptor<uint32_t> m_owners;
-        uint2 m_staticTag;
-        uint32_t m_instanceCount;
-        uint32_t m_frame;
-        uint32_t m_checksLods;
-        ConstantsPtr<SunShadowCullLevel> m_levels;
-        uint32_t m_levelCount;
-        FE_RTTI_Reflect("F8B9AFBD-6556-4A42-AE0C-C767F0BC9B75");
     };
 
 
@@ -314,19 +283,32 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     };
 
 
-    //! Read by the shadow depth pixel shader through MeshViewData::m_passData; it writes pages with all of m_requiredFlags.
+    //! One view of a shadow mesh pass: a clip level or a mip of a local map. All views of a pass share its viewport of
+    //! kSunShadowVirtualSize texels; smaller views use its top left corner.
+    struct SunShadowRasterView final
+    {
+        int2 m_pageOrigin;
+        //! The block of the page table that the view draws.
+        uint32_t m_level;
+        //! Texels per axis of the view.
+        uint32_t m_size;
+        FE_RTTI_Reflect("26E1A76C-89F6-478B-ACC6-2D93CAE19919");
+    };
+
+
+    //! Read by the shadow depth pixel shader through MeshPassData::m_passData; it writes pages with all of m_requiredFlags.
     struct SunShadowRasterData final
     {
         StructuredBufferDescriptor<uint32_t> m_pageTable;
         RWTexture2DDescriptor<uint32_t> m_atlas;
-        uint32_t m_level;
+        //! Indexed like the MeshViewData elements of the pass.
+        ConstantsPtr<SunShadowRasterView> m_views;
         uint32_t m_requiredFlags;
-        int2 m_pageOrigin;
         FE_RTTI_Reflect("C9438732-66F5-451D-A219-B71D3A5FB449");
     };
 
 
-    //! Base pass of the shadow mesh passes of one clip level; pixel shaders write the atlas without render targets.
+    //! Base pass of the shadow mesh passes of one layer; pixel shaders write the atlas without render targets.
     struct SunShadowRasterPassDesc final
     {
         //! Left invalid: it declares the render target state of a pass without attachments.
@@ -376,6 +358,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
 
 #if FE_HOST
     static_assert(sizeof(SunShadowLevel) == 80);
-    static_assert(sizeof(SunShadowData) == 44);
+    static_assert(sizeof(SunShadowData) == 48);
 #endif
 FE_HOST_END_NAMESPACE

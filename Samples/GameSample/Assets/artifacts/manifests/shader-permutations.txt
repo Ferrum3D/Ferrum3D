@@ -63,4 +63,5 @@ cs Shaders/Shadows/UpdatePages.cs.hlsl
 cs Shaders/Shadows/InvalidatePages.cs.hlsl
 ms Shaders/Shadows/MarkTransparentPages.ms.hlsl
 ps Shaders/Shadows/MarkTransparentPages.ps.hlsl
-cs Shaders/Shadows/InvalidateLods.cs.hlsl
+ms Shaders/Shadows/ShadowDepth.ms.hlsl SHADOW_TWO_SIDED=0
+ps Shaders/Shadows/ShadowDepth.ps.hlsl SHADOW_TWO_SIDED=0

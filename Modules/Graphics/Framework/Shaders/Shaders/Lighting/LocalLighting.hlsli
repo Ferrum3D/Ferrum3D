@@ -8,8 +8,9 @@
 
 namespace Shading
 {
-    float3 ComputeLocalLighting(LocalLightingBinding binding, SunShadowBinding shadows, Surface surface, float3 position,
-                                float3 camera, float2 pixel)
+    //! trace is valid for surfaces in the camera depth, whose shadow lookups start with a short ray through it.
+    float3 ComputeLocalLighting(LocalLightingBinding binding, SunShadowBinding shadows, ScreenTrace::Context trace,
+                                Surface surface, float3 position, float3 camera, float2 pixel)
     {
         if (!binding.m_clusters.IsValid())
             return 0;
@@ -50,8 +51,13 @@ namespace Shading
                 if (attenuation <= 0)
                     continue;
 
-                attenuation *=
-                    LocalShadow::SampleVisibility(shadows, shadowCamera, lightMaps, position, surface.m_worldSpaceNormal);
+                attenuation *= LocalShadow::SampleVisibility(shadows,
+                                                             shadowCamera,
+                                                             lightMaps,
+                                                             trace,
+                                                             position,
+                                                             surface.m_worldSpaceNormal,
+                                                             direction);
 
                 result += EvaluateBRDF(surface.m_diffuseAlbedo,
                                        surface.m_f0,

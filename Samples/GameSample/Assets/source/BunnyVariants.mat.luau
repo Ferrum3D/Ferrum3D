@@ -16,7 +16,7 @@ material:technique("DepthVisibility", function(t, ctx)
     return true
 end)
 
--- Sun shadow pages are written by the pixel shader without render targets; casters are not culled by facing.
+-- Shadow pages are written by the pixel shader without render targets; the mesh shader culls primitives.
 material:technique("ShadowDepth", function(t, ctx)
     t.meshShader = "Shaders/Shadows/ShadowDepth.ms.hlsl"
     t.pixelShader = "Shaders/Shadows/ShadowDepth.ps.hlsl"

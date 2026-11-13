@@ -68,8 +68,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
         FE_CONSTEXPR uint32_t kRenderedEarly = 1u << 0;
         //! The meshlet visibility bits of the instance describe its selected LOD.
         FE_CONSTEXPR uint32_t kMeshletHistory = 1u << 1;
-        //! The upper sixteen bits select the shadow levels that draw this instance.
-        FE_CONSTEXPR uint32_t kViewMaskShift = 16;
+        //! The upper sixteen bits hold the index of the view that the instance was culled for, see CullDispatch.
+        FE_CONSTEXPR uint32_t kViewShift = 16;
     } // namespace InstanceFlags
 
 
@@ -91,10 +91,13 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     } // namespace CullStat
 
 
+    //! One group of instance culling. A pass that culls several views at once lists the candidate batches of each view and
+    //! reads the view from the element m_viewIndex of its MeshViewData constants; other passes use view zero.
     struct CullDispatch final
     {
         uint32_t m_batchId;
         uint32_t m_firstMember;
+        uint32_t m_viewIndex;
     };
 
 
@@ -120,6 +123,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     {
         uint32_t m_instanceId;
         uint32_t m_lodMeshlet;
+        //! The view that draws the meshlet, see CullDispatch.
+        uint32_t m_viewIndex;
     };
 
 
@@ -236,12 +241,16 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     };
 
 
-    //! Shared by the culling, rasterization and surface evaluation passes of one view.
+    //! Shared by the culling, rasterization and surface evaluation passes of one view. Passes that cull several views at
+    //! once create one element per view with FrameGraph::CreateConstantsArray.
     struct MeshViewData final
     {
         ViewData m_view;
         MeshCullData m_cull;
         ConstantsPtr<MeshSceneData> m_scene;
+        //! Pads the element to the size that the host aligns it to, so shaders index the views of a pass correctly.
+        uint32_t m_padding0;
+        uint32_t m_padding1;
         FE_RTTI_Reflect("62759A6A-7766-4BD2-A99A-962141CD38E6");
     };
 
@@ -259,6 +268,9 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
 
 #if FE_HOST
     static_assert(sizeof(MeshCullData) == 160);
+    // Shaders index the views of a multi-view pass by this size, so it must match the size they compute.
+    static_assert(sizeof(MeshViewData) == sizeof(ViewData) + sizeof(MeshCullData) + sizeof(ConstantsPtr<MeshSceneData>) + 8);
+    static_assert(sizeof(VisibleMeshlet) == 12 && sizeof(CullDispatch) == 12);
 #else
     MeshSceneData LoadMeshScene(ConstantsPtr<MeshSceneData> constants)
     {
@@ -292,13 +304,27 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     }
 
 
-    MeshViewData LoadMeshView(ConstantsPtr<MeshViewData> constants)
+    //! The view of a wave whose lanes all work on the same view.
+    MeshViewData LoadMeshView(ConstantsPtr<MeshViewData> constants, const uint32_t viewIndex = 0)
     {
-        MeshViewData data = constants.Load();
+        MeshViewData data = constants.LoadElement(WaveReadLaneFirst(viewIndex));
         data.m_view = WaveUniformView(data.m_view);
         data.m_cull = WaveUniformCull(data.m_cull);
         data.m_scene.m_ptr.m_deviceAddress = WaveReadLaneFirst(data.m_scene.m_ptr.m_deviceAddress);
         return data;
+    }
+
+
+    //! The view of one lane, for the compacted passes whose waves mix the views of a multi-view pass.
+    MeshViewData LoadLaneMeshView(ConstantsPtr<MeshViewData> constants, const uint32_t viewIndex)
+    {
+        return constants.LoadElement(viewIndex);
+    }
+
+
+    uint32_t GetViewIndex(const uint32_t instanceFlags)
+    {
+        return instanceFlags >> InstanceFlags::kViewShift;
     }
 
 

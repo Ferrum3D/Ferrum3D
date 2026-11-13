@@ -20,6 +20,15 @@ namespace FE::Graphics::SunShadow
         float m_level0Size = 16.0f;
         //! Distance along the light that each level covers, centred on the camera.
         float m_depthRange = 65536.0f;
+        //! Error in shadow texels that the LODs of casters may have. Each level and mip selects LODs for its own resolution,
+        //! so the triangles drawn into coarse pages stay proportional to their texels.
+        float m_lodErrorThreshold = 2.0f;
+        //! Length in shadow texels of the ray that deferred shading traces through the camera depth towards the light before
+        //! the shadow lookup, which starts where the ray ends. It spans the zone where the LODs of the casters differ from
+        //! the triangles the camera sees; zero disables the trace.
+        float m_screenTraceTexels = 4.0f;
+        //! Debug override: request only coarse receiver coverage, ignoring fine depth requests and feedback.
+        bool m_forceCoarsePages = false;
 
         [[nodiscard]] bool Validate() const;
     };
@@ -76,7 +85,8 @@ namespace FE::Graphics::SunShadow
 
 
     //! Publishes the shadows of a camera view: the clip levels of the sun and the maps of shadow casting local lights, which
-    //! share one page table and atlas. Owns the child views that render the levels and the mips of the maps.
+    //! share one page table and atlas. The levels and the mips of the maps that have pages to draw render together, as the
+    //! views of one multi-view mesh pass per layer.
     struct ViewModule final : public ViewModuleBase
     {
         FE_RTTI("8AE8910B-A0DF-415C-A6E3-2CC1901D5A3B");
@@ -96,16 +106,17 @@ namespace FE::Graphics::SunShadow
             return m_debugMode;
         }
 
-        [[nodiscard]] View* GetLevelView(const uint32_t levelIndex, const Layer /*layer*/) const
+        //! Culling counters of a layer summed over its clip levels and local map mips, read back a few frames later.
+        [[nodiscard]] Culling::Stats GetCullingStats(const Layer layer) const
         {
-            return m_levelViews[levelIndex].Get();
+            return m_layerStats[festd::to_underlying(layer)];
         }
 
-        //! Culling counters of a layer summed over the clip levels; invalid until every level has read back its counters.
-        [[nodiscard]] Culling::Stats GetCullingStats(Layer layer) const;
-
-        //! The child view of one mip of a local map, created on first use.
-        [[nodiscard]] View* GetLocalView(uint32_t mapIndex, uint32_t mip, Layer layer);
+        //! Where the mesh pass of a layer publishes its counters.
+        [[nodiscard]] Culling::Stats& GetLayerStats(const Layer layer)
+        {
+            return m_layerStats[festd::to_underlying(layer)];
+        }
 
         [[nodiscard]] PageCache& GetPageCache() const
         {
@@ -120,8 +131,7 @@ namespace FE::Graphics::SunShadow
     private:
         void DoRelease() override;
 
-        festd::fixed_vector<Rc<View>, kSunShadowMaxLevelCount> m_levelViews;
-        festd::array<Rc<View>, kLocalShadowMaxMapCount * kLocalShadowMipCount> m_localViews;
+        Culling::Stats m_layerStats[kLayerCount];
         festd::unique_ptr<PageCache> m_pageCache;
         LocalShadows::MapAllocation m_localMaps;
         uint32_t m_debugMode = kInvalidIndex;
@@ -149,54 +159,3 @@ namespace FE::Graphics::SunShadow
     //! Replace the view color with the selected sun shadow visualization.
     void AddDebugPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard);
 } // namespace FE::Graphics::SunShadow
-
-
-namespace FE::Graphics::ShadowAtlas
-{
-    //! Frame inputs of one clip level, set by the camera view before its passes are added.
-    struct LevelInputs final
-    {
-        const SunShadow::PageCache* m_cache = nullptr;
-        const SunShadow::PageFrame* m_frame = nullptr;
-        const CulledMeshView* m_sharedInstances = nullptr;
-        const Culling::PassData* m_lodReference = nullptr;
-        float m_lodViewportHeight = 0.0f;
-        uint32_t m_viewMask = 0;
-        uint32_t m_level = 0;
-        //! The layer whose casters this set of passes draws; a view renders its two layers as separate sets.
-        SunShadow::Layer m_layer = SunShadow::Layer::kStatic;
-    };
-
-
-    //! Renders the shadow casters of one clip level view into the pages of the shadow atlas.
-    struct ViewModule final : public ViewModuleBase
-    {
-        FE_RTTI("BBB80D3B-552A-4F97-A025-7349DFD49597");
-
-        LevelInputs m_inputs;
-
-        explicit ViewModule(View* view);
-        ~ViewModule() override;
-
-        void Update(Core::FrameGraphBlackboard& blackboard) override;
-
-        [[nodiscard]] Culling::Stats& GetStats(const SunShadow::Layer layer)
-        {
-            return m_stats[festd::to_underlying(layer)];
-        }
-
-        //! Culling counters of the clip level, read back a few frames later.
-        [[nodiscard]] const Culling::Stats& GetStats(const SunShadow::Layer layer) const
-        {
-            return m_stats[festd::to_underlying(layer)];
-        }
-
-    private:
-        void DoRelease() override;
-
-        Culling::Stats m_stats[SunShadow::kLayerCount];
-    };
-
-
-    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard);
-} // namespace FE::Graphics::ShadowAtlas

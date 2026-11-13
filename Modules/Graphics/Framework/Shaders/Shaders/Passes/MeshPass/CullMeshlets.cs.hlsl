@@ -32,9 +32,10 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     if (chunkIndex >= GConstants.m_dispatch.Load(0).m_workChunkCount)
         return;
 
-    const MeshViewData view = LoadMeshView(GConstants.m_view);
+    // A work chunk holds meshlets of one instance, so every lane of the group culls for the same view.
     const MeshletWorkChunk work = GConstants.m_work.Load(chunkIndex);
     const VisibleInstance instance = GConstants.m_instances.Load(work.m_visibleInstanceIndex);
+    const MeshViewData view = LoadMeshView(GConstants.m_view, GetViewIndex(instance.m_flags));
     const MeshDrawData draw = ResolveMeshDrawData(view, instance.m_instanceId, instance.m_lodIndex);
     const uint meshletIndex = work.m_firstMeshlet + lane;
     const MeshletCullResult result = CullMeshlet(view, draw, meshletIndex);

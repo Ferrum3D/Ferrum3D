@@ -139,6 +139,56 @@ namespace FE::Graphics
         }
 
 
+        // Draws the meshlets that GpuMeshWorkBuilder::Build left visible, one indirect dispatch per command page.
+        void AddMeshRasterPass(Core::FrameGraph& graph, const Env::Name techniqueRole,
+                               const Core::BasePassDescToken passDescToken, PreparedMeshPass& prepared)
+        {
+            auto* desc = graph.AllocatePassData<MeshPass::PassDesc>();
+            desc->m_pipeline = prepared.m_submissions.front().m_pipeline.Get();
+            desc->m_constants = { prepared.m_view, prepared.m_pass, prepared.m_submissions.front().m_firstCommand };
+            desc->m_arguments = Core::BufferView(prepared.m_arguments.Get());
+
+            graph.AddPass(festd::string_view(techniqueRole),
+                          desc,
+                          passDescToken,
+                          [submissions = std::move(prepared.m_submissions), view = prepared.m_view, passData = prepared.m_pass](
+                              Core::FrameGraphContext& context) {
+                              context.BeginRenderPass();
+                              bool firstDispatch = true;
+                              for (const auto& submission : submissions)
+                              {
+                                  for (uint32_t page = 0; page < submission.m_commandCount; ++page)
+                                  {
+                                      const MeshPass::Constants constants{ .m_view = view,
+                                                                           .m_pass = passData,
+                                                                           .m_commandIndex = submission.m_firstCommand + page };
+                                      if (!firstDispatch)
+                                      {
+                                          context.SetPipeline(submission.m_pipeline.Get());
+                                          context.PushConstants(constants);
+                                      }
+
+                                      firstDispatch = false;
+                                      context.DispatchMeshIndirect(constants.m_commandIndex
+                                                                   * sizeof(MeshPass::MeshDispatchArguments));
+                                  }
+                              }
+
+                              context.EndRenderPass();
+                          });
+        }
+
+
+        // Views with one frustum, such as the mips of a local shadow map, have the same candidate batches.
+        bool HasSameFrustum(const Culling::PassData& lhs, const Culling::PassData& rhs)
+        {
+            if (lhs.m_settings.m_instanceFrustumCulling != rhs.m_settings.m_instanceFrustumCulling)
+                return false;
+
+            return Math::CmpEqual(lhs.m_viewProjection, rhs.m_viewProjection, 0.0f);
+        }
+
+
         DrawTagMask GetBatchDrawTags(const MeshBatch& batch)
         {
             const DrawTag mobilityTag = batch.m_mobility == MeshMobility::kDynamic ? DrawTags::Dynamic : DrawTags::Static;
@@ -446,6 +496,26 @@ namespace FE::Graphics
             Vector2UInt(static_cast<uint32_t>(drawTagMask.m_value), static_cast<uint32_t>(drawTagMask.m_value >> 32));
 
         m_memberTable->CopyColumn_m_instance(batch->m_members, festd::span(batch->m_meshInstances));
+        batch->m_workChunkRevision = 0;
+    }
+
+
+    uint32_t MeshSceneModule::GetBatchWorkChunkBound(MeshBatch* batch) const
+    {
+        // Instances, materials and resident LODs change with the revision; moves between batches update the membership.
+        if (batch->m_workChunkRevision == m_revision)
+            return batch->m_workChunkBound;
+
+        uint32_t bound = 0;
+        for (const MeshHandle handle : batch->m_handles)
+        {
+            const MeshGroup* group = m_instances[handle.m_value].m_group;
+            bound += Math::CeilDivide(group->m_maxMeshletCount, MeshPass::kMeshletsPerWorkChunk);
+        }
+
+        batch->m_workChunkBound = bound;
+        batch->m_workChunkRevision = m_revision;
+        return bound;
     }
 
 
@@ -734,7 +804,7 @@ namespace FE::Graphics
                 return;
 
             for (uint32_t first = 0; first < batch.m_members.m_count; first += MeshPass::kInstancesPerCullGroup)
-                dispatches.push_back({ batch.m_tableRef.m_rowIndex, first });
+                dispatches.push_back({ batch.m_tableRef.m_rowIndex, first, 0 });
         };
 
         // Without frustum culling every batch is a candidate, including those outside the camera.
@@ -757,28 +827,6 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::CullShadowInstances(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
-                                              const Matrix4x4& viewProjection, CulledMeshView& result)
-    {
-        Culling::PassData culling = Culling::GetPassData(blackboard);
-        culling.m_viewProjection = viewProjection;
-        culling.m_settings.m_instanceOcclusionCulling = false;
-        CollectCullDispatches(culling, DrawTagMask(DrawTags::Static) | DrawTagMask(DrawTags::Dynamic));
-
-        const auto& view = blackboard.Get<RendererViewData>();
-        const ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
-        MeshCullViewResources resources;
-        resources.m_visibility = state.m_visibility.Get();
-        resources.m_meshletVisibility = state.m_meshletVisibility.Get();
-        CullCollectedDispatches(graph,
-                                *view.m_renderQueueUploader,
-                                CreateMeshViewData(graph, blackboard, culling),
-                                MeshPass::CullPhase::kSingle,
-                                resources,
-                                result);
-    }
-
-
     void MeshSceneModule::PrepareRenderView(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
                                             Core::RingUploader& uploader)
     {
@@ -788,20 +836,13 @@ namespace FE::Graphics
         const Culling::PassData& culling = Culling::GetPassData(blackboard);
         auto& culled = blackboard.Add<CulledMeshView>();
 
-        const auto viewConstants = CreateMeshViewData(graph, blackboard, culling);
-        blackboard.Add<ConstantsPtr<MeshPass::MeshViewData>>(viewConstants);
-        if (culling.m_sharedInstances != nullptr)
-        {
-            culled = *culling.m_sharedInstances;
-            culled.m_view = viewConstants;
-            return;
-        }
-
         ViewCullingState& state = AcquireViewCullingState(graph, uploader, view.m_view);
         blackboard.Add<ViewCullingState*>(&state);
         ResolveCullingStats(state, culling.m_stats);
 
         CollectCullDispatches(culling, DrawTagMask(~UINT64_C(0)));
+        const auto viewConstants = CreateMeshViewData(graph, blackboard, culling);
+        blackboard.Add<ConstantsPtr<MeshPass::MeshViewData>>(viewConstants);
 
         // An occluder pyramid replaces the two phases with a single one, matching Visibility::AddPasses.
         const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
@@ -925,12 +966,7 @@ namespace FE::Graphics
             independent = CullIndependentView(graph, blackboard, uploader, pass);
 
         CulledMeshView& culled = pass.m_independentCulling ? independent : blackboard.Get<CulledMeshView>();
-        ViewCullingState& state = pass.m_cullingStats != nullptr
-            ? AcquireViewCullingState(graph, uploader, blackboard.Get<RendererViewData>().m_view, pass.m_cullingStats)
-            : *blackboard.Get<ViewCullingState*>();
-        if (pass.m_cullingStats != nullptr)
-            ResolveCullingStats(state, pass.m_cullingStats);
-
+        ViewCullingState& state = *blackboard.Get<ViewCullingState*>();
         const bool isLate = pass.m_phase == SceneRenderPhase::kLate;
         FE_FG_SCOPE(graph, isLate ? "LateMeshes" : "Meshes");
 
@@ -951,7 +987,6 @@ namespace FE::Graphics
         }
 
         MeshPassPhase phase;
-        phase.m_viewMask = pass.m_viewMask;
         phase.m_phase = festd::to_underlying(pass.m_phase);
         phase.m_depthPyramid = pass.m_depthPyramid;
         phase.m_stats = pass.m_reportsStats ? state.m_stats.Get() : nullptr;
@@ -965,39 +1000,137 @@ namespace FE::Graphics
         if (!prepared.m_pass.IsValid())
             return;
 
-        auto* desc = graph.AllocatePassData<MeshPass::PassDesc>();
-        desc->m_pipeline = prepared.m_submissions.front().m_pipeline.Get();
-        desc->m_constants = { prepared.m_view, prepared.m_pass, prepared.m_submissions.front().m_firstCommand };
-        desc->m_arguments = Core::BufferView(prepared.m_arguments.Get());
+        AddMeshRasterPass(graph, pass.m_techniqueRole, pass.m_passDescToken, prepared);
+    }
 
-        graph.AddPass(festd::string_view(pass.m_techniqueRole),
-                      desc,
-                      pass.m_passDescToken,
-                      [submissions = std::move(prepared.m_submissions), view = prepared.m_view, passData = prepared.m_pass](
-                          Core::FrameGraphContext& context) {
-                          context.BeginRenderPass();
-                          bool firstDispatch = true;
-                          for (const auto& submission : submissions)
-                          {
-                              for (uint32_t page = 0; page < submission.m_commandCount; ++page)
-                              {
-                                  const MeshPass::Constants constants{ .m_view = view,
-                                                                       .m_pass = passData,
-                                                                       .m_commandIndex = submission.m_firstCommand + page };
-                                  if (!firstDispatch)
-                                  {
-                                      context.SetPipeline(submission.m_pipeline.Get());
-                                      context.PushConstants(constants);
-                                  }
 
-                                  firstDispatch = false;
-                                  context.DispatchMeshIndirect(constants.m_commandIndex
-                                                               * sizeof(MeshPass::MeshDispatchArguments));
-                              }
-                          }
+    void MeshSceneModule::AddMultiViewRenderPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                                   Core::RingUploader& uploader, const MeshMultiViewPass& pass)
+    {
+        FE_PROFILER_ZONE();
+        FE_Assert(pass.m_views.size() == pass.m_viewSizes.size());
 
-                          context.EndRenderPass();
-                      });
+        // The counters are resolved on every frame, including those that draw nothing, so they never keep old values.
+        ViewCullingState* statsState = nullptr;
+        if (pass.m_stats != nullptr)
+        {
+            const View* view = blackboard.Get<RendererViewData>().m_view;
+            statsState = &AcquireViewCullingState(graph, uploader, view, pass.m_stats);
+            ResolveCullingStats(*statsState, pass.m_stats);
+        }
+
+        const auto reportIdle = [&] {
+            if (statsState != nullptr)
+                ResetIdleCullingStats(*statsState, pass.m_stats);
+        };
+
+        if (pass.m_views.empty())
+        {
+            reportIdle();
+            return;
+        }
+
+        FE_FG_SCOPE(graph, "MultiViewMeshes");
+
+        // The views list their candidate batches one after another, and every dispatch names the view it is culled for.
+        // The batches that pass the frustums bound the instances and work of the pass far below every instance per view.
+        const DrawTagMask tagFilter(pass.m_drawTag);
+        festd::inline_vector<MeshPass::MeshViewData, 16> views;
+        festd::inline_vector<const Tools::DepthPyramid::Output*, 16> pyramids;
+        uint64_t instanceBound = 0;
+        uint64_t workChunkBound = 0;
+        m_multiViewDispatches.clear();
+        for (uint32_t viewIndex = 0; viewIndex < pass.m_views.size(); ++viewIndex)
+        {
+            const Culling::PassData& culling = pass.m_views[viewIndex];
+            const Vector2 size = pass.m_viewSizes[viewIndex];
+            FE_Assert(culling.GetOccluderPyramid() != nullptr);
+
+            // The dispatches of the previous view remain collected, so views that share its frustum skip the traversal.
+            const bool sharesFrustum = viewIndex != 0 && HasSameFrustum(culling, pass.m_views[viewIndex - 1]);
+            if (!sharesFrustum)
+                CollectCullDispatches(culling, tagFilter);
+
+            for (const auto& dispatches : m_cullDispatches)
+            {
+                for (MeshPass::CullDispatch dispatch : dispatches)
+                {
+                    dispatch.m_viewIndex = viewIndex;
+                    m_multiViewDispatches.push_back(dispatch);
+                    if (dispatch.m_firstMember != 0)
+                        continue;
+
+                    MeshBatch* batch = m_batches[dispatch.m_batchId];
+                    instanceBound += batch->m_members.m_count;
+                    workChunkBound += GetBatchWorkChunkBound(batch);
+                }
+            }
+
+            MeshPass::MeshViewData& data = views.emplace_back();
+            data = {};
+            data.m_view.m_viewProjection = culling.m_viewProjection;
+            data.m_view.m_inverseViewProjection = Math::Invert(culling.m_viewProjection);
+            data.m_view.m_cameraPosition = PackedVector4F(Vector4(culling.m_cameraPosition, 1.0f));
+            data.m_view.m_viewport = PackedVector4F(0.0f, 0.0f, size.x, size.y);
+            data.m_cull = Culling::BuildMeshCullData(culling, size.y);
+            data.m_scene = m_sceneData;
+            pyramids.push_back(culling.GetOccluderPyramid());
+        }
+
+        if (m_multiViewDispatches.empty())
+        {
+            reportIdle();
+            return;
+        }
+
+        // Without capacities the culling neither reads nor writes the visibility history of the camera view.
+        const ViewCullingState& viewState = *blackboard.Get<ViewCullingState*>();
+        MeshCullViewResources resources;
+        resources.m_visibility = viewState.m_visibility.Get();
+        resources.m_meshletVisibility = viewState.m_meshletVisibility.Get();
+        resources.m_stats = statsState != nullptr ? statsState->m_stats.Get() : nullptr;
+        resources.m_viewPyramids = pyramids;
+
+        const auto viewConstants = graph.CreateConstantsArray(festd::span<const MeshPass::MeshViewData>(views));
+        CulledMeshView culled;
+        GpuMeshWorkBuilder::CullView(
+            graph,
+            uploader,
+            m_multiViewDispatches.size(),
+            [this](const festd::span<MeshPass::CullDispatch> target) {
+                festd::copy(m_multiViewDispatches, target.data());
+            },
+            viewConstants,
+            MeshPass::CullPhase::kSingle,
+            resources,
+            culled);
+
+        // Statistics are complete once the meshlets of the pass are culled.
+        const auto readStats = festd::defer([&] {
+            if (statsState != nullptr)
+                ScheduleCullingStatsReadback(graph, *statsState);
+        });
+
+        if (!culled.m_classification || workChunkBound == 0)
+            return;
+
+        FE_Assert(workChunkBound <= UINT32_MAX / MeshPass::kMeshletsPerWorkChunk);
+
+        MeshPassPhase phase;
+        phase.m_stats = resources.m_stats;
+        phase.m_passData = pass.m_passData;
+        phase.m_viewCount = views.size();
+        phase.m_instanceCapacity = static_cast<uint32_t>(instanceBound);
+        phase.m_workCapacity = static_cast<uint32_t>(workChunkBound);
+
+        MeshPipelineRegistry& registry = UpdatePipelineRegistry(graph, uploader, pass.m_techniqueRole);
+        PreparedMeshPass prepared;
+        const Vector2UInt drawTagMask(static_cast<uint32_t>(tagFilter.m_value), static_cast<uint32_t>(tagFilter.m_value >> 32));
+        GpuMeshWorkBuilder::Build(graph, uploader, registry, culled, phase, drawTagMask, prepared);
+        if (!prepared.m_pass.IsValid())
+            return;
+
+        AddMeshRasterPass(graph, pass.m_techniqueRole, pass.m_passDescToken, prepared);
     }
 
 
@@ -1134,6 +1267,20 @@ namespace FE::Graphics
         latest->m_buffer->Unmap();
 
         *output = ConvertCullingStats(values);
+    }
+
+
+    void MeshSceneModule::ResetIdleCullingStats(const ViewCullingState& state, Culling::Stats* output) const
+    {
+        // Readbacks of the frames that still drew arrive first; the counters are zero once none is left.
+        for (const CullingStatsReadback& readback : state.m_readbacks)
+        {
+            if (readback.m_isPending)
+                return;
+        }
+
+        *output = {};
+        output->m_isValid = true;
     }
 
 

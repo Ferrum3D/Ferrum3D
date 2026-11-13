@@ -88,6 +88,7 @@ namespace
         Graphics::Culling::Settings m_cullingSettings;
         bool m_isDebugWindowDetached = false;
         bool m_isDemoWindowVisible = false;
+        bool m_forceCoarseShadowPages = false;
 
         void Draw(Framework::EntityWorld& world, bool visible = true)
         {
@@ -99,6 +100,7 @@ namespace
                 {
                     ApplyDebugMode(*scene);
                     ApplyCullingSettings(*scene);
+                    ApplyShadowSettings(*scene);
                 }
 
                 return;
@@ -112,6 +114,9 @@ namespace
                 {
                     DrawDebugModeSelector(*scene);
                     DrawCullingSettings();
+                    ImGui::Checkbox("Force coarse shadow pages", &m_forceCoarseShadowPages);
+                    ImGui::SetItemTooltip("Use only coarse shadow coverage for the sun and local lights.\n"
+                                          "Fine depth requests and transparent feedback are ignored.");
                     DrawCullingStats(*scene);
                 }
                 else
@@ -131,6 +136,7 @@ namespace
             {
                 ApplyDebugMode(*scene);
                 ApplyCullingSettings(*scene);
+                ApplyShadowSettings(*scene);
                 DrawFrozenFrustum(*scene);
             }
         }
@@ -355,6 +361,17 @@ namespace
                 auto* culling = scene.GetView(viewIndex)->GetModules().TryFind<Graphics::Culling::ViewModule>();
                 if (culling != nullptr)
                     culling->m_settings = m_cullingSettings;
+            }
+        }
+
+
+        void ApplyShadowSettings(const Graphics::Scene& scene) const
+        {
+            for (uint32_t viewIndex = 0; viewIndex < scene.GetViewCount(); ++viewIndex)
+            {
+                auto* shadows = scene.GetView(viewIndex)->GetModules().TryFind<Graphics::SunShadow::ViewModule>();
+                if (shadows != nullptr)
+                    shadows->m_settings.m_forceCoarsePages = m_forceCoarseShadowPages;
             }
         }
 

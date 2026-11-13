@@ -104,39 +104,41 @@ TEST(ChildViews, ParentPassSetupRendersChildView)
 }
 
 
-TEST(Culling, ShadowLodReferenceMatchesCamera)
+TEST(Culling, ShadowViewsSelectLodsForTheirOwnResolution)
 {
-    Culling::PassData camera;
-    camera.m_cameraPosition = Vector3(13.0f, 7.0f, -20.0f);
-    camera.m_projectionScaleY = 1.7f;
-    camera.m_settings.m_lodErrorThreshold = 2.0f;
+    // A clip level of 128 world units drawn into 4096 texels, with casters allowed two texels of error.
+    Culling::PassData level;
+    level.m_cameraPosition = Vector3(13.0f, 7.0f, -20.0f);
+    level.m_viewProjection = Matrix4x4::Orthographic(128.0f, 128.0f, 0.0f, 1000.0f);
+    level.m_projectionScaleY = 2.0f / 128.0f;
+    level.m_isOrthographic = true;
+    level.m_settings.m_lodErrorThreshold = 2.0f;
 
-    Culling::PassData shadow;
-    shadow.m_cameraPosition = Vector3(1000.0f);
-    shadow.m_viewProjection = Matrix4x4::Orthographic(128.0f, 128.0f, 0.0f, 1000.0f);
-    shadow.m_projectionScaleY = 2.0f / 128.0f;
-    shadow.m_isOrthographic = true;
-    shadow.m_lodReference = &camera;
-    shadow.m_lodViewportHeight = 1080.0f;
+    // Orthographic views compare errors against a unit distance, so the scale is texels per world unit and threshold.
+    const auto levelData = Culling::BuildMeshCullData(level, 4096.0f);
+    EXPECT_FLOAT_EQ(levelData.m_cameraPosition.x, 13.0f);
+    EXPECT_FLOAT_EQ(levelData.m_cameraPosition.w, 4096.0f / 128.0f / 2.0f);
+    EXPECT_NE(levelData.m_flags & MeshPass::CullFlags::kOrthographic, 0u);
+    EXPECT_NE(levelData.m_flags & MeshPass::CullFlags::kLodSelection, 0u);
+    EXPECT_TRUE(Math::CmpEqual(levelData.m_viewProjection, level.m_viewProjection));
 
-    const auto mainData = Culling::BuildMeshCullData(camera, 1080.0f);
-    const auto shadowData = Culling::BuildMeshCullData(shadow, 4096.0f);
-    EXPECT_FLOAT_EQ(shadowData.m_cameraPosition.x, mainData.m_cameraPosition.x);
-    EXPECT_FLOAT_EQ(shadowData.m_cameraPosition.y, mainData.m_cameraPosition.y);
-    EXPECT_FLOAT_EQ(shadowData.m_cameraPosition.z, mainData.m_cameraPosition.z);
-    EXPECT_FLOAT_EQ(shadowData.m_cameraPosition.w, mainData.m_cameraPosition.w);
-    EXPECT_EQ(shadowData.m_flags & MeshPass::CullFlags::kOrthographic, 0u);
-    EXPECT_TRUE(Math::CmpEqual(shadowData.m_viewProjection, shadow.m_viewProjection));
+    // The mips of a local map project alike; each halves the resolution and with it the detail it selects.
+    Culling::PassData map;
+    map.m_projectionScaleY = 1.5f;
+    map.m_settings.m_lodErrorThreshold = 2.0f;
 
-    camera.m_isOrthographic = true;
-    camera.m_settings.m_lodSelection = false;
-    const auto disabled = Culling::BuildMeshCullData(shadow, 512.0f);
-    EXPECT_NE(disabled.m_flags & MeshPass::CullFlags::kOrthographic, 0u);
-    EXPECT_EQ(disabled.m_flags & MeshPass::CullFlags::kLodSelection, 0u);
+    const auto mip0 = Culling::BuildMeshCullData(map, 4096.0f);
+    const auto mip1 = Culling::BuildMeshCullData(map, 2048.0f);
+    EXPECT_FLOAT_EQ(mip0.m_cameraPosition.w, 1.5f * 4096.0f * 0.5f / 2.0f);
+    EXPECT_FLOAT_EQ(mip1.m_cameraPosition.w, mip0.m_cameraPosition.w * 0.5f);
+    EXPECT_EQ(mip0.m_flags & MeshPass::CullFlags::kOrthographic, 0u);
+
+    map.m_settings.m_lodSelection = false;
+    EXPECT_EQ(Culling::BuildMeshCullData(map, 4096.0f).m_flags & MeshPass::CullFlags::kLodSelection, 0u);
 }
 
 
-TEST(ChildViews, ShadowLayersShareOneViewPerLevel)
+TEST(ChildViews, ShadowViewsNeedNoChildViews)
 {
     Core::DeviceFactory::Init(Core::GraphicsApi::kVulkan);
     const auto shutdown = festd::defer([] {
@@ -175,8 +177,6 @@ TEST(ChildViews, ShadowLayersShareOneViewPerLevel)
         renderer.Render(std::move(request));
     }
 
-    EXPECT_EQ(shadows.GetLevelView(0, SunShadow::Layer::kStatic), shadows.GetLevelView(0, SunShadow::Layer::kDynamic));
-    EXPECT_EQ(shadows.GetLocalView(0, 0, SunShadow::Layer::kStatic), shadows.GetLocalView(0, 0, SunShadow::Layer::kDynamic));
     EXPECT_EQ(scene->GetViewCount(), 1u);
 
     output.Reset();

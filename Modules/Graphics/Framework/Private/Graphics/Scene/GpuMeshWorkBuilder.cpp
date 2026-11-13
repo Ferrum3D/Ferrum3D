@@ -38,7 +38,6 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             Core::StructuredBufferPtr<MeshPass::PipelineRouting> m_routing;
             uint32_t m_dispatchCount;
             Vector2UInt m_drawTagMask;
-            uint32_t m_viewMask;
         };
 
 
@@ -90,6 +89,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             Core::StructuredBufferPtr<uint32_t> m_meshletVisibility;
             Core::StructuredBufferPtr<uint32_t> m_stats;
             const Tools::DepthPyramid::Output* m_depthPyramid;
+            ConstantsPtr<MeshPass::DepthPyramidBinding> m_viewPyramids;
             uint32_t m_meshletVisibilityCapacity;
             uint32_t m_meshletCapacity;
             uint32_t m_phase;
@@ -120,6 +120,66 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             Core::StructuredBuffer<MeshPass::MeshCommandRange> m_commands;
             Core::StructuredBuffer<MeshPass::MeshDispatchArguments> m_arguments;
         };
+
+
+        //! Buffer capacities and command pages of one pass.
+        struct PassLayout final
+        {
+            Core::StructuredBuffer<MeshPass::BucketLayout> m_layouts;
+            festd::vector<MeshPipelineSubmission> m_submissions;
+            uint32_t m_instanceCapacity = 0;
+            uint32_t m_workCapacity = 0;
+            uint32_t m_commandCapacity = 0;
+        };
+
+
+        // The registry sizes a pass for every instance of the scene once. A pass that states its own bounds holds no more
+        // than them in total, and in each bucket no more than the instances of the bucket once per view.
+        PassLayout CreatePassLayout(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPipelineRegistry& registry,
+                                    const MeshPassPhase& phase)
+        {
+            PassLayout result;
+            if (phase.m_viewCount == 1 && phase.m_workCapacity == 0)
+            {
+                result.m_layouts = registry.m_layouts;
+                result.m_submissions = registry.m_submissions;
+                result.m_instanceCapacity = registry.m_instanceCapacity;
+                result.m_workCapacity = registry.m_workCapacity;
+                result.m_commandCapacity = registry.m_commandCapacity;
+                return result;
+            }
+
+            FE_Assert(phase.m_instanceCapacity != 0 && phase.m_workCapacity != 0);
+
+            const auto limit = [&phase](const uint32_t registryCapacity, const uint32_t bound) {
+                const uint64_t scaled = static_cast<uint64_t>(registryCapacity) * phase.m_viewCount;
+                return static_cast<uint32_t>(Math::Min<uint64_t>(scaled, bound));
+            };
+
+            result.m_instanceCapacity = limit(registry.m_instanceCapacity, phase.m_instanceCapacity);
+            result.m_workCapacity = limit(registry.m_workCapacity, phase.m_workCapacity);
+
+            // Buckets are packed by their counts, but command pages are reserved per bucket.
+            festd::inline_vector<MeshPass::BucketLayout, 16> layouts;
+            for (const MeshPipelineSlot& slot : registry.m_slots)
+            {
+                const uint64_t meshletCapacity =
+                    static_cast<uint64_t>(limit(slot.m_workCapacity, phase.m_workCapacity)) * MeshPass::kMeshletsPerWorkChunk;
+                const auto pageCount =
+                    static_cast<uint32_t>((meshletCapacity + MeshPass::kMeshletsPerCommand - 1) / MeshPass::kMeshletsPerCommand);
+                layouts.push_back({ result.m_commandCapacity, pageCount });
+                if (pageCount != 0)
+                    result.m_submissions.push_back({ slot.m_pipeline, result.m_commandCapacity, pageCount });
+
+                result.m_commandCapacity += pageCount;
+            }
+
+            result.m_layouts = Core::Buffer::CreateStructured<MeshPass::BucketLayout>(graph.GetDevice(),
+                                                                                      "MeshPassBucketLayouts",
+                                                                                      layouts.size());
+            FE_Verify(uploader.UploadArray(graph, result.m_layouts.Get(), festd::span(layouts)));
+            return result;
+        }
 
 
         MeshPass::DepthPyramidBinding CreateDepthPyramidBinding(Core::FrameGraph& graph,
@@ -162,7 +222,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
 
         void OcclusionCullInstances(Core::FrameGraph& graph, const CulledMeshView& culled, const uint32_t phase,
-                                    const Tools::DepthPyramid::Output& depthPyramid,
+                                    const Tools::DepthPyramid::Output* depthPyramid,
                                     const Core::StructuredBufferPtr<MeshPass::InstanceClassification> classification,
                                     const OcclusionCandidates<uint32_t>& candidates)
         {
@@ -175,7 +235,10 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_stats = GetOptionalUAV(graph, culled.m_stats.Get());
             constants.m_visibilityCapacity = culled.m_visibilityCapacity;
             constants.m_phase = phase;
-            constants.m_depthPyramid = CreateDepthPyramidBinding(graph, depthPyramid);
+            constants.m_viewPyramids = culled.m_viewPyramids;
+            if (depthPyramid != nullptr)
+                constants.m_depthPyramid = CreateDepthPyramidBinding(graph, *depthPyramid);
+
             graph.AddDispatchIndirect("OcclusionCullMeshInstances",
                                       OcclusionCullMeshInstancesPipeline::GetPipeline(),
                                       constants,
@@ -196,8 +259,9 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                 name,
                 culled.m_dispatchCount * MeshPass::kInstancesPerCullGroup);
 
+            const bool isOcclusionTested = depthPyramid != nullptr || culled.m_viewPyramids.IsValid();
             OcclusionCandidates<uint32_t> candidates;
-            if (depthPyramid != nullptr)
+            if (isOcclusionTested)
             {
                 candidates = CreateOcclusionCandidates<uint32_t>(graph,
                                                                  uploader,
@@ -214,15 +278,15 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_occlusionDispatch = GetOptionalUAV(graph, candidates.m_dispatch.Get());
             constants.m_stats = GetOptionalUAV(graph, culled.m_stats.Get());
             constants.m_visibilityCapacity = culled.m_visibilityCapacity;
-            constants.m_isOcclusionTested = depthPyramid != nullptr ? 1 : 0;
+            constants.m_isOcclusionTested = isOcclusionTested ? 1 : 0;
             constants.m_phase = phase;
             graph.AddDispatch(isLate ? "CullLateMeshInstances" : "CullMeshInstances",
                               CullMeshInstancesPipeline::GetPipeline(),
                               constants,
                               culled.m_dispatchCount);
 
-            if (depthPyramid != nullptr)
-                OcclusionCullInstances(graph, culled, phase, *depthPyramid, classification.Get(), candidates);
+            if (isOcclusionTested)
+                OcclusionCullInstances(graph, culled, phase, depthPyramid, classification.Get(), candidates);
 
             return classification;
         }
@@ -261,7 +325,6 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_instanceBuckets = graph.GetUAV(output.m_instanceBuckets.Get());
             constants.m_counts = graph.GetUAV(output.m_counts.Get());
             constants.m_drawTagMask = input.m_drawTagMask;
-            constants.m_viewMask = input.m_viewMask;
             graph.AddDispatch("CountEligibleMeshInstances",
                               CountMeshInstancesPipeline::GetPipeline(),
                               constants,
@@ -384,7 +447,10 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_stats = GetOptionalUAV(graph, input.m_stats);
             constants.m_meshletVisibilityCapacity = input.m_meshletVisibilityCapacity;
             constants.m_phase = input.m_phase;
-            constants.m_depthPyramid = CreateDepthPyramidBinding(graph, *input.m_depthPyramid);
+            constants.m_viewPyramids = input.m_viewPyramids;
+            if (input.m_depthPyramid != nullptr)
+                constants.m_depthPyramid = CreateDepthPyramidBinding(graph, *input.m_depthPyramid);
+
             graph.AddDispatchIndirect("OcclusionCullMeshlets",
                                       OcclusionCullMeshletsPipeline::GetPipeline(),
                                       constants,
@@ -401,8 +467,9 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                                                                                      "VisibleMeshlets",
                                                                                      input.m_meshletCapacity);
 
+            const bool isOcclusionTested = input.m_depthPyramid != nullptr || input.m_viewPyramids.IsValid();
             OcclusionCandidates<MeshPass::MeshletOcclusionCandidate> candidates;
-            if (input.m_depthPyramid != nullptr)
+            if (isOcclusionTested)
             {
                 candidates = CreateOcclusionCandidates<MeshPass::MeshletOcclusionCandidate>(graph,
                                                                                             uploader,
@@ -423,14 +490,14 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             constants.m_occlusionDispatch = GetOptionalUAV(graph, candidates.m_dispatch.Get());
             constants.m_stats = GetOptionalUAV(graph, input.m_stats);
             constants.m_meshletVisibilityCapacity = input.m_meshletVisibilityCapacity;
-            constants.m_isOcclusionTested = input.m_depthPyramid != nullptr ? 1 : 0;
+            constants.m_isOcclusionTested = isOcclusionTested ? 1 : 0;
             constants.m_phase = input.m_phase;
             graph.AddDispatchIndirect("CullMeshlets",
                                       CullMeshletsPipeline::GetPipeline(),
                                       constants,
                                       Core::BufferView(input.m_cullDispatch).Slice(0, sizeof(MeshPass::MeshDispatchArguments)));
 
-            if (input.m_depthPyramid != nullptr)
+            if (isOcclusionTested)
                 OcclusionCullMeshlets(graph, input, meshlets.Get(), candidates);
 
             return meshlets;
@@ -493,6 +560,16 @@ namespace FE::Graphics::GpuMeshWorkBuilder
                                            }));
 
         FE_Assert(resources.m_depthPyramid == nullptr || phase == MeshPass::CullPhase::kSingle);
+        FE_Assert(resources.m_viewPyramids.empty() || phase == MeshPass::CullPhase::kSingle);
+        if (!resources.m_viewPyramids.empty())
+        {
+            festd::inline_vector<MeshPass::DepthPyramidBinding, 32> bindings;
+            for (const Tools::DepthPyramid::Output* pyramid : resources.m_viewPyramids)
+                bindings.push_back(CreateDepthPyramidBinding(graph, *pyramid));
+
+            result.m_viewPyramids = graph.CreateConstantsArray(festd::span<const MeshPass::DepthPyramidBinding>(bindings));
+        }
+
         result.m_classification = CullInstances(graph, uploader, result, phase, resources.m_depthPyramid);
     }
 
@@ -521,6 +598,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         if (registry.m_workCapacity == 0)
             return;
 
+        PassLayout layout = CreatePassLayout(graph, uploader, registry, phase);
         const bool isLate = phase.m_phase == MeshPass::CullPhase::kLate;
         const Core::StructuredBufferPtr<MeshPass::InstanceClassification> classification =
             isLate ? culled.m_lateClassification.Get() : culled.m_classification.Get();
@@ -529,11 +607,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         // Each stage owns its outputs and names only the inputs it consumes.
         const uint32_t bucketCount = registry.m_slots.size();
-        const CountInput countInput{ classification,
-                                     registry.m_routing.Get(),
-                                     culled.m_dispatchCount,
-                                     drawTagMask,
-                                     phase.m_viewMask };
+        const CountInput countInput{ classification, registry.m_routing.Get(), culled.m_dispatchCount, drawTagMask };
         const CountOutput counts = Count(graph, countInput, bucketCount);
         const auto offsets = Scan(graph, counts.m_counts.Get(), bucketCount);
         const FinalizeOutput buckets = FinalizeBuckets(graph, counts.m_counts.Get(), offsets.Get(), bucketCount);
@@ -545,8 +619,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         scatterInput.m_cursors = counts.m_cursors.Get();
         scatterInput.m_stats = phase.m_stats;
         scatterInput.m_dispatchCount = culled.m_dispatchCount;
-        scatterInput.m_instanceCapacity = registry.m_instanceCapacity;
-        scatterInput.m_workCapacity = registry.m_workCapacity;
+        scatterInput.m_instanceCapacity = layout.m_instanceCapacity;
+        scatterInput.m_workCapacity = layout.m_workCapacity;
         scatterInput.m_phase = phase.m_phase;
         const ScatterOutput scattered = Scatter(graph, scatterInput);
 
@@ -561,21 +635,22 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         cullInput.m_meshletVisibilityCapacity = culled.m_meshletVisibilityCapacity;
         cullInput.m_stats = phase.m_stats;
         cullInput.m_depthPyramid = phase.m_depthPyramid;
-        cullInput.m_meshletCapacity = registry.m_workCapacity * MeshPass::kMeshletsPerWorkChunk;
+        cullInput.m_viewPyramids = culled.m_viewPyramids;
+        cullInput.m_meshletCapacity = layout.m_workCapacity * MeshPass::kMeshletsPerWorkChunk;
         cullInput.m_phase = phase.m_phase;
         const auto meshlets = CullMeshlets(graph, uploader, cullInput);
 
         const CommandInput commandInput{ buckets.m_buckets.Get(),
                                          counts.m_meshletCounts.Get(),
-                                         registry.m_layouts.Get(),
+                                         layout.m_layouts.Get(),
                                          bucketCount,
-                                         registry.m_commandCapacity };
+                                         layout.m_commandCapacity };
         const CommandOutput commands = FinalizeCommands(graph, commandInput);
 
         result.m_meshlets = meshlets;
         result.m_commands = commands.m_commands;
         result.m_arguments = commands.m_arguments;
-        result.m_submissions = registry.m_submissions;
+        result.m_submissions = std::move(layout.m_submissions);
         result.m_view = culled.m_view;
 
         MeshPass::MeshPassData passData{};

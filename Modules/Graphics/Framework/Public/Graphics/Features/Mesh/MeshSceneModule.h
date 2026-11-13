@@ -61,6 +61,10 @@ namespace FE::Graphics
         festd::vector<MeshHandle> m_handles;
         DB::Ref<MeshBatchTable> m_tableRef;
         DB::Slice<MeshMemberTable> m_members{};
+        //! Meshlet work chunks that the members need at their largest resident LODs, valid for m_workChunkRevision of the
+        //! module. Bounds the work that one view makes of the batch.
+        uint32_t m_workChunkBound = 0;
+        uint32_t m_workChunkRevision = 0;
     };
 
 
@@ -103,6 +107,26 @@ namespace FE::Graphics
     };
 
 
+    //! A pass that culls and draws several views of the scene with one chain of culling passes and one mesh pass, instead of
+    //! one chain per view. The mesh shader of the role reads the view of each meshlet from VisibleMeshlet::m_viewIndex and
+    //! places it in the viewport of the pass.
+    struct MeshMultiViewPass final
+    {
+        //! Frustum, LOD camera, culling settings and occluder pyramid of each view. Every view has an occluder pyramid.
+        festd::span<const Culling::PassData> m_views;
+        //! The size in pixels that each view renders at, which its LOD selection targets.
+        festd::span<const Vector2> m_viewSizes;
+        Core::BasePassDescToken m_passDescToken;
+        DrawTag m_drawTag;
+        Env::Name m_techniqueRole;
+        //! Read by the shaders of the role through MeshPassData::m_passData.
+        AnyConstantsPtr m_passData;
+        //! Receives the culling statistics summed over the views a few frames later, when not null. A pass without views
+        //! still resolves them, and reports zero counters once the frames that drew are read back.
+        Culling::Stats* m_stats = nullptr;
+    };
+
+
     struct MeshSceneModule final : public SceneModuleBase
     {
         FE_RTTI("1784843C-5085-4289-AA82-04C480E423EE");
@@ -130,6 +154,10 @@ namespace FE::Graphics
                                Core::RingUploader& uploader) override;
         void AddRenderPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Core::RingUploader& uploader,
                              const SceneRenderPass& pass) override;
+
+        //! Cull and draw the views of the pass together. The blackboard is the one of the camera view that owns the pass.
+        void AddMultiViewRenderPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard,
+                                      Core::RingUploader& uploader, const MeshMultiViewPass& pass);
 
         // Indexed batch slots; destroyed batches leave null pointers until their slots are reused.
         [[nodiscard]] const festd::vector<MeshBatch*>& GetBatches() const
@@ -192,9 +220,6 @@ namespace FE::Graphics
             return m_transparentBounds;
         }
 
-        void CullShadowInstances(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, const Matrix4x4& viewProjection,
-                                 CulledMeshView& result);
-
     private:
         void DoRelease() override;
 
@@ -248,6 +273,7 @@ namespace FE::Graphics
         MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
         [[nodiscard]] Aabb CalculateBatchBounds(const MeshBatch* batch) const;
         void UpdateBatchMembership(MeshBatch* batch);
+        [[nodiscard]] uint32_t GetBatchWorkChunkBound(MeshBatch* batch) const;
         void AddStaticChange(const MeshBatch* batch, const Aabb& bounds);
         //! Collect the cull dispatches of the batches that the culling view sees and that have any of the tags.
         void CollectCullDispatches(const Culling::PassData& culling, DrawTagMask tagFilter);
@@ -265,6 +291,8 @@ namespace FE::Graphics
                                                   Culling::Stats* statsTarget = nullptr);
         void ReleaseUnusedViewCullingStates();
         void ResolveCullingStats(ViewCullingState& state, Culling::Stats* output) const;
+        //! Reports zero counters for a frame that culls nothing, once the readbacks of earlier frames are resolved.
+        void ResetIdleCullingStats(const ViewCullingState& state, Culling::Stats* output) const;
         void ScheduleCullingStatsReadback(Core::FrameGraph& graph, ViewCullingState& state) const;
 
         MeshGroup* FindOrCreateMeshGroup(const IO::AssetLease<MeshAsset>& meshAsset,
@@ -287,6 +315,8 @@ namespace FE::Graphics
         festd::vector<Aabb> m_dynamicBounds;
         festd::vector<Aabb> m_transparentBounds;
         festd::vector<MeshPass::CullDispatch> m_cullDispatches[Octree::kMaxTraversalTasks];
+        //! The dispatches of every view of the multi-view pass being added.
+        festd::vector<MeshPass::CullDispatch> m_multiViewDispatches;
         festd::vector<festd::unique_ptr<ViewCullingState>> m_viewCullingStates;
         Memory::BuddyAllocator m_meshletVisibilityAllocator;
 

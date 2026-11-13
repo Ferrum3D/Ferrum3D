@@ -22,15 +22,17 @@ namespace Shading
     }
 
 
-    //! sunVisibility scales the directional light, e.g. by its shadow; shadows holds the shadow maps of local lights.
+    //! sunVisibility scales the directional light, e.g. by its shadow; shadows holds the shadow maps of local lights, and
+    //! trace the camera depth that their lookups trace through when the surface is in it.
     float4 ComputeShading(const MaterialEvaluation material, const float3 worldPosition, const float3 cameraPosition,
                           const GlobalLightingData lighting, const LocalLightingBinding localLighting,
-                          const SunShadowBinding shadows, const float2 pixel, const float sunVisibility = 1.0f)
+                          const SunShadowBinding shadows, const ScreenTrace::Context trace, const float2 pixel,
+                          const float sunVisibility = 1.0f)
     {
         const Surface surface = material.m_surface;
         const float3 viewDirection = normalize(cameraPosition - worldPosition);
         const float3 localLuminance =
-            ComputeLocalLighting(localLighting, shadows, surface, worldPosition, cameraPosition, pixel);
+            ComputeLocalLighting(localLighting, shadows, trace, surface, worldPosition, cameraPosition, pixel);
         if (lighting.m_directionIlluminance.w <= 0)
             return float4(localLuminance + material.m_emissive, 1);
 
@@ -46,5 +48,22 @@ namespace Shading
         const float3 reflectedLuminance = brdf * preExposedIlluminance;
         // AO belongs to indirect illumination, which is currently absent.
         return float4(reflectedLuminance + localLuminance + material.m_emissive, 1.0f);
+    }
+
+
+    //! ComputeShading for surfaces that are absent from the camera depth.
+    float4 ComputeShading(const MaterialEvaluation material, const float3 worldPosition, const float3 cameraPosition,
+                          const GlobalLightingData lighting, const LocalLightingBinding localLighting,
+                          const SunShadowBinding shadows, const float2 pixel, const float sunVisibility = 1.0f)
+    {
+        return ComputeShading(material,
+                              worldPosition,
+                              cameraPosition,
+                              lighting,
+                              localLighting,
+                              shadows,
+                              ScreenTrace::None(),
+                              pixel,
+                              sunVisibility);
     }
 } // namespace Shading

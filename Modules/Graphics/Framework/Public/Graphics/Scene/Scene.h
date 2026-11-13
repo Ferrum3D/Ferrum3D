@@ -13,10 +13,6 @@
 namespace FE::Graphics
 {
     struct RenderBatchCollector;
-    namespace Culling
-    {
-        struct Stats;
-    } // namespace Culling
     namespace Core
     {
         struct FrameGraph;
@@ -68,16 +64,12 @@ namespace FE::Graphics
         Matrix4x4 m_viewProjection;
         Core::BasePassDescToken m_passDescToken;
         DrawTag m_drawTag;
-        //! Optional bit in InstanceClassification::m_flags selecting a shared shadow cull result.
-        uint32_t m_viewMask = 0;
         Env::Name m_techniqueRole;
         SceneRenderPhase m_phase = SceneRenderPhase::kSingle;
         //! The farthest-depth pyramid of the early phase for the late phase, or the occluders of an independently culled pass.
         const Tools::DepthPyramid::Output* m_depthPyramid = nullptr;
         //! Whether the pass reports its culling statistics to the view.
         bool m_reportsStats = false;
-        //! Optional separate statistics for passes sharing a view, such as static and dynamic shadow layers.
-        Culling::Stats* m_cullingStats = nullptr;
         //! Cull only the batches with m_drawTag in a single phase, without reading or writing visibility history. Such passes of
         //! a view share the culling result when they have the same tag and occluders.
         bool m_independentCulling = false;

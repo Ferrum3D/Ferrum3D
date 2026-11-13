@@ -38,10 +38,6 @@ namespace FE::Graphics::SunShadow
         Core::StructuredBuffer<uint32_t> m_pageTable;
         Core::StructuredBuffer<uint32_t> m_owners;
         Core::StructuredBuffer<uint32_t> m_feedback;
-        Core::StructuredBuffer<uint32_t> m_lodHistory;
-        Core::StructuredBuffer<uint32_t> m_lodChanges;
-        uint32_t m_lodCapacity = 0;
-        uint32_t m_lodFrame = 0;
         Rc<Core::Texture> m_staticAtlas;
         uint32_t m_levelCount = 0;
 
@@ -110,9 +106,6 @@ namespace FE::Graphics::SunShadow
         //! distance from the camera. The defaults cover the whole frustum.
         Vector4 m_coarseRect = Vector4(-1.0f, -1.0f, 1.0f, 1.0f);
         Vector2 m_coarseRange = Vector2(0.0f, Constants::kMaxFloat);
-        festd::span<const CulledMeshView> m_casterCulls;
-        uint32_t m_instanceCapacity = 0;
-        Vector2UInt m_staticTag = Vector2UInt::kZero;
         //! Without the sun, the clip levels request and draw nothing.
         bool m_hasSun = true;
 

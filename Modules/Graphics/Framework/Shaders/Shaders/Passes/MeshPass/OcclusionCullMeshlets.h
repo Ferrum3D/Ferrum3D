@@ -17,6 +17,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::OcclusionCullMeshlets)
         RWStructuredBufferDescriptor<uint32_t> m_meshletVisibility;
         RWStructuredBufferDescriptor<uint32_t> m_stats;
         DepthPyramidBinding m_depthPyramid;
+        //! One pyramid per view of a multi-view pass, which replaces m_depthPyramid; invalid otherwise.
+        ConstantsPtr<DepthPyramidBinding> m_viewPyramids;
         uint32_t m_meshletVisibilityCapacity;
         uint32_t m_phase;
 

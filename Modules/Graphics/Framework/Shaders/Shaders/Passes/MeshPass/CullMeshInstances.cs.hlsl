@@ -132,9 +132,10 @@ InstanceCullResult CullMember(const MeshViewData view, const MeshSceneData scene
 FE_NUM_THREADS(kInstancesPerCullGroup, 1, 1)
 void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
 {
-    const MeshViewData view = LoadMeshView(GConstants.m_view);
-    const MeshSceneData scene = LoadMeshScene(view.m_scene);
+    // Every lane of the group culls members of one batch for one view.
     const CullDispatch dispatch = GConstants.m_dispatches.Load(group.x);
+    const MeshViewData view = LoadMeshView(GConstants.m_view, dispatch.m_viewIndex);
+    const MeshSceneData scene = LoadMeshScene(view.m_scene);
     MeshBatchTable batches = scene.m_batches;
     const MeshBatchTable::Row batch = batches.ReadRow(dispatch.m_batchId);
 
@@ -142,7 +143,8 @@ void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
     const uint2 drawTagMask = batch.m_drawTagMask.Get();
     const uint memberIndex = dispatch.m_firstMember + lane;
     const uint slot = group.x * kInstancesPerCullGroup + lane;
-    const InstanceCullResult result = CullMember(view, scene, members, memberIndex, drawTagMask);
+    InstanceCullResult result = CullMember(view, scene, members, memberIndex, drawTagMask);
+    result.m_item.m_flags |= dispatch.m_viewIndex << InstanceFlags::kViewShift;
     GConstants.m_classification.Store(slot, result.m_item);
 
     if (GConstants.m_isOcclusionTested != 0 && HasCullFlag(view.m_cull, CullFlags::kInstanceOcclusion))

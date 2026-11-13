@@ -20,7 +20,6 @@ namespace FE::Graphics::SunShadow
     namespace
     {
         FE_COMPUTE_PIPELINE_SET(UpdatePagesPipeline, "Shaders/Shadows/UpdatePages.cs.hlsl");
-        FE_COMPUTE_PIPELINE_SET(InvalidateLodsPipeline, "Shaders/Shadows/InvalidateLods.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(InvalidatePagesPipeline, "Shaders/Shadows/InvalidatePages.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(MarkPagesPipeline, "Shaders/Shadows/MarkPages.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(CollectPagesPipeline, "Shaders/Shadows/CollectPages.cs.hlsl");
@@ -255,59 +254,6 @@ namespace FE::Graphics::SunShadow
         }
 
 
-        void AddLodInvalidationPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const PageInputs& inputs,
-                                      PageCache& cache, const PageFrame& frame)
-        {
-            if (inputs.m_instanceCapacity == 0 || inputs.m_casterCulls.empty())
-                return;
-
-            if (cache.m_lodCapacity < inputs.m_instanceCapacity || ++cache.m_lodFrame == 0)
-            {
-                cache.m_lodCapacity = Math::CeilPowerOfTwo(inputs.m_instanceCapacity);
-                cache.m_lodHistory = CreatePersistentBuffer(graph, "ShadowLodHistory", cache.m_lodCapacity);
-                cache.m_lodChanges = CreatePersistentBuffer(graph, "ShadowLodChanges", cache.m_lodCapacity);
-                const auto clear = [&cache](void* target) {
-                    memset(target, 0, cache.m_lodCapacity * sizeof(uint32_t));
-                };
-                FE_Verify(
-                    uploader.UploadGenerated(graph, cache.m_lodHistory.Get(), cache.m_lodCapacity * sizeof(uint32_t), clear));
-                FE_Verify(
-                    uploader.UploadGenerated(graph, cache.m_lodChanges.Get(), cache.m_lodCapacity * sizeof(uint32_t), clear));
-                cache.m_lodFrame = 1;
-            }
-
-            auto blocks =
-                Core::Buffer::CreateStructured<SunShadowBlock>(graph.GetDevice(), "ShadowLodBlocks", frame.m_blocks.size());
-            FE_Verify(uploader.UploadArray(graph, blocks.Get(), festd::span<const SunShadowBlock>(frame.m_blocks)));
-            SunShadowLodConstants constants{};
-            constants.m_history = graph.GetUAV(cache.m_lodHistory.Get());
-            constants.m_changes = graph.GetUAV(cache.m_lodChanges.Get());
-            constants.m_pageTable = graph.GetUAV(cache.m_pageTable.Get());
-            constants.m_owners = graph.GetUAV(cache.m_owners.Get());
-            constants.m_blocks = graph.GetSRV(blocks.Get());
-            constants.m_staticTag = inputs.m_staticTag;
-            constants.m_frame = cache.m_lodFrame;
-            for (uint32_t phase = 0; phase < 2; ++phase)
-            {
-                constants.m_checksLods = phase == 0 ? 1u : 0u;
-                for (const CulledMeshView& culled : inputs.m_casterCulls)
-                {
-                    if (culled.m_classification == nullptr)
-                        continue;
-
-                    constants.m_view = culled.m_view;
-                    constants.m_instances = graph.GetUAV(culled.m_classification.Get());
-                    constants.m_instanceCount = culled.m_dispatchCount * MeshPass::kInstancesPerCullGroup;
-                    const uint32_t groupCount = Math::CeilDivide(constants.m_instanceCount, kSunShadowThreadCount);
-                    graph.AddDispatch(phase == 0 ? "CheckShadowLods" : "InvalidateShadowLods",
-                                      InvalidateLodsPipeline::GetPipeline(),
-                                      constants,
-                                      Vector2UInt(groupCount, phase == 0 ? 1u : frame.m_blocks.size()));
-                }
-            }
-        }
-
-
         void AddInvalidatePass(Core::FrameGraph& graph, Core::RingUploader& uploader, const PageInputs& inputs,
                                const PageCache& cache, const PageFrame& frame, const bool marksDynamic = false)
         {
@@ -418,6 +364,7 @@ namespace FE::Graphics::SunShadow
         update.m_pageCount = frame.m_pageCount;
         update.m_isReset = changes.m_isCreated ? 1 : 0;
         update.m_feedback = graph.GetUAV(cache.m_feedback.Get());
+        update.m_forceCoarsePages = inputs.m_settings.m_forceCoarsePages ? 1u : 0u;
         const uint32_t updateCount = Math::Max(frame.m_pageCount, kSunShadowPhysicalPageCount);
         graph.AddDispatch("UpdatePages",
                           UpdatePagesPipeline::GetPipeline(),
@@ -426,8 +373,6 @@ namespace FE::Graphics::SunShadow
 
         if (!changes.m_isCreated && !inputs.m_staticChanges.empty())
             AddInvalidatePass(graph, uploader, inputs, cache, frame);
-
-        AddLodInvalidationPasses(graph, uploader, inputs, cache, frame);
 
         if (!inputs.m_dynamicBounds.empty())
             AddInvalidatePass(graph, uploader, inputs, cache, frame, true);
@@ -446,12 +391,20 @@ namespace FE::Graphics::SunShadow
         }
 
         mark.m_resolution = resolution;
-        graph.AddDispatch("MarkPages", MarkPagesPipeline::GetPipeline(), mark, Math::CeilDivide(resolution, kSunShadowTileSize));
-        if (inputs.m_requestsCoarse)
+        const bool forceCoarsePages = inputs.m_settings.m_forceCoarsePages;
+        if (!forceCoarsePages)
+        {
+            graph.AddDispatch("MarkPages",
+                              MarkPagesPipeline::GetPipeline(),
+                              mark,
+                              Math::CeilDivide(resolution, kSunShadowTileSize));
+        }
+
+        if (inputs.m_requestsCoarse || forceCoarsePages)
         {
             mark.m_isCoarse = 1;
-            mark.m_coarseRect = PackedVector4F(inputs.m_coarseRect);
-            mark.m_coarseRange = inputs.m_coarseRange;
+            mark.m_coarseRect = PackedVector4F(forceCoarsePages ? Vector4(-1.0f, -1.0f, 1.0f, 1.0f) : inputs.m_coarseRect);
+            mark.m_coarseRange = forceCoarsePages ? Vector2(0.0f, Constants::kMaxFloat) : inputs.m_coarseRange;
             graph.AddDispatch("MarkCoarsePages",
                               MarkPagesPipeline::GetPipeline(),
                               mark,
@@ -623,6 +576,7 @@ namespace FE::Graphics::SunShadow
         data.m_isOrthographicCamera = camera.m_isOrthographic ? 1 : 0;
         data.m_level0TexelSize = settings.m_level0Size / kSunShadowVirtualSize;
         data.m_depthPerUnit = 1.0f / settings.m_depthRange;
+        data.m_screenTraceTexels = settings.m_screenTraceTexels;
         return data;
     }
 
@@ -643,44 +597,6 @@ namespace FE::Graphics::SunShadow
     }
 
 
-    View* ViewModule::GetLocalView(const uint32_t mapIndex, const uint32_t mip, const Layer /*layer*/)
-    {
-        Rc<View>& localView = m_localViews[mapIndex * kLocalShadowMipCount + mip];
-        if (localView == nullptr)
-        {
-            localView = m_view->GetScene()->CreateChildView();
-            localView->GetModules().Add<ShadowAtlas::ViewModule>();
-        }
-
-        return localView.Get();
-    }
-
-
-    Culling::Stats ViewModule::GetCullingStats(const Layer layer) const
-    {
-        const auto& levelViews = m_levelViews;
-
-        Culling::Stats total;
-        total.m_isValid = !levelViews.empty();
-        for (const Rc<View>& levelView : levelViews)
-        {
-            const Culling::Stats& stats = levelView->GetModules().Find<ShadowAtlas::ViewModule>().GetStats(layer);
-            total.m_isValid &= stats.m_isValid;
-            total.m_instanceCandidates += stats.m_instanceCandidates;
-            total.m_instanceFrustumCulled += stats.m_instanceFrustumCulled;
-            total.m_instanceOcclusionCulled += stats.m_instanceOcclusionCulled;
-            total.m_instancesRendered += stats.m_instancesRendered;
-            total.m_meshletCandidates += stats.m_meshletCandidates;
-            total.m_meshletFrustumCulled += stats.m_meshletFrustumCulled;
-            total.m_meshletOcclusionCulled += stats.m_meshletOcclusionCulled;
-            total.m_meshletsRendered += stats.m_meshletsRendered;
-            total.m_trianglesRendered += stats.m_trianglesRendered;
-        }
-
-        return total;
-    }
-
-
     festd::span<const Env::Name> ViewModule::GetDebugModes() const
     {
         return GetModeNames();
@@ -698,15 +614,6 @@ namespace FE::Graphics::SunShadow
     {
         FE_Assert(m_settings.Validate());
 
-        while (m_levelViews.size() < m_settings.m_levelCount)
-        {
-            Rc<View> levelView = m_view->GetScene()->CreateChildView();
-            levelView->GetModules().Add<ShadowAtlas::ViewModule>();
-            m_levelViews.push_back(std::move(levelView));
-        }
-
-        m_levelViews.resize(m_settings.m_levelCount);
-
         blackboard.Add<ViewModule*>(this);
 
         if (m_debugMode == kInvalidIndex)
@@ -719,16 +626,6 @@ namespace FE::Graphics::SunShadow
 
     namespace
     {
-        void AddLevelPasses(Core::FrameGraph& graph, View* levelView, const uint32_t resolution,
-                            const ShadowAtlas::LevelInputs& inputs)
-        {
-            ShadowAtlas::ViewModule& atlas = levelView->GetModules().Find<ShadowAtlas::ViewModule>();
-            atlas.m_inputs = inputs;
-            Renderer::Get().AddViewPasses(graph, { levelView, Vector2UInt(resolution, resolution) });
-            atlas.m_inputs = {};
-        }
-
-
         //! Shader data of the local maps of a camera view, in the blocks that follow the clip levels.
         struct LocalShadowFrame final
         {
@@ -819,21 +716,6 @@ namespace FE::Graphics::SunShadow
             };
             FE_Verify(
                 uploader.UploadGenerated(graph, frame.m_lightMapBuffer.Get(), slotCount * sizeof(uint32_t), writeLightMaps));
-
-            // The child views of the mips project like the maps; the mips differ only in resolution.
-            for (uint32_t mapIndex = 0; mapIndex < LocalShadows::kMaxMapCount; ++mapIndex)
-            {
-                const LocalShadows::MapSetup& map = allocation.m_maps[mapIndex];
-                if (!map.m_isUsed)
-                    continue;
-
-                for (uint32_t mip = 0; mip < kLocalShadowMipCount; ++mip)
-                {
-                    View& mipView = *module.GetLocalView(mapIndex, mip, Layer::kStatic);
-                    mipView.SetCameraTransform(map.m_camera);
-                    mipView.SetProjection(map.m_fovY, 1.0f, map.m_near, map.m_far);
-                }
-            }
         }
 
 
@@ -900,121 +782,76 @@ namespace FE::Graphics::SunShadow
         }
 
 
-        MeshPass::DepthPyramidBinding GetPagePyramidBinding(Core::FrameGraph& graph, const Tools::DepthPyramid::Output& pyramid)
+        // Culling inputs of one clip level or local map mip. LODs are selected for the resolution of the view, not for the
+        // camera that samples it, and the page pyramid of the layer occludes the casters that touch no drawn page.
+        Culling::PassData CreateViewCulling(const Matrix4x4& viewProjection, const Vector3 cameraPosition,
+                                            const float projectionScaleY, const bool isOrthographic,
+                                            const float lodErrorThreshold, const Tools::DepthPyramid::Output* pagePyramid)
         {
-            // Layers that are not drawn have no pyramid; a binding without mips puts no instance into their view masks.
-            MeshPass::DepthPyramidBinding binding{};
-            if (pyramid.m_texture == nullptr)
-                return binding;
-
-            binding.m_texture = graph.GetSRV(pyramid.m_texture.Get());
-            binding.m_size = pyramid.m_size;
-            binding.m_uvScale = pyramid.m_uvScale;
-            binding.m_mipCount = pyramid.m_mipCount;
-            return binding;
+            Culling::PassData culling;
+            culling.m_settings.m_instanceOcclusionCulling = true;
+            culling.m_settings.m_meshletOcclusionCulling = true;
+            culling.m_settings.m_lodErrorThreshold = lodErrorThreshold;
+            culling.m_occluderPyramid = pagePyramid;
+            culling.m_viewProjection = viewProjection;
+            culling.m_occlusionViewProjection = viewProjection;
+            culling.m_cameraPosition = cameraPosition;
+            culling.m_projectionScaleY = projectionScaleY;
+            culling.m_isOrthographic = isOrthographic;
+            return culling;
         }
 
 
-        void BuildCasterViewMasks(Core::FrameGraph& graph, const CulledMeshView& culled, const Matrix4x4& sharedProjection,
-                                  const PageFrame& frame, const uint32_t firstBlock, const uint32_t levelCount)
-        {
-            if (culled.m_classification == nullptr)
-                return;
-
-            const Matrix4x4 inverse = Math::Invert(sharedProjection);
-            festd::fixed_vector<SunShadowCullLevel, kSunShadowMaxLevelCount> levels;
-            for (uint32_t level = 0; level < levelCount; ++level)
-            {
-                const uint32_t block = firstBlock + level;
-                const Matrix4x4 relative = inverse * frame.m_blocks[block].m_viewProjection;
-                SunShadowCullLevel& data = levels.emplace_back();
-                data.m_uvScaleBias = PackedVector4F(relative.m_00,
-                                                    relative.m_11,
-                                                    0.5f * (1.0f - relative.m_00 + relative.m_30),
-                                                    0.5f * (1.0f - relative.m_11 - relative.m_31));
-                data.m_staticPages = GetPagePyramidBinding(graph, frame.m_staticPyramids[block]);
-                data.m_dynamicPages = GetPagePyramidBinding(graph, frame.m_dynamicPyramids[block]);
-            }
-
-            SunShadowLodConstants constants{};
-            constants.m_view = culled.m_view;
-            constants.m_instances = graph.GetUAV(culled.m_classification.Get());
-            constants.m_instanceCount = culled.m_dispatchCount * MeshPass::kInstancesPerCullGroup;
-            constants.m_levels = graph.CreateConstantsArray(festd::span<const SunShadowCullLevel>(levels));
-            constants.m_levelCount = levelCount;
-            const DrawTagMask staticTag(DrawTags::Static);
-            constants.m_staticTag = Vector2UInt(uint32_t(staticTag.m_value), uint32_t(staticTag.m_value >> 32));
-            constants.m_checksLods = 2;
-            graph.AddDispatch("BuildCasterViewMasks",
-                              InvalidateLodsPipeline::GetPipeline(),
-                              constants,
-                              Math::CeilDivide(constants.m_instanceCount, kSunShadowThreadCount));
-        }
-
-
+        // Static casters go into the dirty pages of the static atlas, then one copy moves the pages that dynamic casters touch
+        // into this frame's atlas, then dynamic casters are added to it. The clip levels and local map mips of a layer that
+        // have pages to draw are the views of one multi-view mesh pass, which culls and rasterizes them together.
         void AddBlockPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, ViewModule& module,
                             const bool hasSun, const festd::span<const LevelSetup> levels, const PageCache& cache,
-                            const PageFrame& frame, const festd::span<const CulledMeshView> casterCulls)
+                            const PageFrame& frame)
         {
             const RendererViewData& view = blackboard.Get<RendererViewData>();
             auto* meshes = view.m_scene->GetModules().TryFind<MeshSceneModule>();
-            ShadowAtlas::LevelInputs inputs;
-            inputs.m_cache = &cache;
-            inputs.m_frame = &frame;
-            inputs.m_lodReference = &Culling::GetPassData(blackboard);
-            inputs.m_lodViewportHeight = view.m_viewportRect.Height();
-
-            const uint32_t levelCount = module.m_settings.m_levelCount;
+            const Settings& settings = module.m_settings;
             const auto& maps = module.GetLocalMaps().m_maps;
-            const auto drawsBlocks = [&frame](const uint32_t firstBlock, const uint32_t blockCount) {
-                for (uint32_t block = firstBlock; block < firstBlock + blockCount; ++block)
-                {
-                    if (frame.m_drawsStatic[block] || frame.m_drawsDynamic[block])
-                        return true;
-                }
-
-                return false;
-            };
-
-            // The view masks of both layers are built once per shared cull, and only for culls with a block to draw.
-            if (hasSun && meshes != nullptr && drawsBlocks(0, levels.size()))
-                BuildCasterViewMasks(graph, casterCulls[0], levels.back().m_viewProjection, frame, 0, levels.size());
-
-            for (uint32_t map = 0; map < maps.size(); ++map)
-            {
-                const uint32_t firstBlock = levelCount + map * kLocalShadowMipCount;
-                if (!maps[map].m_isUsed || meshes == nullptr || !drawsBlocks(firstBlock, kLocalShadowMipCount))
-                    continue;
-
-                BuildCasterViewMasks(graph,
-                                     casterCulls[map + 1],
-                                     maps[map].m_viewProjection,
-                                     frame,
-                                     firstBlock,
-                                     kLocalShadowMipCount);
-            }
-
-            // Static casters go into the dirty pages of the static atlas, then one copy moves the pages that dynamic casters
-            // touch into this frame's atlas, then dynamic casters are added to it.
             for (uint32_t layerIndex = 0; layerIndex < kLayerCount; ++layerIndex)
             {
                 const Layer layer = static_cast<Layer>(layerIndex);
                 const bool isStatic = layer == Layer::kStatic;
-                const auto& draws = isStatic ? frame.m_drawsStatic : frame.m_drawsDynamic;
                 if (!isStatic)
                     AddCopyPagesPass(graph, cache, frame);
 
-                inputs.m_layer = layer;
-                inputs.m_sharedInstances = meshes != nullptr ? &casterCulls[0] : nullptr;
+                if (meshes == nullptr)
+                    continue;
+
+                const auto& draws = isStatic ? frame.m_drawsStatic : frame.m_drawsDynamic;
+                const auto& pyramids = isStatic ? frame.m_staticPyramids : frame.m_dynamicPyramids;
+                festd::inline_vector<Culling::PassData, 16> views;
+                festd::inline_vector<Vector2, 16> viewSizes;
+                festd::inline_vector<SunShadowRasterView, 16> rasterViews;
+                const auto addView = [&](const uint32_t block, const uint32_t size, const Culling::PassData& culling) {
+                    views.push_back(culling);
+                    viewSizes.push_back(Vector2(float(size)));
+
+                    SunShadowRasterView& rasterView = rasterViews.emplace_back();
+                    rasterView.m_pageOrigin = frame.m_blocks[block].m_pageOrigin;
+                    rasterView.m_level = block;
+                    rasterView.m_size = size;
+                };
+
                 for (uint32_t level = 0; hasSun && level < levels.size(); ++level)
                 {
                     if (!draws[level])
                         continue;
 
-                    FE_FG_SCOPE(graph, Fmt::FixedFormat(isStatic ? "StaticLevel{}" : "DynamicLevel{}", level));
-                    inputs.m_level = level;
-                    inputs.m_viewMask = 1u << (MeshPass::InstanceFlags::kViewMaskShift + level);
-                    AddLevelPasses(graph, module.GetLevelView(level, layer), kSunShadowVirtualSize, inputs);
+                    const LevelSetup& setup = levels[level];
+                    addView(level,
+                            kSunShadowVirtualSize,
+                            CreateViewCulling(setup.m_viewProjection,
+                                              setup.m_camera.Translation(),
+                                              2.0f / setup.m_size,
+                                              true,
+                                              settings.m_lodErrorThreshold,
+                                              &pyramids[level]));
                 }
 
                 for (uint32_t map = 0; map < maps.size(); ++map)
@@ -1022,19 +859,54 @@ namespace FE::Graphics::SunShadow
                     if (!maps[map].m_isUsed)
                         continue;
 
-                    inputs.m_sharedInstances = meshes != nullptr ? &casterCulls[map + 1] : nullptr;
+                    // The mips of a map project alike and differ in resolution, so each selects its own LODs.
+                    const float projectionScaleY = 1.0f / std::tan(maps[map].m_fovY * 0.5f);
                     for (uint32_t mip = 0; mip < kLocalShadowMipCount; ++mip)
                     {
-                        const uint32_t block = levelCount + map * kLocalShadowMipCount + mip;
+                        const uint32_t block = settings.m_levelCount + map * kLocalShadowMipCount + mip;
                         if (!draws[block])
                             continue;
 
-                        FE_FG_SCOPE(graph, Fmt::FixedFormat(isStatic ? "StaticMap{}Mip{}" : "DynamicMap{}Mip{}", map, mip));
-                        inputs.m_level = block;
-                        inputs.m_viewMask = 1u << (MeshPass::InstanceFlags::kViewMaskShift + mip);
-                        AddLevelPasses(graph, module.GetLocalView(map, mip, layer), kSunShadowVirtualSize >> mip, inputs);
+                        addView(block,
+                                kSunShadowVirtualSize >> mip,
+                                CreateViewCulling(maps[map].m_viewProjection,
+                                                  maps[map].m_camera.Translation(),
+                                                  projectionScaleY,
+                                                  false,
+                                                  settings.m_lodErrorThreshold,
+                                                  &pyramids[block]));
                     }
                 }
+
+                // A layer without pages to draw has no views, and the pass then only keeps its counters current.
+                MeshMultiViewPass pass;
+                pass.m_stats = &module.GetLayerStats(layer);
+                if (views.empty())
+                {
+                    meshes->AddMultiViewRenderPasses(graph, blackboard, *view.m_renderQueueUploader, pass);
+                    continue;
+                }
+
+                FE_FG_SCOPE(graph, isStatic ? "StaticShadowViews" : "DynamicShadowViews");
+
+                SunShadowRasterData rasterData{};
+                rasterData.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
+                rasterData.m_atlas = graph.GetUAV(isStatic ? cache.m_staticAtlas.Get() : frame.m_atlas.Get());
+                rasterData.m_views = graph.CreateConstantsArray(festd::span<const SunShadowRasterView>(rasterViews));
+                rasterData.m_requiredFlags = isStatic ? kStaticPageFlags : kDynamicPageFlags;
+
+                // Every view draws into the top left corner of one viewport of the largest view size.
+                auto* base = graph.AllocatePassData<SunShadowRasterPassDesc>();
+                base->m_viewport = RectF::FromPosAndSize(Vector2::kZero, Vector2(float(kSunShadowVirtualSize)));
+
+                pass.m_views = views;
+                pass.m_viewSizes = viewSizes;
+                pass.m_passDescToken = graph.AddBasePassDesc(base);
+                pass.m_drawTag = isStatic ? DrawTags::Static : DrawTags::Dynamic;
+                // Only materials with a ShadowDepth technique cast shadows.
+                pass.m_techniqueRole = Env::Name("ShadowDepth");
+                pass.m_passData = graph.CreateConstants(rasterData);
+                meshes->AddMultiViewRenderPasses(graph, blackboard, *view.m_renderQueueUploader, pass);
             }
         }
     } // namespace
@@ -1078,13 +950,6 @@ namespace FE::Graphics::SunShadow
         ResolveFeedback(cache);
         const float* depthOrigin = cache.m_pageTable != nullptr ? &cache.m_depthOrigin : nullptr;
         CalculateLevels(settings, camera.m_position, directionToLight, levels, depthOrigin);
-        for (uint32_t levelIndex = 0; levelIndex < levels.size(); ++levelIndex)
-        {
-            const LevelSetup& level = levels[levelIndex];
-            View& levelView = *module.GetLevelView(levelIndex, Layer::kStatic);
-            levelView.SetCameraTransform(level.m_camera);
-            levelView.SetOrthographicProjection(level.m_size, level.m_size, 0.0f, settings.m_depthRange);
-        }
 
         // Without the sun no position projects into a clip level, while local maps still select mips by the camera.
         const auto shaderLevels = BuildShadowLevels(levels);
@@ -1120,32 +985,11 @@ namespace FE::Graphics::SunShadow
                 SetCoarseRegion(meshes->GetTransparentBounds(), *view.m_view, view.m_viewportRect, inputs);
         }
 
-        festd::array<CulledMeshView, kLocalShadowMaxMapCount + 1> casterCulls;
-        if (auto* meshes = view.m_scene->GetModules().TryFind<MeshSceneModule>())
-        {
-            if (hasSun)
-                meshes->CullShadowInstances(graph, blackboard, levels.back().m_viewProjection, casterCulls[0]);
-
-            for (uint32_t map = 0; map < kLocalShadowMaxMapCount; ++map)
-            {
-                if (module.GetLocalMaps().m_maps[map].m_isUsed)
-                    meshes->CullShadowInstances(graph,
-                                                blackboard,
-                                                module.GetLocalMaps().m_maps[map].m_viewProjection,
-                                                casterCulls[map + 1]);
-            }
-
-            inputs.m_instanceCapacity = meshes->GetMeshInstanceTable()->GetReservedRowCount();
-            const DrawTagMask staticTag(DrawTags::Static);
-            inputs.m_staticTag = Vector2UInt(uint32_t(staticTag.m_value), uint32_t(staticTag.m_value >> 32));
-            inputs.m_casterCulls = casterCulls;
-        }
-
         PageFrame frame;
         AddRequestPasses(graph, *view.m_renderQueueUploader, inputs, cache, frame);
         AddAllocatePasses(graph, cache, frame);
 
-        AddBlockPasses(graph, blackboard, module, hasSun, levels, cache, frame, casterCulls);
+        AddBlockPasses(graph, blackboard, module, hasSun, levels, cache, frame);
         ScheduleFeedbackReadback(graph, cache, frame, Renderer::Get().GetGraphicsQueue()->GetCurrentFence());
 
         SunShadowBinding& binding = blackboard.Add<SunShadowBinding>();
@@ -1199,86 +1043,3 @@ namespace FE::Graphics::SunShadow
         view.m_isMainColorWritten = true;
     }
 } // namespace FE::Graphics::SunShadow
-
-
-namespace FE::Graphics::ShadowAtlas
-{
-    ViewModule::ViewModule(View* view)
-        : ViewModuleBase(view)
-    {
-    }
-
-
-    ViewModule::~ViewModule() = default;
-
-
-    void ViewModule::DoRelease()
-    {
-        Memory::DefaultDelete(this);
-    }
-
-
-    void ViewModule::Update(Core::FrameGraphBlackboard& blackboard)
-    {
-        Culling::PassData& culling = blackboard.Add<Culling::PassData>();
-        culling.m_settings.m_instanceOcclusionCulling = false;
-        culling.m_settings.m_meshletOcclusionCulling = true;
-        culling.m_sharedInstances = m_inputs.m_sharedInstances;
-        culling.m_lodReference = m_inputs.m_lodReference;
-        culling.m_lodViewportHeight = m_inputs.m_lodViewportHeight;
-        culling.m_viewProjection = m_view->GetViewProjectionMatrix();
-        culling.m_occlusionViewProjection = culling.m_viewProjection;
-        culling.m_cameraPosition = m_view->GetCameraTransform().Translation();
-        culling.m_projectionScaleY = m_view->GetProjectionMatrix().m_11;
-        culling.m_isOrthographic = m_view->IsOrthographic();
-        if (m_inputs.m_frame != nullptr)
-        {
-            const SunShadow::PageFrame& frame = *m_inputs.m_frame;
-            const bool isStatic = m_inputs.m_layer == SunShadow::Layer::kStatic;
-            culling.m_occluderPyramid = &(isStatic ? frame.m_staticPyramids : frame.m_dynamicPyramids)[m_inputs.m_level];
-            blackboard.Add<ViewModule*>(this);
-        }
-    }
-
-
-    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
-    {
-        ViewModule* const* modulePtr = blackboard.TryGet<ViewModule*>();
-        if (modulePtr == nullptr)
-            return;
-
-        FE_FG_SCOPE(graph, "ShadowAtlas");
-
-        const LevelInputs& inputs = (*modulePtr)->m_inputs;
-        const SunShadow::PageCache& cache = *inputs.m_cache;
-        const SunShadow::PageFrame& frame = *inputs.m_frame;
-        const RendererViewData& view = blackboard.Get<RendererViewData>();
-        const bool isStatic = inputs.m_layer == SunShadow::Layer::kStatic;
-
-        SunShadowRasterData rasterData{};
-        rasterData.m_pageTable = graph.GetSRV(cache.m_pageTable.Get());
-        rasterData.m_atlas = graph.GetUAV(isStatic ? cache.m_staticAtlas.Get() : frame.m_atlas.Get());
-        rasterData.m_level = inputs.m_level;
-        rasterData.m_requiredFlags = isStatic ? kSunShadowPageAllocated | kSunShadowPageDirty
-                                              : kSunShadowPageAllocated | kSunShadowPageRequested | kSunShadowPageDynamic;
-        rasterData.m_pageOrigin = frame.m_blocks[inputs.m_level].m_pageOrigin;
-
-        auto* base = graph.AllocatePassData<SunShadowRasterPassDesc>();
-        base->m_viewport = view.m_viewportRect;
-
-        SceneRenderPass pass;
-        pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
-        pass.m_passDescToken = graph.AddBasePassDesc(base);
-        pass.m_drawTag = isStatic ? DrawTags::Static : DrawTags::Dynamic;
-        pass.m_viewMask = inputs.m_viewMask;
-        pass.m_techniqueRole = Env::Name("ShadowDepth");
-        pass.m_phase = SceneRenderPhase::kSingle;
-        pass.m_depthPyramid = &(isStatic ? frame.m_staticPyramids : frame.m_dynamicPyramids)[inputs.m_level];
-        pass.m_reportsStats = true;
-        pass.m_cullingStats = &(*modulePtr)->GetStats(inputs.m_layer);
-        pass.m_passData = graph.CreateConstants(rasterData);
-        view.m_scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
-            module.AddRenderPasses(graph, blackboard, *view.m_renderQueueUploader, pass);
-        });
-    }
-} // namespace FE::Graphics::ShadowAtlas
