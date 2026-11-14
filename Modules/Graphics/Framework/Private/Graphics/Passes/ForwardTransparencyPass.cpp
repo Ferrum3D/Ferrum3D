@@ -46,19 +46,26 @@ namespace FE::Graphics::ForwardTransparency
         auto accumulation =
             Core::Texture::Create(graph.GetDevice(), "TransparencyAccumulation", Core::Format::kR16G16B16A16_SFLOAT, resolution);
         auto revealage = Core::Texture::Create(graph.GetDevice(), "TransparencyRevealage", Core::Format::kR16_SFLOAT, resolution);
+
+        // Techniques declare a fixed target layout, so the reactive mask is bound even when no upscaler reads it.
+        auto& output = blackboard.Add<Output>();
+        output.m_reactive = Core::Texture::Create(graph.GetDevice(), "TransparencyReactive", Core::Format::kR8_UNORM, resolution);
+
         auto* targets = graph.AllocatePassData<Targets>();
         targets->m_accumulation = Core::TextureView::Create(accumulation.Get());
         targets->m_revealage = Core::TextureView::Create(revealage.Get());
+        targets->m_reactive = Core::TextureView::Create(output.m_reactive.Get());
         targets->m_depth = Core::TextureView::Create(view.m_mainDepthTarget);
         targets->m_viewport = view.m_viewportRect;
         graph.AddPass("ClearTransparency", targets, [](Core::FrameGraphContext& context) {
             context.ClearColorTarget(0, Core::ColorClearValue::Float(Color4F(0, 0, 0, 0)));
             context.ClearColorTarget(1, Core::ColorClearValue::Float(Color4F(1, 1, 1, 1)));
+            context.ClearColorTarget(2, Core::ColorClearValue::Float(Color4F(0, 0, 0, 0)));
             context.ClearRenderTargets();
         });
 
         SceneRenderPass pass;
-        pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
+        pass.m_viewProjection = GetRasterViewProjection(blackboard, *view.m_view);
         pass.m_passDescToken = graph.AddBasePassDesc(targets);
         pass.m_drawTag = DrawTags::Transparent;
         pass.m_techniqueRole = "ForwardTransparency";

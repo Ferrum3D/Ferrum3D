@@ -45,6 +45,7 @@ table MeshInstanceTable
 {
     DB::Ref<MeshGroupTable> m_meshGroup;
     float3x4 m_transform;
+    float3x4 m_previousTransform;
     BufferPointer m_instanceData;
     uint32_t m_meshletVisibilityOffset;
 }

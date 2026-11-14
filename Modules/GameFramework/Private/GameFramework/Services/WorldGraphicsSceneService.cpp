@@ -5,6 +5,7 @@
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/ForwardTransparencyPass.h>
+#include <Graphics/Passes/Fsr3UpscalerPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/TonemapPass.h>
@@ -102,6 +103,7 @@ namespace FE::GameFramework
         view->GetModules().Add<Graphics::Visibility::DebugViewModule>();
         view->GetModules().Add<Graphics::GBufferDebug::ViewModule>();
         view->GetModules().Add<Graphics::Tonemap::ViewModule>();
+        view->GetModules().Add<Graphics::Fsr3::ViewModule>();
         view->SetEnabled(false);
         return view;
     }

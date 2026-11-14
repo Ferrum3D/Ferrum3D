@@ -65,12 +65,6 @@ namespace FE::Graphics::SunShadow
         }
 
 
-        Vector3 GetDirectionToLight(const GlobalLightingParameters& parameters)
-        {
-            return Math::Rotate(Vector3::AxisZ(), Math::Normalize(parameters.m_directionalLightOrientation));
-        }
-
-
         Core::StructuredBuffer<uint32_t> CreatePersistentBuffer(Core::FrameGraph& graph, const Env::Name name,
                                                                 const uint32_t count)
         {
@@ -507,6 +501,12 @@ namespace FE::Graphics::SunShadow
     {
         const bool isLevelCountValid = m_levelCount > 0 && m_levelCount <= kSunShadowMaxLevelCount;
         return isLevelCountValid && m_level0Size > 0.0f && m_depthRange > 0.0f;
+    }
+
+
+    Vector3 GetDirectionToLight(const GlobalLightingParameters& parameters)
+    {
+        return Math::Rotate(Vector3::AxisZ(), Math::Normalize(parameters.m_directionalLightOrientation));
     }
 
 

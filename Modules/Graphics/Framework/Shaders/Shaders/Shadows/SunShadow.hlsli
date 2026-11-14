@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <Shaders/Shadows/ScreenSpaceShadow.h>
 #include <Shaders/Shadows/ScreenTrace.hlsli>
 #include <Shaders/Shadows/SunShadow.h>
 
@@ -284,5 +285,31 @@ namespace SunShadow
             return 0.0f;
 
         return FilterLevel(binding, data, selection, worldPosition + directionToLight * rayLength, normal);
+    }
+
+
+    //! SampleVisibility for a surface in the camera depth of a view with a screen space shadow, which replaces the ray:
+    //! screenVisibility is its value at the pixel of the surface. The pass sees the occluders within a fixed number of
+    //! pixels towards the light, so the shadow lookup starts no farther from the surface than those pixels reach.
+    float SampleVisibility(const SunShadowBinding binding, const float screenVisibility, const float3 worldPosition,
+                           const float3 normal, const float3 directionToLight)
+    {
+        if (!binding.m_data.IsValid())
+            return 1.0f;
+
+        const SunShadowData data = binding.m_data.Load();
+        const LevelSelection selection = SelectBackedLevel(binding, data, worldPosition);
+        if (!selection.m_isBacked)
+            return screenVisibility;
+
+        if (dot(normal, directionToLight) <= 0.0f)
+            return FilterLevel(binding, data, selection, worldPosition, normal);
+
+        // A pixel step towards the light spans at least the world size of a pixel at the surface.
+        const float pixelSize = data.m_cameraPosition.w * length(worldPosition - data.m_cameraPosition.xyz);
+        const float coveredLength = pixelSize * float(kScreenShadowSampleCount - kScreenShadowFadeSamples);
+        const float rayLength = min(selection.m_level.m_texelSize * data.m_screenTraceTexels, coveredLength);
+        const float3 lookupPosition = worldPosition + directionToLight * rayLength;
+        return min(screenVisibility, FilterLevel(binding, data, selection, lookupPosition, normal));
     }
 } // namespace SunShadow

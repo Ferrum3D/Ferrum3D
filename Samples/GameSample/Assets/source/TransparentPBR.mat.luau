@@ -5,7 +5,7 @@ local material = Material.new("TransparentPBR")
 material:parameter("BaseColor", "Vector", "Material", { 0.15, 0.6, 0.85, 0.35 })
 material:parameter("Properties", "Vector", "Material", { 0.22, 0.0, 0.0, 0.0 })
 material:technique("ForwardTransparency", function(t, ctx)
-    t.renderTargetFormats = { "R16G16B16A16_SFLOAT", "R16_SFLOAT" }
+    t.renderTargetFormats = { "R16G16B16A16_SFLOAT", "R16_SFLOAT", "R8_UNORM" }
     t.depthTargetFormat = "D32_SFLOAT"
     t.rasterization = Pipeline.RasterizationState.fillBackCull()
     t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
@@ -20,7 +20,11 @@ material:technique("ForwardTransparency", function(t, ctx)
     revealage.blendEnabled = true
     revealage.sourceFactor = "Zero"
     revealage.destinationFactor = "OneMinusSrcColor"
-    t.targetBlends = { accumulation, revealage }
+    local reactive = Pipeline.BlendState.disabled()
+    reactive.blendEnabled = true
+    reactive.blendOp = "Max"
+    reactive.alphaBlendOp = "Max"
+    t.targetBlends = { accumulation, revealage, reactive }
     return true
 end)
 -- Requests the sun shadow pages that the forward pass samples, since transparent surfaces are absent from the depth.

@@ -22,6 +22,7 @@
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
+#include <Graphics/Passes/Fsr3UpscalerPass.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/TonemapPass.h>
 #include <Graphics/Passes/VisibilityPass.h>
@@ -198,6 +199,7 @@ namespace
             m_view->GetModules().Add<DeferredShading::ViewModule>();
             m_view->GetModules().Add<SunShadow::ViewModule>();
             m_view->GetModules().Add<Tonemap::ViewModule>();
+            m_view->GetModules().Add<Fsr3::ViewModule>();
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
             // A camera at mesh height looks along the stress grid rows, so near instances occlude far ones.
@@ -347,6 +349,7 @@ namespace
                 m_secondView->GetModules().Add<DeferredShading::ViewModule>();
                 m_secondView->GetModules().Add<SunShadow::ViewModule>();
                 m_secondView->GetModules().Add<Tonemap::ViewModule>();
+                m_secondView->GetModules().Add<Fsr3::ViewModule>();
                 auto& probePass = m_secondView->GetModules().Find<Visibility::ViewModule>();
                 probePass.m_drawTag = GMaskProbeTag;
                 probePass.m_techniqueRole = "DepthVisibility";

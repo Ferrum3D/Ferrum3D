@@ -71,7 +71,7 @@ namespace FE::Graphics::Visibility
         const bool isOcclusionCulled = culling.m_settings.IsOcclusionCullingEnabled();
         const Tools::DepthPyramid::Output* occluderPyramid = culling.GetOccluderPyramid();
         SceneRenderPass pass;
-        pass.m_viewProjection = view.m_view->GetViewProjectionMatrix();
+        pass.m_viewProjection = GetRasterViewProjection(blackboard, *view.m_view);
         pass.m_passDescToken = graph.AddBasePassDesc(coverage);
         pass.m_drawTag = data->m_drawTag;
         pass.m_techniqueRole = data->m_techniqueRole;

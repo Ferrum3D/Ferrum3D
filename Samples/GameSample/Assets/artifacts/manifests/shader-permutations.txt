@@ -65,3 +65,13 @@ ms Shaders/Shadows/MarkTransparentPages.ms.hlsl
 ps Shaders/Shadows/MarkTransparentPages.ps.hlsl
 ms Shaders/Shadows/ShadowDepth.ms.hlsl SHADOW_TWO_SIDED=0
 ps Shaders/Shadows/ShadowDepth.ps.hlsl SHADOW_TWO_SIDED=0
+cs Shaders/Passes/Fsr3/Clear.cs.hlsl
+cs Shaders/Passes/Fsr3/ClearUint.cs.hlsl
+cs Shaders/Passes/Fsr3/Accumulate.cs.hlsl
+cs Shaders/Passes/Fsr3/ShadingChange.cs.hlsl
+cs Shaders/Passes/Fsr3/LumaInstability.cs.hlsl
+cs Shaders/Passes/Fsr3/PrepareReactivity.cs.hlsl
+cs Shaders/Passes/Fsr3/ShadingChangePyramid.cs.hlsl
+cs Shaders/Passes/Fsr3/LumaPyramid.cs.hlsl
+cs Shaders/Passes/Fsr3/PrepareInputs.cs.hlsl
+cs Shaders/Shadows/ScreenSpaceShadow.cs.hlsl

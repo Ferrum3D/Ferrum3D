@@ -89,6 +89,7 @@ namespace
         bool m_isDebugWindowDetached = false;
         bool m_isDemoWindowVisible = false;
         bool m_forceCoarseShadowPages = false;
+        bool m_usesScreenSpaceShadow = true;
 
         void Draw(Framework::EntityWorld& world, bool visible = true)
         {
@@ -117,6 +118,9 @@ namespace
                     ImGui::Checkbox("Force coarse shadow pages", &m_forceCoarseShadowPages);
                     ImGui::SetItemTooltip("Use only coarse shadow coverage for the sun and local lights.\n"
                                           "Fine depth requests and transparent feedback are ignored.");
+                    ImGui::Checkbox("Screen space sun shadow", &m_usesScreenSpaceShadow);
+                    ImGui::SetItemTooltip("Shadow the sun with the screen space shadow pass.\n"
+                                          "Otherwise shading traces a short ray per pixel.");
                     DrawCullingStats(*scene);
                 }
                 else
@@ -371,7 +375,10 @@ namespace
             {
                 auto* shadows = scene.GetView(viewIndex)->GetModules().TryFind<Graphics::SunShadow::ViewModule>();
                 if (shadows != nullptr)
+                {
                     shadows->m_settings.m_forceCoarsePages = m_forceCoarseShadowPages;
+                    shadows->m_settings.m_usesScreenSpaceShadow = m_usesScreenSpaceShadow;
+                }
             }
         }
 

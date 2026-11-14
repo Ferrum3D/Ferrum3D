@@ -65,9 +65,20 @@ namespace FE::Graphics::SurfaceEvaluation
         }
 
         auto& targets = output.m_gBufferTargets;
+
+        // Evaluation shaders skip motion when its descriptor is left invalid.
+        RWTexture2DDescriptor<float2> motion{};
+        if (view.m_needsMotionVectors)
+        {
+            output.m_motion = Core::Texture::Create(graph.GetDevice(), "GBufferMotion", Core::Format::kR16G16_SFLOAT, resolution);
+            motion = graph.GetUAV(output.m_motion.Get());
+        }
+
         // Clear coverage once, then let each object producer classify only its own visibility IDs.
         SurfaceConstants clear{};
         clear.m_g0 = graph.GetUAV(targets[0].Get());
+        clear.m_motion = motion;
+        clear.m_camera = view.m_constants;
         clear.m_work.m_resolution = resolution;
         clear.m_visibility = graph.GetSRV(visibility);
         graph.AddDispatch("ClearSurfaceG0", ClearSurfacePipeline::GetPipeline(), clear, Math::CeilDivide(resolution, 8u));
@@ -96,6 +107,7 @@ namespace FE::Graphics::SurfaceEvaluation
             constants.m_g1 = graph.GetUAV(targets[1].Get());
             constants.m_g2 = graph.GetUAV(targets[2].Get());
             constants.m_g3 = graph.GetUAV(targets[3].Get());
+            constants.m_motion = motion;
             constants.m_work.m_resolution = resolution;
             constants.m_work.m_tilesPerRow = Math::CeilDivide(resolution.x, kTileSize);
             for (uint32_t slot = 0; slot < pipelines.size(); ++slot)

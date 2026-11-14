@@ -47,6 +47,7 @@ bool ComputePerspectiveWeights(const float4 clip0, const float4 clip1, const flo
 struct ReconstructedAttributes
 {
     float3 m_worldPosition;
+    float3 m_localPosition;
     float3 m_normal;
     float4 m_tangent;
     float2 m_uv;
@@ -78,9 +79,12 @@ bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, cons
     const uint i0 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.x) * sizeof(uint));
     const uint i1 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.y) * sizeof(uint));
     const uint i2 = draw.m_geometry.Read<uint>(layout.m_remapOffset + (header.m_vertexOffset + local.z) * sizeof(uint));
-    const PixelAttributes v0 = TransformAttributes(draw, i0, view.m_view.m_viewProjection, needUV, needTangent);
-    const PixelAttributes v1 = TransformAttributes(draw, i1, view.m_view.m_viewProjection, needUV, needTangent);
-    const PixelAttributes v2 = TransformAttributes(draw, i2, view.m_view.m_viewProjection, needUV, needTangent);
+    float3 p0;
+    float3 p1;
+    float3 p2;
+    const PixelAttributes v0 = TransformVertex(draw, i0, view.m_view.m_viewProjection, needUV, needTangent, p0);
+    const PixelAttributes v1 = TransformVertex(draw, i1, view.m_view.m_viewProjection, needUV, needTangent, p1);
+    const PixelAttributes v2 = TransformVertex(draw, i2, view.m_view.m_viewProjection, needUV, needTangent, p2);
     const float2 ndcPerPixel = float2(2.0f, -2.0f) / resolution;
     const float2 ndc = pixelCenter * ndcPerPixel + float2(-1.0f, 1.0f);
 
@@ -89,6 +93,7 @@ bool ReconstructAttributes(const MeshViewData view, const uint2 visibility, cons
         return false;
 
     const float3 w = weights.m_value;
+    result.m_localPosition = p0 * w.x + p1 * w.y + p2 * w.z;
     result.m_worldPosition = v0.m_worldPos * w.x + v1.m_worldPos * w.y + v2.m_worldPos * w.z;
     result.m_normal = normalize(v0.m_normal * w.x + v1.m_normal * w.y + v2.m_normal * w.z);
     result.m_tangent = v0.m_tangent * w.x + v1.m_tangent * w.y + v2.m_tangent * w.z;

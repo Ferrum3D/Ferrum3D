@@ -9,10 +9,12 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/ShaderSourceDirectory.h>
 #include <Graphics/Database/Database.h>
+#include <Graphics/Features/Shadows/ScreenSpaceShadow.h>
 #include <Graphics/Features/Shadows/SunShadow.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DepthPyramidPass.h>
 #include <Graphics/Passes/ForwardTransparencyPass.h>
+#include <Graphics/Passes/Fsr3UpscalerPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/ImGuiPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
@@ -398,22 +400,39 @@ namespace FE::Graphics
             m_viewSetupStack.pop_back();
         });
 
+        ViewData& constants = blackboard.Add<ViewData>();
+        constants.m_viewProjection = view.GetViewProjectionMatrix();
+        constants.m_inverseViewProjection = view.GetInverseViewProjectionMatrix();
+        constants.m_unjitteredViewProjection = constants.m_viewProjection;
+        constants.m_previousViewProjection = constants.m_viewProjection;
+        constants.m_cameraPosition = PackedVector4F(Vector4(view.GetCameraTransform().Translation(), 1.0f));
+
+        ViewRenderSetup setup;
+        setup.m_outputResolution = resolution;
+        setup.m_renderResolution = resolution;
+        setup.m_constants = &constants;
+
+        view.GetModules().ForEachActive([&](ViewModuleBase& module) {
+            module.PrepareView(graph, blackboard, setup);
+        });
+
+        const Vector2UInt renderResolution = setup.m_renderResolution;
+
         RendererViewTargets& targets = blackboard.Add<RendererViewTargets>();
-        targets.m_color = Core::Texture::Create(m_device.Get(), "RendererMainColor", Core::Format::kB10G11R11_UFLOAT, resolution);
-        targets.m_depth = Core::Texture::Create(m_device.Get(), "RendererMainDepth", Core::Format::kD32_SFLOAT, resolution);
+        targets.m_color =
+            Core::Texture::Create(m_device.Get(), "RendererMainColor", Core::Format::kB10G11R11_UFLOAT, renderResolution);
+        targets.m_depth = Core::Texture::Create(m_device.Get(), "RendererMainDepth", Core::Format::kD32_SFLOAT, renderResolution);
 
         RendererViewData& viewData = blackboard.Add<RendererViewData>();
         viewData.m_scene = &scene;
         viewData.m_view = &view;
         viewData.m_mainColorTarget = targets.m_color.Get();
         viewData.m_mainDepthTarget = targets.m_depth.Get();
-        viewData.m_viewportRect = RectF::FromPosAndSize(Vector2::kZero, Vector2(resolution));
+        viewData.m_outputColorTarget = targets.m_color.Get();
+        viewData.m_viewportRect = RectF::FromPosAndSize(Vector2::kZero, Vector2(renderResolution));
+        viewData.m_outputResolution = resolution;
+        viewData.m_needsMotionVectors = setup.m_needsMotionVectors;
         viewData.m_renderQueueUploader = &m_renderQueueUploader;
-
-        ViewData& constants = blackboard.Add<ViewData>();
-        constants.m_viewProjection = view.GetViewProjectionMatrix();
-        constants.m_inverseViewProjection = view.GetInverseViewProjectionMatrix();
-        constants.m_cameraPosition = PackedVector4F(Vector4(view.GetCameraTransform().Translation(), 1.0f));
 
         const RectF rect = viewData.m_viewportRect;
         constants.m_viewport = PackedVector4F(rect.left, rect.top, rect.Width(), rect.Height());
@@ -435,6 +454,8 @@ namespace FE::Graphics
         viewData.m_lighting = CreateViewLighting(graph, blackboard);
         Visibility::AddDebugPasses(graph, blackboard);
         SurfaceEvaluation::AddPasses(graph, blackboard);
+        // After surface evaluation, which may later displace the depth that the shadow marches.
+        ScreenSpaceShadow::AddPasses(graph, blackboard);
         GBufferDebug::AddPasses(graph, blackboard);
         SunShadow::AddDebugPasses(graph, blackboard);
         DeferredShading::AddPasses(graph, blackboard);
@@ -443,6 +464,7 @@ namespace FE::Graphics
         view.GetModules().ForEachActive([&](ViewModuleBase& module) {
             module.AddRenderPasses(graph, blackboard);
         });
+        Fsr3::AddPasses(graph, blackboard);
         ImGuiPass::AddPasses(graph, blackboard);
 
         // Offscreen output must precede UI passes that sample it in this same graph.

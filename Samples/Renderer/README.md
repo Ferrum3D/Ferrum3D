@@ -2,6 +2,15 @@
 
 Visibility rasterization, GBuffer evaluation and deferred compute shading are the default pipeline. Each stage has its own view module and exchanges targets through the FrameGraph blackboard. The forward path has been removed. See [Stage 5 notes](../../VISIBILITY_BUFFER_STAGE5.md).
 
+FSR3 upscaling is enabled through `Fsr3::ViewModule`, using the vendored shaders and engine render graph without the
+FidelityFX host API. Its default `m_renderScale` is `2.0f / 3.0f` (Quality); `1.0f` enables Native AA. Deactivate the module
+to restore native rendering without temporal upscaling. Call `ResetHistory()` on camera cuts. Resizing
+and skipped views reset history automatically. The module adjusts the view through `ViewModuleBase::PrepareView`: scene
+rendering is jittered, and the GBuffer motion target it requests uses unjittered current and previous camera matrices and
+previous mesh-instance transforms. Views without such a module produce no motion target. Tonemapping and UI read
+`RendererViewData::m_outputColorTarget` at the output resolution.
+Exposure and pre-exposure are shared in `Shaders/Shading/Exposure.h`. Frame generation is not integrated.
+
 Validation is disabled by default. Add `--api-validation` for Vulkan API checks, or `--gpu-validation` for GPU-assisted checks (which also enables API validation). Use neither flag for performance measurements and Nsight captures.
 
 Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-normal`, `surface-properties`, `surface-emissive`, and `surface-route` modes to `--visibility-debug`. These show GPU classification and surface evaluation. See [Stage 3 notes](../../VISIBILITY_BUFFER_STAGE3.md).

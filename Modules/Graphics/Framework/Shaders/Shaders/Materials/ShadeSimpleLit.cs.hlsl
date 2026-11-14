@@ -26,11 +26,12 @@ void main(uint3 dispatch : SV_GroupID, uint lane : SV_GroupIndex)
     const float4 world = mul(float4(ndc, depth, 1), view.m_inverseViewProjection);
     const float3 worldPosition = world.xyz / world.w;
     const float nDotL = saturate(dot(surface.m_normal, lighting.m_directionIlluminance.xyz));
-    const float sunVisibility = SunShadow::SampleVisibility(viewLighting.m_sunShadow,
-                                                            ScreenTrace::CreateContext(GConstants.m_depth, view),
-                                                            worldPosition,
-                                                            surface.m_normal,
-                                                            lighting.m_directionIlluminance.xyz);
+    const float sunVisibility = SampleSunVisibility(pixel,
+                                                    view,
+                                                    viewLighting.m_sunShadow,
+                                                    worldPosition,
+                                                    surface.m_normal,
+                                                    lighting.m_directionIlluminance.xyz);
     const float3 illuminance = Atmosphere::DirectionalIlluminance(lighting, worldPosition) * sunVisibility;
     GConstants.m_output.Store(pixel, surface.m_color * illuminance * (nDotL * Shading::kPreExposure / Atmosphere::kPi));
 }

@@ -9,18 +9,20 @@
 
 struct MeshInstanceTable
 {
-    FE_CONSTEXPR uint32_t kRowsPerPage =
-        DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float3x4) + sizeof(BufferPointer) + sizeof(uint32_t));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize
+        / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float3x4) + sizeof(float3x4) + sizeof(BufferPointer) + sizeof(uint32_t));
 
     FE_CONSTEXPR uint32_t kOffset_m_meshGroup = 0;
     FE_CONSTEXPR uint32_t kOffset_m_transform = kOffset_m_meshGroup + sizeof(DB::Ref<MeshGroupTable>) * kRowsPerPage;
-    FE_CONSTEXPR uint32_t kOffset_m_instanceData = kOffset_m_transform + sizeof(float3x4) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_previousTransform = kOffset_m_transform + sizeof(float3x4) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_instanceData = kOffset_m_previousTransform + sizeof(float3x4) * kRowsPerPage;
     FE_CONSTEXPR uint32_t kOffset_m_meshletVisibilityOffset = kOffset_m_instanceData + sizeof(BufferPointer) * kRowsPerPage;
 
     struct Row
     {
         DB::ElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
         DB::ElementHandle<float3x4, kOffset_m_transform> m_transform;
+        DB::ElementHandle<float3x4, kOffset_m_previousTransform> m_previousTransform;
         DB::ElementHandle<BufferPointer, kOffset_m_instanceData> m_instanceData;
         DB::ElementHandle<uint32_t, kOffset_m_meshletVisibilityOffset> m_meshletVisibilityOffset;
     };
@@ -35,6 +37,7 @@ struct MeshInstanceTable
         Row row;
         row.m_meshGroup.Setup(pageAddress, localRowIndex);
         row.m_transform.Setup(pageAddress, localRowIndex);
+        row.m_previousTransform.Setup(pageAddress, localRowIndex);
         row.m_instanceData.Setup(pageAddress, localRowIndex);
         row.m_meshletVisibilityOffset.Setup(pageAddress, localRowIndex);
         return row;

@@ -96,6 +96,10 @@ namespace FE::Graphics::RasterProbe
         const auto instanceRow = instances.WriteRow(instance);
         instanceRow.m_meshGroup.Get() = group;
         instanceRow.m_transform.Get() = Matrix3x4::FromMatrix4x4(Matrix4x4::Scale(Vector3(-1, 0.5f, 1)));
+        Matrix4x4 previousTransform = Matrix4x4::Scale(Vector3(-1, 0.5f, 1));
+        previousTransform.m_30 = 0.2f;
+        previousTransform.m_31 = -0.4f;
+        instanceRow.m_previousTransform.Get() = Matrix3x4::FromMatrix4x4(previousTransform);
 
         Rc<Core::FrameGraph> graph = device->CreateFrameGraph(descriptors, pool, queue);
         Core::RingUploader uploader;
@@ -112,8 +116,8 @@ namespace FE::Graphics::RasterProbe
         auto meshlets = Core::Buffer::CreateStructured<MeshPass::VisibleMeshlet>(device, "RasterProbeMeshlets", 1);
         auto commands = Core::Buffer::CreateStructured<MeshPass::MeshCommandRange>(device, "RasterProbeCommands", 1);
         auto arguments = Core::Buffer::CreateStructured<MeshPass::MeshDispatchArguments>(device, "RasterProbeArguments", 1);
-        auto output = Core::Buffer::CreateStructured<uint32_t>(device, "RasterProbeOutput", 32);
-        Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "RasterProbeReadback", 128);
+        auto output = Core::Buffer::CreateStructured<uint32_t>(device, "RasterProbeOutput", 36);
+        Rc<Core::Buffer> readback = Core::Buffer::CreateByteAddress(device, "RasterProbeReadback", 144);
         Core::ResourceCommitParams readbackCommit;
         readbackCommit.m_memory = Core::ResourceMemory::kHostRandomAccess;
         readbackCommit.m_bindFlags = Core::BarrierAccessFlags::kCopyDest;
@@ -151,6 +155,8 @@ namespace FE::Graphics::RasterProbe
         // A nonsymmetric projection that preserves this triangle's clip positions exposes transposed matrix loads.
         view.m_view.m_viewProjection.m_rows[2].x = 0.4f;
         view.m_view.m_viewProjection.m_rows[3].x = -0.2f;
+        view.m_view.m_unjitteredViewProjection = view.m_view.m_viewProjection;
+        view.m_view.m_previousViewProjection = view.m_view.m_viewProjection;
         scene.m_visibilityType = 7;
         scene.m_instances = instances.GetInstance();
         scene.m_groups = groups.GetInstance();
@@ -188,6 +194,7 @@ namespace FE::Graphics::RasterProbe
             context.DispatchMeshIndirect();
         });
         Rc<Core::Texture> planes[4];
+        Rc motion = Core::Texture::Create(device, "RasterMotion", Core::Format::kR16G16_SFLOAT, { 64, 64 });
         for (uint32_t plane = 0; plane < 4; ++plane)
             planes[plane] = Core::Texture::Create(device,
                                                   Fmt::FormatName("RasterSurfaceG{}", plane),
@@ -202,6 +209,7 @@ namespace FE::Graphics::RasterProbe
         clear.m_visibility = graph->GetSRV(visibility.Get());
         clear.m_work.m_resolution = Vector2UInt(64, 64);
         clear.m_g0 = graph->GetUAV(Core::TextureView::Create(planes[0].Get()));
+        clear.m_motion = graph->GetUAV(motion.Get());
         graph->AddDispatch("ClearRasterSurface", clearPipeline, clear, Math::CeilDivide(clear.m_work.m_resolution, 8u));
         const Visibility::SurfaceBinding binding{ group.m_rowIndex, 0 };
         auto routing = Visibility::CreateSurfaceRouting(device, festd::span(&binding, 1), groups.GetReservedRowCount(), 1);
@@ -224,6 +232,7 @@ namespace FE::Graphics::RasterProbe
         evaluation.m_g1 = graph->GetUAV(Core::TextureView::Create(planes[1].Get()));
         evaluation.m_g2 = graph->GetUAV(Core::TextureView::Create(planes[2].Get()));
         evaluation.m_g3 = graph->GetUAV(Core::TextureView::Create(planes[3].Get()));
+        evaluation.m_motion = graph->GetUAV(motion.Get());
         evaluation.m_work.m_resolution = Vector2UInt(64, 64);
         evaluation.m_work.m_tilesPerRow = 1;
         graph->AddDispatchIndirect("EvaluateRasterSurface",
@@ -237,6 +246,7 @@ namespace FE::Graphics::RasterProbe
         inspect.m_g0 = graph->GetSRV(Core::TextureView::Create(planes[0].Get()));
         inspect.m_g1 = graph->GetSRV(Core::TextureView::Create(planes[1].Get()));
         inspect.m_g2 = graph->GetSRV(Core::TextureView::Create(planes[2].Get()));
+        inspect.m_motion = graph->GetSRV(motion.Get());
         inspect.m_words = graph->GetUAV(output.Get());
         graph->AddDispatch("InspectRasterProbe", probe, inspect, Core::ComputeWorkGroupCount(2));
         graph->AddCopyPass(Core::BufferView(readback.Get()), Core::BufferView(output.Get()));
@@ -249,7 +259,7 @@ namespace FE::Graphics::RasterProbe
         fence.Wait();
         device->WaitIdle();
         const uint32_t* words = static_cast<const uint32_t*>(readback->Map());
-        readback->InvalidateMappedRange(0, 128);
+        readback->InvalidateMappedRange(0, 144);
         EXPECT_EQ(words[0], (7u << Visibility::kObjectTypeShift) | (instance.m_rowIndex + 1));
         EXPECT_EQ(words[1], 64u);
         EXPECT_NEAR(std::bit_cast<float>(words[2]), 0.5f, 1e-6f);
@@ -270,6 +280,10 @@ namespace FE::Graphics::RasterProbe
         EXPECT_EQ(words[18], 0u);
         EXPECT_EQ(words[19], 0u);
         EXPECT_EQ(words[28], 0u);
+        EXPECT_NEAR(std::bit_cast<float>(words[32]), 0.1f, 0.0002f);
+        EXPECT_NEAR(std::bit_cast<float>(words[33]), 0.2f, 0.0002f);
+        EXPECT_EQ(words[34], 0u);
+        EXPECT_EQ(words[35], 0u);
         readback->Unmap();
         graph.Reset();
         uploader.Shutdown();

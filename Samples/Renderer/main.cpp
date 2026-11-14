@@ -21,6 +21,7 @@
 #include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/DrawTags.h>
+#include <Graphics/Passes/Fsr3UpscalerPass.h>
 #include <Graphics/Passes/GBufferDebugPass.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
 #include <Graphics/Passes/TonemapPass.h>
@@ -162,6 +163,7 @@ namespace
             m_view->GetModules().Add<Visibility::DebugViewModule>();
             m_view->GetModules().Add<GBufferDebug::ViewModule>();
             m_view->GetModules().Add<Tonemap::ViewModule>();
+            m_view->GetModules().Add<Fsr3::ViewModule>();
             if (const auto debugMode = Cli::GetValue("--visibility-debug"); debugMode && *debugMode != "deferred")
                 FE_Verify(m_view->SetDebugMode(Env::Name(*debugMode)), "Unknown debug mode");
 

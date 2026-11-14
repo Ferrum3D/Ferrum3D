@@ -70,7 +70,7 @@ namespace FE::Graphics::Culling
         {
             // A new freeze captures a new depth pyramid; unfreezing releases it.
             m_frozenDepthPyramid = {};
-            m_frozenViewProjection = m_view->GetViewProjectionMatrix();
+            m_frozenViewProjection = GetRasterViewProjection(blackboard, *m_view);
             m_frozenCameraPosition = m_view->GetCameraTransform().Translation();
             m_frozenProjectionScaleY = GetProjectionScaleY(*m_view);
             m_isFrozenOrthographic = m_view->IsOrthographic();
@@ -93,7 +93,7 @@ namespace FE::Graphics::Culling
         else
         {
             data.m_viewProjection = m_view->GetViewProjectionMatrix();
-            data.m_occlusionViewProjection = data.m_viewProjection;
+            data.m_occlusionViewProjection = GetRasterViewProjection(blackboard, *m_view);
             data.m_cameraPosition = m_view->GetCameraTransform().Translation();
             data.m_projectionScaleY = GetProjectionScaleY(*m_view);
             data.m_isOrthographic = m_view->IsOrthographic();
@@ -109,7 +109,7 @@ namespace FE::Graphics::Culling
         const View& view = *blackboard.Get<RendererViewData>().m_view;
         PassData& data = blackboard.Add<PassData>();
         data.m_viewProjection = view.GetViewProjectionMatrix();
-        data.m_occlusionViewProjection = data.m_viewProjection;
+        data.m_occlusionViewProjection = GetRasterViewProjection(blackboard, view);
         data.m_cameraPosition = view.GetCameraTransform().Translation();
         data.m_projectionScaleY = GetProjectionScaleY(view);
         data.m_isOrthographic = view.IsOrthographic();

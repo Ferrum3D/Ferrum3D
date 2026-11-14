@@ -253,6 +253,8 @@ namespace FE::Graphics
         struct InstanceRecord final
         {
             Matrix3x4* m_transform = nullptr;
+            Matrix3x4 m_lastRenderedTransform = Matrix3x4::kIdentity;
+            bool m_hasMotion = false;
             bool m_transformDirty = false;
             DB::Ref<MeshInstanceTable> m_tableRef = DB::Ref<MeshInstanceTable>::CreateInvalid();
             MeshBatch* m_batch = nullptr;

@@ -7,6 +7,8 @@ namespace FE::Graphics::SurfaceEvaluation
     struct Output final
     {
         Rc<Core::Texture> m_gBufferTargets[4];
+        //! UV-space offset to each pixel's previous position; null unless RendererViewData::m_needsMotionVectors.
+        Rc<Core::Texture> m_motion;
     };
 
 

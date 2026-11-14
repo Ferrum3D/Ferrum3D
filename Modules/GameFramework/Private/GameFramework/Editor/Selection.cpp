@@ -106,7 +106,10 @@ namespace FE::Editor
         pass.m_pickResult = graph.GetUAV(result.Get());
         pass.m_resolution = resolution;
         pass.m_selectedCount = m_selected.size();
-        pass.m_pickPosition = Math::Min(m_pickPosition, resolution - Vector2UInt(1, 1));
+        const Vector2UInt outputResolution = view.m_outputResolution.x > 0 ? view.m_outputResolution : resolution;
+        const Vector2UInt pickPosition(m_pickPosition.x * resolution.x / outputResolution.x,
+                                       m_pickPosition.y * resolution.y / outputResolution.y);
+        pass.m_pickPosition = Math::Min(pickPosition, resolution - Vector2UInt(1, 1));
         pass.m_pick = m_pickRequested ? 1 : 0;
         graph.AddDispatch("EditorSelectionOutlineAndPick", pipeline, pass, Math::CeilDivide(resolution, 8u));
 

@@ -25,6 +25,11 @@ Stage 3 adds `evaluation-tile`, `evaluation-group`, `surface-color`, `surface-no
 
 Use `--visibility-debug <mode>` for Stage 2 diagnostics (`visibility`, `instance`, `meshlet`, `triangle`, `uv`, `normal`, `tangent`, `derivatives`, `depth-error`). Add `--smoke` to render eight frames after world readiness and exit. See [Stage 2 notes](../../VISIBILITY_BUFFER_STAGE2.md).
 
+Camera views enable FSR3 upscaling at Quality (`Fsr3::ViewModule::m_renderScale = 2.0f / 3.0f`). Set the scale to `1.0f`
+for Native AA, or deactivate the module for native rendering. Debug visualizations bypass upscaling. Transparent materials
+write an additional `R8_UNORM` reactive render target with max blending; `Fsr3::Masks` accepts a separate optional
+transparency/composition texture for effects that need it. The upscaler runs before tonemapping and UI, without frame generation.
+
 Build the `GameSample` and `FerrumCli` executables. GameSample owns its asset catalog with the same layout as Renderer:
 
 - `Assets/source/Helmet/`: model, textures, and material source files, copied from Renderer.

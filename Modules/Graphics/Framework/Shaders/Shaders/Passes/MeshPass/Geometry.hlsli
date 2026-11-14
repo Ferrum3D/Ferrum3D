@@ -103,11 +103,13 @@ MeshDrawData ResolveMeshDrawData(const MeshViewData view, const uint32_t instanc
 }
 
 
-PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t vertexIndex, const float4x4 viewProjection,
-                                    const bool needUV = true, const bool needTangent = true)
+//! Also returns the object-space position, e.g. to reproject the vertex with another transform.
+PixelAttributes TransformVertex(const MeshDrawData drawData, const uint32_t vertexIndex, const float4x4 viewProjection,
+                                const bool needUV, const bool needTangent, out float3 localPosition)
 {
     const uint offset = vertexIndex * sizeof(VertexInput);
     const float3 position = drawData.m_geometry.Read<float3>(offset);
+    localPosition = position;
     const uint packedNormal = drawData.m_geometry.Read<uint>(offset + 20);
     const float3 inputNormal = Math::Pack::A2R10G10B10UnormToRGBA32Float(packedNormal).xyz * 2.0f - 1.0f;
     const float4 worldPosition = mul(float4(position, 1.0f), drawData.m_worldTransform);
@@ -128,6 +130,14 @@ PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t 
     output.m_uv = needUV ? Math::Pack::RG16FloatToRG32Float(packedUV) : 0;
     output.m_materialRow = drawData.m_group.m_materialInstance.Get().m_rowIndex;
     return output;
+}
+
+
+PixelAttributes TransformAttributes(const MeshDrawData drawData, const uint32_t vertexIndex, const float4x4 viewProjection,
+                                    const bool needUV = true, const bool needTangent = true)
+{
+    float3 localPosition;
+    return TransformVertex(drawData, vertexIndex, viewProjection, needUV, needTangent, localPosition);
 }
 
 

@@ -36,4 +36,7 @@ void main(uint3 group : SV_GroupID)
     const float normalZ = color >> 24 != 0 ? surface.m_normal.z : 0;
     GConstants.m_words.Store(offset + 14, asuint(normalZ));
     GConstants.m_words.Store(offset + 15, color >> 24 != 0 ? GConstants.m_g2.Load(uint3(pixel, 0)) : 0);
+    const float2 motion = GConstants.m_motion.Load(uint3(pixel, 0));
+    GConstants.m_words.Store(32 + group.x * 2, asuint(motion.x));
+    GConstants.m_words.Store(33 + group.x * 2, asuint(motion.y));
 }

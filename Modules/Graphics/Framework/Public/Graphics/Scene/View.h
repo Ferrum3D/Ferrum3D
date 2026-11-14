@@ -28,6 +28,23 @@ namespace FE::Graphics
     };
 
 
+    struct ViewData;
+
+
+    //! @brief Passed to ViewModuleBase::PrepareView before the renderer creates the view's main targets and constants.
+    struct ViewRenderSetup final
+    {
+        //! Resolution of the view's output target.
+        Vector2UInt m_outputResolution = Vector2UInt::kZero;
+        //! Resolution of the main targets; an upscaling module reduces it.
+        Vector2UInt m_renderResolution = Vector2UInt::kZero;
+        //! Camera constants; a temporal module jitters m_viewProjection and supplies m_previousViewProjection.
+        ViewData* m_constants = nullptr;
+        //! Set by a module that reads SurfaceEvaluation::Output::m_motion.
+        bool m_needsMotionVectors = false;
+    };
+
+
     //! @brief A rendering feature of one View.
     //!
     //! Update publishes the module's data into the view blackboard. The renderer adds passes in a fixed order;
@@ -37,6 +54,9 @@ namespace FE::Graphics
         FE_RTTI("77BC4DE9-A792-4A65-BCB8-F23556551774");
 
         ~ViewModuleBase() override = default;
+
+        //! Optional adjustment of the render resolution and camera constants, called before Update.
+        virtual void PrepareView(Core::FrameGraph&, Core::FrameGraphBlackboard&, ViewRenderSetup&) {}
 
         virtual void Update(Core::FrameGraphBlackboard& blackboard) = 0;
 

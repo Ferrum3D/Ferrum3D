@@ -1,4 +1,5 @@
 #include <Graphics/Core/PipelineVariantSet.h>
+#include <Graphics/Features/Shadows/ScreenSpaceShadow.h>
 #include <Graphics/Passes/DeferredShadingPass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/Passes/SurfaceEvaluationPass.h>
@@ -90,6 +91,9 @@ namespace FE::Graphics::DeferredShading
         constants.m_g2 = graph.GetSRV(gBufferTargets[2].Get());
         constants.m_g3 = graph.GetSRV(gBufferTargets[3].Get());
         constants.m_depth = graph.GetSRV(view.m_mainDepthTarget);
+        if (const auto* screenShadow = blackboard.TryGet<ScreenSpaceShadow::Output>())
+            constants.m_sunScreenShadow = graph.GetSRV(screenShadow->m_sunVisibility.Get());
+
         constants.m_work.m_pixels = graph.GetSRV(work.m_pixels.Get());
         constants.m_work.m_waves = graph.GetSRV(work.m_waves.Get());
         constants.m_work.m_ranges = graph.GetSRV(work.m_ranges.Get());

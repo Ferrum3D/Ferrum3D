@@ -11,8 +11,11 @@ struct MaterialParameters
 };
 
 
+// clang-format off
 [earlydepthstencil]
-void main(PixelAttributes input, out float4 accumulation : SV_Target0, out float4 revealage : SV_Target1)
+void main(PixelAttributes input, out float4 accumulation : SV_Target0, out float4 revealage : SV_Target1,
+          out float reactive : SV_Target2)
+// clang-format on
 {
     const MaterialInstanceTable table = GView.m_scene.Load().m_materials;
     const MaterialParameters parameters = table.ReadRow(input.m_materialRow).m_materialParameters.Get().Read<MaterialParameters>(0);
@@ -42,4 +45,5 @@ void main(PixelAttributes input, out float4 accumulation : SV_Target0, out float
     const float weight = clamp(pow(alpha + 0.01f, 3) * (0.1f + input.m_pos.z * input.m_pos.z * 100), 0.01f, 10.0f);
     accumulation = float4(color * alpha, alpha) * weight;
     revealage = alpha;
+    reactive = min(alpha, 0.9f);
 }

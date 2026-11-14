@@ -15,6 +15,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Visibility)
         RWTexture2DDescriptor<float3> m_output;
         SurfaceWorkBinding m_work;
         uint32_t m_shaderCount;
+        //! Screen space shadow of the sun, see ScreenSpaceShadow::Output; invalid in views without one.
+        Texture2DDescriptor<float> m_sunScreenShadow;
         FE_RTTI_Reflect("B2A55DB1-8534-475D-A6E0-5C4C025861FD");
     };
 

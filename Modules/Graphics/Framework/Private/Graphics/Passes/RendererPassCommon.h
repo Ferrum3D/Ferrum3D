@@ -13,6 +13,16 @@ namespace FE::Graphics
     void ClearMainTargets(Core::FrameGraph& graph, const RendererViewData& view);
 
 
+    //! @brief The matrix scene geometry is rasterized with, including the sub-pixel jitter of a temporal module.
+    [[nodiscard]] inline Matrix4x4 GetRasterViewProjection(Core::FrameGraphBlackboard& blackboard, const View& view)
+    {
+        if (const ViewData* camera = blackboard.TryGet<ViewData>())
+            return camera->m_viewProjection;
+
+        return view.GetViewProjectionMatrix();
+    }
+
+
     struct RendererTargetClearPassDesc final
     {
         Core::PassColorTarget m_colorTarget;

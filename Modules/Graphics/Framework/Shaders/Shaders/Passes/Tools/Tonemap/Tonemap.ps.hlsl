@@ -1,5 +1,6 @@
 #include <Shaders/Base/Math.hlsli>
 #include <Shaders/Passes/Tools/Blit/Blit.hlsli>
+#include <Shaders/Shading/Exposure.h>
 
 /*
  * AgX adapted from three.js (https://github.com/mrdoob/three.js), based on Filament and Blender.
@@ -62,6 +63,6 @@ float3 TonemapAgx(const float3 hdr)
 void main(const in PixelAttributes input, out float4 color : SV_Target0)
 {
     const float3 hdr = GConstants.m_input.Sample(GConstants.m_sampler.Get(), input.m_texCoord).rgb;
-    const float3 mapped = TonemapAgx(hdr);
+    const float3 mapped = TonemapAgx(hdr * (Shading::kExposure / Shading::kPreExposure));
     color = float4(Math::LinearToSRGB(mapped), 1.0f);
 }

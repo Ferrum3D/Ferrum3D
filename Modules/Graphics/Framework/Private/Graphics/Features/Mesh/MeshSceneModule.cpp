@@ -336,6 +336,8 @@ namespace FE::Graphics
         const MeshInstanceTable::RWRow instance = m_meshInstanceTable->WriteRow(instanceRef);
         instance.m_meshGroup.Get() = meshGroup->m_tableRef;
         instance.m_transform.Get() = desc.m_transform;
+        instance.m_previousTransform.Get() = desc.m_transform;
+        m_instances[handle.m_value].m_lastRenderedTransform = desc.m_transform;
         instance.m_instanceData.Get() = parameters.m_devicePointer;
 
         desc.m_batch->m_meshInstances.push_back(instanceRef);
@@ -404,11 +406,23 @@ namespace FE::Graphics
         // Workers own distinct rows. Publish shared database/batch dirty bits only after extraction joins.
         for (InstanceRecord& instance : m_instances)
         {
+            if (instance.m_transform == nullptr)
+                continue;
+
+            if (instance.m_transformDirty || instance.m_hasMotion)
+            {
+                FE_Assert(instance.m_tableRef.m_rowIndex != kInvalidIndex);
+
+                const auto row = m_meshInstanceTable->WriteRow(instance.m_tableRef);
+                row.m_previousTransform.Get() = instance.m_lastRenderedTransform;
+                instance.m_lastRenderedTransform = *instance.m_transform;
+                m_meshInstanceTable->MarkRowDirty(instance.m_tableRef);
+            }
+
+            instance.m_hasMotion = instance.m_transformDirty;
             if (!instance.m_transformDirty)
                 continue;
 
-            FE_Assert(instance.m_tableRef.m_rowIndex != kInvalidIndex);
-            m_meshInstanceTable->MarkRowDirty(instance.m_tableRef);
             m_boundsDirty.set(instance.m_batch->m_tableRef.m_rowIndex);
             instance.m_transformDirty = false;
         }
@@ -1332,6 +1346,7 @@ namespace FE::Graphics
         InstanceRecord& record = m_instances[handleIndex];
         record.m_tableRef = sourceIndex;
         record.m_transform = &m_meshInstanceTable->WriteRow(sourceIndex).m_transform.Get();
+        record.m_hasMotion = false;
         record.m_transformDirty = false;
         record.m_batch = batch;
         record.m_group = group;

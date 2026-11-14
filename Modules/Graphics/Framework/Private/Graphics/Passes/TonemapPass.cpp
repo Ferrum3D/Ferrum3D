@@ -44,7 +44,7 @@ namespace FE::Graphics::Tonemap
 
         const RendererViewData& view = blackboard.Get<RendererViewData>();
         ViewOutput& output = blackboard.Get<ViewOutput>();
-        Tools::Tonemap::AddPass(graph, Core::TextureView::Create(view.m_mainColorTarget), output.m_target);
+        Tools::Tonemap::AddPass(graph, Core::TextureView::Create(view.m_outputColorTarget), output.m_target);
         output.m_isInitialized = true;
     }
 } // namespace FE::Graphics::Tonemap

@@ -10,6 +10,12 @@
 #include <Shaders/Shadows/SunShadow.h>
 #include <festd/vector.h>
 
+namespace FE::Graphics
+{
+    struct GlobalLightingParameters;
+} // namespace FE::Graphics
+
+
 namespace FE::Graphics::SunShadow
 {
     struct Settings final
@@ -27,11 +33,22 @@ namespace FE::Graphics::SunShadow
         //! the shadow lookup, which starts where the ray ends. It spans the zone where the LODs of the casters differ from
         //! the triangles the camera sees; zero disables the trace.
         float m_screenTraceTexels = 4.0f;
+        //! Shadows the sun in deferred shading with ScreenSpaceShadow instead of the ray of m_screenTraceTexels, which then
+        //! only limits how far from the surface the shadow lookup starts. Local lights keep their rays.
+        bool m_usesScreenSpaceShadow = true;
+        //! Thickness that the screen space shadow assumes for every pixel of the camera depth, as a fraction of its depth.
+        float m_screenShadowThickness = 0.005f;
+        //! Sharpens the transition of the screen space shadow; at least one.
+        float m_screenShadowContrast = 4.0f;
         //! Debug override: request only coarse receiver coverage, ignoring fine depth requests and feedback.
         bool m_forceCoarsePages = false;
 
         [[nodiscard]] bool Validate() const;
     };
+
+
+    //! World direction from any surface towards the sun.
+    [[nodiscard]] Vector3 GetDirectionToLight(const GlobalLightingParameters& parameters);
 
 
     //! Camera and projection of one clip level, snapped to whole pages in light space so that cached pages stay valid.
